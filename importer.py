@@ -1,0 +1,710 @@
+#!/usr/bin/env python
+
+"""
+Import logic.
+
+Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013,
+              2014, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+from errors import ProgramError
+from os.path import exists, extsep, getmtime, join
+from os import listdir, makedirs, remove
+from common import init_item, readfile, writefile
+from referencing import Reference
+import inspector
+import sys
+
+class Importer:
+
+    "An import machine, searching for and loading modules."
+
+    def __init__(self, path, cache=None, verbose=False):
+
+        """
+        Initialise the importer with the given search 'path' - a list of
+        directories to search for Python modules.
+
+        The optional 'cache' should be the name of a directory used to store
+        cached module information.
+
+        The optional 'verbose' parameter causes output concerning the activities
+        of the object to be produced if set to a true value (not the default).
+        """
+
+        self.path = path
+        self.cache = cache
+        self.verbose = verbose
+
+        self.modules = {}
+        self.modules_ordered = []
+        self.loading = set()
+        self.hidden = {}
+        self.revealing = {}
+        self.invalidated = set()
+
+        self.objects = {}
+        self.classes = {}
+        self.function_parameters = {}
+        self.function_defaults = {}
+        self.function_targets = {}
+        self.function_arguments = {}
+
+        # Derived information.
+
+        self.subclasses = {}
+
+        # Attributes of different object types.
+
+        self.all_class_attrs = {}
+        self.all_instance_attrs = {}
+        self.all_instance_attr_constants = {}
+        self.all_combined_attrs = {}
+        self.all_module_attrs = {}
+        self.all_shadowed_attrs = {}
+
+        # References to external names and aliases within program units.
+
+        self.all_name_references = {}
+        self.all_initialised_names = {}
+        self.all_aliased_names = {}
+
+        # General attribute accesses.
+
+        self.all_attr_accesses = {}
+        self.all_const_accesses = {}
+        self.all_attr_access_modifiers = {}
+
+        # Constant literals and values.
+
+        self.all_constants = {}
+        self.all_constant_values = {}
+
+        self.make_cache()
+
+    def make_cache(self):
+        if self.cache and not exists(self.cache):
+            makedirs(self.cache)
+
+    def check_cache(self, details):
+
+        """
+        Check whether the cache applies for the given 'details', invalidating it
+        if it does not.
+        """
+
+        recorded_details = self.get_cache_details()
+
+        if recorded_details != details:
+            self.remove_cache()
+
+        writefile(self.get_cache_details_filename(), details)
+
+    def get_cache_details_filename(self):
+
+        "Return the filename for the cache details."
+
+        return join(self.cache, "$details")
+
+    def get_cache_details(self):
+
+        "Return details of the cache."
+
+        details_filename = self.get_cache_details_filename()
+
+        if not exists(details_filename):
+            return None
+        else:
+            return readfile(details_filename)
+
+    def remove_cache(self):
+
+        "Remove the contents of the cache."
+
+        for filename in listdir(self.cache):
+            remove(join(self.cache, filename))
+
+    def to_cache(self):
+
+        "Write modules to the cache."
+
+        if self.cache:
+            for module_name, module in self.modules.items():
+                module.to_cache(join(self.cache, module_name))
+
+    # Object retrieval and storage.
+
+    def get_object(self, name):
+
+        """
+        Return a reference for the given 'name' or None if no such object
+        exists.
+        """
+
+        return self.objects.get(name)
+
+    def set_object(self, name, value=None):
+
+        "Set the object with the given 'name' and the given 'value'."
+
+        if isinstance(value, Reference):
+            ref = value.alias(name)
+        else:
+            ref = Reference(value, name)
+
+        self.objects[name] = ref
+
+    # Indirect object retrieval.
+
+    def get_attributes(self, ref, attrname):
+
+        """
+        Return attributes provided by 'ref' for 'attrname'. Class attributes
+        may be provided by instances.
+        """
+
+        kind = ref.get_kind()
+        if kind == "<class>":
+            ref = self.get_class_attribute(ref.get_origin(), attrname)
+            return ref and set([ref]) or set()
+        elif kind == "<instance>":
+            return self.get_combined_attributes(ref.get_origin(), attrname)
+        elif kind == "<module>":
+            ref = self.get_module_attribute(ref.get_origin(), attrname)
+            return ref and set([ref]) or set()
+        else:
+            return set()
+
+    def get_class_attribute(self, object_type, attrname):
+
+        "Return from 'object_type' the details of class attribute 'attrname'."
+
+        attr = self.all_class_attrs[object_type].get(attrname)
+        return attr and self.get_object(attr)
+
+    def get_instance_attributes(self, object_type, attrname):
+
+        """
+        Return from 'object_type' the details of instance attribute 'attrname'.
+        """
+
+        consts = self.all_instance_attr_constants.get(object_type)
+        attrs = set()
+        for attr in self.all_instance_attrs[object_type].get(attrname, []):
+            attrs.add(consts and consts.get(attrname) or Reference("<var>", attr))
+        return attrs
+
+    def get_combined_attributes(self, object_type, attrname):
+
+        """
+        Return from 'object_type' the details of class or instance attribute
+        'attrname'.
+        """
+
+        ref = self.get_class_attribute(object_type, attrname)
+        refs = ref and set([ref]) or set()
+        refs.update(self.get_instance_attributes(object_type, attrname))
+        return refs
+
+    def get_module_attribute(self, object_type, attrname):
+
+        "Return from 'object_type' the details of module attribute 'attrname'."
+
+        if attrname in self.all_module_attrs[object_type]:
+            return self.get_object("%s.%s" % (object_type, attrname))
+        else:
+            return None
+
+    # Module management.
+
+    def get_modules(self):
+
+        "Return all modules known to the importer."
+
+        return self.modules.values()
+
+    def get_module(self, name, hidden=False):
+
+        "Return the module with the given 'name'."
+
+        if not self.modules.has_key(name):
+            return None
+
+        # Obtain the module and attempt to reveal it.
+
+        module = self.modules[name]
+        if not hidden:
+            self.reveal_module(module)
+        return module
+
+    def reveal_module(self, module):
+
+        "Check if 'module' is hidden and reveal it."
+
+        if module.name in self.hidden:
+            del self.hidden[module.name]
+
+            # Reveal referenced modules.
+
+            module.reveal_referenced()
+
+    def set_revealing(self, module, name, instigator):
+
+        """
+        Make the revealing of 'module' conditional on 'name' for the given
+        'instigator' of the reveal operation.
+        """
+
+        self.revealing[module.name].add((name, instigator))
+
+    # Program operations.
+
+    def initialise(self, filename, reset=False):
+
+        """
+        Initialise a program whose main module is 'filename', resetting the
+        cache if 'reset' is true. Return the main module.
+        """
+
+        if reset:
+            self.remove_cache()
+        self.check_cache(filename)
+
+        # Load the program itself.
+
+        m = self.load_from_file(filename)
+
+        # Resolve dependencies within the program.
+
+        for module in self.modules_ordered:
+            module.resolve()
+
+        return m
+
+    def finalise(self):
+
+        "Finalise the inspected program."
+
+        self.finalise_classes()
+        self.remove_hidden()
+        self.to_cache()
+        self.set_class_types()
+        self.define_instantiators()
+        self.collect_constants()
+
+    def finalise_classes(self):
+
+        "Finalise the class relationships and attributes."
+
+        self.derive_inherited_attrs()
+        self.derive_subclasses()
+        self.derive_shadowed_attrs()
+
+    def derive_inherited_attrs(self):
+
+        "Derive inherited attributes for classes throughout the program."
+
+        for name in self.classes.keys():
+            self.propagate_attrs_for_class(name)
+
+    def propagate_attrs_for_class(self, name, visited=None):
+
+        "Propagate inherited attributes for class 'name'."
+
+        # Visit classes only once.
+
+        if self.all_combined_attrs.has_key(name):
+            return
+
+        visited = visited or []
+
+        if name in visited:
+            raise ProgramError, "Class %s may not inherit from itself: %s -> %s." % (name, " -> ".join(visited), name)
+
+        visited.append(name)
+
+        class_attrs = {}
+        instance_attrs = {}
+
+        # Aggregate the attributes from base classes, recording the origins of
+        # applicable attributes.
+
+        for base in self.classes[name][::-1]:
+
+            # Get the identity of the class from the reference.
+
+            base = base.get_origin()
+
+            # Define the base class completely before continuing with this
+            # class.
+
+            self.propagate_attrs_for_class(base, visited)
+            class_attrs.update(self.all_class_attrs[base])
+
+            # Instance attribute origins are combined if different.
+
+            for key, values in self.all_instance_attrs[base].items():
+                init_item(instance_attrs, key, set)
+                instance_attrs[key].update(values)
+
+        # Class attributes override those defined earlier in the hierarchy.
+
+        class_attrs.update(self.all_class_attrs.get(name, {}))
+
+        # Instance attributes are merely added if not already defined.
+
+        for key in self.all_instance_attrs.get(name, []):
+            if not instance_attrs.has_key(key):
+                instance_attrs[key] = set(["%s.%s" % (name, key)])
+
+        self.all_class_attrs[name] = class_attrs
+        self.all_instance_attrs[name] = instance_attrs
+        self.all_combined_attrs[name] = set(class_attrs.keys()).union(instance_attrs.keys())
+
+    def derive_subclasses(self):
+
+        "Derive subclass details for classes."
+
+        for name, bases in self.classes.items():
+            for base in bases:
+
+                # Get the identity of the class from the reference.
+
+                base = base.get_origin()
+                self.subclasses[base].add(name)
+
+    def derive_shadowed_attrs(self):
+
+        "Derive shadowed attributes for classes."
+
+        for name, attrs in self.all_instance_attrs.items():
+            attrs = set(attrs.keys()).intersection(self.all_class_attrs[name].keys())
+            if attrs:
+                self.all_shadowed_attrs[name] = attrs
+
+    def remove_hidden(self):
+
+        "Remove all hidden modules."
+
+        # First reveal any modules exposing names.
+
+        for modname, names in self.revealing.items():
+            module = self.modules[modname]
+
+            # Obtain the imported names and determine whether they should cause
+            # the module to be revealed.
+
+            for (name, instigator) in names:
+                if module is not instigator:
+
+                    # Only if an object is provided by the module should the
+                    # module be revealed. References to objects in other modules
+                    # should not in themselves expose the module in which those
+                    # references occur.
+
+                    ref = module.get_global(name)
+                    if ref and ref.provided_by_module(module.name):
+                        self.reveal_module(module)
+                        instigator.revealed.add(module)
+
+        # Then remove all modules that are still hidden.
+
+        for modname in self.hidden:
+            module = self.modules[modname]
+            module.unpropagate()
+            del self.modules[modname]
+            ref = self.objects.get(modname)
+            if ref and ref.get_kind() == "<module>":
+                del self.objects[modname]
+
+    def set_class_types(self):
+
+        "Set the type of each class."
+
+        ref = self.get_object("__builtins__.type")
+        for attrs in self.all_class_attrs.values():
+            attrs["__class__"] = ref.get_origin()
+
+    def define_instantiators(self):
+
+        """
+        Consolidate parameter and default details, incorporating initialiser
+        details to define instantiator signatures.
+        """
+
+        for cls, attrs in self.all_class_attrs.items():
+            initialiser = attrs["__init__"]
+            self.function_parameters[cls] = self.function_parameters[initialiser][1:]
+            self.function_defaults[cls] = self.function_defaults[initialiser]
+
+    def collect_constants(self):
+
+        "Get constants from all active modules."
+
+        for module in self.modules.values():
+            self.all_constants.update(module.constants)
+
+    # Import methods.
+
+    def find_in_path(self, name):
+
+        """
+        Find the given module 'name' in the search path, returning None where no
+        such module could be found, or a 2-tuple from the 'find' method
+        otherwise.
+        """
+
+        for d in self.path:
+            m = self.find(d, name)
+            if m: return m
+        return None
+
+    def find(self, d, name):
+
+        """
+        In the directory 'd', find the given module 'name', where 'name' can
+        either refer to a single file module or to a package. Return None if the
+        'name' cannot be associated with either a file or a package directory,
+        or a 2-tuple from '_find_package' or '_find_module' otherwise.
+        """
+
+        m = self._find_package(d, name)
+        if m: return m
+        m = self._find_module(d, name)
+        if m: return m
+        return None
+
+    def _find_module(self, d, name):
+
+        """
+        In the directory 'd', find the given module 'name', returning None where
+        no suitable file exists in the directory, or a 2-tuple consisting of
+        None (indicating that no package directory is involved) and a filename
+        indicating the location of the module.
+        """
+
+        name_py = name + extsep + "py"
+        filename = self._find_file(d, name_py)
+        if filename:
+            return None, filename
+        return None
+
+    def _find_package(self, d, name):
+
+        """
+        In the directory 'd', find the given package 'name', returning None
+        where no suitable package directory exists, or a 2-tuple consisting of
+        a directory (indicating the location of the package directory itself)
+        and a filename indicating the location of the __init__.py module which
+        declares the package's top-level contents.
+        """
+
+        filename = self._find_file(d, name)
+        if filename:
+            init_py = "__init__" + extsep + "py"
+            init_py_filename = self._find_file(filename, init_py)
+            if init_py_filename:
+                return filename, init_py_filename
+        return None
+
+    def _find_file(self, d, filename):
+
+        """
+        Return the filename obtained when searching the directory 'd' for the
+        given 'filename', or None if no actual file exists for the filename.
+        """
+
+        filename = join(d, filename)
+        if exists(filename):
+            return filename
+        else:
+            return None
+
+    def load(self, name, return_leaf=False, hidden=False):
+
+        """
+        Load the module or package with the given 'name'. Return an object
+        referencing the loaded module or package, or None if no such module or
+        package exists.
+
+        Where 'return_leaf' is specified, the final module in the chain is
+        returned. Where 'hidden' is specified, the module is marked as hidden.
+        """
+
+        if return_leaf:
+            name_for_return = name
+        else:
+            name_for_return = name.split(".")[0]
+
+        # Loaded modules are returned immediately.
+        # Modules may be known but not yet loading (having been registered as
+        # submodules), loading, loaded, or completely unknown.
+
+        module = self.get_module(name, hidden)
+
+        if module:
+            return self.modules[name_for_return]
+
+        # Otherwise, modules are loaded.
+
+        if self.verbose:
+            print >>sys.stderr, "Loading", name
+
+        # Split the name into path components, and try to find the uppermost in
+        # the search path.
+
+        path = name.split(".")
+        path_so_far = []
+        top = module = None
+
+        for p in path:
+
+            # Get the module's filesystem details.
+
+            if not path_so_far:
+                m = self.find_in_path(p)
+            elif d:
+                m = self.find(d, p)
+            else:
+                m = None
+
+            path_so_far.append(p)
+            module_name = ".".join(path_so_far)
+
+            if not m:
+                if self.verbose:
+                    print >>sys.stderr, "Not found (%s)" % name
+
+                return None # NOTE: Import error.
+
+            # Get the module itself.
+
+            d, filename = m
+            submodule = self.load_from_file(filename, module_name, hidden)
+
+            if module is None:
+                top = submodule
+
+            module = submodule
+
+        # Return either the deepest or the uppermost module.
+
+        return return_leaf and module or top
+
+    def load_from_file(self, filename, module_name=None, hidden=False):
+
+        "Load the module from the given 'filename'."
+
+        if module_name is None:
+            module_name = "__main__"
+
+        module = self.modules.get(module_name)
+
+        if not module:
+
+            # Try to load from cache.
+
+            module = self.load_from_cache(filename, module_name, hidden)
+            if module:
+                return module
+
+            # If no cache entry exists, load from file.
+
+            module = inspector.InspectedModule(module_name, self)
+            self.add_module(module_name, module)
+            self.update_cache_validity(module)
+
+        # Initiate loading if not already in progress.
+
+        if not module.loaded and module not in self.loading:
+            self._load(module, module_name, hidden, lambda m: m.parse, filename)
+
+        return module
+
+    def update_cache_validity(self, module):
+
+        "Make 'module' valid in the cache, but invalidate accessing modules."
+
+        self.invalidated.update(module.accessing_modules)
+        if module.name in self.invalidated:
+            self.invalidated.remove(module.name)
+
+    def source_is_new(self, filename, module_name):
+
+        "Return whether 'filename' is newer than the cached 'module_name'."
+
+        if self.cache:
+            cache_filename = join(self.cache, module_name)
+            return not exists(cache_filename) or \
+                getmtime(filename) > getmtime(cache_filename) or \
+                module_name in self.invalidated
+        else:
+            return True
+
+    def load_from_cache(self, filename, module_name, hidden=False):
+
+        "Return a module residing in the cache."
+
+        module = self.modules.get(module_name)
+
+        if not self.source_is_new(filename, module_name):
+
+            if not module:
+                module = inspector.CachedModule(module_name, self)
+                self.add_module(module_name, module)
+
+            if not module.loaded and module not in self.loading:
+                filename = join(self.cache, module_name)
+                self._load(module, module_name, hidden, lambda m: m.from_cache, filename)
+
+        return module
+
+    def _load(self, module, module_name, hidden, fn, filename):
+
+        """
+        Load 'module' for the given 'module_name', with the module being hidden
+        if 'hidden' is a true value, and with 'fn' performing an invocation on
+        the module with the given 'filename'.
+        """
+
+        # Indicate that the module is hidden if requested.
+
+        if hidden:
+            self.hidden[module_name] = module
+
+        # Indicate that loading is in progress and load the module.
+
+        self.loading.add(module)
+        if self.verbose:
+            print >>sys.stderr, "Loading", filename
+        fn(module)(filename)
+        if self.verbose:
+            print >>sys.stderr, "Loaded", filename
+        self.loading.remove(module)
+
+        self.modules_ordered.append(module)
+
+    def add_module(self, module_name, module):
+
+        """
+        Return the module with the given 'module_name', adding a new module
+        object if one does not already exist.
+        """
+
+        self.modules[module_name] = module
+        self.objects[module_name] = Reference("<module>", module_name)
+
+# vim: tabstop=4 expandtab shiftwidth=4

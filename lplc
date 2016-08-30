@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+from errors import *
+from os.path import abspath, exists, join, split
+from time import time
+import importer
+import sys
+
+libdirs = [
+    join(split(__file__)[0], "lib"),
+    "/usr/share/lichen/lib"
+    ]
+
+def load_module(filename, module_name):
+    for libdir in libdirs:
+        path = join(libdir, filename)
+        if exists(path):
+            return i.load_from_file(path, module_name)
+    return None
+
+def stopwatch(activity, now):
+    print >>sys.stderr, "%s took %.2f seconds" % (activity, time() - now)
+    return time()
+
+# Main program.
+
+if __name__ == "__main__":
+    args = sys.argv[2:]
+    path = libdirs + sys.path[:]
+
+    filename = abspath(sys.argv[1])
+    path.append(split(filename)[0])
+
+    verbose = "-v" in args
+    reset = "-r" in args
+
+    # Load the program.
+
+    try:
+        start = now = time()
+
+        i = importer.Importer(path, "_cache", verbose)
+        m = i.initialise(filename, reset)
+        i.finalise()
+
+        now = stopwatch("Inspection", now)
+
+    # Report any errors.
+
+    except ProcessingError, exc:
+        print exc
+        if "-tb" in args:
+            raise
+        elif "-exit" in args:
+            sys.exit(1)
+
+    except KeyboardInterrupt:
+        if "-exit" in args:
+            sys.exit(2)
+        else:
+            raise
+
+    else:
+        if "-exit" in args:
+            sys.exit(0)
+
+# vim: tabstop=4 expandtab shiftwidth=4
