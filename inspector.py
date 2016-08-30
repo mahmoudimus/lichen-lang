@@ -22,6 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from branching import BranchTracker
 from common import *
+from errors import InspectError
 from modules import *
 from os import listdir
 from os.path import extsep, split, splitext
@@ -582,13 +583,16 @@ class InspectedModule(BasicModule, CacheWritingModule):
         elif isinstance(n, compiler.ast.Tuple):
             return self.get_literal_instance(n, "tuple")
 
-        # List comprehensions and if expressions.
+        # Unsupported nodes.
 
-        elif isinstance(n, compiler.ast.ListComp):
-            self.process_listcomp_node(n)
+        elif isinstance(n, compiler.ast.GenExpr):
+            raise InspectError("Generator expressions are not supported.", self.get_namespace_path(), n)
 
         elif isinstance(n, compiler.ast.IfExp):
-            self.process_ifexp_node(n)
+            raise InspectError("If-else expressions are not supported.", self.get_namespace_path(), n)
+
+        elif isinstance(n, compiler.ast.ListComp):
+            raise InspectError("List comprehensions are not supported.", self.get_namespace_path(), n)
 
         # All other nodes are processed depth-first.
 
@@ -987,18 +991,6 @@ class InspectedModule(BasicModule, CacheWritingModule):
 
         tracker.merge_branches()
 
-    def process_ifexp_node(self, n):
-
-        "Process the given if expression node 'n'."
-
-        name_ref = self.process_structure_node(self.convert_ifexp_node(n))
-
-        path = self.get_namespace_path()
-        self.allocate_arguments(path, self.function_defaults[name_ref.get_origin()])
-        self.deallocate_arguments(path, self.function_defaults[name_ref.get_origin()])
-
-        return InvocationRef(name_ref)
-
     def process_import_node(self, n):
 
         "Process the given import node 'n'."
@@ -1059,18 +1051,6 @@ class InspectedModule(BasicModule, CacheWritingModule):
 
         origin = self.get_object_path(name)
         return ResolvedNameRef(name, Reference("<function>", origin))
-
-    def process_listcomp_node(self, n):
-
-        "Process the given list comprehension node 'n'."
-
-        name_ref = self.process_structure_node(self.convert_listcomp_node(n))
-
-        path = self.get_namespace_path()
-        self.allocate_arguments(path, self.function_defaults[name_ref.get_origin()])
-        self.deallocate_arguments(path, self.function_defaults[name_ref.get_origin()])
-
-        return InvocationRef(name_ref)
 
     def process_logical_node(self, n):
 
