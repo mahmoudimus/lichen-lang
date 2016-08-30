@@ -180,10 +180,6 @@ class BranchTracker:
 
         self.loop_branches = []
 
-        # Inherited usage.
-
-        self.inherited = None
-
     # Structure assembly methods.
 
     def new_branchpoint(self, loop_node=False):
@@ -452,63 +448,6 @@ class BranchTracker:
         for branch in branches:
             branch.contributors.add(contributor)
 
-    # Namespace methods.
-
-    def inherit_branches(self, tracker, names):
-
-        """
-        Propagate branches from the given 'tracker' excluding those associated
-        with 'names'.
-        """
-
-        # For each inherited name, create a branch connected to the inherited
-        # branches.
-
-        self.inherited = {}
-
-        for name, branches in tracker.attribute_branches[-1].items():
-
-            # Do not inherit any listed names (typically parameters) or any
-            # special names.
-
-            if name in names or name.startswith("$"):
-                continue
-
-            # Make a tentative assignment for the name.
-
-            contributor = Branch([name], True)
-            init_item(self.assignments, name, list)
-            self.assignments[name].append(contributor)
-
-            # Connect the inherited branch to the new one.
-
-            for branch in branches:
-                init_item(contributor.suppliers, name, set)
-                contributor.suppliers[name].add(branch)
-                branch.contributors.add(contributor)
-
-            # Record the inherited branch.
-
-            self.inherited[name] = [contributor]
-
-        self.attribute_branches[-1].update(self.inherited)
-
-    def disconnect_name(self, name):
-
-        "Disconnect inherited branches for 'name'."
-
-        if not self.inherited or not self.inherited.has_key(name):
-            return
-
-        # Remove the new branch from the inherited branches for the name.
-
-        for contributor in self.inherited[name]:
-            for supplier in contributor.suppliers[name]:
-                supplier.contributors.remove(contributor)
-            del contributor.suppliers[name]
-
-        del self.inherited[name]
-
     # Attribute usage methods.
 
     def tracking_name(self, name):
@@ -518,13 +457,11 @@ class BranchTracker:
         if it is.
         """
 
-        return self.assignments.has_key(name) and \
-               (not self.inherited or not self.inherited.has_key(name)) and \
-               self.have_name(name)
+        return self.assignments.has_key(name) and self.have_name(name)
 
     def have_name(self, name):
 
-        "Return whether 'name' is known, perhaps having been inherited."
+        "Return whether 'name' is known."
 
         return self.attribute_branches[-1].get(name)
 
@@ -539,8 +476,6 @@ class BranchTracker:
         branch = Branch(names, True, values)
 
         for name in names:
-            self.disconnect_name(name)
-
             branches[name] = [branch]
             init_item(self.assignments, name, list)
             self.assignments[name].append(branch)

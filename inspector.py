@@ -67,11 +67,6 @@ class InspectedModule(BasicModule, CacheWritingModule):
         self.in_conditional = False
         self.global_attr_accesses = {}
 
-        # Nested scope handling.
-
-        self.parent_function = None
-        self.propagated_names = {}
-
         # Usage tracking.
 
         self.trackers = []
@@ -917,9 +912,6 @@ class InspectedModule(BasicModule, CacheWritingModule):
 
         # Reset conditional tracking to focus on the function contents.
 
-        parent_function = self.parent_function
-        self.parent_function = self.in_function and self.get_namespace_path() or None
-
         in_conditional = self.in_conditional
         self.in_conditional = False
 
@@ -931,34 +923,19 @@ class InspectedModule(BasicModule, CacheWritingModule):
         # Track attribute usage within the namespace.
 
         path = self.get_namespace_path()
-        init_item(self.propagated_names, path, set)
 
         self.start_tracking(locals)
         self.process_structure_node(n.code)
         self.stop_tracking()
 
-        # Propagate names from parent scopes.
-
-        for local in self.propagated_names[path]:
-            if not local in argnames and self.trackers[-1].have_name(local):
-                argnames.append(local)
-                defaults.append((local, Reference("<var>")))
-                self.set_function_local(local)
-
-        # Exit to the parent and note propagated names.
+        # Exit to the parent.
 
         self.exit_namespace()
-
-        parent = self.get_namespace_path()
-        if self.propagated_names.has_key(parent):
-            for local in self.propagated_names[path]:
-                self.propagated_names[parent].add(local)
 
         # Update flags.
 
         self.in_function = in_function
         self.in_conditional = in_conditional
-        self.parent_function = parent_function
 
         # Define the function using the appropriate name.
 
@@ -1170,14 +1147,7 @@ class InspectedModule(BasicModule, CacheWritingModule):
 
             branches = tracker.tracking_name(n.name)
 
-            # Find names inherited from a parent scope.
-
-            if not branches and self.parent_function:
-                branches = tracker.have_name(n.name)
-                if branches:
-                    self.propagate_name(n.name)
-
-            # Local or inherited name.
+            # Local name.
 
             if branches:
                 self.record_branches_for_access(branches, n.name, None)
@@ -1340,12 +1310,6 @@ class InspectedModule(BasicModule, CacheWritingModule):
         tracker = BranchTracker()
         self.trackers.append(tracker)
 
-        # For functions created from expressions or for functions within
-        # functions, propagate usage to the new namespace.
-
-        if self.parent_function:
-            tracker.inherit_branches(parent, names)
-
         # Record the given names established as new branches.
 
         tracker.assign_names(names)
@@ -1386,13 +1350,6 @@ class InspectedModule(BasicModule, CacheWritingModule):
         self.record_assignments_for_access(tracker)
         self.attr_usage[self.name] = tracker.get_all_usage()
         self.name_initialisers[self.name] = tracker.get_all_values()
-
-    def propagate_name(self, name):
-
-        "Propagate the given 'name' into the current namespace."
-
-        path = self.get_namespace_path()
-        self.propagated_names[path].add(name)
 
     def record_assignments_for_access(self, tracker):
 
