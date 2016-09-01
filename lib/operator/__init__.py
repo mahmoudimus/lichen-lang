@@ -19,10 +19,60 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from operator.binary import *
-from operator.unary import *
-from operator.augmented import *
-from operator.comparison import *
-from operator.sequence import *
+from operator.augmented import (
+    iadd,
+    iand_,
+    idiv,
+    ifloordiv,
+    ilshift,
+    imod,
+    imul,
+    ior_,
+    ipow,
+    irshift,
+    isub,
+    ixor,
+    )
+
+from operator.binary import (
+    add,
+    and_,
+    contains,
+    div,
+    floordiv,
+    in_,
+    not_in,
+    lshift,
+    mod,
+    mul,
+    or_,
+    pow,
+    rshift,
+    sub,
+    xor,
+    )
+
+from operator.comparison import (
+    eq,
+    ge,
+    gt,
+    le,
+    lt,
+    ne,
+    )
+
+from operator.sequence import (
+    getitem,
+    setitem,
+    getslice,
+    setslice,
+    )
+
+from operator.unary import (
+    invert,
+    neg,
+    not_,
+    pos,
+    )
 
 # vim: tabstop=4 expandtab shiftwidth=4

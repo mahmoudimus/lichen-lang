@@ -19,7 +19,8 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.operator import *
+from __builtins__.iterator import listiterator
+from __builtins__.operator import _binary_op, _negate
 import native
 
 class basestring(object):
