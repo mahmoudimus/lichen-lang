@@ -312,9 +312,11 @@ class Importer:
 
         for name, ref in self.objects.items():
             if ref.has_kind("<depends>"):
-                ref = self.find_dependency(ref)
-                if ref:
-                    resolved[name] = ref
+                found = self.find_dependency(ref)
+                if found:
+                    resolved[name] = found
+                else:
+                    print >>sys.stderr, "Name %s references an unknown object: %s" % (name, ref.get_origin())
 
         for name, ref in resolved.items():
             self.objects[name] = ref
