@@ -20,9 +20,10 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import *
+from common import CommonModule
 from encoders import decode_modifier_term, encode_modifiers, encode_usage
 from referencing import decode_reference, Reference
+from results import ResolvedNameRef
 import sys
 
 class BasicModule(CommonModule):
@@ -31,18 +32,6 @@ class BasicModule(CommonModule):
 
     def __init__(self, name, importer):
         CommonModule.__init__(self, name, importer)
-
-        # Import machinery links.
-
-        self.loaded = False
-
-        # Module dependencies.
-
-        self.imported = set()
-        self.imported_hidden = set()
-        self.imported_names = {}
-        self.revealed = set()
-        self.accessing_modules = set()
 
         # Global name information.
 
@@ -64,7 +53,6 @@ class BasicModule(CommonModule):
 
         self.names_used = {}
         self.names_missing = {}
-        self.name_references = {} # references to globals
 
         # Function details.
 
@@ -96,30 +84,8 @@ class BasicModule(CommonModule):
 
         self.attr_access_modifiers = {}
 
-        # Initialisation-related details.
-
-        self.initialised_names = {}
-        self.aliased_names = {}
-
     def __repr__(self):
         return "BasicModule(%r, %r)" % (self.name, self.importer)
-
-    def resolve(self):
-
-        "Resolve dependencies and complete definitions."
-
-        self.resolve_class_bases()
-        self.check_special()
-        self.check_names_used()
-        self.resolve_members()
-        self.resolve_initialisers()
-        self.resolve_literals()
-        self.remove_redundant_accessors()
-        self.set_invocation_usage()
-
-        # Propagate to the importer information needed in subsequent activities.
-
-        self.propagate()
 
     # Derived information methods.
 
@@ -175,36 +141,6 @@ class BasicModule(CommonModule):
             if ref.provided_by_module(self.name) or name in self.importer.hidden:
                 if ref.get_kind() != "<module>":
                     del self.importer.objects[name]
-
-    def resolve_class_bases(self):
-
-        "Resolve all class bases since some of them may have been deferred."
-
-        for name, bases in self.classes.items():
-            resolved = []
-            bad = []
-
-            for base in bases:
-
-                # Resolve dependencies.
-
-                if base.has_kind("<depends>"):
-                    ref = self.importer.get_object(base.get_origin())
-                else:
-                    ref = base
-
-                # Obtain the origin of the base class reference.
-
-                if not ref or not ref.has_kind("<class>"):
-                    bad.append(base)
-                    break
-
-                resolved.append(ref)
-
-            if bad:
-                print >>sys.stderr, "Bases of class %s were not classes." % (name, ", ".join(map(str, bad)))
-            else:
-                self.importer.classes[name] = self.classes[name] = resolved
 
     def propagate_attrs(self):
 
@@ -268,20 +204,6 @@ class BasicModule(CommonModule):
         path = self.get_namespace_path()
         return name in self.scope_globals.get(path, [])
 
-    def get_globals(self):
-
-        """
-        Get the globals from this module, returning a dictionary mapping names
-        to references incorporating original definition details.
-        """
-
-        l = []
-        for name, value in self.objects.items():
-            parent, attrname = name.rsplit(".", 1)
-            if parent == self.name:
-                l.append((attrname, value))
-        return dict(l)
-
     def get_global(self, name):
 
         """
@@ -297,57 +219,38 @@ class BasicModule(CommonModule):
     def get_global_or_builtin(self, name):
 
         """
-        Return the object recorded the given 'name' from this module or from the
-        __builtins__ module. If no object has yet been defined, perhaps due to
-        circular module references, None is returned.
+        Return a reference for the given 'name' found in this module or in the
+        __builtins__.
         """
 
         return self.get_global(name) or self.get_builtin(name)
 
     def get_builtin(self, name):
 
-        "Return the object providing the given built-in 'name'."
+        "Return a reference to the built-in with the given 'name'."
 
-        path = "__builtins__.%s" % name
+        self.importer.queue_module("__builtins__", self)
+        return Reference("<depends>", "__builtins__.%s" % name)
 
-        # Obtain __builtins__.
+    def get_builtin_class(self, name):
 
-        module = self.ensure_builtins(path)
+        "Return a reference to the actual object providing 'name'."
 
-        # Attempt to find the named object within __builtins__.
+        # NOTE: This makes assumptions about the __builtins__ structure.
 
-        if module:
-            self.find_imported_name(name, module.name, module)
-
-        # Return the path and any reference for the named object.
-
-        return self.importer.get_object(path)
-
-    def ensure_builtins(self, path):
-
-        """
-        If 'path' is a reference to an object within __builtins__, return the
-        __builtins__ module.
-        """
-
-        if path.split(".", 1)[0] == "__builtins__":
-            return self.importer.load("__builtins__", True, True)
-        else:
-            return None
+        return Reference("<class>", "__builtins__.%s.%s" % (name, name))
 
     def get_object(self, path):
 
         """
-        Get the details of an object with the given 'path', either from this
-        module or from the whole program. Return a tuple containing the path and
-        any object found.
+        Get the details of an object with the given 'path'. Where the object
+        cannot be resolved, an unresolved reference is returned.
         """
 
         if self.objects.has_key(path):
             return self.objects[path]
         else:
-            self.ensure_builtins(path)
-            return self.importer.get_object(path)
+            return Reference("<depends>", path)
 
     def set_object(self, name, value=None):
 
@@ -356,6 +259,14 @@ class BasicModule(CommonModule):
         ref = decode_reference(value, name)
         multiple = self.objects.has_key(name) and self.objects[name].get_kind() != ref.get_kind()
         self.importer.objects[name] = self.objects[name] = multiple and ref.as_var() or ref
+
+    def import_name_from_module(self, name, module_name):
+
+        "Import 'name' from the module having the given 'module_name'."
+
+        if module_name != self.name:
+            self.importer.queue_module(module_name, self)
+        return Reference("<depends>", "%s.%s" % (module_name, name))
 
     # Special names.
 
@@ -385,169 +296,12 @@ class BasicModule(CommonModule):
         value = ResolvedNameRef(literal_name, ref)
         self.set_special(literal_name, value)
 
-    # Revealing modules by tracking name imports across modules.
-
-    def set_imported_name(self, name, module_name, alias=None, path=None):
-
-        """
-        Record 'name' as being imported from the given 'module_name', employing
-        the given 'alias' in the local namespace if specified.
-        """
-
-        path = path or self.get_namespace_path()
-        init_item(self.imported_names, path, dict)
-        self.imported_names[path][alias or name] = (name, module_name)
-
-    def get_imported_name(self, name, path):
-
-        "Get details of any imported 'name' within the namespace at 'path'."
-
-        if self.imported_names.has_key(path):
-            return self.imported_names[path].get(name)
-        else:
-            return None
-
-    def find_imported_name(self, name, path, module=None):
-
-        """
-        Find details of the imported 'name' within the namespace at 'path',
-        starting within the given 'module' if indicated, or within this module
-        otherwise.
-        """
-
-        module = module or self
-
-        # Obtain any module required by the name.
-
-        name_modname = module.get_imported_name(name, path)
-
-        if name_modname:
-            name, modname = name_modname
-            module = self._find_imported_name(name, modname, module)
-
-        # Obtain the name from the final module, revealing it if appropriate.
-
-        if module:
-            init_item(self.importer.revealing, module.name, set)
-            self.importer.set_revealing(module, name, self)
-
-    def _find_imported_name(self, name, modname, module):
-
-        """
-        Traverse details for 'name' via 'modname' to the module providing the
-        name, tentatively revealing the module even if the module is not yet
-        loaded and cannot provide the details of the object recorded for the
-        name.
-        """
-
-        _name = name
-
-        # Obtain any modules referenced by each required module.
-
-        while True:
-
-            # Get the module directly or traverse possibly-aliased names.
-
-            module = self.get_module_direct(modname, True)
-            if not module:
-                top, module = self.get_module(modname, True)
-            name_modname = module.get_imported_name(_name, module.name)
-            if not name_modname:
-                break
-            else:
-                _name, modname = name_modname
-
-        return module
-
-    def reveal_referenced(self):
-
-        """
-        Reveal modules referenced by this module.
-        """
-
-        for path, names in self.imported_names.items():
-            for alias, (name, modname) in names.items():
-                module = self._find_imported_name(name, modname, self)
-                self.reveal_module(module)
-
-    def reveal_module(self, module):
-
-        """
-        Reveal the given 'module', recording the revealed modules on this
-        module.
-        """
-
-        if module is not self:
-            self.importer.reveal_module(module)
-            self.revealed.add(module)
-            module.accessing_modules.add(self.name)
-
-    # Module loading.
-
-    def get_module_direct(self, modname, hidden=False):
-
-        """
-        Return 'modname' without traversing parent modules, keeping the module
-        'hidden' if set to a true value, loading the module if not already
-        loaded.
-        """
-
-        return self.importer.get_module(modname, True) or self.importer.load(modname, hidden=hidden)
-
-    def get_module(self, name, hidden=False):
-
-        """
-        Use the given 'name' to obtain the identity of a module. Return module
-        objects or None if the module cannot be found. This method is required
-        when aliases are used to refer to modules and where a module "path" does
-        not correspond to the actual module path.
-
-        A tuple is returned containing the top or base module and the deepest or
-        leaf module involved.
-        """
-
-        path_so_far = []
-        top = module = None
-        parts = name.split(".")
-
-        for i, part in enumerate(parts):
-            path_so_far.append(part)
-            module_name = ".".join(path_so_far)
-            ref = self.get_object(module_name)
-
-            # If no known object exists, attempt to load it.
-
-            if not ref:
-                module = self.importer.load(module_name, True, hidden)
-                if not module:
-                    return None
-
-                # Rewrite the path to use the actual module details.
-
-                path_so_far = module.name.split(".")
-
-            # If the object exists and is not a module, stop.
-
-            elif ref.has_kind(["<class>", "<function>", "<var>"]):
-                return None
-
-            else:
-                module = self.importer.get_module(ref.get_origin(), hidden)
-
-            if not top:
-                top = module
-
-        return top, module
-
 class CachedModule(BasicModule):
 
     "A cached module."
 
     def __repr__(self):
         return "CachedModule(%r, %r)" % (self.name, self.importer)
-
-    def resolve(self):
-        pass
 
     def to_cache(self, filename):
 
@@ -566,27 +320,8 @@ class CachedModule(BasicModule):
         try:
             self.filename = f.readline().rstrip()
 
-            accessing_modules = f.readline().split(": ", 1)[-1].rstrip()
-
-            module_names = f.readline().split(": ", 1)[-1].rstrip()
-            if module_names:
-                for module_name in module_names.split(", "):
-                    self.imported.add(self.importer.load(module_name))
-
-            module_names = f.readline().split(": ", 1)[-1].rstrip()
-            if module_names:
-                for module_name in module_names.split(", "):
-                    self.imported_hidden.add(self.importer.load(module_name, hidden=True))
-
-            module_names = f.readline().split(": ", 1)[-1].rstrip()
-            if module_names:
-                for module_name in module_names.split(", "):
-                    module = self.importer.load(module_name, True, True)
-                    self.reveal_module(module)
-
             f.readline() # (empty line)
 
-            self._get_imported_names(f)
             self._get_members(f)
             self._get_class_relationships(f)
             self._get_instance_attrs(f)
@@ -613,19 +348,8 @@ class CachedModule(BasicModule):
         finally:
             f.close()
 
-        self.loaded = True
-
-    def resolve(self):
+    def complete(self):
         self.propagate()
-
-    def _get_imported_names(self, f):
-        f.readline() # "imported names:"
-        line = f.readline().rstrip()
-        while line:
-            path, alias_or_name, name, module_name = self._get_fields(line, 4)
-            init_item(self.imported_names, path, dict)
-            self.imported_names[path][alias_or_name] = (name, module_name)
-            line = f.readline().rstrip()
 
     def _get_members(self, f):
         f.readline() # "members:"
@@ -885,13 +609,6 @@ class CacheWritingModule:
         format to the file having the given 'filename':
 
         filename
-        "accessed by:" accessing module names during this module's import
-        "imports:" imported module names
-        "hidden imports:" imported module names
-        "reveals:" revealed module names
-        (empty line)
-        "imported names:"
-        zero or more: qualified name " " name " " module name
         (empty line)
         "members:"
         zero or more: qualified name " " reference
@@ -987,33 +704,6 @@ class CacheWritingModule:
         f = open(filename, "w")
         try:
             print >>f, self.filename
-
-            accessing_modules = list(self.accessing_modules)
-            accessing_modules.sort()
-            print >>f, "accessed by:", ", ".join(accessing_modules)
-
-            module_names = [m.name for m in self.imported]
-            module_names.sort()
-            print >>f, "imports:", ", ".join(module_names)
-
-            module_names = [m.name for m in self.imported_hidden]
-            module_names.sort()
-            print >>f, "hidden imports:", ", ".join(module_names)
-
-            module_names = [m.name for m in self.revealed]
-            module_names.sort()
-            print >>f, "reveals:", ", ".join(module_names)
-
-            print >>f
-            print >>f, "imported names:"
-            paths = self.imported_names.keys()
-            paths.sort()
-            for path in paths:
-                names = self.imported_names[path].keys()
-                names.sort()
-                for alias_or_name in names:
-                    name, modname = self.imported_names[path][alias_or_name]
-                    print >>f, path, alias_or_name, name, modname
 
             print >>f
             print >>f, "members:"

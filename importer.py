@@ -49,11 +49,10 @@ class Importer:
         self.cache = cache
         self.verbose = verbose
 
+        self.to_import = set()
+
         self.modules = {}
-        self.modules_ordered = []
-        self.loading = set()
-        self.hidden = {}
-        self.revealing = {}
+        self.accessing_modules = {}
         self.invalidated = set()
 
         self.objects = {}
@@ -230,45 +229,33 @@ class Importer:
 
     # Module management.
 
+    def queue_module(self, name, module):
+
+        """
+        Queue the module with the given 'name' for import from the given
+        'module'.
+        """
+
+        if not self.modules.has_key(name):
+            self.to_import.add(name)
+
+        init_item(self.accessing_modules, name, set)
+        self.accessing_modules[name].add(module.name)
+
     def get_modules(self):
 
         "Return all modules known to the importer."
 
         return self.modules.values()
 
-    def get_module(self, name, hidden=False):
+    def get_module(self, name):
 
         "Return the module with the given 'name'."
 
         if not self.modules.has_key(name):
             return None
 
-        # Obtain the module and attempt to reveal it.
-
-        module = self.modules[name]
-        if not hidden:
-            self.reveal_module(module)
-        return module
-
-    def reveal_module(self, module):
-
-        "Check if 'module' is hidden and reveal it."
-
-        if module.name in self.hidden:
-            del self.hidden[module.name]
-
-            # Reveal referenced modules.
-
-            module.reveal_referenced()
-
-    def set_revealing(self, module, name, instigator):
-
-        """
-        Make the revealing of 'module' conditional on 'name' for the given
-        'instigator' of the reveal operation.
-        """
-
-        self.revealing[module.name].add((name, instigator))
+        return self.modules[name]
 
     # Program operations.
 
@@ -287,10 +274,20 @@ class Importer:
 
         m = self.load_from_file(filename)
 
+        # Load any queued modules.
+
+        while self.to_import:
+            for name in list(self.to_import): # avoid mutation issue
+                self.load(name)
+
+        # Resolve dependencies between modules.
+
+        self.resolve()
+
         # Resolve dependencies within the program.
 
-        for module in self.modules_ordered:
-            module.resolve()
+        for module in self.modules.values():
+            module.complete()
 
         return m
 
@@ -299,11 +296,37 @@ class Importer:
         "Finalise the inspected program."
 
         self.finalise_classes()
-        self.remove_hidden()
         self.to_cache()
         self.set_class_types()
         self.define_instantiators()
         self.collect_constants()
+
+    # Supporting operations.
+
+    def resolve(self):
+
+        "Resolve dependencies between modules."
+
+        resolved = {}
+
+        for name, ref in self.objects.items():
+            if ref.has_kind("<depends>"):
+                ref = self.find_dependency(ref)
+                if ref:
+                    resolved[name] = ref
+
+        for name, ref in resolved.items():
+            self.objects[name] = ref
+
+    def find_dependency(self, ref):
+
+        "Find the ultimate dependency for 'ref'."
+
+        found = set()
+        while ref and ref.has_kind("<depends>") and not ref in found:
+            found.add(ref)
+            ref = self.objects.get(ref.get_origin())
+        return ref
 
     def finalise_classes(self):
 
@@ -394,41 +417,6 @@ class Importer:
             attrs = set(attrs.keys()).intersection(self.all_class_attrs[name].keys())
             if attrs:
                 self.all_shadowed_attrs[name] = attrs
-
-    def remove_hidden(self):
-
-        "Remove all hidden modules."
-
-        # First reveal any modules exposing names.
-
-        for modname, names in self.revealing.items():
-            module = self.modules[modname]
-
-            # Obtain the imported names and determine whether they should cause
-            # the module to be revealed.
-
-            for (name, instigator) in names:
-                if module is not instigator:
-
-                    # Only if an object is provided by the module should the
-                    # module be revealed. References to objects in other modules
-                    # should not in themselves expose the module in which those
-                    # references occur.
-
-                    ref = module.get_global(name)
-                    if ref and ref.provided_by_module(module.name):
-                        self.reveal_module(module)
-                        instigator.revealed.add(module)
-
-        # Then remove all modules that are still hidden.
-
-        for modname in self.hidden:
-            module = self.modules[modname]
-            module.unpropagate()
-            del self.modules[modname]
-            ref = self.objects.get(modname)
-            if ref and ref.get_kind() == "<module>":
-                del self.objects[modname]
 
     def set_class_types(self):
 
@@ -533,30 +521,22 @@ class Importer:
         else:
             return None
 
-    def load(self, name, return_leaf=False, hidden=False):
+    def load(self, name):
 
         """
         Load the module or package with the given 'name'. Return an object
         referencing the loaded module or package, or None if no such module or
         package exists.
-
-        Where 'return_leaf' is specified, the final module in the chain is
-        returned. Where 'hidden' is specified, the module is marked as hidden.
         """
-
-        if return_leaf:
-            name_for_return = name
-        else:
-            name_for_return = name.split(".")[0]
 
         # Loaded modules are returned immediately.
         # Modules may be known but not yet loading (having been registered as
         # submodules), loading, loaded, or completely unknown.
 
-        module = self.get_module(name, hidden)
+        module = self.get_module(name)
 
         if module:
-            return self.modules[name_for_return]
+            return self.modules[name]
 
         # Otherwise, modules are loaded.
 
@@ -568,7 +548,7 @@ class Importer:
 
         path = name.split(".")
         path_so_far = []
-        top = module = None
+        module = None
 
         for p in path:
 
@@ -593,18 +573,11 @@ class Importer:
             # Get the module itself.
 
             d, filename = m
-            submodule = self.load_from_file(filename, module_name, hidden)
+            module = self.load_from_file(filename, module_name)
 
-            if module is None:
-                top = submodule
+        return module
 
-            module = submodule
-
-        # Return either the deepest or the uppermost module.
-
-        return return_leaf and module or top
-
-    def load_from_file(self, filename, module_name=None, hidden=False):
+    def load_from_file(self, filename, module_name=None):
 
         "Load the module from the given 'filename'."
 
@@ -617,7 +590,7 @@ class Importer:
 
             # Try to load from cache.
 
-            module = self.load_from_cache(filename, module_name, hidden)
+            module = self.load_from_cache(filename, module_name)
             if module:
                 return module
 
@@ -627,10 +600,7 @@ class Importer:
             self.add_module(module_name, module)
             self.update_cache_validity(module)
 
-        # Initiate loading if not already in progress.
-
-        if not module.loaded and module not in self.loading:
-            self._load(module, module_name, hidden, lambda m: m.parse, filename)
+            self._load(module, module_name, lambda m: m.parse, filename)
 
         return module
 
@@ -638,7 +608,9 @@ class Importer:
 
         "Make 'module' valid in the cache, but invalidate accessing modules."
 
-        self.invalidated.update(module.accessing_modules)
+        accessing = self.accessing_modules.get(module.name)
+        if accessing:
+            self.invalidated.update(accessing)
         if module.name in self.invalidated:
             self.invalidated.remove(module.name)
 
@@ -654,48 +626,35 @@ class Importer:
         else:
             return True
 
-    def load_from_cache(self, filename, module_name, hidden=False):
+    def load_from_cache(self, filename, module_name):
 
         "Return a module residing in the cache."
 
         module = self.modules.get(module_name)
 
-        if not self.source_is_new(filename, module_name):
+        if not module and not self.source_is_new(filename, module_name):
+            module = inspector.CachedModule(module_name, self)
+            self.add_module(module_name, module)
 
-            if not module:
-                module = inspector.CachedModule(module_name, self)
-                self.add_module(module_name, module)
-
-            if not module.loaded and module not in self.loading:
-                filename = join(self.cache, module_name)
-                self._load(module, module_name, hidden, lambda m: m.from_cache, filename)
+            filename = join(self.cache, module_name)
+            self._load(module, module_name, lambda m: m.from_cache, filename)
 
         return module
 
-    def _load(self, module, module_name, hidden, fn, filename):
+    def _load(self, module, module_name, fn, filename):
 
         """
-        Load 'module' for the given 'module_name', with the module being hidden
-        if 'hidden' is a true value, and with 'fn' performing an invocation on
-        the module with the given 'filename'.
+        Load 'module' for the given 'module_name', and with 'fn' performing an
+        invocation on the module with the given 'filename'.
         """
 
-        # Indicate that the module is hidden if requested.
+        # Load the module.
 
-        if hidden:
-            self.hidden[module_name] = module
-
-        # Indicate that loading is in progress and load the module.
-
-        self.loading.add(module)
         if self.verbose:
             print >>sys.stderr, "Loading", filename
         fn(module)(filename)
         if self.verbose:
             print >>sys.stderr, "Loaded", filename
-        self.loading.remove(module)
-
-        self.modules_ordered.append(module)
 
     def add_module(self, module_name, module):
 
@@ -706,5 +665,7 @@ class Importer:
 
         self.modules[module_name] = module
         self.objects[module_name] = Reference("<module>", module_name)
+        if module_name in self.to_import:
+            self.to_import.remove(module_name)
 
 # vim: tabstop=4 expandtab shiftwidth=4

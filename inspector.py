@@ -21,48 +21,23 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from branching import BranchTracker
-from common import *
-from modules import *
-from os import listdir
-from os.path import extsep, split, splitext
+from common import get_argnames, init_item, predefined_constants
+from modules import BasicModule, CacheWritingModule
 from referencing import Reference
+from resolving import NameResolving
+from results import AccessRef, InstanceRef, InvocationRef, LiteralSequenceRef, \
+                    LocalNameRef, NameRef, ResolvedNameRef
 import compiler
 import sys
 
-class AccessRef(Result):
-
-    """
-    A reference to an attribute access that is generally only returned from a
-    processed access for possible initialiser resolution for assignments.
-    """
-
-    def __init__(self, original_name, attrnames, number):
-        self.original_name = original_name
-        self.attrnames = attrnames
-        self.number = number
-
-    def reference(self):
-        return None
-
-    def __repr__(self):
-        return "AccessRef(%r, %r, %r)" % (self.original_name, self.attrnames, self.number)
-
-class InvocationRef(Result):
-
-    "An invocation of a name reference."
-
-    def __init__(self, name_ref):
-        self.name_ref = name_ref
-
-    def __repr__(self):
-        return "InvocationRef(%r)" % self.name_ref
-
-class InspectedModule(BasicModule, CacheWritingModule):
+class InspectedModule(BasicModule, CacheWritingModule, NameResolving):
 
     "A module inspector."
 
     def __init__(self, name, importer):
         BasicModule.__init__(self, name, importer)
+        NameResolving.__init__(self)
+
         self.in_class = False
         self.in_conditional = False
         self.global_attr_accesses = {}
@@ -105,340 +80,21 @@ class InspectedModule(BasicModule, CacheWritingModule):
 
         self.stop_tracking_in_module()
 
-        # Check names used and resolve them.
+    def complete(self):
 
-        self.register_submodules()
-        self.loaded = True
+        "Complete the module inspection."
 
-    def register_submodules(self):
+        # Resolve names not definitively mapped to objects.
 
-        "For package modules add submodule details."
+        self.resolve()
 
-        if splitext(split(self.filename)[1])[0] == "__init__":
-            for subname in listdir(split(self.filename)[0]):
-                name, ext = splitext(subname)
+        # Define the invocation requirements in each namespace.
 
-                # Add modules whose names are not already defined as globals.
+        self.set_invocation_usage()
 
-                if ext == ("%spy" % extsep) and name != "__init__" and not self.get_global(name):
-                    module_name = self.get_global_path(name)
-                    top, submodule = self.get_module(module_name, True)
-                    self.set_module(name, submodule, hidden=True)
+        # Propagate to the importer information needed in subsequent activities.
 
-    def check_special(self):
-
-        "Check special names."
-
-        for name, value in self.special.items():
-            if value.has_kind("<depends>"):
-                self.find_imported_name(name, self.name)
-            self.special[name] = self.get_object(value.get_origin())
-
-    def check_names_used(self):
-
-        "Check the names used by each function."
-
-        for path in self.names_used.keys():
-            self.check_names_used_for_path(path)
-
-    def check_names_used_for_path(self, path):
-
-        "Check the names used by the given 'path'."
-
-        names = self.names_used.get(path)
-        if not names:
-            return
-
-        in_function = self.function_locals.has_key(path)
-
-        for name in names:
-            if name in predefined_constants or in_function and name in self.function_locals[path]:
-                continue
-
-            # Resolve names that have been imported locally.
-
-            self.find_imported_name(name, path)
-
-            # Find local definitions.
-
-            key = "%s.%s" % (path, name)
-            ref = self.get_object(key)
-            if ref:
-                self.name_references[key] = ref.final() or key
-                self.resolve_accesses(path, name, ref)
-                continue
-
-            # Resolve names that have been imported globally.
-
-            self.find_imported_name(name, self.name)
-
-            # Find global or built-in definitions.
-
-            ref = self.get_global_or_builtin(name)
-            objpath = ref and (ref.final() or ref.get_name())
-            if objpath:
-                self.name_references[key] = objpath
-                self.resolve_accesses(path, name, ref)
-                continue
-
-            print >>sys.stderr, "Name not recognised: %s in %s" % (name, path)
-            init_item(self.names_missing, path, set)
-            self.names_missing[path].add(name)
-
-    def resolve_members(self):
-
-        "Resolve any members referring to deferred references."
-
-        for name, ref in self.objects.items():
-            if ref.has_kind("<depends>"):
-                ref = self.get_object(ref.get_origin())
-                ref = ref.alias(name)
-                self.importer.objects[name] = self.objects[name] = ref
-
-    def resolve_accesses(self, path, name, ref):
-
-        """
-        Resolve any unresolved accesses in the function at the given 'path'
-        for the given 'name' corresponding to the indicated 'ref'. Note that
-        this mechanism cannot resolve things like inherited methods because
-        they are not recorded as program objects in their inherited locations.
-        """
-
-        attr_accesses = self.global_attr_accesses.get(path)
-        all_attrnames = attr_accesses and attr_accesses.get(name)
-
-        if not all_attrnames:
-            return
-
-        # Insist on constant accessors.
-
-        if not ref.has_kind(["<class>", "<module>"]):
-            return
-
-        found_attrnames = set()
-
-        for attrnames in all_attrnames:
-
-            # Start with the resolved name, adding attributes.
-
-            attrs = ref.get_path()
-            remaining = attrnames.split(".")
-            last_ref = ref
-
-            # Add each component, testing for a constant object.
-
-            while remaining:
-                attrname = remaining[0]
-                attrs.append(attrname)
-                del remaining[0]
-
-                # Find any constant object reference.
-
-                attr_ref = self.get_object(".".join(attrs))
-
-                # Non-constant accessors terminate the traversal.
-
-                if not attr_ref.has_kind(["<class>", "<module>", "<function>"]):
-
-                    # Provide the furthest constant accessor unless the final
-                    # access can be resolved.
-
-                    if remaining:
-                        remaining.insert(0, attrs.pop())
-                    else:
-                        last_ref = attr_ref
-                    break
-
-                # A module may expose an attribute imported from a hidden
-                # module.
-
-                elif last_ref.has_kind("<module>"):
-                    module, leaf_module = self.get_module(last_ref.get_origin())
-                    self.find_imported_name(attrname, module.name, module)
-
-                # Follow any reference to a constant object.
-                # Where the given name refers to an object in another location,
-                # switch to the other location in order to be able to test its
-                # attributes.
-
-                last_ref = attr_ref
-                attrs = attr_ref.get_path()
-
-            # Record a constant accessor only if an object was found
-            # that is different from the namespace involved.
-
-            if last_ref:
-                objpath = ".".join(attrs)
-                if objpath != path:
-
-                    # Establish a constant access.
-
-                    init_item(self.const_accesses, path, dict)
-                    self.const_accesses[path][(name, attrnames)] = (objpath, last_ref, ".".join(remaining))
-
-                    if len(attrs) > 1:
-                        found_attrnames.add(attrs[1])
-
-        # Remove any usage records for the name.
-
-        if found_attrnames:
-
-            # NOTE: Should be only one name version.
-
-            versions = []
-            for version in self.attr_usage[path][name]:
-                new_usage = set()
-                for usage in version:
-                    if found_attrnames.intersection(usage):
-                        new_usage.add(tuple(set(usage).difference(found_attrnames)))
-                    else:
-                        new_usage.add(usage)
-                versions.append(new_usage)
-
-            self.attr_usage[path][name] = versions
-
-    def resolve_initialisers(self):
-
-        "Resolve initialiser values for names."
-
-        # Get the initialisers in each namespace.
-
-        for path, name_initialisers in self.name_initialisers.items():
-            const_accesses = self.const_accesses.get(path)
-
-            # Resolve values for each name in a scope.
-
-            for name, values in name_initialisers.items():
-                if path == self.name:
-                    assigned_path = name
-                else:
-                    assigned_path = "%s.%s" % (path, name)
-
-                initialised_names = {}
-                aliased_names = {}
-
-                for i, name_ref in enumerate(values):
-
-                    # Unwrap invocations.
-
-                    if isinstance(name_ref, InvocationRef):
-                        invocation = True
-                        name_ref = name_ref.name_ref
-                    else:
-                        invocation = False
-
-                    # Obtain a usable reference from names or constants.
-
-                    if isinstance(name_ref, ResolvedNameRef):
-                        if not name_ref.reference():
-                            continue
-                        ref = name_ref.reference()
-
-                    # Obtain a reference from instances.
-
-                    elif isinstance(name_ref, InstanceRef):
-                        if not name_ref.reference():
-                            continue
-                        ref = name_ref.reference()
-
-                    # Resolve accesses that employ constants.
-
-                    elif isinstance(name_ref, AccessRef):
-                        ref = None
-
-                        if const_accesses:
-                            resolved_access = const_accesses.get((name_ref.original_name, name_ref.attrnames))
-                            if resolved_access:
-                                objpath, ref, remaining_attrnames = resolved_access
-                                if remaining_attrnames:
-                                    ref = None
-
-                        # Accesses that do not employ constants cannot be resolved,
-                        # but they may be resolvable later.
-
-                        if not ref:
-                            if not invocation:
-                                aliased_names[i] = name_ref.original_name, name_ref.attrnames, name_ref.number
-                            continue
-
-                    # Attempt to resolve a plain name reference.
-
-                    elif isinstance(name_ref, LocalNameRef):
-                        key = "%s.%s" % (path, name_ref.name)
-                        origin = self.name_references.get(key)
-
-                        # Accesses that do not refer to known static objects
-                        # cannot be resolved, but they may be resolvable later.
-
-                        if not origin:
-                            if not invocation:
-                                aliased_names[i] = name_ref.name, None, name_ref.number
-                            continue
-
-                        ref = self.get_object(origin)
-                        if not ref:
-                            continue
-
-                    elif isinstance(name_ref, NameRef):
-                        key = "%s.%s" % (path, name_ref.name)
-                        origin = self.name_references.get(key)
-                        if not origin:
-                            continue
-
-                        ref = self.get_object(origin)
-                        if not ref:
-                            continue
-
-                    else:
-                        continue
-
-                    # Convert class invocations to instances.
-
-                    if invocation:
-                        ref = ref.has_kind("<class>") and ref.instance_of() or None
-
-                    if ref:
-                        initialised_names[i] = ref
-
-                if initialised_names:
-                    self.initialised_names[assigned_path] = initialised_names
-                if aliased_names:
-                    self.aliased_names[assigned_path] = aliased_names
-
-    def resolve_literals(self):
-
-        "Resolve constant value types."
-
-        # Get the constants defined in each namespace.
-
-        for path, constants in self.constants.items():
-            for constant, n in constants.items():
-                objpath = "%s.$c%d" % (path, n)
-                _constant, value_type = self.constant_values[objpath]
-                self.initialised_names[objpath] = {0 : Reference("<instance>", value_type)}
-
-        # Get the literals defined in each namespace.
-
-        for path, literals in self.literals.items():
-            for n in range(0, literals):
-                objpath = "%s.$C%d" % (path, n)
-                value_type = self.literal_types[objpath]
-                self.initialised_names[objpath] = {0 : Reference("<instance>", value_type)}
-
-    def remove_redundant_accessors(self):
-
-        "Remove now-redundant modifier and accessor information."
-
-        for path, const_accesses in self.const_accesses.items():
-            accesses = self.attr_accessors.get(path)
-            modifiers = self.attr_access_modifiers.get(path)
-            if not accesses:
-                continue
-            for access in const_accesses.keys():
-                if accesses.has_key(access):
-                    del accesses[access]
-                if modifiers and modifiers.has_key(access):
-                    del modifiers[access]
+        self.propagate()
 
     def set_invocation_usage(self):
 
@@ -761,8 +417,8 @@ class InspectedModule(BasicModule, CacheWritingModule):
             base_class = self.get_class(base)
 
             if not base_class:
-                print >>sys.stderr, "In %s, class %s has unidentifiable base classes." % (
-                    path, n.name)
+                print >>sys.stderr, "In %s, class %s has unidentifiable base class: %s" % (
+                    path, n.name, base)
                 return
             else:
                 bases.append(base_class)
@@ -804,73 +460,23 @@ class InspectedModule(BasicModule, CacheWritingModule):
 
         path = self.get_namespace_path()
 
-        modname, names = self.get_module_name(n)
+        module_name, names = self.get_module_name(n)
+        if module_name == self.name:
+            raise InspectError("Cannot import from the current module.", path, n)
 
-        # Load the mentioned module.
-
-        top, module = self.get_module(modname, True)
-        self.set_module(None, module, hidden=True)
-
-        if not module:
-            print >>sys.stderr, "In %s, from statement importing from %s failed." % (
-                path, modname)
+        self.importer.queue_module(module_name, self)
 
         # Attempt to obtain the referenced objects.
 
         for name, alias in n.names:
-
-            # NOTE: Package submodules are not implicitly imported.
-
             if name == "*":
-                if module:
-
-                    # Warn about a circular import that probably doesn't find
-                    # the names.
-
-                    if not module.loaded:
-                        print >>sys.stderr, "In %s, from statement performs circular import %s of %s." % (
-                            path, modname)
-
-                    for name, value in module.get_globals().items():
-                        if name != "__name__":
-                            value = ResolvedNameRef(name, value)
-                            self.set_general_local(name, value)
-                            self.set_imported_name(name, modname)
-                break
+                raise InspectError("Only explicitly specified names can be imported from modules.", path, n)
 
             # Explicit names.
 
-            ref = self.import_name_from_module(name, modname, module, alias)
+            ref = self.import_name_from_module(name, module_name)
             value = ResolvedNameRef(alias or name, ref)
             self.set_general_local(alias or name, value)
-            self.set_imported_name(name, modname, alias)
-
-    def import_name_from_module(self, name, modname, module, alias=None):
-
-        """
-        Import 'name' from the module having the given 'modname', with 'module'
-        having been obtained for the module name, using 'alias' for the imported
-        name in the current namespace.
-        """
-
-        path = self.get_namespace_path()
-
-        if module and module.get_global(name):
-            value = module.get_global(name)
-
-            # Warn about an import that fails to provide a name, perhaps due
-            # to a circular import.
-
-            if not value:
-                print >>sys.stderr, "In %s, from statement cannot import %s from %s%s." % (
-                    path, name, modname, not module.loaded and "(circular import)")
-
-            return value
-
-        # Record the name as a dependency.
-
-        else:
-            return Reference("<depends>", "%s.%s" % (modname, name))
 
     def process_function_node(self, n, name):
 
@@ -1031,16 +637,13 @@ class InspectedModule(BasicModule, CacheWritingModule):
         # Load the mentioned module.
 
         for name, alias in n.names:
-            module, leaf_module = self.get_module(name, alias)
+            if name == self.name:
+                raise InspectError("Cannot import the current module.", path, n)
+            if not alias and len(n.names) > 1:
+                raise InspectError("Imported modules must be aliased unless a simple module is imported.", path, n)
 
-            if not module:
-                print >>sys.stderr, "In %s, import statement importing from %s failed." % (
-                    path, name)
-            if module and not module.loaded:
-                print >>sys.stderr, "In %s, import statement performs circular import of %s." % (
-                    path, name)
-
-            self.set_module(alias or name.split(".")[0], module, leaf_module)
+            self.set_module(alias or name.split(".")[0], name)
+            self.importer.queue_module(name, self)
 
     def process_invocation_node(self, n):
 
@@ -1124,22 +727,12 @@ class InspectedModule(BasicModule, CacheWritingModule):
 
             op = n.name[len("$op"):]
 
-            # Access the operator module.
-
-            top, module = self.get_module("operator", True)
-            self.set_module(None, module, hidden=True)
-
-            # Link the operation to the operator module definition in this
-            # module.
-
-            self.set_imported_name(op, "operator", n.name, self.name)
-
             # Attempt to get a reference.
 
-            ref = self.import_name_from_module(op, "operator", module)
-            ref = self.get_object("operator.%s" % op) or ref
+            ref = self.import_name_from_module(op, "operator")
 
             # Record the imported name and provide the resolved name reference.
+            # NOTE: Maybe use a different class.
 
             value = ResolvedNameRef(n.name, ref)
             self.set_special(n.name, value)
@@ -1491,29 +1084,15 @@ class InspectedModule(BasicModule, CacheWritingModule):
         init_item(self.names_used, path, set)
         self.names_used[path].add(name)
 
-    def set_module(self, name, module, leaf_module=None, hidden=False):
+    def set_module(self, name, module_name):
 
         """
-        Set a module in the current namespace using the given 'name' and
-        corresponding 'module' object, with the 'leaf_module' being recorded
-        if different. If 'hidden' is a true value, the modules are recorded as
-        not necessarily being exposed by this module. This module is, however,
-        recorded as accessing the given modules and is thus dependent on them.
+        Set a module in the current namespace using the given 'name' associated
+        with the corresponding 'module_name'.
         """
 
         if name:
-            self.set_general_local(name, module and Reference("<module>", module.name) or None)
-        if module:
-            if hidden:
-                self.imported_hidden.add(module)
-                if leaf_module and leaf_module is not module:
-                    self.imported_hidden.add(leaf_module)
-            else:
-                self.imported.add(module)
-                module.accessing_modules.add(self.name)
-                if leaf_module and leaf_module is not module:
-                    self.imported.add(leaf_module)
-                    leaf_module.accessing_modules.add(self.name)
+            self.set_general_local(name, Reference("<module>", module_name))
 
     def set_definition(self, name, kind):
 
@@ -1688,16 +1267,16 @@ class InspectedModule(BasicModule, CacheWritingModule):
 
         "Return a constant reference for the given type 'name' and 'value'."
 
-        ref = self.get_literal_builtin(name)
+        ref = self.get_builtin_class(name)
         return self.get_constant_reference(ref, value)
 
     def get_literal_instance(self, n, name):
 
         "For node 'n', return a reference to an instance of 'name'."
 
-        # Get a class reference.
+        # Get a reference to the built-in class.
 
-        ref = self.get_literal_builtin(name)
+        ref = self.get_builtin_class(name)
 
         # Obtain the details of the literal itself.
         # An alias to the type is generated for sequences.
@@ -1710,31 +1289,6 @@ class InspectedModule(BasicModule, CacheWritingModule):
 
         else:
             return self.get_constant_reference(ref, n.value)
-
-    def get_literal_builtin(self, name):
-
-        "Return a reference for a built-in literal type of the given 'name'."
-
-        ref = self.get_builtin(name)
-        true_origin = "__builtins__.%s.%s" % (name, name)
-        exposed_origin = "__builtins__.%s" % name
-
-        # Obtain fully-imported built-in class references.
-
-        if ref and ref.has_kind("<class>"):
-            pass
-
-        # Early-stage references need explicit references.
-
-        elif ref:
-            ref = Reference("<class>", true_origin)
-
-        # Otherwise, the normal locations can be used.
-
-        else:
-            ref = Reference("<class>", true_origin, exposed_origin)
-
-        return ref
 
     # Functions and invocations.
 
