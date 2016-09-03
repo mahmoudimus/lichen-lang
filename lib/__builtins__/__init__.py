@@ -76,7 +76,6 @@ from __builtins__.bool import bool
 from __builtins__.buffer import buffer
 from __builtins__.complex import complex
 from __builtins__.dict import dict
-from __builtins__.ellipsis import ellipsis
 from __builtins__.file import file
 from __builtins__.float import float
 from __builtins__.int import int
@@ -86,9 +85,8 @@ from __builtins__.list import list
 from __builtins__.long import long
 from __builtins__.none import NoneType
 from __builtins__.notimplemented import NotImplementedType
-from __builtins__.property import property
 from __builtins__.set import frozenset, set
-from __builtins__.string import basestring, str, unicode
+from __builtins__.str import basestring, str, unicode
 from __builtins__.tuple import tuple
 
 # Functions.
