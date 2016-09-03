@@ -23,6 +23,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from errors import *
 from os import listdir, makedirs, remove
 from os.path import exists, isdir, join, split
+from results import ConstantValueRef, LiteralSequenceRef, NameRef
 import compiler
 
 class CommonOutput:
@@ -227,6 +228,12 @@ class CommonModule:
         return name_ref
 
     def get_literal_reference(self, name, ref, items, cls):
+
+        """
+        Return a literal reference for the given type 'name', literal 'ref',
+        node 'items' and employing the given 'cls' as the class of the returned
+        reference object.
+        """
 
         # Construct an invocation using the items as arguments.
 
@@ -465,6 +472,8 @@ class CommonModule:
         self.next_iterator()
         self.process_structure_node(node)
 
+    # Node rewriting, without processing.
+
     def convert_ifexp_node(self, n):
 
         """
@@ -579,6 +588,8 @@ class CommonModule:
         return compiler.ast.Discard(
             compiler.ast.CallFunc(
                 compiler.ast.Getattr(compiler.ast.Name(temp), "append"), [expr]))
+
+    # More node processing.
 
     def process_literal_sequence_node(self, n, name, ref, cls):
 
@@ -795,114 +806,6 @@ def get_argnames(args):
             l.append(arg)
     return l
 
-# Classes representing inspection and translation observations.
-
-class Result:
-
-    "An abstract expression result."
-
-    def is_name(self):
-        return False
-    def get_origin(self):
-        return None
-
-class NameRef(Result):
-
-    "A reference to a name."
-
-    def __init__(self, name, expr=None):
-        self.name = name
-        self.expr = expr
-
-    def is_name(self):
-        return True
-
-    def reference(self):
-        return None
-
-    def final(self):
-        return None
-
-    def __repr__(self):
-        return "NameRef(%r, %r)" % (self.name, self.expr)
-
-class LocalNameRef(NameRef):
-
-    "A reference to a local name."
-
-    def __init__(self, name, number):
-        NameRef.__init__(self, name)
-        self.number = number
-
-    def __repr__(self):
-        return "LocalNameRef(%r, %r)" % (self.name, self.number)
-
-class ResolvedNameRef(NameRef):
-
-    "A resolved name-based reference."
-
-    def __init__(self, name, ref, expr=None):
-        NameRef.__init__(self, name, expr)
-        self.ref = ref
-
-    def reference(self):
-        return self.ref
-
-    def get_name(self):
-        return self.ref and self.ref.get_name() or None
-
-    def get_origin(self):
-        return self.ref and self.ref.get_origin() or None
-
-    def static(self):
-        return self.ref and self.ref.static() or None
-
-    def final(self):
-        return self.ref and self.ref.final() or None
-
-    def has_kind(self, kinds):
-        return self.ref and self.ref.has_kind(kinds)
-
-    def __repr__(self):
-        return "ResolvedNameRef(%r, %r, %r)" % (self.name, self.ref, self.expr)
-
-class ConstantValueRef(ResolvedNameRef):
-
-    "A constant reference representing a single literal value."
-
-    def __init__(self, name, ref, value, number=None):
-        ResolvedNameRef.__init__(self, name, ref)
-        self.value = value
-        self.number = number
-
-    def __repr__(self):
-        return "ConstantValueRef(%r, %r, %r, %r)" % (self.name, self.ref, self.value, self.number)
-
-class InstanceRef(Result):
-
-    "An instance reference."
-
-    def __init__(self, ref):
-        self.ref = ref
-
-    def reference(self):
-        return self.ref
-
-    def __repr__(self):
-        return "InstanceRef(%r)" % self.ref
-
-class LiteralSequenceRef(ResolvedNameRef):
-
-    "A reference representing a sequence of values."
-
-    def __init__(self, name, ref, node, items=None):
-        ResolvedNameRef.__init__(self, name, ref)
-        self.node = node
-        self.items = items
-
-    def __repr__(self):
-        return "LiteralSequenceRef(%r, %r, %r, %r)" % (self.name, self.ref, self.node, self.items)
-
 # Dictionary utilities.
 
 def init_item(d, key, fn):
@@ -996,18 +899,31 @@ def sorted_output(x):
 # Attribute chain decoding.
 
 def get_attrnames(attrnames):
+
+    """
+    Split the qualified attribute chain 'attrnames' into its components,
+    handling special attributes starting with "#" that indicate type
+    conformance.
+    """
+
     if attrnames.startswith("#"):
         return [attrnames]
     else:
         return attrnames.split(".")
 
 def get_attrname_from_location(location):
+
+    """
+    Extract the first attribute from the attribute names employed in a
+    'location'.
+    """
+
     path, name, attrnames, access = location
     return get_attrnames(attrnames)[0]
 
 # Useful data.
 
-predefined_constants = "Ellipsis", "False", "None", "NotImplemented", "True"
+predefined_constants = "False", "None", "NotImplemented", "True"
 
 operator_functions = {
 
