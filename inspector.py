@@ -35,8 +35,10 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving):
     "A module inspector."
 
     def __init__(self, name, importer):
+
+        "Initialise the module with basic details."
+
         BasicModule.__init__(self, name, importer)
-        NameResolving.__init__(self)
 
         self.in_class = False
         self.in_conditional = False
@@ -642,7 +644,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving):
             if not alias and len(n.names) > 1:
                 raise InspectError("Imported modules must be aliased unless a simple module is imported.", path, n)
 
-            self.set_module(alias or name.split(".")[0], name)
+            self.set_module(alias or name.split(".")[-1], name)
             self.importer.queue_module(name, self)
 
     def process_invocation_node(self, n):

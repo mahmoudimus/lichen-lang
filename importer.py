@@ -24,6 +24,7 @@ from errors import ProgramError
 from os.path import exists, extsep, getmtime, join
 from os import listdir, makedirs, remove
 from common import init_item, readfile, writefile
+from modules import CachedModule
 from referencing import Reference
 import inspector
 import sys
@@ -633,7 +634,7 @@ class Importer:
         module = self.modules.get(module_name)
 
         if not module and not self.source_is_new(filename, module_name):
-            module = inspector.CachedModule(module_name, self)
+            module = CachedModule(module_name, self)
             self.add_module(module_name, module)
 
             filename = join(self.cache, module_name)

@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import CommonModule
+from common import init_item, CommonModule
 from encoders import decode_modifier_term, encode_modifiers, encode_usage
 from referencing import decode_reference, Reference
 from results import ResolvedNameRef
@@ -83,6 +83,15 @@ class BasicModule(CommonModule):
         # Assignment details for accesses.
 
         self.attr_access_modifiers = {}
+
+        # Name resolution details.
+
+        self.name_references = {} # references to globals
+
+        # Initialisation-related details.
+
+        self.initialised_names = {}
+        self.aliased_names = {}
 
     def __repr__(self):
         return "BasicModule(%r, %r)" % (self.name, self.importer)

@@ -29,14 +29,6 @@ class NameResolving:
 
     "Resolving names mix-in for inspected modules."
 
-    def __init__(self):
-        self.name_references = {} # references to globals
-
-        # Initialisation-related details.
-
-        self.initialised_names = {}
-        self.aliased_names = {}
-
     # Object resolution.
 
     def resolve_object(self, ref):
