@@ -1,10 +1,8 @@
 import package.module
 
-C = package.module.Class
-c = package
-d = c
-e = c.module
-f = c.module.Class
+C = module.Class
+c = module
+f = c.Class
 
 def t():
-    x = c.module.Class
+    x = c.Class
