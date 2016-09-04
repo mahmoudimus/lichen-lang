@@ -33,6 +33,11 @@ class BasicModule(CommonModule):
     def __init__(self, name, importer):
         CommonModule.__init__(self, name, importer)
 
+        # Import details, primarily for cache output.
+
+        self.imports = set()
+        self.required = set()
+
         # Global name information.
 
         self.objects = {}
@@ -235,7 +240,7 @@ class BasicModule(CommonModule):
 
         "Return a reference to the built-in with the given 'name'."
 
-        self.importer.queue_module("__builtins__", self)
+        self.queue_module("__builtins__")
         return Reference("<depends>", "__builtins__.%s" % name)
 
     def get_builtin_class(self, name):
@@ -271,8 +276,21 @@ class BasicModule(CommonModule):
         "Import 'name' from the module having the given 'module_name'."
 
         if module_name != self.name:
-            self.importer.queue_module(module_name, self)
+            self.queue_module(module_name)
         return Reference("<depends>", "%s.%s" % (module_name, name))
+
+    def queue_module(self, name, required=False):
+
+        """
+        Queue the module with the given 'name'. If 'required' is true (it is
+        false by default), indicate that the module is required in the final
+        program.
+        """
+
+        self.importer.queue_module(name, self, required)
+        if required:
+            self.required.add(name)
+        self.imports.add(name)
 
 class CachedModule(BasicModule):
 
@@ -300,6 +318,7 @@ class CachedModule(BasicModule):
 
             f.readline() # (empty line)
 
+            self._get_imports(f)
             self._get_members(f)
             self._get_class_relationships(f)
             self._get_instance_attrs(f)
@@ -328,6 +347,19 @@ class CachedModule(BasicModule):
 
     def complete(self):
         self.propagate()
+
+    def _get_imports(self, f):
+        f.readline() # "imports:"
+        line = f.readline().strip()
+        self.required = line != "{}" and set(line.split(", ")) or set()
+        line = f.readline().strip()
+        self.imports = line != "{}" and set(line.split(", ")) or set()
+        f.readline()
+
+        for name in self.required:
+            self.queue_module(name, True)
+        for name in self.imports:
+            self.queue_module(name)
 
     def _get_members(self, f):
         f.readline() # "members:"
@@ -588,6 +620,9 @@ class CacheWritingModule:
 
         filename
         (empty line)
+        "imports:"
+        required module names
+        possibly required module names
         "members:"
         zero or more: qualified name " " reference
         (empty line)
@@ -682,6 +717,15 @@ class CacheWritingModule:
         f = open(filename, "w")
         try:
             print >>f, self.filename
+
+            print >>f
+            print >>f, "imports:"
+            required = list(self.required)
+            required.sort()
+            print >>f, required and ", ".join(required) or "{}"
+            imports = list(self.imports)
+            imports.sort()
+            print >>f, imports and ", ".join(imports) or "{}"
 
             print >>f
             print >>f, "members:"

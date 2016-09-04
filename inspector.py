@@ -466,7 +466,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving):
         if module_name == self.name:
             raise InspectError("Cannot import from the current module.", path, n)
 
-        self.importer.queue_module(module_name, self)
+        self.queue_module(module_name)
 
         # Attempt to obtain the referenced objects.
 
@@ -645,7 +645,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving):
                 raise InspectError("Imported modules must be aliased unless a simple module is imported.", path, n)
 
             self.set_module(alias or name.split(".")[-1], name)
-            self.importer.queue_module(name, self, True)
+            self.queue_module(name, True)
 
     def process_invocation_node(self, n):
 
