@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iterator import listiterator
-from __builtins__.sequence import _getitem, _getslice
+from __builtins__.sequence import _getitem, _getslice, _tuple
 
 class tuple(object):
 
