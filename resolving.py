@@ -46,9 +46,9 @@ class NameResolving:
     def get_resolved_object(self, path):
 
         """
-        Get the details of an object with the given 'path'. Where the object
-        has not been resolved, None is returned. This differs from the
-        get_object method used elsewhere in that it does not return an
+        Get the details of an object with the given 'path' within this module.
+        Where the object has not been resolved, None is returned. This differs
+        from the get_object method used elsewhere in that it does not return an
         unresolved object reference.
         """
 
@@ -60,6 +60,12 @@ class NameResolving:
                 return ref
         else:
             return None
+
+    def get_resolved_global_or_builtin(self, name):
+
+        "Return the resolved global or built-in object with the given 'name'."
+
+        return self.get_global(name) or self.importer.get_object("__builtins__.%s" % name)
 
     # Post-inspection resolution activities.
 
@@ -82,6 +88,9 @@ class NameResolving:
         for name, ref in self.objects.items():
             if ref.has_kind("<depends>"):
                 ref = self.importer.get_object(name)
+
+                # Alias the member and write back to the importer.
+
                 ref = ref.alias(name)
                 self.importer.objects[name] = self.objects[name] = ref
 
@@ -148,7 +157,7 @@ class NameResolving:
 
             # Find global or built-in definitions.
 
-            ref = self.get_global_or_builtin(name)
+            ref = self.get_resolved_global_or_builtin(name)
             objpath = ref and (ref.final() or ref.get_name())
             if objpath:
                 self.name_references[key] = objpath
@@ -348,6 +357,13 @@ class NameResolving:
 
                     else:
                         continue
+
+                    # Resolve any hidden dependencies involving external objects
+                    # or unresolved names referring to globals or built-ins.
+
+                    if ref.has_kind("<depends>"):
+                        ref = self.importer.get_object(ref.get_origin()) or \
+                              self.importer.get_object(self.name_references.get(ref.get_origin()))
 
                     # Convert class invocations to instances.
 
