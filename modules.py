@@ -274,34 +274,6 @@ class BasicModule(CommonModule):
             self.importer.queue_module(module_name, self)
         return Reference("<depends>", "%s.%s" % (module_name, name))
 
-    # Special names.
-
-    def get_special(self, name):
-
-        "Return any stored value for the given special 'name'."
-
-        return self.special.get(name)
-
-    def set_special(self, name, value):
-
-        """
-        Set a special 'name' that merely tracks the use of an implicit object
-        'value'.
-        """
-
-        self.special[name] = value
-
-    def set_special_literal(self, name, ref):
-
-        """
-        Set a special name for the literal type 'name' having type 'ref'. Such
-        special names provide a way of referring to literal object types.
-        """
-
-        literal_name = "$L%s" % name
-        value = ResolvedNameRef(literal_name, ref)
-        self.set_special(literal_name, value)
-
 class CachedModule(BasicModule):
 
     "A cached module."
