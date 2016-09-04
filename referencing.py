@@ -131,18 +131,29 @@ class Reference:
 
         return Reference("<var>", None, self.name)
 
-    def provided_by_module(self, module_name):
-
-        "Return whether the reference is provided by 'module_name'."
-
-        path = self.origin
-        return not path or path.rsplit(".", 1)[0] == module_name
-
     def alias(self, name):
 
         "Alias this reference employing 'name'."
 
         return Reference(self.get_kind(), self.get_origin(), name)
+
+    def ancestors(self):
+
+        """
+        Return ancestors of this reference's origin in order of decreasing
+        depth.
+        """
+
+        if not self.origin:
+            return None
+
+        parts = self.get_origin().split(".")
+        ancestors = []
+
+        for i in range(len(parts) - 1, 0, -1):
+            ancestors.append(".".join(parts[:i]))
+
+        return ancestors
 
 def decode_reference(s, name=None):
 

@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import init_item, CommonModule
+from common import init_item, remove_items, CommonModule
 from encoders import decode_modifier_term, encode_modifiers, encode_usage
 from referencing import decode_reference, Reference
 from results import ResolvedNameRef
@@ -119,7 +119,6 @@ class BasicModule(CommonModule):
         for name in self.classes.keys():
             del self.importer.all_class_attrs[name]
             del self.importer.all_instance_attrs[name]
-            del self.importer.all_combined_attrs[name]
             del self.importer.all_instance_attr_constants[name]
 
             for name, bases in self.classes.items():
@@ -147,9 +146,7 @@ class BasicModule(CommonModule):
         # automatically propagated when defined.
 
         for name, ref in self.objects.items():
-            if ref.provided_by_module(self.name) or name in self.importer.hidden:
-                if ref.get_kind() != "<module>":
-                    del self.importer.objects[name]
+            del self.importer.objects[name]
 
     def propagate_attrs(self):
 

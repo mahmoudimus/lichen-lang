@@ -51,6 +51,7 @@ class Importer:
         self.verbose = verbose
 
         self.to_import = set()
+        self.required = set(["__main__"])
 
         self.modules = {}
         self.accessing_modules = {}
@@ -230,18 +231,22 @@ class Importer:
 
     # Module management.
 
-    def queue_module(self, name, module):
+    def queue_module(self, name, accessor, required=False):
 
         """
         Queue the module with the given 'name' for import from the given
-        'module'.
+        'accessor' module. If 'required' is true (it is false by default), the
+        module will be required in the final program.
         """
 
         if not self.modules.has_key(name):
             self.to_import.add(name)
 
+        if required:
+            self.required.add(name)
+
         init_item(self.accessing_modules, name, set)
-        self.accessing_modules[name].add(module.name)
+        self.accessing_modules[name].add(accessor.name)
 
     def get_modules(self):
 
@@ -285,10 +290,23 @@ class Importer:
 
         self.resolve()
 
+        # Record the type of all classes.
+
+        self.type_ref = self.get_object("__builtins__.type")
+
         # Resolve dependencies within the program.
 
         for module in self.modules.values():
             module.complete()
+
+        # Remove unneeded modules.
+
+        all_modules = self.modules.items()
+
+        for name, module in all_modules:
+            if name not in self.required:
+                module.unpropagate()
+                del self.modules[name]
 
         return m
 
@@ -318,8 +336,14 @@ class Importer:
                 else:
                     print >>sys.stderr, "Name %s references an unknown object: %s" % (name, ref.get_origin())
 
+        # Record the resolved names and identify required modules.
+
         for name, ref in resolved.items():
             self.objects[name] = ref
+
+            module_name = self.get_module_provider(ref)
+            if module_name:
+                self.required.add(module_name)
 
     def find_dependency(self, ref):
 
@@ -330,6 +354,15 @@ class Importer:
             found.add(ref)
             ref = self.objects.get(ref.get_origin())
         return ref
+
+    def get_module_provider(self, ref):
+
+        "Identify the provider of the given 'ref'."
+
+        for ancestor in ref.ancestors():
+            if self.modules.has_key(ancestor):
+                return ancestor
+        return None
 
     def finalise_classes(self):
 
@@ -425,9 +458,8 @@ class Importer:
 
         "Set the type of each class."
 
-        ref = self.get_object("__builtins__.type")
         for attrs in self.all_class_attrs.values():
-            attrs["__class__"] = ref.get_origin()
+            attrs["__class__"] = self.type_ref.get_origin()
 
     def define_instantiators(self):
 

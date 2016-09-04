@@ -645,7 +645,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving):
                 raise InspectError("Imported modules must be aliased unless a simple module is imported.", path, n)
 
             self.set_module(alias or name.split(".")[-1], name)
-            self.importer.queue_module(name, self)
+            self.importer.queue_module(name, self, True)
 
     def process_invocation_node(self, n):
 
