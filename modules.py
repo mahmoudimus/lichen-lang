@@ -204,6 +204,31 @@ class BasicModule(CommonModule):
             self.importer.all_instance_attrs[name] = self.instance_attrs.get(name) or {}
             self.importer.all_instance_attr_constants[name] = self.instance_attr_constants.get(name) or {}
 
+    def set_object(self, name, value=None):
+
+        "Set an object with the given 'name' and the given 'value'."
+
+        ref = decode_reference(value, name)
+        multiple = self.objects.has_key(name) and self.objects[name].get_kind() != ref.get_kind()
+        self.importer.objects[name] = self.objects[name] = multiple and ref.as_var() or ref
+
+    def queue_module(self, name, required=False):
+
+        """
+        Queue the module with the given 'name'. If 'required' is true (it is
+        false by default), indicate that the module is required in the final
+        program.
+        """
+
+        self.importer.queue_module(name, self, required)
+        if required:
+            self.required.add(name)
+        self.imports.add(name)
+
+class InspectionNaming:
+
+    "Name operations related to inspection."
+
     # Module-relative naming.
 
     def is_global(self, name):
@@ -265,14 +290,6 @@ class BasicModule(CommonModule):
         else:
             return Reference("<depends>", path)
 
-    def set_object(self, name, value=None):
-
-        "Set an object with the given 'name' and the given 'value'."
-
-        ref = decode_reference(value, name)
-        multiple = self.objects.has_key(name) and self.objects[name].get_kind() != ref.get_kind()
-        self.importer.objects[name] = self.objects[name] = multiple and ref.as_var() or ref
-
     def import_name_from_module(self, name, module_name):
 
         "Import 'name' from the module having the given 'module_name'."
@@ -280,19 +297,6 @@ class BasicModule(CommonModule):
         if module_name != self.name:
             self.queue_module(module_name)
         return Reference("<depends>", "%s.%s" % (module_name, name))
-
-    def queue_module(self, name, required=False):
-
-        """
-        Queue the module with the given 'name'. If 'required' is true (it is
-        false by default), indicate that the module is required in the final
-        program.
-        """
-
-        self.importer.queue_module(name, self, required)
-        if required:
-            self.required.add(name)
-        self.imports.add(name)
 
 class CachedModule(BasicModule):
 

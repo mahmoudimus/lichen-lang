@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from branching import BranchTracker
 from common import get_argnames, init_item, predefined_constants
-from modules import BasicModule, CacheWritingModule
+from modules import BasicModule, CacheWritingModule, InspectionNaming
 from referencing import Reference
 from resolving import NameResolving
 from results import AccessRef, InstanceRef, InvocationRef, LiteralSequenceRef, \
@@ -30,7 +30,7 @@ from results import AccessRef, InstanceRef, InvocationRef, LiteralSequenceRef, \
 import compiler
 import sys
 
-class InspectedModule(BasicModule, CacheWritingModule, NameResolving):
+class InspectedModule(BasicModule, CacheWritingModule, NameResolving, InspectionNaming):
 
     "A module inspector."
 
