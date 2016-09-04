@@ -151,7 +151,8 @@ class BasicModule(CommonModule):
         # automatically propagated when defined.
 
         for name, ref in self.objects.items():
-            del self.importer.objects[name]
+            if not ref.has_kind("<module>"):
+                del self.importer.objects[name]
 
     def propagate_attrs(self):
 
@@ -249,6 +250,7 @@ class BasicModule(CommonModule):
 
         # NOTE: This makes assumptions about the __builtins__ structure.
 
+        self.queue_module("__builtins__.%s" % name, True)
         return Reference("<class>", "__builtins__.%s.%s" % (name, name))
 
     def get_object(self, path):
