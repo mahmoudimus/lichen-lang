@@ -52,6 +52,7 @@ class Importer:
 
         self.to_import = set()
         self.required = set(["__main__"])
+        self.removed = {}
 
         self.modules = {}
         self.accessing_modules = {}
@@ -307,6 +308,7 @@ class Importer:
             if name not in self.required:
                 module.unpropagate()
                 del self.modules[name]
+                self.removed[name] = module
 
         return m
 
