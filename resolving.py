@@ -69,7 +69,7 @@ class NameResolving:
 
         self.resolve_members()
         self.resolve_class_bases()
-        #self.check_special()
+        self.check_special()
         self.check_names_used()
         self.resolve_initialisers()
         self.resolve_literals()
@@ -114,7 +114,6 @@ class NameResolving:
         "Check special names."
 
         for name, value in self.special.items():
-            # NOTE: Needs to handle Ref classes.
             self.special[name] = self.get_resolved_object(value.get_origin())
 
     def check_names_used(self):
