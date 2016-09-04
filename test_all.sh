@@ -24,4 +24,8 @@ for FILENAME in tests/* ; do
     if ! ./lplc "$FILENAME" ; then exit 1 ; fi
     echo 1>&2
 
+    # Check for unresolved names in the cache.
+
+    if grep -e '<depends>' -r "_cache" ; then exit 1 ; fi
+
 done
