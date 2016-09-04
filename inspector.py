@@ -1189,7 +1189,9 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving):
 
         "Return a suitable initialiser reference for 'value'."
 
-        if isinstance(value, (NameRef, AccessRef, InstanceRef)): # includes LiteralSequenceRef, ResolvedNameRef
+        # Includes LiteralSequenceRef, ResolvedNameRef...
+
+        if isinstance(value, (NameRef, AccessRef, InstanceRef)):
             return value.reference()
 
         # In general, invocations do not produce known results. However, the
