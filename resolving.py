@@ -117,18 +117,24 @@ class NameResolving:
                 ref = self.convert_invocation(ref)
                 self.importer.objects[key] = self.objects[key] = ref
 
-        # Rewrite function defaults, which are effectively extra members of the
-        # module.
+        # Convert function defaults, which are effectively extra members of the
+        # module, and function locals.
 
-        defaults = self.function_defaults.items()
-
-        for fname, parameters in defaults:
+        for fname, parameters in self.function_defaults.items():
             l = []
             for pname, ref in parameters:
                 if ref.has_kind("<invoke>"):
                     ref = self.convert_invocation(ref)
                 l.append((pname, ref))
             self.function_defaults[fname] = l
+
+        # Convert function locals referencing invocations.
+
+        for fname, names in self.function_locals.items():
+            for name, ref in names.items():
+                if ref.has_kind("<invoke>"):
+                    ref = self.convert_invocation(ref)
+                    names[name] = ref
 
     def convert_invocation(self, ref):
 
