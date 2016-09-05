@@ -352,9 +352,16 @@ class Importer:
             for name, ref in resolved.items():
                 d[name] = ref
 
+                # Find the providing module of this reference.
+
                 module_name = self.get_module_provider(ref)
                 if module_name:
                     self.required.add(module_name)
+
+                    # Make this module required in all accessing modules.
+
+                    for accessor_name in self.accessing_modules[module_name]:
+                        self.modules[accessor_name].required.add(module_name)
 
     def find_dependency(self, ref):
 
