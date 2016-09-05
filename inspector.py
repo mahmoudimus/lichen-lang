@@ -57,6 +57,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
     def __repr__(self):
         return "InspectedModule(%r, %r)" % (self.name, self.importer)
 
+    # Principal methods.
+
     def parse(self, filename):
 
         "Parse the file having the given 'filename'."
@@ -82,6 +84,10 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         self.stop_tracking_in_module()
 
+        # Collect external name references.
+
+        self.collect_names()
+
     def complete(self):
 
         "Complete the module inspection."
@@ -97,6 +103,54 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Propagate to the importer information needed in subsequent activities.
 
         self.propagate()
+
+    # Accessory methods.
+
+    def collect_names(self):
+
+        "Collect the names used by each scope."
+
+        for path in self.names_used.keys():
+            self.collect_names_for_path(path)
+
+    def collect_names_for_path(self, path):
+
+        "Collect the names used by the given 'path'."
+
+        names = self.names_used.get(path)
+        if not names:
+            return
+
+        in_function = self.function_locals.has_key(path)
+
+        for name in names:
+            if name in predefined_constants or in_function and name in self.function_locals[path]:
+                continue
+
+            # Find local definitions (within static namespaces).
+
+            key = "%s.%s" % (path, name)
+            ref = self.get_resolved_object(key)
+            if ref:
+                self.importer.all_name_references[key] = self.name_references[key] = ref.alias(key)
+                continue
+
+            # Find global or built-in definitions.
+
+            ref = self.get_resolved_global_or_builtin(name)
+            if ref:
+                self.importer.all_name_references[key] = self.name_references[key] = ref
+                continue
+
+            print >>sys.stderr, "Name not recognised: %s in %s" % (name, path)
+            init_item(self.names_missing, path, set)
+            self.names_missing[path].add(name)
+
+    def get_resolved_global_or_builtin(self, name):
+
+        "Return the resolved global or built-in object with the given 'name'."
+
+        return self.get_global(name) or self.importer.get_object("__builtins__.%s" % name)
 
     def set_invocation_usage(self):
 
@@ -734,7 +788,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             ref = self.import_name_from_module(op, "operator")
 
             # Record the imported name and provide the resolved name reference.
-            # NOTE: Maybe use a different class.
 
             value = ResolvedNameRef(n.name, ref)
             self.set_special(n.name, value)
@@ -1198,7 +1251,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # name initialisers are resolved once a module has been inspected.
 
         elif isinstance(value, InvocationRef):
-            return None
+            return value.reference()
 
         else:
             return value

@@ -31,18 +31,6 @@ class NameResolving:
 
     # Object resolution.
 
-    def resolve_object(self, ref):
-
-        """
-        Return the given 'ref' in resolved form, given knowledge of the entire
-        program.
-        """
-
-        if ref.has_kind("<depends>"):
-            return self.importer.get_object(ref.get_origin())
-        else:
-            return ref
-
     def get_resolved_object(self, path):
 
         """
@@ -61,12 +49,6 @@ class NameResolving:
         else:
             return None
 
-    def get_resolved_global_or_builtin(self, name):
-
-        "Return the resolved global or built-in object with the given 'name'."
-
-        return self.get_global(name) or self.importer.get_object("__builtins__.%s" % name)
-
     # Post-inspection resolution activities.
 
     def resolve(self):
@@ -77,22 +59,31 @@ class NameResolving:
         self.resolve_class_bases()
         self.check_special()
         self.check_names_used()
+        self.check_invocations()
         self.resolve_initialisers()
         self.resolve_literals()
         self.remove_redundant_accessors()
 
     def resolve_members(self):
 
-        "Resolve any members referring to deferred references."
+        """
+        Resolve any members referring to deferred references, using information
+        stored in the importer. This updates stored object and external name
+        records in this module.
+        """
 
-        for name, ref in self.objects.items():
-            if ref.has_kind("<depends>"):
-                ref = self.importer.get_object(name)
+        for impd, d in [
+            (self.importer.objects, self.objects),
+            (self.importer.all_name_references, self.name_references)
+            ]:
 
-                # Alias the member and write back to the importer.
+            for name, ref in d.items():
 
-                ref = ref.alias(name)
-                self.importer.objects[name] = self.objects[name] = ref
+                # Obtain resolved names from the importer.
+
+                if ref.has_kind("<depends>"):
+                    ref = self.importer.identify(name)
+                    d[name] = ref
 
     def resolve_class_bases(self):
 
@@ -103,7 +94,7 @@ class NameResolving:
             bad = []
 
             for base in bases:
-                ref = self.resolve_object(base)
+                ref = self.importer.identify(base.get_origin())
 
                 # Obtain the origin of the base class reference.
 
@@ -127,46 +118,44 @@ class NameResolving:
 
     def check_names_used(self):
 
-        "Check the names used by each function."
+        "Check the external names used by each scope."
 
-        for path in self.names_used.keys():
-            self.check_names_used_for_path(path)
+        for key, ref in self.name_references.items():
+            path, name = key.rsplit(".", 1)
+            self.resolve_accesses(path, name, ref)
 
-    def check_names_used_for_path(self, path):
+    def check_invocations(self):
 
-        "Check the names used by the given 'path'."
+        "Find invocations amongst module data and replace their results."
 
-        names = self.names_used.get(path)
-        if not names:
-            return
+        # Find members and replace invocation results with values. This is
+        # effectively the same as is done for initialised names, but refers to
+        # any unchanging value after initialisation.
 
-        in_function = self.function_locals.has_key(path)
+        for key, ref in self.objects.items():
+            if ref.has_kind("<invoke>"):
+                ref = self.convert_invocation(ref)
+                self.importer.objects[key] = self.objects[key] = ref
 
-        for name in names:
-            if name in predefined_constants or in_function and name in self.function_locals[path]:
-                continue
+        # Rewrite function defaults, which are effectively extra members of the
+        # module.
 
-            # Find local definitions (within static namespaces).
+        defaults = self.function_defaults.items()
 
-            key = "%s.%s" % (path, name)
-            ref = self.get_resolved_object(key)
-            if ref:
-                self.name_references[key] = ref.final() or key
-                self.resolve_accesses(path, name, ref)
-                continue
+        for fname, parameters in defaults:
+            l = []
+            for pname, ref in parameters:
+                if ref.has_kind("<invoke>"):
+                    ref = self.convert_invocation(ref)
+                l.append((pname, ref))
+            self.function_defaults[fname] = l
 
-            # Find global or built-in definitions.
+    def convert_invocation(self, ref):
 
-            ref = self.get_resolved_global_or_builtin(name)
-            objpath = ref and (ref.final() or ref.get_name())
-            if objpath:
-                self.name_references[key] = objpath
-                self.resolve_accesses(path, name, ref)
-                continue
+        "Convert the given invocation 'ref', handling instantiation."
 
-            print >>sys.stderr, "Name not recognised: %s in %s" % (name, path)
-            init_item(self.names_missing, path, set)
-            self.names_missing[path].add(name)
+        ref = self.importer.identify(ref.get_origin())
+        return ref and ref.has_kind("<class>") and ref.instance_of() or Reference("<var>")
 
     def resolve_accesses(self, path, name, ref):
 
@@ -236,6 +225,9 @@ class NameResolving:
             if last_ref:
                 objpath = ".".join(attrs)
                 if objpath != path:
+
+                    if last_ref.has_kind("<invoke>"):
+                        last_ref = self.convert_invocation(last_ref)
 
                     # Establish a constant access.
 
@@ -362,15 +354,14 @@ class NameResolving:
                     # or unresolved names referring to globals or built-ins.
 
                     if ref.has_kind("<depends>"):
-                        ref = self.importer.get_object(ref.get_origin()) or \
-                              self.importer.get_object(self.name_references.get(ref.get_origin()))
+                        ref = self.importer.identify(ref.get_origin())
 
                     # Convert class invocations to instances.
 
                     if invocation:
-                        ref = ref.has_kind("<class>") and ref.instance_of() or None
+                        ref = self.convert_invocation(ref)
 
-                    if ref:
+                    if ref and not ref.has_kind("<var>"):
                         initialised_names[i] = ref
 
                 if initialised_names:

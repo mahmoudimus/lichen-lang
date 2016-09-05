@@ -181,7 +181,6 @@ class BasicModule(CommonModule):
 
         "Propagate name references for the module."
 
-        self.importer.all_name_references.update(self.name_references)
         self.importer.all_initialised_names.update(self.initialised_names)
         self.importer.all_aliased_names.update(self.aliased_names)
 

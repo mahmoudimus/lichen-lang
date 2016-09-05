@@ -19,6 +19,8 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from referencing import Reference
+
 # Classes representing inspection and translation observations.
 
 class Result:
@@ -54,6 +56,13 @@ class InvocationRef(Result):
 
     def __init__(self, name_ref):
         self.name_ref = name_ref
+
+    def reference(self):
+        origin = self.name_ref.get_origin()
+        if origin:
+            return Reference("<invoke>", origin)
+        else:
+            return Reference("<var>")
 
     def __repr__(self):
         return "InvocationRef(%r)" % self.name_ref

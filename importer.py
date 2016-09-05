@@ -169,6 +169,14 @@ class Importer:
 
         self.objects[name] = ref
 
+    # Identification of both stored object names and name references.
+
+    def identify(self, name):
+
+        "Identify 'name' using stored object and external name records."
+
+        return self.objects.get(name) or self.all_name_references.get(name)
+
     # Indirect object retrieval.
 
     def get_attributes(self, ref, attrname):
@@ -328,24 +336,25 @@ class Importer:
 
         "Resolve dependencies between modules."
 
-        resolved = {}
+        for d in [self.objects, self.all_name_references]:
+            resolved = {}
 
-        for name, ref in self.objects.items():
-            if ref.has_kind("<depends>"):
-                found = self.find_dependency(ref)
-                if found:
-                    resolved[name] = found
-                else:
-                    print >>sys.stderr, "Name %s references an unknown object: %s" % (name, ref.get_origin())
+            for name, ref in d.items():
+                if ref.has_kind("<depends>"):
+                    found = self.find_dependency(ref)
+                    if found:
+                        resolved[name] = found
+                    else:
+                        print >>sys.stderr, "Name %s references an unknown object: %s" % (name, ref.get_origin())
 
-        # Record the resolved names and identify required modules.
+            # Record the resolved names and identify required modules.
 
-        for name, ref in resolved.items():
-            self.objects[name] = ref
+            for name, ref in resolved.items():
+                d[name] = ref
 
-            module_name = self.get_module_provider(ref)
-            if module_name:
-                self.required.add(module_name)
+                module_name = self.get_module_provider(ref)
+                if module_name:
+                    self.required.add(module_name)
 
     def find_dependency(self, ref):
 
