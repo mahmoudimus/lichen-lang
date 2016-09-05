@@ -29,26 +29,6 @@ class NameResolving:
 
     "Resolving names mix-in for inspected modules."
 
-    # Object resolution.
-
-    def get_resolved_object(self, path):
-
-        """
-        Get the details of an object with the given 'path' within this module.
-        Where the object has not been resolved, None is returned. This differs
-        from the get_object method used elsewhere in that it does not return an
-        unresolved object reference.
-        """
-
-        if self.objects.has_key(path):
-            ref = self.objects[path]
-            if ref.has_kind("<depends>"):
-                return None
-            else:
-                return ref
-        else:
-            return None
-
     # Post-inspection resolution activities.
 
     def resolve(self):
@@ -403,5 +383,25 @@ class NameResolving:
                     del accesses[access]
                 if modifiers and modifiers.has_key(access):
                     del modifiers[access]
+
+    # Object resolution.
+
+    def get_resolved_object(self, path):
+
+        """
+        Get the details of an object with the given 'path' within this module.
+        Where the object has not been resolved, None is returned. This differs
+        from the get_object method used elsewhere in that it does not return an
+        unresolved object reference.
+        """
+
+        if self.objects.has_key(path):
+            ref = self.objects[path]
+            if ref.has_kind("<depends>"):
+                return None
+            else:
+                return ref
+        else:
+            return None
 
 # vim: tabstop=4 expandtab shiftwidth=4
