@@ -336,32 +336,51 @@ class Importer:
 
         "Resolve dependencies between modules."
 
-        for d in [self.objects, self.all_name_references]:
-            resolved = {}
+        self.waiting = {}
 
-            for name, ref in d.items():
-                if ref.has_kind("<depends>"):
-                    found = self.find_dependency(ref)
-                    if found:
-                        resolved[name] = found
-                    else:
-                        print >>sys.stderr, "Name %s references an unknown object: %s" % (name, ref.get_origin())
+        for module in self.modules.values():
 
-            # Record the resolved names and identify required modules.
+            # Resolve all deferred references in each module.
 
-            for name, ref in resolved.items():
-                d[name] = ref
+            for ref in module.deferred:
+                found = self.find_dependency(ref)
+                if not found:
+                    print >>sys.stderr, "Module %s references an unknown object: %s" % (module.name, ref.get_origin())
 
-                # Find the providing module of this reference.
+                # Record the resolved names and identify required modules.
 
-                module_name = self.get_module_provider(ref)
-                if module_name:
-                    self.required.add(module_name)
+                else:
+                    ref.mutate(found)
 
-                    # Make this module required in all accessing modules.
+                    # Find the providing module of this reference.
 
-                    for accessor_name in self.accessing_modules[module_name]:
-                        self.modules[accessor_name].required.add(module_name)
+                    provider = self.get_module_provider(ref)
+                    if provider:
+
+                        module.required.add(provider)
+                        self.accessing_modules[provider].add(module.name)
+
+                        # Postpone any inclusion of the provider until this
+                        # module becomes required.
+
+                        if module.name not in self.required:
+                            init_item(self.waiting, module.name, set)
+                            self.waiting[module.name].add(provider)
+
+                        # Make this module required in the accessing module.
+
+                        else:
+                            self.required.add(provider)
+
+        for module_name in self.waiting.keys():
+            self.require_providers(module_name)
+
+    def require_providers(self, module_name):
+        if module_name in self.required and self.waiting.has_key(module_name):
+            for provider in self.waiting[module_name]:
+                if provider not in self.required:
+                    self.required.add(provider)
+                    self.require_providers(provider)
 
     def find_dependency(self, ref):
 
@@ -370,7 +389,7 @@ class Importer:
         found = set()
         while ref and ref.has_kind("<depends>") and not ref in found:
             found.add(ref)
-            ref = self.objects.get(ref.get_origin())
+            ref = self.identify(ref.get_origin())
         return ref
 
     def get_module_provider(self, ref):

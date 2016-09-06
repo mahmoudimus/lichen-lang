@@ -35,7 +35,6 @@ class NameResolving:
 
         "Resolve dependencies and complete definitions."
 
-        self.resolve_members()
         self.resolve_class_bases()
         self.check_special()
         self.check_names_used()
@@ -43,27 +42,6 @@ class NameResolving:
         self.resolve_initialisers()
         self.resolve_literals()
         self.remove_redundant_accessors()
-
-    def resolve_members(self):
-
-        """
-        Resolve any members referring to deferred references, using information
-        stored in the importer. This updates stored object and external name
-        records in this module.
-        """
-
-        for impd, d in [
-            (self.importer.objects, self.objects),
-            (self.importer.all_name_references, self.name_references)
-            ]:
-
-            for name, ref in d.items():
-
-                # Obtain resolved names from the importer.
-
-                if ref.has_kind("<depends>"):
-                    ref = self.importer.identify(name)
-                    d[name] = ref
 
     def resolve_class_bases(self):
 

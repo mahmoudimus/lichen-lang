@@ -130,12 +130,12 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             if name in predefined_constants or in_function and name in self.function_locals[path]:
                 continue
 
-            # Find local definitions (within static namespaces).
+            # Find local definitions (within dynamic namespaces).
 
             key = "%s.%s" % (path, name)
             ref = self.get_resolved_object(key)
             if ref:
-                self.importer.all_name_references[key] = self.name_references[key] = ref.alias(key)
+                self.importer.all_name_references[key] = self.name_references[key] = ref
                 continue
 
             # Find global or built-in definitions.
@@ -789,6 +789,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Attempt to get a reference.
 
             ref = self.import_name_from_module(op, "operator")
+            self.add_deferred(ref)
 
             # Record the imported name and provide the resolved name reference.
 

@@ -137,6 +137,14 @@ class Reference:
 
         return Reference(self.get_kind(), self.get_origin(), name)
 
+    def mutate(self, ref):
+
+        "Mutate this reference to have the same details as 'ref'."
+
+        self.kind = ref.kind
+        self.origin = ref.origin
+        self.name = ref.name
+
     def ancestors(self):
 
         """

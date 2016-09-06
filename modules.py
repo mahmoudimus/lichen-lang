@@ -37,6 +37,7 @@ class BasicModule(CommonModule):
 
         self.imports = set()
         self.required = set()
+        self.deferred = []
 
         # Global name information.
 
@@ -207,7 +208,17 @@ class BasicModule(CommonModule):
 
         "Set an object with the given 'name' and the given 'value'."
 
+        # Decode any string value, with a new reference being returned even
+        # given a provided reference.
+
         ref = decode_reference(value, name)
+        self.add_deferred(ref)
+        self._set_object(name, ref)
+
+    def _set_object(self, name, ref):
+
+        # Determine how the object properties will be defined.
+
         multiple = self.objects.has_key(name) and self.objects[name].get_kind() != ref.get_kind()
         self.importer.objects[name] = self.objects[name] = multiple and ref.as_var() or ref
 
@@ -266,7 +277,9 @@ class InspectionNaming:
         "Return a reference to the built-in with the given 'name'."
 
         self.queue_module("__builtins__")
-        return Reference("<depends>", "__builtins__.%s" % name)
+        ref = Reference("<depends>", "__builtins__.%s" % name)
+        self.deferred.append(ref)
+        return ref
 
     def get_builtin_class(self, name):
 
@@ -289,7 +302,9 @@ class InspectionNaming:
         if self.objects.has_key(path):
             return self.objects[path]
         else:
-            return Reference("<depends>", path)
+            ref = Reference("<depends>", path)
+            self.deferred.append(ref)
+            return ref
 
     def import_name_from_module(self, name, module_name):
 
@@ -299,12 +314,29 @@ class InspectionNaming:
             self.queue_module(module_name)
         return Reference("<depends>", "%s.%s" % (module_name, name))
 
+    def add_deferred(self, ref):
+
+        "Record 'ref' as a deferred reference."
+
+        if ref.has_kind("<depends>"):
+            self.deferred.append(ref)
+
 class CachedModule(BasicModule):
 
     "A cached module."
 
     def __repr__(self):
         return "CachedModule(%r, %r)" % (self.name, self.importer)
+
+    def set_object(self, name, value=None):
+
+        "Set an object with the given 'name' and the given 'value'."
+
+        # Decode any string value, with a new reference being returned even
+        # given a provided reference.
+
+        ref = decode_reference(value, name)
+        self._set_object(name, ref)
 
     def to_cache(self, filename):
 
