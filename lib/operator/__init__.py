@@ -61,6 +61,11 @@ from operator.comparison import (
     ne,
     )
 
+from operator.core import (
+    is_,
+    is_not,
+    )
+
 from operator.sequence import (
     getitem,
     setitem,
