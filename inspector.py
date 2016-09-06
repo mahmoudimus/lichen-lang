@@ -155,19 +155,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         return self.get_global(name) or self.importer.get_object("__builtins__.%s" % name)
 
-    def set_invocation_usage(self):
-
-        """
-        Discard the current invocation storage figures, retaining the maximum
-        values.
-        """
-
-        for path, (current, maximum) in self.function_targets.items():
-            self.importer.function_targets[path] = self.function_targets[path] = maximum
-
-        for path, (current, maximum) in self.function_arguments.items():
-            self.importer.function_arguments[path] = self.function_arguments[path] = maximum
-
     # Module structure traversal.
 
     def process_structure_node(self, n):
@@ -1380,6 +1367,19 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         self.set_special(literal_name, value)
 
     # Functions and invocations.
+
+    def set_invocation_usage(self):
+
+        """
+        Discard the current invocation storage figures, retaining the maximum
+        values.
+        """
+
+        for path, (current, maximum) in self.function_targets.items():
+            self.importer.function_targets[path] = self.function_targets[path] = maximum
+
+        for path, (current, maximum) in self.function_arguments.items():
+            self.importer.function_arguments[path] = self.function_arguments[path] = maximum
 
     def allocate_arguments(self, path, args):
 
