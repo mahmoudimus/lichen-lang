@@ -115,7 +115,10 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
     def collect_names_for_path(self, path):
 
-        "Collect the names used by the given 'path'."
+        """
+        Collect the names used by the given 'path'. These are propagated to the
+        importer in advance of any dependency resolution.
+        """
 
         names = self.names_used.get(path)
         if not names:
