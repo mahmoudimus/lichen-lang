@@ -18,6 +18,12 @@ def load_module(filename, module_name):
             return i.load_from_file(path, module_name)
     return None
 
+def show_missing(missing):
+    missing = list(missing)
+    missing.sort()
+    for module_name, name in missing:
+        print >>sys.stderr, "Module %s references an unknown object: %s" % (module_name, name)
+
 def stopwatch(activity, now):
     print >>sys.stderr, "%s took %.2f seconds" % (activity, time() - now)
     return time()
@@ -41,9 +47,18 @@ if __name__ == "__main__":
 
         i = importer.Importer(path, "_cache", verbose)
         m = i.initialise(filename, reset)
-        i.finalise()
+        success = i.finalise()
 
         now = stopwatch("Inspection", now)
+
+        # Check for success, indicating missing references otherwise.
+
+        if not success:
+            show_missing(i.missing)
+            if "-exit" in args:
+                sys.exit(1)
+            else:
+                sys.exit(0)
 
     # Report any errors.
 

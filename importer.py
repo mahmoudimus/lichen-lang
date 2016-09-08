@@ -50,13 +50,20 @@ class Importer:
         self.cache = cache
         self.verbose = verbose
 
+        # Module importing queue, required modules, removed modules and active
+        # modules in the final program.
+
         self.to_import = set()
         self.required = set(["__main__"])
         self.removed = {}
-
         self.modules = {}
+
+        # Module relationships and invalidated cached modules.
+
         self.accessing_modules = {}
         self.invalidated = set()
+
+        # Basic program information.
 
         self.objects = {}
         self.classes = {}
@@ -64,6 +71,10 @@ class Importer:
         self.function_defaults = {}
         self.function_targets = {}
         self.function_arguments = {}
+
+        # Unresolved names.
+
+        self.missing = set()
 
         # Derived information.
 
@@ -322,13 +333,21 @@ class Importer:
 
     def finalise(self):
 
-        "Finalise the inspected program."
+        """
+        Finalise the inspected program, returning whether the program could be
+        finalised.
+        """
+
+        if self.missing:
+            return False
 
         self.finalise_classes()
         self.to_cache()
         self.set_class_types()
         self.define_instantiators()
         self.collect_constants()
+
+        return True
 
     # Supporting operations.
 
@@ -345,7 +364,7 @@ class Importer:
             for ref in module.deferred:
                 found = self.find_dependency(ref)
                 if not found:
-                    print >>sys.stderr, "Module %s references an unknown object: %s" % (module.name, ref.get_origin())
+                    self.missing.add((module.name, ref.get_origin()))
 
                 # Record the resolved names and identify required modules.
 
