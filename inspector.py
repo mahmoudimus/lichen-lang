@@ -554,9 +554,18 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Initialise argument and local records.
 
         function_name = self.get_object_path(name)
+        argnames = get_argnames(n.argnames)
 
-        argnames = self.importer.function_parameters[function_name] = \
-                   self.function_parameters[function_name] = get_argnames(n.argnames)
+        # Insert "self" into methods where not explicitly declared.
+
+        if self.in_class and (not argnames or argnames[0] != "self"):
+            argnames.insert(0, "self")
+
+        self.importer.function_parameters[function_name] = \
+                   self.function_parameters[function_name] = argnames
+
+        # Define all arguments/parameters in the local namespace.
+
         locals = self.function_locals[function_name] = {}
 
         for argname in argnames:
