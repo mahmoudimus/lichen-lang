@@ -135,25 +135,36 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             key = "%s.%s" % (path, name)
             ref = self.get_resolved_object(key)
             if ref:
-                self.importer.all_name_references[key] = self.name_references[key] = ref
+                self.set_name_reference(key, ref)
                 continue
 
-            # Find global or built-in definitions.
+            # Find global or known built-in definitions.
 
             ref = self.get_resolved_global_or_builtin(name)
             if ref:
-                self.importer.all_name_references[key] = self.name_references[key] = ref
+                self.set_name_reference(key, ref)
                 continue
 
-            print >>sys.stderr, "Name not recognised: %s in %s" % (name, path)
-            init_item(self.names_missing, path, set)
-            self.names_missing[path].add(name)
+            # Find presumed built-in definitions.
+
+            ref = self.get_builtin(name)
+            self.set_name_reference(key, ref)
+
+    def set_name_reference(self, path, ref):
+
+        "Map the given name 'path' to 'ref'."
+
+        self.importer.all_name_references[path] = self.name_references[path] = ref
 
     def get_resolved_global_or_builtin(self, name):
 
         "Return the resolved global or built-in object with the given 'name'."
 
-        return self.get_global(name) or self.importer.get_object("__builtins__.%s" % name)
+        # In some circumstances, the name is neither global nor recognised by
+        # the importer. It is then assumed to be a general built-in.
+
+        return self.get_global(name) or \
+               self.importer.get_object("__builtins__.%s" % name)
 
     # Module structure traversal.
 
@@ -795,7 +806,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         if ref:
             return ResolvedNameRef(n.name, ref)
 
-        # Global name.
+        # Explicitly-declared global names.
 
         elif self.in_function and n.name in self.scope_globals[path]:
             return NameRef(n.name)
@@ -823,7 +834,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
                 access_number = self.record_access_details(n.name, None, False)
                 return LocalNameRef(n.name, access_number)
 
-            # Possible global name.
+            # Possible global or built-in name.
 
             else:
                 return NameRef(n.name)

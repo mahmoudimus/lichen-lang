@@ -55,10 +55,9 @@ class BasicModule(CommonModule):
         self.instance_attr_constants = {}
         self.module_attrs = set()
 
-        # Names used and missing.
+        # Names used in each namespace.
 
         self.names_used = {}
-        self.names_missing = {}
 
         # Function details.
 
@@ -363,7 +362,6 @@ class CachedModule(BasicModule):
             self._get_instance_attrs(f)
             self._get_instance_attr_constants(f)
             self.from_lines(f, self.names_used)     # "names used:"
-            self.from_lines(f, self.names_missing)  # "names missing:"
             self._get_name_references(f)
             self._get_initialised_names(f)
             self._get_aliased_names(f)
@@ -797,7 +795,6 @@ class CacheWritingModule:
                     print >>f, name, attrname, ref
 
             self.to_lines(f, "names used:", self.names_used)
-            self.to_lines(f, "names missing:", self.names_missing)
 
             print >>f
             print >>f, "name references:"
