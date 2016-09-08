@@ -439,8 +439,8 @@ class CachedModule(BasicModule):
         f.readline() # "name references:"
         line = f.readline().rstrip()
         while line:
-            name, value = self._get_fields(line)
-            self.name_references[name] = value
+            name, ref = self._get_fields(line)
+            self.importer.all_name_references[name] = self.name_references[name] = decode_reference(ref)
             line = f.readline().rstrip()
 
     def _get_initialised_names(self, f):
