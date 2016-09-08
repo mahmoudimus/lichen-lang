@@ -372,10 +372,19 @@ class Importer:
                         else:
                             self.required.add(provider)
 
+        # Check modules again to see if they are now required and should now
+        # cause the inclusion of other modules providing objects to the program.
+
         for module_name in self.waiting.keys():
             self.require_providers(module_name)
 
     def require_providers(self, module_name):
+
+        """
+        Test if 'module_name' is itself required and, if so, require modules
+        containing objects provided to the module.
+        """
+
         if module_name in self.required and self.waiting.has_key(module_name):
             for provider in self.waiting[module_name]:
                 if provider not in self.required:
