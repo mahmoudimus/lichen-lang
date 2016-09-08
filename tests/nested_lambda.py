@@ -1,7 +1,7 @@
 a = 4
 
 def f(x):
-    g = lambda y: lambda z: (x, y, z, a)
+    g = lambda y, x=x: lambda z, x=x, y=y: (x, y, z, a)
     return g
 
 result = f(1)(2)(3)

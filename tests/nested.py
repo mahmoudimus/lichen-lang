@@ -1,8 +1,8 @@
 a = 4
 
 def f(x):
-    def g(y):
-        def h(z):
+    def g(y, x=x):
+        def h(z, x=x, y=y):
             return x, y, z, a
         return h
     return g
