@@ -23,7 +23,7 @@ from common import first, get_attrname_from_location, get_attrnames, \
                    init_item, make_key, sorted_output, \
                    CommonOutput
 from encoders import encode_attrnames, encode_access_location, \
-                     encode_constrained, encode_location
+                     encode_constrained, encode_location, encode_usage
 from os.path import join
 from referencing import Reference
 
@@ -236,7 +236,9 @@ class Deducer(CommonOutput):
 
                 if not all_types:
                     print >>f_types, encode_location(location), "deduced", "<>", 0
-                    print >>f_warnings, encode_location(location)
+                    attrnames = list(self.location_index[location])
+                    attrnames.sort()
+                    print >>f_warnings, encode_location(location), "; ".join(map(encode_usage, attrnames))
 
                 guard_test = self.accessor_guard_tests.get(location)
 
