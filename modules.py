@@ -467,7 +467,7 @@ class CachedModule(BasicModule):
         while line:
             function, names = self._get_fields(line)
             self.importer.function_parameters[function] = \
-                self.function_parameters[function] = names and names.split(", ") or []
+                self.function_parameters[function] = names != "{}" and names.split(", ") or []
             line = f.readline().rstrip()
 
     def _get_function_defaults(self, f):
@@ -829,7 +829,11 @@ class CacheWritingModule:
             functions = self.function_parameters.keys()
             functions.sort()
             for function in functions:
-                print >>f, function, ", ".join(self.function_parameters[function])
+                parameters = self.function_parameters[function]
+                if parameters:
+                    print >>f, function, ", ".join(parameters)
+                else:
+                    print >>f, function, "{}"
 
             print >>f
             print >>f, "function default parameters:"
