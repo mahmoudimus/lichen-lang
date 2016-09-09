@@ -691,8 +691,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         for name, alias in n.names:
             if name == self.name:
                 raise InspectError("Cannot import the current module.", path, n)
-            if not alias and len(n.names) > 1:
-                raise InspectError("Imported modules must be aliased unless a simple module is imported.", path, n)
 
             self.set_module(alias or name.split(".")[-1], name)
             self.queue_module(name, True)
