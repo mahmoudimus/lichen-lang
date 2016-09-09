@@ -554,12 +554,38 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Initialise argument and local records.
 
         function_name = self.get_object_path(name)
+        argnames = get_argnames(n.argnames)
+        is_method = self.in_class and not self.in_function
 
-        argnames = self.importer.function_parameters[function_name] = \
-                   self.function_parameters[function_name] = get_argnames(n.argnames)
+        # Remove explicit "self" from method parameters.
+
+        if is_method and argnames and argnames[0] == "self":
+            del argnames[0]
+
+        # Copy and propagate the parameters.
+
+        self.importer.function_parameters[function_name] = \
+        self.function_parameters[function_name] = argnames[:]
+
+        # Define all arguments/parameters in the local namespace.
+
         locals = self.function_locals[function_name] = {}
 
-        for argname in argnames:
+        # Insert "self" into method locals.
+
+        if is_method:
+            argnames.insert(0, "self")
+
+        # Define "self" in terms of the class if in a method.
+        # This does not diminish the need for type-narrowing in the deducer.
+
+        if argnames:
+            if self.in_class and not self.in_function and argnames[0] == "self":
+                locals[argnames[0]] = Reference("<instance>", self.in_class)
+            else:
+                locals[argnames[0]] = Reference("<var>")
+
+        for argname in argnames[1:]:
             locals[argname] = Reference("<var>")
 
         globals = self.scope_globals[function_name] = set()
