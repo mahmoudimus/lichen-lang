@@ -755,6 +755,11 @@ class Importer:
             print >>sys.stderr, module_name in self.required and "Required" or "Loading", module_name, "from", filename
         fn(module)(filename)
 
+        # Add the module object if not already defined.
+
+        if not self.objects.has_key(module_name):
+            self.objects[module_name] = Reference("<module>", module_name)
+
     def add_module(self, module_name, module):
 
         """
@@ -763,7 +768,6 @@ class Importer:
         """
 
         self.modules[module_name] = module
-        self.objects[module_name] = Reference("<module>", module_name)
         if module_name in self.to_import:
             self.to_import.remove(module_name)
 
