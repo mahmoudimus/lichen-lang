@@ -388,8 +388,10 @@ class Importer:
 
                         # Make this module required in the accessing module.
 
-                        else:
+                        elif provider not in self.required:
                             self.required.add(provider)
+                            if self.verbose:
+                                print >>sys.stderr, "Requiring", provider, "for", ref
 
         # Check modules again to see if they are now required and should now
         # cause the inclusion of other modules providing objects to the program.
@@ -408,6 +410,8 @@ class Importer:
             for provider in self.waiting[module_name]:
                 if provider not in self.required:
                     self.required.add(provider)
+                    if self.verbose:
+                        print >>sys.stderr, "Requiring", provider
                     self.require_providers(provider)
 
     def find_dependency(self, ref):
@@ -640,9 +644,6 @@ class Importer:
 
         # Otherwise, modules are loaded.
 
-        if self.verbose:
-            print >>sys.stderr, "Loading", name
-
         # Split the name into path components, and try to find the uppermost in
         # the search path.
 
@@ -751,10 +752,8 @@ class Importer:
         # Load the module.
 
         if self.verbose:
-            print >>sys.stderr, "Loading", filename
+            print >>sys.stderr, module_name in self.required and "Required" or "Loading", module_name, "from", filename
         fn(module)(filename)
-        if self.verbose:
-            print >>sys.stderr, "Loaded", filename
 
     def add_module(self, module_name, module):
 
