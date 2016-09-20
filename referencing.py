@@ -163,6 +163,15 @@ class Reference:
 
         return ancestors
 
+    def get_types(self):
+
+        "Return class, instance-only and module types for this reference."
+
+        class_types = self.has_kind("<class>") and [self.get_origin()] or []
+        instance_types = []
+        module_types = self.has_kind("<module>") and [self.get_origin()] or []
+        return class_types, instance_types, module_types
+
 def decode_reference(s, name=None):
 
     "Decode 's', making a reference."
@@ -190,5 +199,63 @@ def decode_reference(s, name=None):
 
     else:
         return Reference("<module>", s, name)
+
+
+
+# Type/reference collection functions.
+
+def is_single_class_type(all_types):
+
+    """
+    Return whether 'all_types' is a mixture of class and instance kinds for
+    a single class type.
+    """
+
+    kinds = set()
+    types = set()
+
+    for type in all_types:
+        kinds.add(type.get_kind())
+        types.add(type.get_origin())
+
+    return len(types) == 1 and kinds == set(["<class>", "<instance>"])
+
+def combine_types(class_types, instance_types, module_types):
+
+    """
+    Combine 'class_types', 'instance_types', 'module_types' into a single
+    list of references.
+    """
+
+    all_types = []
+    for kind, l in [("<class>", class_types), ("<instance>", instance_types), ("<module>", module_types)]:
+        for t in l:
+            all_types.append(Reference(kind, t))
+    return all_types
+
+def separate_types(refs):
+
+    """
+    Separate 'refs' into type-specific lists, returning a tuple containing
+    lists of class types, instance types, module types, function types and
+    unknown "var" types.
+    """
+
+    class_types = []
+    instance_types = []
+    module_types = []
+    function_types = []
+    var_types = []
+
+    for kind, l in [
+        ("<class>", class_types), ("<instance>", instance_types), ("<module>", module_types),
+        ("<function>", function_types), ("<var>", var_types)
+        ]:
+
+        for ref in refs:
+            if ref.get_kind() == kind:
+                l.append(ref.get_origin())
+
+    return class_types, instance_types, module_types, function_types, var_types
 
 # vim: tabstop=4 expandtab shiftwidth=4

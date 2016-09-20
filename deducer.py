@@ -26,7 +26,8 @@ from encoders import encode_attrnames, encode_access_location, \
                      encode_constrained, encode_location, encode_usage, \
                      get_kinds, test_for_kinds, test_for_types
 from os.path import join
-from referencing import Reference
+from referencing import combine_types, is_single_class_type, separate_types, \
+                        Reference
 
 class Deducer(CommonOutput):
 
@@ -387,7 +388,7 @@ class Deducer(CommonOutput):
             # Collect specific and general type information.
 
             self.provider_all_types[location] = all_types = \
-                self.combine_types(class_types, instance_types, module_types)
+                combine_types(class_types, instance_types, module_types)
 
             # Accessor information.
 
@@ -406,10 +407,10 @@ class Deducer(CommonOutput):
             # Collect specific and general type information.
 
             self.accessor_all_types[location] = all_types = \
-                self.combine_types(class_types, instance_types, module_types)
+                combine_types(class_types, instance_types, module_types)
 
             self.accessor_all_general_types[location] = all_general_types = \
-                self.combine_types(general_class_types, general_instance_types, general_module_types)
+                combine_types(general_class_types, general_instance_types, general_module_types)
 
             # Record guard information.
 
@@ -419,14 +420,14 @@ class Deducer(CommonOutput):
 
                 if len(all_types) == 1:
                     self.accessor_guard_tests[location] = test_for_types("specific", all_types)
-                elif self.is_single_class_type(all_types):
+                elif is_single_class_type(all_types):
                     self.accessor_guard_tests[location] = "specific-object"
 
                 # Record common type guard details.
 
                 elif len(all_general_types) == 1:
                     self.accessor_guard_tests[location] = test_for_types("common", all_types)
-                elif self.is_single_class_type(all_general_types):
+                elif is_single_class_type(all_general_types):
                     self.accessor_guard_tests[location] = "common-object"
 
                 # Otherwise, no convenient guard can be defined.
@@ -470,14 +471,14 @@ class Deducer(CommonOutput):
 
             guarded = (
                 len(all_accessor_types) == 1 or
-                self.is_single_class_type(all_accessor_types) or
+                is_single_class_type(all_accessor_types) or
                 len(all_accessor_general_types) == 1 or
-                self.is_single_class_type(all_accessor_general_types)
+                is_single_class_type(all_accessor_general_types)
                 )
 
             if guarded:
                 (guard_class_types, guard_instance_types, guard_module_types,
-                    _function_types, _var_types) = self.separate_types(all_provider_types)
+                    _function_types, _var_types) = separate_types(all_provider_types)
 
             # Attribute information, both name-based and anonymous.
 
@@ -535,11 +536,11 @@ class Deducer(CommonOutput):
                     if guarded and all_accessed_attrs.issubset(guard_attrs):
                         if len(all_accessor_types) == 1:
                             self.reference_test_types[location] = test_for_types("guarded-specific", all_accessor_types)
-                        elif self.is_single_class_type(all_accessor_types):
+                        elif is_single_class_type(all_accessor_types):
                             self.reference_test_types[location] = "guarded-specific-object"
                         elif len(all_accessor_general_types) == 1:
                             self.reference_test_types[location] = test_for_types("guarded-common", all_accessor_general_types)
-                        elif self.is_single_class_type(all_accessor_general_types):
+                        elif is_single_class_type(all_accessor_general_types):
                             self.reference_test_types[location] = "guarded-common-object"
 
                     # Provide active test types.
@@ -591,71 +592,6 @@ class Deducer(CommonOutput):
             if attrs:
                 l.append((attrtype, attrs))
         return l
-
-    # Type handling methods.
-
-    def is_single_class_type(self, all_types):
-
-        """
-        Return whether 'all_types' is a mixture of class and instance kinds for
-        a single class type.
-        """
-
-        kinds = set()
-        types = set()
-
-        for type in all_types:
-            kinds.add(type.get_kind())
-            types.add(type.get_origin())
-
-        return len(types) == 1 and kinds == set(["<class>", "<instance>"])
-
-    def get_types_for_reference(self, ref):
-
-        "Return class, instance-only and module types for 'ref'."
-
-        class_types = ref.has_kind("<class>") and [ref.get_origin()] or []
-        instance_types = []
-        module_types = ref.has_kind("<module>") and [ref.get_origin()] or []
-        return class_types, instance_types, module_types
-
-    def combine_types(self, class_types, instance_types, module_types):
-
-        """
-        Combine 'class_types', 'instance_types', 'module_types' into a single
-        list of references.
-        """
-
-        all_types = []
-        for kind, l in [("<class>", class_types), ("<instance>", instance_types), ("<module>", module_types)]:
-            for t in l:
-                all_types.append(Reference(kind, t))
-        return all_types
-
-    def separate_types(self, refs):
-
-        """
-        Separate 'refs' into type-specific lists, returning a tuple containing
-        lists of class types, instance types, module types, function types and
-        unknown "var" types.
-        """
-
-        class_types = []
-        instance_types = []
-        module_types = []
-        function_types = []
-        var_types = []
-
-        for kind, l in [
-            ("<class>", class_types), ("<instance>", instance_types), ("<module>", module_types),
-            ("<function>", function_types), ("<var>", var_types)
-            ]:
-
-            for ref in refs:
-                if ref.get_kind() == kind:
-                    l.append(ref.get_origin())
-
-        return class_types, instance_types, module_types, function_types, var_types
 
     # Initialisation methods.
 
@@ -1171,7 +1107,7 @@ class Deducer(CommonOutput):
                     self.referenced_attrs[access_location] = [(accessor.get_kind(), accessor.get_origin(), ref)]
                     self.access_constrained.add(access_location)
 
-                    class_types, instance_types, module_types = self.get_types_for_reference(accessor)
+                    class_types, instance_types, module_types = accessor.get_types()
                     self.record_reference_types(accessor_location, class_types, instance_types, module_types, True, True)
                     continue
 
@@ -1191,7 +1127,7 @@ class Deducer(CommonOutput):
                 self.init_access_details(access_location)
                 self.init_definition_details(accessor_location)
 
-                class_types, instance_types, module_types = self.get_types_for_reference(ref)
+                class_types, instance_types, module_types = ref.get_types()
 
                 self.identify_reference_attributes(access_location, attrname, class_types, instance_types, module_types, True)
                 self.record_reference_types(accessor_location, class_types, instance_types, module_types, True, True)
@@ -1239,7 +1175,7 @@ class Deducer(CommonOutput):
             ref = self.get_initialised_name(location)
             if ref:
                 (class_types, only_instance_types, module_types,
-                    _function_types, _var_types) = self.separate_types([ref])
+                    _function_types, _var_types) = separate_types([ref])
                 return class_types, only_instance_types, module_types, True, False
 
         # Retrieve the recorded types for the usage.
@@ -1450,7 +1386,7 @@ class Deducer(CommonOutput):
                     # Separate the different attribute types.
 
                     (class_types, instance_types, module_types,
-                        function_types, var_types) = self.separate_types(attrs)
+                        function_types, var_types) = separate_types(attrs)
 
                     # Where non-accessor types are found, do not attempt to refine
                     # the defined accessor types.
@@ -1470,7 +1406,7 @@ class Deducer(CommonOutput):
                     attr = self.get_initialised_name(access_location)
                     if attr:
                         (class_types, instance_types, module_types,
-                            _function_types, _var_types) = self.separate_types([attr])
+                            _function_types, _var_types) = separate_types([attr])
 
                     # Where no further information is found, do not attempt to
                     # refine the defined accessor types.
@@ -1510,7 +1446,7 @@ class Deducer(CommonOutput):
                         class_types = self.provider_class_types[access_location]
                         instance_types = self.provider_instance_types[access_location]
                         module_types = self.provider_module_types[access_location]
-                        attrs = self.combine_types(class_types, instance_types, module_types)
+                        attrs = combine_types(class_types, instance_types, module_types)
                     if attrs:
                         refs.update(attrs)
 
