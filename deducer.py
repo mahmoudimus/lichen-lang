@@ -19,11 +19,12 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import first, get_attrname_from_location, get_attrnames, \
+from common import get_attrname_from_location, get_attrnames, \
                    init_item, make_key, sorted_output, \
                    CommonOutput
 from encoders import encode_attrnames, encode_access_location, \
-                     encode_constrained, encode_location, encode_usage
+                     encode_constrained, encode_location, encode_usage, \
+                     get_kinds, test_for_kinds, test_for_types
 from os.path import join
 from referencing import Reference
 
@@ -246,14 +247,14 @@ class Deducer(CommonOutput):
 
                 if guard_test and guard_test.startswith("specific"):
                     print >>f_guards, encode_location(location), guard_test, \
-                        self.get_kinds(all_types)[0], \
+                        get_kinds(all_types)[0], \
                         sorted_output(all_types)
 
                 # Write common type guard details.
 
                 elif guard_test and guard_test.startswith("common"):
                     print >>f_guards, encode_location(location), guard_test, \
-                        self.get_kinds(all_general_types)[0], \
+                        get_kinds(all_general_types)[0], \
                         sorted_output(all_general_types)
 
                 print >>f_type_summary, encode_location(location), encode_constrained(constrained), \
@@ -417,14 +418,14 @@ class Deducer(CommonOutput):
                 # Record specific type guard details.
 
                 if len(all_types) == 1:
-                    self.accessor_guard_tests[location] = self.test_for_types("specific", all_types)
+                    self.accessor_guard_tests[location] = test_for_types("specific", all_types)
                 elif self.is_single_class_type(all_types):
                     self.accessor_guard_tests[location] = "specific-object"
 
                 # Record common type guard details.
 
                 elif len(all_general_types) == 1:
-                    self.accessor_guard_tests[location] = self.test_for_types("common", all_types)
+                    self.accessor_guard_tests[location] = test_for_types("common", all_types)
                 elif self.is_single_class_type(all_general_types):
                     self.accessor_guard_tests[location] = "common-object"
 
@@ -533,11 +534,11 @@ class Deducer(CommonOutput):
 
                     if guarded and all_accessed_attrs.issubset(guard_attrs):
                         if len(all_accessor_types) == 1:
-                            self.reference_test_types[location] = self.test_for_types("guarded-specific", all_accessor_types)
+                            self.reference_test_types[location] = test_for_types("guarded-specific", all_accessor_types)
                         elif self.is_single_class_type(all_accessor_types):
                             self.reference_test_types[location] = "guarded-specific-object"
                         elif len(all_accessor_general_types) == 1:
-                            self.reference_test_types[location] = self.test_for_types("guarded-common", all_accessor_general_types)
+                            self.reference_test_types[location] = test_for_types("guarded-common", all_accessor_general_types)
                         elif self.is_single_class_type(all_accessor_general_types):
                             self.reference_test_types[location] = "guarded-common-object"
 
@@ -550,9 +551,9 @@ class Deducer(CommonOutput):
                         if len(all_providers) == 1:
                             provider = list(all_providers)[0]
                             if provider != '__builtins__.object':
-                                all_accessor_kinds = set(self.get_kinds(all_accessor_types))
+                                all_accessor_kinds = set(get_kinds(all_accessor_types))
                                 if len(all_accessor_kinds) == 1:
-                                    test_type = self.test_for_kinds("specific", all_accessor_kinds)
+                                    test_type = test_for_kinds("specific", all_accessor_kinds)
                                 else:
                                     test_type = "specific-object"
                                 self.reference_test_types[location] = test_type
@@ -561,9 +562,9 @@ class Deducer(CommonOutput):
                         elif len(all_general_providers) == 1:
                             provider = list(all_general_providers)[0]
                             if provider != '__builtins__.object':
-                                all_accessor_kinds = set(self.get_kinds(all_accessor_general_types))
+                                all_accessor_kinds = set(get_kinds(all_accessor_general_types))
                                 if len(all_accessor_kinds) == 1:
-                                    test_type = self.test_for_kinds("common", all_accessor_kinds)
+                                    test_type = test_for_kinds("common", all_accessor_kinds)
                                 else:
                                     test_type = "common-object"
                                 self.reference_test_types[location] = test_type
@@ -590,42 +591,6 @@ class Deducer(CommonOutput):
             if attrs:
                 l.append((attrtype, attrs))
         return l
-
-    # Test generation methods.
-
-    def get_kinds(self, all_types):
-
-        """
-        Return object kind details for 'all_types', being a collection of
-        references for program types.
-        """
-
-        return map(lambda ref: ref.get_kind(), all_types)
-
-    def test_for_types(self, prefix, all_types):
-
-        """
-        Return identifiers describing test conditions incorporating the given
-        'prefix' and involving 'all_types', being a collection of references to
-        program types.
-        """
-
-        return self.test_for_kind(prefix, first(all_types).get_kind())
-
-    def test_for_kinds(self, prefix, all_kinds):
-
-        """
-        Return identifiers describing test conditions incorporating the given
-        'prefix' and involving 'all_kinds', being a collection of object kinds.
-        """
-
-        return self.test_for_kind(prefix, first(all_kinds))
-
-    def test_for_kind(self, prefix, kind):
-
-        "Return a test condition identifier featuring 'prefix' and 'kind'."
-
-        return "%s-%s" % (prefix, kind == "<instance>" and "instance" or "type")
 
     # Type handling methods.
 

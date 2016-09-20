@@ -19,6 +19,8 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from common import first
+
 # Output encoding and decoding for the summary files.
 
 def encode_attrnames(attrnames):
@@ -83,6 +85,46 @@ def decode_modifier_term(s):
 
     return s == "A"
 
+
+
+# Test generation functions.
+
+def get_kinds(all_types):
+
+    """ 
+    Return object kind details for 'all_types', being a collection of
+    references for program types.
+    """
+
+    return map(lambda ref: ref.get_kind(), all_types)
+
+def test_for_kind(prefix, kind):
+
+    "Return a test condition identifier featuring 'prefix' and 'kind'."
+
+    return "%s-%s" % (prefix, kind == "<instance>" and "instance" or "type")
+
+def test_for_kinds(prefix, all_kinds):
+
+    """ 
+    Return identifiers describing test conditions incorporating the given
+    'prefix' and involving 'all_kinds', being a collection of object kinds.
+    """
+
+    return test_for_kind(prefix, first(all_kinds))
+
+def test_for_types(prefix, all_types):
+
+    """ 
+    Return identifiers describing test conditions incorporating the given
+    'prefix' and involving 'all_types', being a collection of references to
+    program types.
+    """
+
+    return test_for_kind(prefix, first(all_types).get_kind())
+
+
+
 # Output program encoding.
 
 def encode_function_pointer(path):
@@ -111,6 +153,8 @@ def encode_symbol(symbol_type, path=None):
     "Encode a symbol with the given 'symbol_type' and optional 'path'."
 
     return "__%s%s" % (symbol_type, path and "_%s" % encode_path(path) or "")
+
+
 
 # Output language reserved words.
 
