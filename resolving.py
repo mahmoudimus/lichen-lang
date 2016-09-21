@@ -322,7 +322,7 @@ class NameResolving:
 
                     # Convert class invocations to instances.
 
-                    if invocation:
+                    if ref and invocation:
                         ref = self.convert_invocation(ref)
 
                     if ref and not ref.has_kind("<var>"):
