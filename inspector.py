@@ -325,6 +325,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Names and attributes are assigned the entire expression.
 
         if isinstance(n, compiler.ast.AssName):
+            if n.name == "self":
+                raise InspectError("Redefinition of self is not allowed.", self.get_namespace_path(), n)
 
             name_ref = expr and self.process_structure_node(expr)
 
