@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __builtins__.operator import _binary_op, _negate
 import native
 
 class int(object):
@@ -134,25 +135,5 @@ class int(object):
     def __bool__(self):
         "Return whether this int is non-zero."
         return _negate(native._int_eq(self, 0))
-
-# Utility functions.
-
-def _binary_op(self, other, op):
-
-    "Test the type of 'other' and perform 'op'."
-
-    if self.__class__ is other.__class__:
-        return op(self, other)
-    else:
-        return NotImplemented
-
-def _negate(result):
-
-    "Negate any valid logical value."
-
-    if result is NotImplemented:
-        return result
-    else:
-        return not result
 
 # vim: tabstop=4 expandtab shiftwidth=4

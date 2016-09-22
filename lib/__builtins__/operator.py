@@ -3,7 +3,7 @@
 """
 Operator-related functions.
 
-Copyright (C) 2015 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,12 +19,12 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-def _binary_op(self, other, op):
+def _binary_op(this, other, op):
 
-    "Test the type of 'other' and perform 'op'."
+    "Test the types of 'this' and 'other', performing 'op' if identical."
 
-    if self.__class__ is other.__class__:
-        return op(self, other)
+    if this.__class__ is other.__class__:
+        return op(this, other)
     else:
         return NotImplemented
 

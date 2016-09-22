@@ -776,6 +776,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             self.set_special(n.name, value)
             return value
 
+        # Test for self usage, which is only allowed in methods.
+
+        if n.name == "self" and not (self.in_function and self.in_class):
+            raise InspectError("Use of self is only allowed in methods.", path, n)
+
         # Record usage of the name.
 
         self.record_name(n.name)
