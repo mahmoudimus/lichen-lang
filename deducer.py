@@ -62,6 +62,10 @@ class Deducer(CommonOutput):
 
         self.alias_index = {}
 
+        # Map constant accesses to redefined accesses.
+
+        self.const_accesses = {}
+
         # Map usage observations to assigned attributes.
 
         self.assigned_attrs = {}
@@ -1031,17 +1035,6 @@ class Deducer(CommonOutput):
         for access_location, accessor_locations in self.access_index.items():
             self.record_types_for_access(access_location, accessor_locations, alias_accesses)
 
-        # Aliased name definitions. All aliases with usage will have been
-        # defined, but they may be refined according to referenced accesses.
-
-        for accessor_location in self.alias_index.keys():
-            self.record_types_for_alias(accessor_location)
-
-        # Update accesses employing aliases.
-
-        for access_location in alias_accesses:
-            self.record_types_for_access(access_location, self.access_index[access_location])
-
         # Anonymous references with attribute chains.
 
         for location, accesses in self.importer.all_attr_accesses.items():
@@ -1112,28 +1105,45 @@ class Deducer(CommonOutput):
 
                     class_types, instance_types, module_types = accessor.get_types()
                     self.record_reference_types(accessor_location, class_types, instance_types, module_types, True, True)
-                    continue
 
-                # Build a descriptive location based on the original
-                # details, employing the first remaining attribute name.
+                else:
 
-                l = get_attrnames(attrnames)
-                attrname = l[0]
+                    # Build a descriptive location based on the original
+                    # details, employing the first remaining attribute name.
 
-                oa = original_accessor[:-len(l)]
-                oa = ".".join(oa)
+                    l = get_attrnames(attrnames)
+                    attrname = l[0]
 
-                access_location = (location, oa, attrnames, 0)
-                accessor_location = (location, oa, None, 0)
-                self.access_index[access_location] = [accessor_location]
+                    oa = original_accessor[:-len(l)]
+                    oa = ".".join(oa)
 
-                self.init_access_details(access_location)
-                self.init_definition_details(accessor_location)
+                    access_location = (location, oa, attrnames, 0)
+                    accessor_location = (location, oa, None, 0)
+                    self.access_index[access_location] = [accessor_location]
 
-                class_types, instance_types, module_types = ref.get_types()
+                    self.init_access_details(access_location)
+                    self.init_definition_details(accessor_location)
 
-                self.identify_reference_attributes(access_location, attrname, class_types, instance_types, module_types, True)
-                self.record_reference_types(accessor_location, class_types, instance_types, module_types, True, True)
+                    class_types, instance_types, module_types = ref.get_types()
+
+                    self.identify_reference_attributes(access_location, attrname, class_types, instance_types, module_types, True)
+                    self.record_reference_types(accessor_location, class_types, instance_types, module_types, True, True)
+
+                original_location = (location, original_name, original_attrnames, 0)
+
+                if original_location != access_location:
+                    self.const_accesses[original_location] = access_location
+
+        # Aliased name definitions. All aliases with usage will have been
+        # defined, but they may be refined according to referenced accesses.
+
+        for accessor_location in self.alias_index.keys():
+            self.record_types_for_alias(accessor_location)
+
+        # Update accesses employing aliases.
+
+        for access_location in alias_accesses:
+            self.record_types_for_access(access_location, self.access_index[access_location])
 
     def constrain_types(self, path, class_types, instance_types, module_types):
 
@@ -1432,6 +1442,12 @@ class Deducer(CommonOutput):
             refs = set()
 
             for access_location in self.alias_index[accessor_location]:
+
+                # Obtain any redefined constant access location.
+
+                if self.const_accesses.has_key(access_location):
+                    access_location = self.const_accesses[access_location]
+
                 location, name, attrnames, access_number = access_location
 
                 # Alias references an attribute access.
