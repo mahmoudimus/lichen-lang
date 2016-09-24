@@ -107,6 +107,7 @@ class Deducer(CommonOutput):
         self.reference_module_attrs = {}
         self.reference_all_attrs = {}
         self.reference_all_attrtypes = {}
+        self.reference_all_accessors = {}
         self.reference_test_types = {}
         self.reference_test_accessor_types = {}
 
@@ -479,6 +480,8 @@ class Deducer(CommonOutput):
             if guarded:
                 (guard_class_types, guard_instance_types, guard_module_types,
                     _function_types, _var_types) = separate_types(all_provider_types)
+
+            self.reference_all_accessors[location] = all_accessor_types
 
             # Attribute information, both name-based and anonymous.
 
