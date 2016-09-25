@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import get_attrname_from_location, get_attrnames, \
+from common import first, get_attrname_from_location, get_attrnames, \
                    init_item, make_key, sorted_output, \
                    CommonOutput
 from encoders import encode_attrnames, encode_access_location, \
@@ -136,6 +136,7 @@ class Deducer(CommonOutput):
         self.write_mutations()
         self.write_accessors()
         self.write_accesses()
+        self.write_access_plans()
 
     def write_mutations(self):
 
@@ -436,6 +437,26 @@ class Deducer(CommonOutput):
                     self.accessor_guard_tests[location] = "common-object"
 
                 # Otherwise, no convenient guard can be defined.
+
+    def write_access_plans(self):
+
+        "Each attribute access is written out as a plan."
+
+        f_attrs = open(join(self.output, "attribute_plans"), "w")
+
+        try:
+            locations = self.referenced_attrs.keys()
+            locations.sort()
+
+            for location in locations:
+                base, traversed, attrnames, attr = self.get_access(location)
+                print >>f_attrs, encode_access_location(location), base, \
+                                 ".".join(traversed) or "{}", \
+                                 ".".join(attrnames) or "{}", \
+                                 attr or "{}"
+
+        finally:
+            f_attrs.close()
 
     def classify_accesses(self):
 
@@ -1614,5 +1635,60 @@ class Deducer(CommonOutput):
                 attrs.add(("<module>", object_type, ref))
 
         return attrs
+
+    def get_access(self, location):
+
+        "Return details of the access at the given 'location'."
+
+        const_access = self.const_accesses.has_key(location)
+        if const_access:
+            location = self.const_accesses[location]
+
+        path, name, attrname_str, version = location
+        attrnames = attrname_str.split(".")
+        attrname = attrnames[0]
+
+        # Obtain only reference information.
+
+        attrs = []
+        objtypes = []
+        for attrtype, objtype, attr in self.referenced_attrs[location]:
+            attrs.append(attr)
+            objtypes.append(objtype)
+
+        # Identify the last static attribute.
+
+        if const_access:
+            base = len(objtypes) == 1 and first(objtypes)
+        else:
+            ref = self.importer.identify("%s.%s" % (path, name))
+            if not ref:
+                base = name
+            else:
+                base = ref.get_origin()
+
+        traversed = []
+
+        # Traverse remaining attributes.
+
+        while len(attrs) == 1:
+            attr = first(attrs)
+
+            traversed.append(attrname)
+            del attrnames[0]
+
+            if not attrnames:
+                break
+
+            if attr.static():
+                base = attr.get_origin()
+                traversed = []
+
+            attrname = attrnames[0]
+            attrs = self.importer.get_attributes(attr, attrname)
+        else:
+            attr = None
+
+        return base, traversed, attrnames, attr and attr.get_name()
 
 # vim: tabstop=4 expandtab shiftwidth=4

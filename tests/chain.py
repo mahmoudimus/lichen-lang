@@ -2,7 +2,8 @@ class C:
     class D:
         class E:
             def m(self, x):
-                return x
+                self.x = x
+                return self.x.__len__
             n = 123
         p = "456"
 
@@ -16,7 +17,7 @@ def main():
     i = C.D.p.__len__
     inst = e()
     method = inst.m
-    return method(5)
+    return method("5")
 
 result1 = main()
 c = C
@@ -28,4 +29,4 @@ h = C.D.p
 i = C.D.p.__len__
 inst = e()
 method = inst.m
-result2 = method(5)
+result2 = method("5")
