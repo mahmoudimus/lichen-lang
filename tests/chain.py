@@ -3,8 +3,11 @@ class C:
         class E:
             def m(self, x):
                 self.x = x
-                return self.x.__len__
+                l = self.x.__len__
+                s = self.o
+                return self.o.__len__
             n = 123
+            o = "123"
         p = "456"
 
 def main():
