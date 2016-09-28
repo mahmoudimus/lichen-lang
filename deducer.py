@@ -24,7 +24,7 @@ from common import first, get_attrname_from_location, get_attrnames, \
                    CommonOutput
 from encoders import encode_attrnames, encode_access_location, \
                      encode_constrained, encode_location, encode_usage, \
-                     get_kinds, test_for_kinds, test_for_types
+                     get_kinds, test_for_kinds, test_for_type
 from os.path import join
 from referencing import combine_types, is_single_class_type, separate_types, \
                         Reference
@@ -65,6 +65,7 @@ class Deducer(CommonOutput):
         # Map constant accesses to redefined accesses.
 
         self.const_accesses = {}
+        self.const_accesses_rev = {}
 
         # Map usage observations to assigned attributes.
 
@@ -88,10 +89,14 @@ class Deducer(CommonOutput):
         self.provider_class_types = {}
         self.provider_instance_types = {}
         self.provider_module_types = {}
-        self.reference_constrained = set()
+        self.accessor_constrained = set()
         self.access_constrained = set()
         self.referenced_attrs = {}
         self.referenced_objects = {}
+
+        # Details of access operations.
+
+        self.access_plans = {}
 
         # Accumulated information about accessors and providers.
 
@@ -104,14 +109,15 @@ class Deducer(CommonOutput):
         self.accessor_guard_tests = {}
 
         # Accumulated information about accessed attributes and
-        # attribute-specific accessor tests.
+        # access/attribute-specific accessor tests.
 
         self.reference_class_attrs = {}
         self.reference_instance_attrs = {}
         self.reference_module_attrs = {}
         self.reference_all_attrs = {}
         self.reference_all_attrtypes = {}
-        self.reference_all_accessors = {}
+        self.reference_all_accessor_types = {}
+        self.reference_all_accessor_general_types = {}
         self.reference_test_types = {}
         self.reference_test_accessor_types = {}
 
@@ -126,6 +132,7 @@ class Deducer(CommonOutput):
         self.identify_references()
         self.classify_accessors()
         self.classify_accesses()
+        self.initialise_access_plans()
 
     def to_output(self):
 
@@ -215,7 +222,7 @@ class Deducer(CommonOutput):
             locations.sort()
 
             for location in locations:
-                constrained = location in self.reference_constrained
+                constrained = location in self.accessor_constrained
 
                 # Accessor information.
 
@@ -373,6 +380,27 @@ class Deducer(CommonOutput):
             f_tests.close()
             f_warnings.close()
 
+    def write_access_plans(self):
+
+        "Each attribute access is written out as a plan."
+
+        f_attrs = open(join(self.output, "attribute_plans"), "w")
+
+        try:
+            locations = self.access_plans.keys()
+            locations.sort()
+
+            for location in locations:
+                base, traversed, attrnames, method, test, attr = self.access_plans[location]
+                print >>f_attrs, encode_access_location(location), base, \
+                                 ".".join(traversed) or "{}", \
+                                 ".".join(attrnames) or "{}", \
+                                 method, test, \
+                                 attr or "{}"
+
+        finally:
+            f_attrs.close()
+
     def classify_accessors(self):
 
         "For each program location, classify accessors."
@@ -383,7 +411,7 @@ class Deducer(CommonOutput):
         locations = self.accessor_class_types.keys()
 
         for location in locations:
-            constrained = location in self.reference_constrained
+            constrained = location in self.accessor_constrained
 
             # Provider information.
 
@@ -425,38 +453,18 @@ class Deducer(CommonOutput):
                 # Record specific type guard details.
 
                 if len(all_types) == 1:
-                    self.accessor_guard_tests[location] = test_for_types("specific", all_types)
+                    self.accessor_guard_tests[location] = test_for_type("specific", first(all_types))
                 elif is_single_class_type(all_types):
                     self.accessor_guard_tests[location] = "specific-object"
 
                 # Record common type guard details.
 
                 elif len(all_general_types) == 1:
-                    self.accessor_guard_tests[location] = test_for_types("common", all_types)
+                    self.accessor_guard_tests[location] = test_for_type("common", first(all_types))
                 elif is_single_class_type(all_general_types):
                     self.accessor_guard_tests[location] = "common-object"
 
                 # Otherwise, no convenient guard can be defined.
-
-    def write_access_plans(self):
-
-        "Each attribute access is written out as a plan."
-
-        f_attrs = open(join(self.output, "attribute_plans"), "w")
-
-        try:
-            locations = self.referenced_attrs.keys()
-            locations.sort()
-
-            for location in locations:
-                base, traversed, attrnames, attr = self.get_access(location)
-                print >>f_attrs, encode_access_location(location), base, \
-                                 ".".join(traversed) or "{}", \
-                                 ".".join(attrnames) or "{}", \
-                                 attr or "{}"
-
-        finally:
-            f_attrs.close()
 
     def classify_accesses(self):
 
@@ -483,15 +491,12 @@ class Deducer(CommonOutput):
                 # Obtain the provider types for guard-related attribute access
                 # checks.
 
-                provider_guard_types = self.provider_all_types.get(accessor_location)
-                all_provider_types.update(provider_guard_types)
+                all_provider_types.update(self.provider_all_types.get(accessor_location))
 
-                # Obtain the accessor types.
+                # Obtain the accessor guard types (specific and general).
 
-                accessor_guard_types = self.accessor_all_types.get(accessor_location)
-                accessor_general_guard_types = self.accessor_all_general_types.get(accessor_location)
-                all_accessor_types.update(accessor_guard_types)
-                all_accessor_general_types.update(accessor_general_guard_types)
+                all_accessor_types.update(self.accessor_all_types.get(accessor_location))
+                all_accessor_general_types.update(self.accessor_all_general_types.get(accessor_location))
 
             # Determine the basis on which the access has been guarded.
 
@@ -506,7 +511,8 @@ class Deducer(CommonOutput):
                 (guard_class_types, guard_instance_types, guard_module_types,
                     _function_types, _var_types) = separate_types(all_provider_types)
 
-            self.reference_all_accessors[location] = all_accessor_types
+            self.reference_all_accessor_types[location] = all_accessor_types
+            self.reference_all_accessor_general_types[location] = all_accessor_general_types
 
             # Attribute information, both name-based and anonymous.
 
@@ -563,11 +569,11 @@ class Deducer(CommonOutput):
 
                     if guarded and all_accessed_attrs.issubset(guard_attrs):
                         if len(all_accessor_types) == 1:
-                            self.reference_test_types[location] = test_for_types("guarded-specific", all_accessor_types)
+                            self.reference_test_types[location] = test_for_type("guarded-specific", first(all_accessor_types))
                         elif is_single_class_type(all_accessor_types):
                             self.reference_test_types[location] = "guarded-specific-object"
                         elif len(all_accessor_general_types) == 1:
-                            self.reference_test_types[location] = test_for_types("guarded-common", all_accessor_general_types)
+                            self.reference_test_types[location] = test_for_type("guarded-common", first(all_accessor_general_types))
                         elif is_single_class_type(all_accessor_general_types):
                             self.reference_test_types[location] = "guarded-common-object"
 
@@ -603,6 +609,13 @@ class Deducer(CommonOutput):
 
                         else:
                             self.reference_test_types[location] = "validate"
+
+    def initialise_access_plans(self):
+
+        "Define attribute access plans."
+
+        for location in self.referenced_attrs.keys():
+            self.access_plans[location] = self.get_access_plan(location)
 
     def get_referenced_attrs(self, location):
 
@@ -1154,6 +1167,7 @@ class Deducer(CommonOutput):
 
                 if original_location != access_location:
                     self.const_accesses[original_location] = access_location
+                    self.const_accesses_rev[access_location] = original_location
 
         # Aliased name definitions. All aliases with usage will have been
         # defined, but they may be refined according to referenced accesses.
@@ -1346,7 +1360,7 @@ class Deducer(CommonOutput):
                 self.init_definition_details(location)
                 self.record_types_for_usage(location, [attrname])
 
-            constrained = location in self.reference_constrained and constrained
+            constrained = location in self.accessor_constrained and constrained
 
         self.init_access_details(access_location)
         self.identify_reference_attributes(access_location, attrname, class_types, instance_types, module_types, constrained)
@@ -1567,7 +1581,7 @@ class Deducer(CommonOutput):
             self.accessor_module_types[location].update(module_types)
 
         if constrained:
-            self.reference_constrained.add(location)
+            self.accessor_constrained.add(location)
 
     def identify_reference_attributes(self, location, attrname, class_types, instance_types, module_types, constrained):
 
@@ -1636,36 +1650,141 @@ class Deducer(CommonOutput):
 
         return attrs
 
-    def get_access(self, location):
+    guarded_specific_tests = (
+        "guarded-specific-instance",
+        "guarded-specific-type",
+        "guarded-specific-object",
+        )
+
+    guarded_common_tests = (
+        "guarded-common-instance",
+        "guarded-common-type",
+        "guarded-common-object",
+        )
+
+    specific_tests = (
+        "specific-instance",
+        "specific-type",
+        "specific-object",
+        )
+
+    common_tests = (
+        "common-instance",
+        "common-type",
+        "common-object",
+        )
+
+    class_tests = (
+        "guarded-specific-type",
+        "guarded-common-type",
+        "specific-type",
+        "common-type",
+        )
+
+    class_or_instance_tests = (
+        "guarded-specific-object",
+        "guarded-common-object",
+        "specific-object",
+        "common-object",
+        )
+
+    def get_access_plan(self, location):
 
         "Return details of the access at the given 'location'."
 
-        const_access = self.const_accesses.has_key(location)
-        if const_access:
-            location = self.const_accesses[location]
+        const_access = self.const_accesses_rev.has_key(location)
 
         path, name, attrname_str, version = location
         attrnames = attrname_str.split(".")
         attrname = attrnames[0]
 
-        # Obtain only reference information.
+        # Obtain reference and accessor information, retaining also distinct
+        # provider kind details.
 
         attrs = []
         objtypes = []
+        provider_kinds = set()
+
         for attrtype, objtype, attr in self.referenced_attrs[location]:
             attrs.append(attr)
             objtypes.append(objtype)
+            provider_kinds.add(attrtype)
 
-        # Identify the last static attribute.
+        # Obtain accessor type and kind information.
+
+        accessor_types = self.reference_all_accessor_types[location]
+        accessor_general_types = self.reference_all_accessor_general_types[location]
+        accessor_kinds = get_kinds(accessor_general_types)
+
+        # Determine any guard or test requirements.
+
+        constrained = location in self.access_constrained
+
+        if constrained:
+            test = "constrained"
+        else:
+            test = self.reference_test_types[location]
+
+        # Determine the accessor and provider properties.
+
+        class_accessor = "<class>" in accessor_kinds
+        module_accessor = "<module>" in accessor_kinds
+        instance_accessor = "<instance>" in accessor_kinds
+        provided_by_class = "<class>" in provider_kinds
+        provided_by_instance = "<instance>" in provider_kinds
+
+        # Identify the last static attribute for context acquisition.
+
+        base = None
+        dynamic_base = None
+
+        # Constant accesses have static accessors.
 
         if const_access:
             base = len(objtypes) == 1 and first(objtypes)
+
+        # Constant accessors are static.
+
         else:
             ref = self.importer.identify("%s.%s" % (path, name))
-            if not ref:
-                base = name
-            else:
+            if ref:
                 base = ref.get_origin()
+
+            # Identify single type accessors. These can be relied upon to
+            # provide attributes in the same positions.
+
+            elif constrained and len(accessor_types) == 1:
+                ref = first(accessor_types)
+
+            elif constrained and len(accessor_general_types) == 1:
+                ref = first(accessor_general_types)
+
+            # Multiple type accessors may involve a single type but where both
+            # the type itself (a class) or an instance of the type might be used
+            # to access a class attribute.
+
+            # Usage of previously-generated guard and test details.
+
+            elif test in self.guarded_specific_tests:
+                ref = first(accessor_types)
+
+            elif test in self.guarded_common_tests:
+                ref = first(accessor_general_types)
+
+            elif test in self.common_tests or test in self.specific_tests:
+                accessor_test_types = self.reference_test_accessor_types[location]
+                ref = first(accessor_test_types)
+
+            # Static accessors.
+
+            if ref and test in self.class_tests:
+                base = ref.get_origin()
+
+            # Constrained accessors that are not static but whose nature is
+            # determined.
+
+            if not base and ref and constrained:
+                dynamic_base = ref.get_origin()
 
         traversed = []
 
@@ -1680,15 +1799,51 @@ class Deducer(CommonOutput):
             if not attrnames:
                 break
 
+            # Update the last static attribute.
+
             if attr.static():
                 base = attr.get_origin()
                 traversed = []
 
+            # Get the next attribute.
+
             attrname = attrnames[0]
             attrs = self.importer.get_attributes(attr, attrname)
+
+        # Where many attributes are suggested, no single attribute identity can
+        # be loaded.
+
         else:
             attr = None
 
-        return base, traversed, attrnames, attr and attr.get_name()
+        # Determine the method of access.
+
+        # Static, identified attribute.
+
+        if attr and attr.static():
+            method = "static"; origin = attr.final()
+
+        # Identified attribute that must be accessed via its parent.
+
+        elif attr and attr.get_name():
+            method = "direct"; origin = attr.get_name()
+
+        # Attribute accessed at a known position via its parent.
+
+        elif base or dynamic_base:
+            method = "relative"; origin = None
+
+        # The fallback case is always run-time testing and access.
+
+        else:
+            l = []
+            if class_accessor or module_accessor or provided_by_instance:
+                l.append("checkobject")
+            if instance_accessor and provided_by_class:
+                l.append("checkclass")
+            method = "+".join(l)
+            origin = None
+
+        return base or name, traversed, attrnames, method, test, origin
 
 # vim: tabstop=4 expandtab shiftwidth=4

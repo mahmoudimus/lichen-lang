@@ -107,21 +107,21 @@ def test_for_kind(prefix, kind):
 def test_for_kinds(prefix, all_kinds):
 
     """ 
-    Return identifiers describing test conditions incorporating the given
+    Return an identifier describing test conditions incorporating the given
     'prefix' and involving 'all_kinds', being a collection of object kinds.
     """
 
     return test_for_kind(prefix, first(all_kinds))
 
-def test_for_types(prefix, all_types):
+def test_for_type(prefix, ref):
 
     """ 
-    Return identifiers describing test conditions incorporating the given
-    'prefix' and involving 'all_types', being a collection of references to
-    program types.
+    Return an identifier describing a test condition incorporating the given
+    'prefix' and involving 'ref', being a program type reference. The kind of
+    the reference is employed in the identifier.
     """
 
-    return test_for_kind(prefix, first(all_types).get_kind())
+    return test_for_kind(prefix, ref.get_kind())
 
 
 
