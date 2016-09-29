@@ -111,9 +111,6 @@ class Deducer(CommonOutput):
         # Accumulated information about accessed attributes and
         # access/attribute-specific accessor tests.
 
-        self.reference_class_attrs = {}
-        self.reference_instance_attrs = {}
-        self.reference_module_attrs = {}
         self.reference_all_attrs = {}
         self.reference_all_attrtypes = {}
         self.reference_all_accessor_types = {}
@@ -421,18 +418,18 @@ class Deducer(CommonOutput):
 
             # Collect specific and general type information.
 
-            self.provider_all_types[location] = all_types = \
+            self.provider_all_types[location] = \
                 combine_types(class_types, instance_types, module_types)
 
             # Accessor information.
 
             class_types = self.accessor_class_types[location]
             self.accessor_general_class_types[location] = \
-                general_class_types = self.get_most_general_types(class_types)
+                general_class_types = self.get_most_general_class_types(class_types)
 
             instance_types = self.accessor_instance_types[location]
             self.accessor_general_instance_types[location] = \
-                general_instance_types = self.get_most_general_types(instance_types)
+                general_instance_types = self.get_most_general_class_types(instance_types)
 
             module_types = self.accessor_module_types[location]
             self.accessor_general_module_types[location] = \
@@ -478,7 +475,7 @@ class Deducer(CommonOutput):
         for location in locations:
             constrained = location in self.access_constrained
 
-            # Determine whether the attribute access is guarded or not.
+            # Combine type information from all accessors supplying the access.
 
             accessor_locations = self.get_accessors_for_access(location)
 
@@ -498,7 +495,7 @@ class Deducer(CommonOutput):
                 all_accessor_types.update(self.accessor_all_types.get(accessor_location))
                 all_accessor_general_types.update(self.accessor_all_general_types.get(accessor_location))
 
-            # Determine the basis on which the access has been guarded.
+            # Determine whether the attribute access is guarded or not.
 
             guarded = (
                 len(all_accessor_types) == 1 or
@@ -528,23 +525,16 @@ class Deducer(CommonOutput):
                 all_accessed_attrs = set()
                 all_accessed_attrtypes = set()
                 all_providers = set()
-                all_general_providers = set()
 
-                for attrtype, d, general in [
-                    ("<class>", self.reference_class_attrs, self.get_most_general_types),
-                    ("<instance>", self.reference_instance_attrs, self.get_most_general_types),
-                    ("<module>", self.reference_module_attrs, self.get_most_general_module_types)]:
+                # Obtain provider and attribute details for this kind of
+                # object.
 
-                    attrs = [attr for _attrtype, object_type, attr in referenced_attrs if _attrtype == attrtype]
-                    providers = [object_type for _attrtype, object_type, attr in referenced_attrs if _attrtype == attrtype]
-                    general_providers = general(providers)
-                    d[location] = set(attrs)
+                for attrtype, object_type, attr in referenced_attrs:
+                    all_accessed_attrs.add(attr)
+                    all_accessed_attrtypes.add(attrtype)
+                    all_providers.add(object_type)
 
-                    if attrs:
-                        all_accessed_attrs.update(attrs)
-                        all_accessed_attrtypes.add(attrtype)
-                        all_providers.update(providers)
-                        all_general_providers.update(general_providers)
+                all_general_providers = self.get_most_general_types(all_providers)
 
                 # Determine which attributes would be provided by the
                 # accessor types upheld by a guard.
@@ -624,14 +614,12 @@ class Deducer(CommonOutput):
         'attrname' as a list of (attribute type, attribute set) tuples.
         """
 
-        ca = self.reference_class_attrs[location]
-        ia = self.reference_instance_attrs[location]
-        ma = self.reference_module_attrs[location]
-
-        l = []
-        for attrtype, attrs in (("<class>", ca), ("<instance>", ia), ("<module>", ma)):
-            if attrs:
-                l.append((attrtype, attrs))
+        d = {}
+        for attrtype, objtype, attr in self.referenced_attrs[location]:
+            init_item(d, attrtype, set)
+            d[attrtype].add(attr)
+        l = d.items()
+        l.sort() # class, module, instance
         return l
 
     # Initialisation methods.
@@ -913,7 +901,25 @@ class Deducer(CommonOutput):
 
     # Simplification of types.
 
-    def get_most_general_types(self, class_types):
+    def get_most_general_types(self, types):
+
+        "Return the most general types for the given 'types'."
+
+        module_types = set()
+        class_types = set()
+
+        for type in types:
+            ref = self.importer.identify(type)
+            if ref.has_kind("<module>"):
+                module_types.add(type)
+            else:
+                class_types.add(type)
+
+        types = set(self.get_most_general_module_types(module_types))
+        types.update(self.get_most_general_class_types(class_types))
+        return types
+
+    def get_most_general_class_types(self, class_types):
 
         "Return the most general types for the given 'class_types'."
 
