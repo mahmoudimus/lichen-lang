@@ -9,6 +9,7 @@ class C:
             n = 123
             o = "123"
         p = "456"
+        q = 789
 
 def main():
     c = C
@@ -18,6 +19,7 @@ def main():
     g = C.D.E.n
     h = C.D.p
     i = C.D.p.__len__
+    C.D.q = 987
     inst = e()
     method = inst.m
     return method("5")
@@ -30,6 +32,7 @@ f = C.D.E.m
 g = C.D.E.n
 h = C.D.p
 i = C.D.p.__len__
+C.D.q = 987
 inst = e()
 method = inst.m
 result2 = method("5")

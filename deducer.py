@@ -25,6 +25,7 @@ from common import first, get_attrname_from_location, get_attrnames, \
 from encoders import encode_attrnames, encode_access_location, \
                      encode_constrained, encode_location, encode_usage, \
                      get_kinds, test_for_kinds, test_for_type
+from errors import DeduceError
 from os.path import join
 from referencing import combine_types, is_single_class_type, separate_types, \
                         Reference
@@ -80,6 +81,10 @@ class Deducer(CommonOutput):
         # Modified attributes from usage observations.
 
         self.modified_attributes = {}
+
+        # Accesses that are assignments.
+
+        self.reference_assignments = set()
 
         # Map locations to types, constrained indicators and attributes.
 
@@ -520,97 +525,98 @@ class Deducer(CommonOutput):
 
             referenced_attrs = self.referenced_attrs[location]
 
-            if referenced_attrs:
+            if not referenced_attrs:
+                raise DeduceError, location
 
-                # Record attribute information for each name used on the
-                # accessor.
+            # Record attribute information for each name used on the
+            # accessor.
 
-                attrname = get_attrname_from_location(location)
+            attrname = get_attrname_from_location(location)
 
-                all_accessed_attrs = set()
-                all_providers = set()
+            all_accessed_attrs = set()
+            all_providers = set()
 
-                # Obtain provider and attribute details for this kind of
-                # object.
+            # Obtain provider and attribute details for this kind of
+            # object.
 
-                for attrtype, object_type, attr in referenced_attrs:
-                    all_accessed_attrs.add(attr)
-                    all_providers.add(object_type)
+            for attrtype, object_type, attr in referenced_attrs:
+                all_accessed_attrs.add(attr)
+                all_providers.add(object_type)
 
-                all_general_providers = self.get_most_general_types(all_providers)
+            all_general_providers = self.get_most_general_types(all_providers)
 
-                # Determine which attributes would be provided by the
-                # accessor types upheld by a guard.
+            # Determine which attributes would be provided by the
+            # accessor types upheld by a guard.
 
-                if guarded:
-                    guard_attrs = set()
-                    for _attrtype, object_type, attr in \
-                        self._identify_reference_attribute(attrname, guard_class_types, guard_instance_types, guard_module_types):
-                        guard_attrs.add(attr)
+            if guarded:
+                guard_attrs = set()
+                for _attrtype, object_type, attr in \
+                    self._identify_reference_attribute(attrname, guard_class_types, guard_instance_types, guard_module_types):
+                    guard_attrs.add(attr)
+            else:
+                guard_attrs = None
+
+            self.reference_all_attrs[location] = all_accessed_attrs
+
+            # Constrained accesses guarantee the nature of the accessor.
+            # However, there may still be many types involved.
+
+            if constrained:
+                if single_accessor_type:
+                    self.reference_test_types[location] = test_for_type("constrained-specific", first(all_accessor_types))
+                elif single_accessor_class_type:
+                    self.reference_test_types[location] = "constrained-specific-object"
+                elif single_accessor_general_type:
+                    self.reference_test_types[location] = test_for_type("constrained-common", first(all_accessor_general_types))
+                elif single_accessor_general_class_type:
+                    self.reference_test_types[location] = "constrained-common-object"
                 else:
-                    guard_attrs = None
+                    self.reference_test_types[location] = "constrained-many"
 
-                self.reference_all_attrs[location] = all_accessed_attrs
+            # Suitably guarded accesses, where the nature of the
+            # accessor can be guaranteed, do not require the attribute
+            # involved to be validated. Otherwise, for unguarded
+            # accesses, access-level tests are required.
 
-                # Constrained accesses guarantee the nature of the accessor.
-                # However, there may still be many types involved.
+            elif guarded and all_accessed_attrs.issubset(guard_attrs):
+                if single_accessor_type:
+                    self.reference_test_types[location] = test_for_type("guarded-specific", first(all_accessor_types))
+                elif single_accessor_class_type:
+                    self.reference_test_types[location] = "guarded-specific-object"
+                elif single_accessor_general_type:
+                    self.reference_test_types[location] = test_for_type("guarded-common", first(all_accessor_general_types))
+                elif single_accessor_general_class_type:
+                    self.reference_test_types[location] = "guarded-common-object"
 
-                if constrained:
-                    if single_accessor_type:
-                        self.reference_test_types[location] = test_for_type("constrained-specific", first(all_accessor_types))
-                    elif single_accessor_class_type:
-                        self.reference_test_types[location] = "constrained-specific-object"
-                    elif single_accessor_general_type:
-                        self.reference_test_types[location] = test_for_type("constrained-common", first(all_accessor_general_types))
-                    elif single_accessor_general_class_type:
-                        self.reference_test_types[location] = "constrained-common-object"
+            # Record the need to test the type of anonymous and
+            # unconstrained accessors.
+
+            elif len(all_providers) == 1:
+                provider = first(all_providers)
+                if provider != '__builtins__.object':
+                    all_accessor_kinds = set(get_kinds(all_accessor_types))
+                    if len(all_accessor_kinds) == 1:
+                        test_type = test_for_kinds("specific", all_accessor_kinds)
                     else:
-                        self.reference_test_types[location] = "constrained-many"
+                        test_type = "specific-object"
+                    self.reference_test_types[location] = test_type
+                    self.reference_test_accessor_types[location] = provider
 
-                # Suitably guarded accesses, where the nature of the
-                # accessor can be guaranteed, do not require the attribute
-                # involved to be validated. Otherwise, for unguarded
-                # accesses, access-level tests are required.
+            elif len(all_general_providers) == 1:
+                provider = first(all_general_providers)
+                if provider != '__builtins__.object':
+                    all_accessor_kinds = set(get_kinds(all_accessor_general_types))
+                    if len(all_accessor_kinds) == 1:
+                        test_type = test_for_kinds("common", all_accessor_kinds)
+                    else:
+                        test_type = "common-object"
+                    self.reference_test_types[location] = test_type
+                    self.reference_test_accessor_types[location] = provider
 
-                elif guarded and all_accessed_attrs.issubset(guard_attrs):
-                    if single_accessor_type:
-                        self.reference_test_types[location] = test_for_type("guarded-specific", first(all_accessor_types))
-                    elif single_accessor_class_type:
-                        self.reference_test_types[location] = "guarded-specific-object"
-                    elif single_accessor_general_type:
-                        self.reference_test_types[location] = test_for_type("guarded-common", first(all_accessor_general_types))
-                    elif single_accessor_general_class_type:
-                        self.reference_test_types[location] = "guarded-common-object"
+            # Record the need to test the identity of the attribute.
 
-                # Record the need to test the type of anonymous and
-                # unconstrained accessors.
-
-                elif len(all_providers) == 1:
-                    provider = first(all_providers)
-                    if provider != '__builtins__.object':
-                        all_accessor_kinds = set(get_kinds(all_accessor_types))
-                        if len(all_accessor_kinds) == 1:
-                            test_type = test_for_kinds("specific", all_accessor_kinds)
-                        else:
-                            test_type = "specific-object"
-                        self.reference_test_types[location] = test_type
-                        self.reference_test_accessor_types[location] = provider
-
-                elif len(all_general_providers) == 1:
-                    provider = first(all_general_providers)
-                    if provider != '__builtins__.object':
-                        all_accessor_kinds = set(get_kinds(all_accessor_general_types))
-                        if len(all_accessor_kinds) == 1:
-                            test_type = test_for_kinds("common", all_accessor_kinds)
-                        else:
-                            test_type = "common-object"
-                        self.reference_test_types[location] = test_type
-                        self.reference_test_accessor_types[location] = provider
-
-                # Record the need to test the identity of the attribute.
-
-                else:
-                    self.reference_test_types[location] = "validate"
+            else:
+                self.reference_test_types[location] = "validate"
 
     def initialise_access_plans(self):
 
@@ -783,6 +789,9 @@ class Deducer(CommonOutput):
                         access_location = (path, name, attrnames, access_number)
                     else:
                         access_location = (path, None, attrnames, 0)
+
+                    if assignment:
+                        self.reference_assignments.add(access_location)
 
                     # Associate assignments with usage.
 
@@ -1838,15 +1847,15 @@ class Deducer(CommonOutput):
 
         # Determine the method of access.
 
-        # Static, identified attribute.
-
-        if attr and attr.static():
-            method = "static"; origin = attr.final()
-
         # Identified attribute that must be accessed via its parent.
 
-        elif attr and attr.get_name():
+        if attr and attr.get_name() and (not attr.static() or location in self.reference_assignments):
             method = "direct"; origin = attr.get_name()
+
+        # Static, identified attribute.
+
+        elif attr and attr.static():
+            method = "static"; origin = attr.final()
 
         # Attribute accessed at a known position via its parent.
 

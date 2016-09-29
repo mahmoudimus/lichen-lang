@@ -78,6 +78,12 @@ class InspectError(NodeProcessingError):
 
     pass
 
+class DeduceError(NodeProcessingError):
+
+    "An error during the deduction process."
+
+    pass
+
 class TranslateError(NodeProcessingError):
 
     "An error during the module translation process."
