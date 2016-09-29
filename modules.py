@@ -122,6 +122,7 @@ class BasicModule(CommonModule):
         del self.importer.all_module_attrs[self.name]
 
         for name in self.classes.keys():
+            del self.importer.classes[name]
             del self.importer.all_class_attrs[name]
             del self.importer.all_instance_attrs[name]
             del self.importer.all_instance_attr_constants[name]
@@ -150,8 +151,20 @@ class BasicModule(CommonModule):
         # Remove this module's objects from the importer. Objects are
         # automatically propagated when defined.
 
+        ref = self.importer.objects.get(self.name)
+        if ref and ref.has_kind("<module>"):
+            del self.importer.objects[self.name]
+
         for name, ref in self.objects.items():
             if not ref.has_kind("<module>"):
+                del self.importer.objects[name]
+
+    def collect(self):
+
+        "Collect removed objects."
+
+        for name, ref in self.objects.items():
+            if not self.importer.objects.has_key(ref.get_origin()) and self.importer.objects.has_key(name):
                 del self.importer.objects[name]
 
     def propagate_attrs(self):

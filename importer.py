@@ -329,6 +329,17 @@ class Importer:
                 del self.modules[name]
                 self.removed[name] = module
 
+        # Collect redundant objects.
+
+        for module in self.removed.values():
+            module.collect()
+
+        # Assert module objects where aliases have been removed.
+
+        for name in self.required:
+            if not self.objects.has_key(name):
+                self.objects[name] = Reference("<module>", name)
+
         return m
 
     def finalise(self):
