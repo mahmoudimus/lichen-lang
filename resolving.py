@@ -63,7 +63,7 @@ class NameResolving:
                 resolved.append(ref)
 
             if bad:
-                print >>sys.stderr, "Bases of class %s were not classes." % (name, ", ".join(map(str, bad)))
+                print >>sys.stderr, "Bases of class %s were not classes: %s" % (name, ", ".join(map(str, bad)))
             else:
                 self.importer.classes[name] = self.classes[name] = resolved
 
