@@ -1768,6 +1768,11 @@ class Deducer(CommonOutput):
         provided_by_class = "<class>" in provider_kinds
         provided_by_instance = "<instance>" in provider_kinds
 
+        # Determine how attributes may be accessed relative to the accessor.
+
+        object_relative = class_accessor or module_accessor or provided_by_instance
+        class_relative = instance_accessor and provided_by_class
+
         # Identify the last static attribute for context acquisition.
 
         base = None
@@ -1849,7 +1854,7 @@ class Deducer(CommonOutput):
 
         # Identified attribute that must be accessed via its parent.
 
-        if attr and attr.get_name() and (not attr.static() or location in self.reference_assignments):
+        if attr and attr.get_name() and location in self.reference_assignments:
             method = "direct"; origin = attr.get_name()
 
         # Static, identified attribute.
@@ -1860,17 +1865,15 @@ class Deducer(CommonOutput):
         # Attribute accessed at a known position via its parent.
 
         elif base or dynamic_base:
-            method = "relative"; origin = None
+            method = "relative" + (object_relative and "-object" or "") + \
+                                  (class_relative and "-class" or "")
+            origin = None
 
         # The fallback case is always run-time testing and access.
 
         else:
-            l = []
-            if class_accessor or module_accessor or provided_by_instance:
-                l.append("checkobject")
-            if instance_accessor and provided_by_class:
-                l.append("checkclass")
-            method = "+".join(l)
+            method = "check" + (object_relative and "-object" or "") + \
+                               (class_relative and "-class" or "")
             origin = None
 
         return base or name, traversed, attrnames, method, test, origin

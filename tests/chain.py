@@ -8,8 +8,16 @@ class C:
                 return self.o.__len__
             n = 123
             o = "123"
+
         p = "456"
         q = 789
+
+        class F(E):
+            def r(self, y):
+                s = self.o
+                C.D.F.t = 234
+                return self.o.__len__
+            t = 123
 
 def main():
     c = C
