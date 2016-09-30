@@ -1286,7 +1286,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Record usage of the name and attempt to identify it.
 
             self.record_name(node.name)
-            return self.get_global_or_builtin(node.name)
+            return self.find_name(node.name)
         else:
             return None
 
