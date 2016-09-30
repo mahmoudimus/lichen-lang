@@ -394,7 +394,8 @@ class Deducer(CommonOutput):
 
             for location in locations:
                 base, traversed, attrnames, method, test, attr = self.access_plans[location]
-                print >>f_attrs, encode_access_location(location), base, \
+                print >>f_attrs, encode_access_location(location), \
+                                 base or "{}", \
                                  ".".join(traversed) or "{}", \
                                  ".".join(attrnames) or "{}", \
                                  method, test, \
@@ -1733,9 +1734,9 @@ class Deducer(CommonOutput):
 
         const_access = self.const_accesses_rev.has_key(location)
 
-        path, name, attrname_str, version = location
-        attrnames = attrname_str.split(".")
-        attrname = attrnames[0]
+        path, name, attrnames, version = location
+        remaining = attrnames.split(".")
+        attrname = remaining[0]
 
         # Obtain reference and accessor information, retaining also distinct
         # provider kind details.
@@ -1828,9 +1829,9 @@ class Deducer(CommonOutput):
             attr = first(attrs)
 
             traversed.append(attrname)
-            del attrnames[0]
+            del remaining[0]
 
-            if not attrnames:
+            if not remaining:
                 break
 
             # Update the last static attribute.
@@ -1841,7 +1842,7 @@ class Deducer(CommonOutput):
 
             # Get the next attribute.
 
-            attrname = attrnames[0]
+            attrname = remaining[0]
             attrs = self.importer.get_attributes(attr, attrname)
 
         # Where many attributes are suggested, no single attribute identity can
@@ -1876,6 +1877,8 @@ class Deducer(CommonOutput):
                                (class_relative and "-class" or "")
             origin = None
 
-        return base or name, traversed, attrnames, method, test, origin
+        # Determine the nature of the context.
+
+        return base or name, traversed, remaining, method, test, origin
 
 # vim: tabstop=4 expandtab shiftwidth=4

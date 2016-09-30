@@ -18,6 +18,10 @@ class C:
                 C.D.F.t = 234
                 return self.o.__len__
             t = 123
+            def u(self):
+                return self.o
+            def v(self):
+                return self.u().__len__
 
 def main():
     c = C
