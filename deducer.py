@@ -624,7 +624,8 @@ class Deducer(CommonOutput):
         "Define attribute access plans."
 
         for location in self.referenced_attrs.keys():
-            self.access_plans[location] = self.get_access_plan(location)
+            original_location = self.const_accesses_rev.get(location)
+            self.access_plans[original_location or location] = self.get_access_plan(location)
 
     def get_referenced_attrs(self, location):
 
