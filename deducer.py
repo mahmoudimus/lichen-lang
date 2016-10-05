@@ -121,7 +121,7 @@ class Deducer(CommonOutput):
         self.reference_all_accessor_types = {}
         self.reference_all_accessor_general_types = {}
         self.reference_test_types = {}
-        self.reference_test_accessor_types = {}
+        self.reference_test_accessor_type = {}
 
         # The processing workflow itself.
 
@@ -365,10 +365,10 @@ class Deducer(CommonOutput):
 
                     # Write any type checks for anonymous accesses.
 
-                    elif test_type and self.reference_test_accessor_types.get(location):
+                    elif test_type and self.reference_test_accessor_type.get(location):
                         print >>f_tests, encode_access_location(location), test_type, \
                             sorted_output(all_accessed_attrs), \
-                            self.reference_test_accessor_types[location]
+                            self.reference_test_accessor_type[location]
 
                     print >>f_attr_summary, encode_access_location(location), encode_constrained(constrained), \
                         test_type or "untested", sorted_output(all_accessed_attrs)
@@ -393,13 +393,15 @@ class Deducer(CommonOutput):
             locations.sort()
 
             for location in locations:
-                base, traversed, attrnames, method, test, attr = self.access_plans[location]
+                name, test, test_type, base, traversed, attrnames, context, \
+                    method, attr = self.access_plans[location]
+
                 print >>f_attrs, encode_access_location(location), \
+                                 name, test, test_type or "{}", \
                                  base or "{}", \
                                  ".".join(traversed) or "{}", \
                                  ".".join(attrnames) or "{}", \
-                                 method, test, \
-                                 attr or "{}"
+                                 context, method, attr or "{}"
 
         finally:
             f_attrs.close()
@@ -601,7 +603,7 @@ class Deducer(CommonOutput):
                     else:
                         test_type = "specific-object"
                     self.reference_test_types[location] = test_type
-                    self.reference_test_accessor_types[location] = provider
+                    self.reference_test_accessor_type[location] = provider
 
             elif len(all_general_providers) == 1:
                 provider = first(all_general_providers)
@@ -612,7 +614,7 @@ class Deducer(CommonOutput):
                     else:
                         test_type = "common-object"
                     self.reference_test_types[location] = test_type
-                    self.reference_test_accessor_types[location] = provider
+                    self.reference_test_accessor_type[location] = provider
 
             # Record the need to test the identity of the attribute.
 
@@ -1731,7 +1733,23 @@ class Deducer(CommonOutput):
 
     def get_access_plan(self, location):
 
-        "Return details of the access at the given 'location'."
+        """
+        Return details of the access at the given 'location'. The details are as
+        follows:
+
+         * the initial accessor (from which accesses will be performed if no
+           computed static accessor is found)
+         * details of any test required on the initial accessor
+         * details of any type employed by the test
+         * any static accessor (from which accesses will be performed in
+           preference to the initial accessor)
+         * attributes needing to be traversed from the base that yield
+           unambiguous objects
+         * remaining attributes needing to be tested and traversed
+         * details of the context
+         * the method of obtaining the final attribute
+         * any static final attribute
+        """
 
         const_access = self.const_accesses_rev.has_key(location)
 
@@ -1761,6 +1779,7 @@ class Deducer(CommonOutput):
 
         constrained = location in self.access_constrained
         test = self.reference_test_types[location]
+        test_type = self.reference_test_accessor_type.get(location)
 
         # Determine the accessor and provider properties.
 
@@ -1810,7 +1829,7 @@ class Deducer(CommonOutput):
             # Such tests allow single or multiple kinds of a type.
 
             elif test in self.common_tests or test in self.specific_tests:
-                dynamic_base = self.reference_test_accessor_types[location]
+                dynamic_base = test_type
 
             # Static accessors.
 
@@ -1880,6 +1899,8 @@ class Deducer(CommonOutput):
 
         # Determine the nature of the context.
 
-        return base or name, traversed, remaining, method, test, origin
+        context = base and "base" or len(traversed or remaining) > 1 and "traversal" or "accessor"
+
+        return name, test, test_type, base, traversed, remaining, context, method, origin
 
 # vim: tabstop=4 expandtab shiftwidth=4
