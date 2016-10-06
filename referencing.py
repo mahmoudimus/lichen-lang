@@ -145,6 +145,15 @@ class Reference:
         self.origin = ref.origin
         self.name = ref.name
 
+    def parent(self):
+
+        "Return the parent of this reference's origin."
+
+        if not self.get_origin():
+            return None
+
+        return self.get_origin().rsplit(".", 1)[0]
+
     def ancestors(self):
 
         """
@@ -152,7 +161,7 @@ class Reference:
         depth.
         """
 
-        if not self.origin:
+        if not self.get_origin():
             return None
 
         parts = self.get_origin().split(".")
