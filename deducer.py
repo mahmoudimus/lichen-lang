@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from common import first, get_attrname_from_location, get_attrnames, \
-                   init_item, make_key, sorted_output, \
+                   get_name_path, init_item, make_key, sorted_output, \
                    CommonOutput
 from encoders import encode_attrnames, encode_access_location, \
                      encode_constrained, encode_location, encode_usage, \
@@ -1271,7 +1271,7 @@ class Deducer(CommonOutput):
 
         # Obtain references to known objects.
 
-        path = self.get_name_path(unit_path, name)
+        path = get_name_path(unit_path, name)
 
         class_types, only_instance_types, module_types, constrained_specific = \
             self.constrain_types(path, class_types, only_instance_types, module_types)
@@ -1547,7 +1547,7 @@ class Deducer(CommonOutput):
         """
 
         location, name, attrnames, version = access_location
-        path = self.get_name_path(location, name)
+        path = get_name_path(location, name)
 
         # Use initialiser information, if available.
 
@@ -1556,15 +1556,6 @@ class Deducer(CommonOutput):
             return refs[version]
         else:
             return None
-
-    def get_name_path(self, path, name):
-
-        "Return a suitable qualified name from the given 'path' and 'name'."
-
-        if "." in name:
-            return name
-        else:
-            return "%s.%s" % (path, name)
 
     def record_reference_types(self, location, class_types, instance_types,
         module_types, constrained, constrained_specific=False):

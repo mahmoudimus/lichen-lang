@@ -802,6 +802,15 @@ def get_attrname_from_location(location):
     path, name, attrnames, access = location
     return get_attrnames(attrnames)[0]
 
+def get_name_path(path, name):
+
+    "Return a suitable qualified name from the given 'path' and 'name'."
+
+    if "." in name:
+        return name
+    else:
+        return "%s.%s" % (path, name)
+
 # Useful data.
 
 predefined_constants = "False", "None", "NotImplemented", "True"
