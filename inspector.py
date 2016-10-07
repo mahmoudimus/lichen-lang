@@ -443,9 +443,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             branches = tracker.use_attribute(name, attrname)
 
             if not branches:
-                print >>sys.stderr, "In %s, name %s is accessed using %s before an assignment." % (
-                    path, name, attrname)
-                branches = tracker.use_attribute(name, attrname)
+                raise InspectError("Name %s is accessed using %s before an assignment." % (
+                    name, attrname), path, n)
 
             self.record_branches_for_access(branches, name, attrnames)
             access_number = self.record_access_details(name, attrnames, assignment)
