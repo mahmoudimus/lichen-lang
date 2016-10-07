@@ -811,7 +811,7 @@ def get_name_path(path, name):
     else:
         return "%s.%s" % (path, name)
 
-# Type deduction for usage.
+# Usage-related functions.
 
 def get_types_for_usage(attrnames, objects):
 
@@ -825,6 +825,17 @@ def get_types_for_usage(attrnames, objects):
         if set(attrnames).issubset(_attrnames):
             types.append(name)
     return types
+
+def get_invoked_attributes(usage):
+
+    "Obtain invoked attribute from the given 'usage'."
+
+    invoked = []
+    if usage:
+        for attrname, invocation in usage:
+            if invocation:
+                invoked.append(attrname)
+    return invoked
 
 # Useful data.
 

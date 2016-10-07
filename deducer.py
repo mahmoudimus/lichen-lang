@@ -20,8 +20,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from common import first, get_attrname_from_location, get_attrnames, \
-                   get_name_path, init_item, sorted_output, \
-                   CommonOutput
+                   get_invoked_attributes, get_name_path, init_item, \
+                   sorted_output, CommonOutput
 from encoders import encode_attrnames, encode_access_location, \
                      encode_constrained, encode_location, encode_usage, \
                      get_kinds, test_for_kinds, test_for_type
@@ -1394,7 +1394,9 @@ class Deducer(CommonOutput):
          constrained,
          constrained_specific) = self.get_target_types(accessor_location, usage)
 
-        self.record_reference_types(accessor_location, class_types, instance_types, module_types, constrained, constrained_specific)
+        invocations = get_invoked_attributes(usage)
+
+        self.record_reference_types(accessor_location, class_types, instance_types, module_types, constrained, constrained_specific, invocations)
 
     def record_types_for_attribute(self, access_location, attrname):
 
@@ -1543,7 +1545,7 @@ class Deducer(CommonOutput):
             return None
 
     def record_reference_types(self, location, class_types, instance_types,
-        module_types, constrained, constrained_specific=False):
+        module_types, constrained, constrained_specific=False, invocations=None):
 
         """
         Associate attribute provider types with the given 'location', consisting
@@ -1572,12 +1574,18 @@ class Deducer(CommonOutput):
         # Instance-only and module types support only their own kinds as
         # accessors.
 
+        path, name, version, attrnames = location
+
+        if invocations:
+            class_only_types = self.filter_for_invocations(class_types, invocations)
+        else:
+            class_only_types = class_types
+
         # However, the nature of accessors can be further determined.
         # Any self variable may only refer to an instance.
 
-        path, name, version, attrnames = location
         if name != "self" or not self.in_method(path):
-            self.accessor_class_types[location].update(class_types)
+            self.accessor_class_types[location].update(class_only_types)
 
         if not constrained_specific:
             self.accessor_instance_types[location].update(class_types)
@@ -1589,6 +1597,30 @@ class Deducer(CommonOutput):
 
         if constrained:
             self.accessor_constrained.add(location)
+
+    def filter_for_invocations(self, class_types, attrnames):
+
+        """
+        From the given 'class_types', identify methods for the given
+        'attrnames' that are being invoked, returning a filtered collection of
+        class types.
+        """
+
+        to_filter = set()
+
+        for class_type in class_types:
+            for attrname in attrnames:
+                ref = self.importer.get_class_attribute(class_type, attrname)
+                parent_class = ref and ref.parent()
+
+                if ref and ref.has_kind("<function>") and (
+                   parent_class == class_type or
+                   class_type in self.descendants[parent_class]):
+
+                    to_filter.add(class_type)
+                    break
+
+        return set(class_types).difference(to_filter)
 
     def identify_reference_attributes(self, location, attrname, class_types, instance_types, module_types, constrained):
 
