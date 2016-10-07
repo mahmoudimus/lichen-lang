@@ -529,7 +529,7 @@ class Deducer(CommonOutput):
             referenced_attrs = self.referenced_attrs[location]
 
             if not referenced_attrs:
-                raise DeduceError, location
+                raise DeduceError, repr(location)
 
             # Record attribute information for each name used on the
             # accessor.
