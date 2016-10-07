@@ -21,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from common import init_item, remove_items, CommonModule
-from encoders import decode_modifier_term, encode_modifiers, encode_usage
+from encoders import decode_modifier_term, decode_usage, encode_modifiers, encode_usage
 from referencing import decode_reference, Reference
 from results import ResolvedNameRef
 import sys
@@ -636,16 +636,8 @@ class CachedModule(BasicModule):
             if attrnames == "{}":
                 all_attrnames = ()
             else:
-                # Decode attribute details for each usage description.
-
-                all_attrnames = set()
-                for attrname_str in attrnames.split(", "):
-                    all_attrnames.add(attrname_str)
-
-                all_attrnames = list(all_attrnames)
-                all_attrnames.sort()
-
-            all_usages.add(tuple(all_attrnames))
+                all_attrnames = decode_usage(attrnames)
+            all_usages.add(all_attrnames)
 
         d.append(all_usages)
 

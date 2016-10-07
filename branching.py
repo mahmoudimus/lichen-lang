@@ -77,14 +77,15 @@ class Branch:
         else:
             return [b for b in self.get_all_suppliers(name) if name in b.assignments]
 
-    def set_usage(self, name, attrname):
+    def set_usage(self, name, attrname, invocation=False):
 
         """
-        Record usage on the given 'name' of the attribute 'attrname'.
+        Record usage on the given 'name' of the attribute 'attrname', noting the
+        invocation of the attribute if 'invocation' is set to a true value.
         """
 
         if self.usage.has_key(name):
-            self.usage[name].add(attrname)
+            self.usage[name].add((attrname, invocation))
 
     def get_usage(self):
 
@@ -482,11 +483,12 @@ class BranchTracker:
 
         return branch
 
-    def use_attribute(self, name, attrname):
+    def use_attribute(self, name, attrname, invocation=False):
 
         """
         Indicate the use on the given 'name' of an attribute with the given
-        'attrname'.
+        'attrname', optionally involving an invocation of the attribute if
+        'invocation' is set to a true value.
 
         Return all branches that support 'name'.
         """
@@ -497,7 +499,7 @@ class BranchTracker:
 
         if branches.has_key(name):
             for branch in branches[name]:
-                branch.set_usage(name, attrname)
+                branch.set_usage(name, attrname, invocation)
             return branches[name]
         else:
             return None

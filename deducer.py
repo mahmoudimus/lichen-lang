@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from common import first, get_attrname_from_location, get_attrnames, \
-                   get_name_path, init_item, make_key, sorted_output, \
+                   get_name_path, init_item, sorted_output, \
                    CommonOutput
 from encoders import encode_attrnames, encode_access_location, \
                      encode_constrained, encode_location, encode_usage, \
@@ -699,7 +699,7 @@ class Deducer(CommonOutput):
             for attrnames in all_attrnames:
                 attrname = get_attrnames(attrnames)[-1]
                 access_location = (location, None, attrnames, 0)
-                self.add_usage_term(access_location, [attrname])
+                self.add_usage_term(access_location, ((attrname, False),))
 
     def add_usage(self, assignments, path):
 
@@ -713,21 +713,19 @@ class Deducer(CommonOutput):
             for i, usages in enumerate(versions):
                 location = (path, name, None, i)
 
-                for attrnames in usages:
-                    self.add_usage_term(location, attrnames)
+                for usage in usages:
+                    self.add_usage_term(location, usage)
 
-    def add_usage_term(self, location, attrnames):
+    def add_usage_term(self, location, usage):
 
         """
-        For 'location' and using 'attrnames' as a description of usage, record
+        For 'location' and using 'usage' as a description of usage, record
         in the usage index a mapping from the usage to 'location', and record in
         the location index a mapping from 'location' to the usage.
         """
 
-        key = make_key(attrnames)
-
         init_item(self.location_index, location, set)
-        self.location_index[location].add(key)
+        self.location_index[location].add(usage)
 
     def init_accessors(self):
 
@@ -803,11 +801,9 @@ class Deducer(CommonOutput):
 
                     for location in accessor_locations:
                         for usage in self.location_index[location]:
-                            key = make_key(usage)
-
                             if assignment:
-                                init_item(self.assigned_attrs, key, set)
-                                self.assigned_attrs[key].add((path, name, attrnames))
+                                init_item(self.assigned_attrs, usage, set)
+                                self.assigned_attrs[usage].add((path, name, attrnames))
 
     def init_aliases(self):
 
@@ -1010,31 +1006,31 @@ class Deducer(CommonOutput):
                 init_item(attr_types, attrname, set)
                 attr_types[attrname].add(name)
 
-    def get_class_types_for_usage(self, attrnames):
+    def get_class_types_for_usage(self, usage):
 
-        "Return names of classes supporting the given 'attrnames'."
+        "Return names of classes supporting the given 'usage'."
 
-        return self._get_types_for_usage(attrnames, self.attr_class_types, self.importer.all_class_attrs)
+        return self._get_types_for_usage(usage, self.attr_class_types, self.importer.all_class_attrs)
 
-    def get_instance_types_for_usage(self, attrnames):
+    def get_instance_types_for_usage(self, usage):
 
         """
-        Return names of classes whose instances support the given 'attrnames'
+        Return names of classes whose instances support the given 'usage'
         (as either class or instance attributes).
         """
 
-        return self._get_types_for_usage(attrnames, self.attr_instance_types, self.importer.all_combined_attrs)
+        return self._get_types_for_usage(usage, self.attr_instance_types, self.importer.all_combined_attrs)
 
-    def get_module_types_for_usage(self, attrnames):
+    def get_module_types_for_usage(self, usage):
 
-        "Return names of modules supporting the given 'attrnames'."
+        "Return names of modules supporting the given 'usage'."
 
-        return self._get_types_for_usage(attrnames, self.attr_module_types, self.importer.all_module_attrs)
+        return self._get_types_for_usage(usage, self.attr_module_types, self.importer.all_module_attrs)
 
-    def _get_types_for_usage(self, attrnames, attr_types, attrs):
+    def _get_types_for_usage(self, usage, attr_types, attrs):
 
         """
-        For the given 'attrnames' representing attribute usage, return types
+        For the given 'usage' representing attribute usage, return types
         recorded in the 'attr_types' attribute-to-types mapping that support
         such usage, with the given 'attrs' type-to-attributes mapping used to
         quickly assess whether a type supports all of the stated attributes.
@@ -1042,8 +1038,12 @@ class Deducer(CommonOutput):
 
         # Where no attributes are used, any type would be acceptable.
 
-        if not attrnames:
+        if not usage:
             return attrs.keys()
+
+        attrnames = []
+        for attrname, invocation in usage:
+            attrnames.append(attrname)
 
         types = []
 
@@ -1389,7 +1389,7 @@ class Deducer(CommonOutput):
 
             else:
                 self.init_definition_details(location)
-                self.record_types_for_usage(location, [attrname])
+                self.record_types_for_usage(location, [(attrname, False)])
 
             constrained = location in self.accessor_constrained and constrained
 
@@ -1418,7 +1418,7 @@ class Deducer(CommonOutput):
         'attrname' for type deduction.
         """
 
-        usage = [attrname]
+        usage = ((attrname, False),)
 
         class_types = self.get_class_types_for_usage(usage)
         only_instance_types = set(self.get_instance_types_for_usage(usage)).difference(class_types)

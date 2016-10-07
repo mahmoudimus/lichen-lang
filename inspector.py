@@ -43,6 +43,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         self.in_class = False
         self.in_conditional = False
+        self.in_invocation = False
         self.global_attr_accesses = {}
 
         # Usage tracking.
@@ -363,7 +364,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         # Obtain any completed chain and return the reference to it.
 
+        in_invocation = self.in_invocation
+        self.in_invocation = False
         name_ref = self.process_attribute_chain(n)
+        self.in_invocation = in_invocation
+
         if self.have_access_expression(n):
             return name_ref
 
@@ -440,7 +445,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Record attribute usage in the tracker, and record the branch
             # information for the access.
 
-            branches = tracker.use_attribute(name, attrname)
+            branches = tracker.use_attribute(name, attrname, self.in_invocation)
 
             if not branches:
                 raise InspectError("Name %s is accessed using %s before an assignment." % (
@@ -707,7 +712,10 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         try:
             # Process the expression, obtaining any identified reference.
 
+            in_invocation = self.in_invocation
+            self.in_invocation = True
             name_ref = self.process_structure_node(n.node)
+            self.in_invocation = in_invocation
 
             # Process the arguments.
 

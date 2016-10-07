@@ -41,8 +41,21 @@ def encode_usage(usage):
 
     all_attrnames = []
     for t in usage:
-        all_attrnames.append(t)
+        attrname, invocation = t
+        all_attrnames.append("%s%s" % (attrname, invocation and "!" or ""))
     return ", ".join(all_attrnames) or "{}"
+
+def decode_usage(s):
+
+    "Decode attribute details from 's'."
+
+    all_attrnames = set()
+    for attrname_str in s.split(", "):
+        all_attrnames.add((attrname_str.rstrip("!"), attrname_str.endswith("!")))
+
+    all_attrnames = list(all_attrnames)
+    all_attrnames.sort()
+    return tuple(all_attrnames)
 
 def encode_access_location(t):
 
