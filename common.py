@@ -811,6 +811,21 @@ def get_name_path(path, name):
     else:
         return "%s.%s" % (path, name)
 
+# Type deduction for usage.
+
+def get_types_for_usage(attrnames, objects):
+
+    """
+    Identify the types that can support the given 'attrnames', using the
+    given 'objects' as the catalogue of type details.
+    """
+
+    types = []
+    for name, _attrnames in objects.items():
+        if set(attrnames).issubset(_attrnames):
+            types.append(name)
+    return types
+
 # Useful data.
 
 predefined_constants = "False", "None", "NotImplemented", "True"

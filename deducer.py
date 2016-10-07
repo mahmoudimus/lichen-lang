@@ -969,21 +969,6 @@ class Deducer(CommonOutput):
         else:
             return module_types
 
-    # Type deduction for usage.
-
-    def get_types_for_usage(self, attrnames, objects):
-
-        """
-        Identify the types that can support the given 'attrnames', using the
-        given 'objects' as the catalogue of type details.
-        """
-
-        types = []
-        for name, _attrnames in objects.items():
-            if set(attrnames).issubset(_attrnames):
-                types.append(name)
-        return types
-
     # More efficient usage-to-type indexing and retrieval.
 
     def init_attr_type_indexes(self):
