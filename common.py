@@ -800,6 +800,8 @@ def get_attrname_from_location(location):
     """
 
     path, name, attrnames, access = location
+    if not attrnames:
+        return attrnames
     return get_attrnames(attrnames)[0]
 
 def get_name_path(path, name):

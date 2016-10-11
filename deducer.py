@@ -384,7 +384,13 @@ class Deducer(CommonOutput):
 
     def write_access_plans(self):
 
-        "Each attribute access is written out as a plan."
+        """
+        Each attribute access is written out as a plan of the following form:
+
+        location " " name " " test " " test type " " base " " traversed attributes
+                 " " attributes to traverse " " context " " access method
+                 " " static attribute
+        """
 
         f_attrs = open(join(self.output, "attribute_plans"), "w")
 
@@ -1339,11 +1345,9 @@ class Deducer(CommonOutput):
         'accessor_locations'.
         """
 
-        path, name, attrnames, version = access_location
-        if not attrnames:
+        attrname = get_attrname_from_location(access_location)
+        if not attrname:
             return
-
-        attrname = get_attrnames(attrnames)[0]
 
         # Collect all suggested types for the accessors. Accesses may
         # require accessors from of a subset of the complete set of types.
