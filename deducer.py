@@ -1888,14 +1888,14 @@ class Deducer(CommonOutput):
         # Identified attribute that must be accessed via its parent.
 
         if attr and attr.get_name() and location in self.reference_assignments:
-            method = "direct"; origin = attr.get_name()
+            method = "assign"; origin = attr.get_name()
 
         # Static, identified attribute.
 
         elif attr and attr.static():
             method = "static"; origin = attr.final()
 
-        # Attribute accessed at a known position via its parent.
+        # First attribute accessed at a known position via the accessor.
 
         elif base or dynamic_base:
             method = "relative" + (object_relative and "-object" or "") + \
@@ -1911,7 +1911,7 @@ class Deducer(CommonOutput):
 
         # Determine the nature of the context.
 
-        context = base and "base" or len(traversed or remaining) > 1 and "traversal" or "accessor"
+        context = len(traversed or remaining) == 1 and (base and "base" or "original-accessor") or "final-accessor"
 
         return name, test, test_type, base, traversed, remaining, context, method, origin
 
