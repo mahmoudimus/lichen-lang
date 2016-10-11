@@ -3,7 +3,7 @@
 from errors import *
 from os.path import abspath, exists, join, split
 from time import time
-import importer, deducer
+import importer, deducer, optimiser
 import sys
 
 libdirs = [
@@ -64,6 +64,11 @@ if __name__ == "__main__":
         d.to_output()
 
         now = stopwatch("Deduction", now)
+
+        o = optimiser.Optimiser(i, d, "_output")
+        o.to_output()
+
+        now = stopwatch("Optimisation", now)
 
     # Report any errors.
 
