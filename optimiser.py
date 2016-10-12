@@ -21,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from common import add_counter_item, get_attrname_from_location, init_item, \
                    sorted_output
-from encoders import encode_access_location, get_kinds
+from encoders import encode_access_location, encode_instruction, get_kinds
 from os.path import exists, join
 from os import makedirs
 from referencing import Reference
@@ -57,6 +57,7 @@ class Optimiser:
         # Specific attribute access information.
 
         self.access_plans = {}
+        self.access_instructions = {}
 
         # Object structure information.
 
@@ -82,6 +83,7 @@ class Optimiser:
         self.populate_tables()
         self.populate_constants()
         self.refine_access_plans()
+        self.initialise_access_instructions()
 
     def to_output(self):
 
@@ -200,7 +202,8 @@ class Optimiser:
 
             for location, (name, test, test_type, base,
                 traversed, traversed_ambiguity,
-                attrnames, attrnames_ambiguity, context, method, attr) in access_plans:
+                attrnames, attrnames_ambiguity, context,
+                first_method, final_method, attr) in access_plans:
 
                 print >>f, encode_access_location(location), \
                            name, test, test_type or "{}", \
@@ -209,7 +212,21 @@ class Optimiser:
                            ".".join(map(str, traversed_ambiguity)) or "{}", \
                            ".".join(map(str, attrnames_ambiguity)) or "{}", \
                            ".".join(attrnames) or "{}", \
-                           context, method, attr or "{}"
+                           context, first_method, final_method, attr or "{}"
+
+        finally:
+            f.close()
+
+        f = open(join(self.output, "instruction_plans"), "w")
+        try:
+            access_instructions = self.access_instructions.items()
+            access_instructions.sort()
+
+            for location, instructions in access_instructions:
+                print >>f, encode_access_location(location), "..."
+                for instruction in instructions:
+                    print >>f, encode_instruction(instruction)
+                print >>f
 
         finally:
             f.close()
@@ -347,14 +364,133 @@ class Optimiser:
             # Obtain the access details.
 
             name, test, test_type, base, traversed, attrnames, \
-                context, method, attr = access_plan
+                context, first_method, final_method, origin = access_plan
 
             traversed_ambiguity = self.get_ambiguity_for_attributes(traversed)
             attrnames_ambiguity = self.get_ambiguity_for_attributes(attrnames)
 
             self.access_plans[access_location] = \
                 name, test, test_type, base, traversed, traversed_ambiguity, \
-                attrnames, attrnames_ambiguity, context, method, attr
+                attrnames, attrnames_ambiguity, context, \
+                first_method, final_method, origin
+
+    def initialise_access_instructions(self):
+
+        "Expand access plans into instruction sequences."
+
+        for access_location, access_plan in self.access_plans.items():
+
+            # Obtain the access details.
+
+            name, test, test_type, base, traversed, traversed_ambiguity, \
+                attrnames, attrnames_ambiguity, context, \
+                first_method, final_method, origin = access_plan
+
+            instructions = []
+            emit = instructions.append
+
+            if base:
+                original_accessor = base
+            else:
+                original_accessor = name
+
+            # Prepare for any first attribute access.
+
+            if traversed:
+                attrname = traversed[0]
+                del traversed[0]
+            elif attrnames:
+                attrname = attrnames[0]
+                del attrnames[0]
+
+            access_first_attribute = final_method == "access" or traversed or attrnames
+
+            if context == "final-accessor" or access_first_attribute:
+                emit(("set_accessor", original_accessor))
+
+            # Set the context if already available.
+
+            if context == "original-accessor":
+                emit(("set_context", original_accessor))
+            elif context == "base":
+                emit(("set_context", base))
+
+            # Apply any test.
+
+            if test_type == "specific-type":
+                emit(("test_specific_type", accessor, test_type))
+            elif test_type == "specific-instance":
+                emit(("test_specific_instance", accessor, test_type))
+            elif test_type == "specific-object":
+                emit(("test_specific_object", accessor, test_type))
+            elif test_type == "common-type":
+                emit(("test_common_type", accessor, test_type))
+            elif test_type == "common-instance":
+                emit(("test_common_instance", accessor, test_type))
+            elif test_type == "common-object":
+                emit(("test_common_object", accessor, test_type))
+
+            # Perform the first or final access.
+            # The access only needs performing if the resulting accessor is used.
+
+            if access_first_attribute:
+
+                if first_method == "relative-class":
+                    emit(("set_accessor", ("load_via_class", "accessor", "attrname")))
+                elif first_method == "relative-object":
+                    emit(("set_accessor", ("load_via_object", "accessor", "attrname")))
+                elif first_method == "relative-object-class":
+                    emit(("set_accessor", ("get_class_and_load", "accessor", "attrname")))
+                elif first_method == "check-class":
+                    emit(("set_accessor", ("check_and_load_via_class", "accessor", "attrname")))
+                elif first_method == "check-object":
+                    emit(("set_accessor", ("check_and_load_via_object", "accessor", "attrname")))
+                elif first_method == "check-object-class":
+                    emit(("set_accessor", ("get_class_check_and_load", "accessor", "attrname")))
+
+            # Obtain an accessor.
+
+            remaining = len(traversed + attrnames)
+
+            if traversed:
+                for attrname in traversed:
+
+                    # Set the context, if appropriate.
+
+                    if remaining == 1 and context == "final-accessor":
+                        emit(("set_context", "accessor"))
+
+                    # Perform the access only if not achieved directly.
+
+                    if remaining > 1 or final_method == "access":
+                        emit(("set_accessor", ("load_unambiguous", "accessor", attrname)))
+
+                    remaining -= 1
+
+            if attrnames:
+                for attrname, ambiguity in zip(attrnames, attrnames_ambiguity):
+
+                    # Set the context, if appropriate.
+
+                    if remaining == 1 and context == "final-accessor":
+                        emit(("set_context", "accessor"))
+
+                    # Perform the access only if not achieved directly.
+
+                    if remaining > 1 or final_method == "access":
+                        if ambiguity == 1:
+                            emit(("set_accessor", ("load_unambiguous", "accessor", attrname)))
+                        else:
+                            emit(("set_accessor", ("load_ambiguous", "accessor", attrname)))
+
+                    remaining -= 1
+
+            if final_method == "assign":
+                emit(("store_member", origin, "<expr>"))
+            elif final_method == "static":
+                emit(("load_static", origin))
+
+            self.access_instructions[access_location] = instructions
 
     def get_ambiguity_for_attributes(self, attrnames):
 

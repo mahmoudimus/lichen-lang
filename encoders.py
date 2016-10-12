@@ -138,6 +138,33 @@ def test_for_type(prefix, ref):
 
 
 
+# Instruction representation encoding.
+
+def encode_instruction(instruction):
+
+    """
+    Encode the 'instruction' - a sequence starting with an operation and
+    followed by arguments, each of which may be an instruction sequence or a
+    plain value - to produce a function call string representation.
+    """
+
+    op = instruction[0]
+    args = instruction[1:]
+
+    if args:
+        a = []
+        for i in args:
+            if isinstance(i, tuple):
+                a.append(encode_instruction(i))
+            else:
+                a.append(i or "{}")
+        argstr = "(%s)" % ", ".join(a)
+        return "%s%s" % (op, argstr)
+    else:
+        return op
+
+
+
 # Output program encoding.
 
 def encode_function_pointer(path):

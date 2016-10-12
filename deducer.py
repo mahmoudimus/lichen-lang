@@ -400,14 +400,14 @@ class Deducer(CommonOutput):
 
             for location in locations:
                 name, test, test_type, base, traversed, attrnames, context, \
-                    method, attr = self.access_plans[location]
+                    first_method, final_method, attr = self.access_plans[location]
 
                 print >>f_attrs, encode_access_location(location), \
                                  name, test, test_type or "{}", \
                                  base or "{}", \
                                  ".".join(traversed) or "{}", \
                                  ".".join(attrnames) or "{}", \
-                                 context, method, attr or "{}"
+                                 context, first_method, final_method, attr or "{}"
 
         finally:
             f_attrs.close()
@@ -1888,31 +1888,34 @@ class Deducer(CommonOutput):
         # Identified attribute that must be accessed via its parent.
 
         if attr and attr.get_name() and location in self.reference_assignments:
-            method = "assign"; origin = attr.get_name()
+            final_method = "assign"; origin = attr.get_name()
 
         # Static, identified attribute.
 
         elif attr and attr.static():
-            method = "static"; origin = attr.final()
+            final_method = "static"; origin = attr.final()
+
+        # All other methods of access involve traversal.
+
+        else:
+            final_method = "access"; origin = None
 
         # First attribute accessed at a known position via the accessor.
 
-        elif base or dynamic_base:
-            method = "relative" + (object_relative and "-object" or "") + \
-                                  (class_relative and "-class" or "")
-            origin = None
+        if base or dynamic_base:
+            first_method = "relative" + (object_relative and "-object" or "") + \
+                                        (class_relative and "-class" or "")
 
         # The fallback case is always run-time testing and access.
 
         else:
-            method = "check" + (object_relative and "-object" or "") + \
-                               (class_relative and "-class" or "")
-            origin = None
+            first_method = "check" + (object_relative and "-object" or "") + \
+                                     (class_relative and "-class" or "")
 
         # Determine the nature of the context.
 
         context = len(traversed or remaining) == 1 and (base and "base" or "original-accessor") or "final-accessor"
 
-        return name, test, test_type, base, traversed, remaining, context, method, origin
+        return name, test, test_type, base, traversed, remaining, context, first_method, final_method, origin
 
 # vim: tabstop=4 expandtab shiftwidth=4
