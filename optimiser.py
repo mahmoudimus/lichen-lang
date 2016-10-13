@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Optimise object layouts.
+Optimise object layouts and generate access instruction plans.
 
 Copyright (C) 2014, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
@@ -392,7 +392,7 @@ class Optimiser:
             if base:
                 original_accessor = base
             else:
-                original_accessor = name
+                original_accessor = "<expr>" # use a generic placeholder
 
             # Prepare for any first attribute access.
 
@@ -405,29 +405,31 @@ class Optimiser:
 
             access_first_attribute = final_method == "access" or traversed or attrnames
 
-            if context == "final-accessor" or access_first_attribute:
-                emit(("set_accessor", original_accessor))
-
             # Set the context if already available.
 
             if context == "original-accessor":
                 emit(("set_context", original_accessor))
+                accessor = "context"
             elif context == "base":
                 emit(("set_context", base))
+                accessor = "context"
+            elif context == "final-accessor" or access_first_attribute:
+                emit(("set_accessor", original_accessor))
+                accessor = "accessor"
 
             # Apply any test.
 
-            if test_type == "specific-type":
+            if test == "specific-type":
                 emit(("test_specific_type", accessor, test_type))
-            elif test_type == "specific-instance":
+            elif test == "specific-instance":
                 emit(("test_specific_instance", accessor, test_type))
-            elif test_type == "specific-object":
+            elif test == "specific-object":
                 emit(("test_specific_object", accessor, test_type))
-            elif test_type == "common-type":
+            elif test == "common-type":
                 emit(("test_common_type", accessor, test_type))
-            elif test_type == "common-instance":
+            elif test == "common-instance":
                 emit(("test_common_instance", accessor, test_type))
-            elif test_type == "common-object":
+            elif test == "common-object":
                 emit(("test_common_object", accessor, test_type))
 
             # Perform the first or final access.
@@ -436,17 +438,17 @@ class Optimiser:
             if access_first_attribute:
 
                 if first_method == "relative-class":
-                    emit(("set_accessor", ("load_via_class", "accessor", "attrname")))
+                    emit(("set_accessor", ("load_via_class", accessor, attrname)))
                 elif first_method == "relative-object":
-                    emit(("set_accessor", ("load_via_object", "accessor", "attrname")))
+                    emit(("set_accessor", ("load_via_object", accessor, attrname)))
                 elif first_method == "relative-object-class":
-                    emit(("set_accessor", ("get_class_and_load", "accessor", "attrname")))
+                    emit(("set_accessor", ("get_class_and_load", accessor, attrname)))
                 elif first_method == "check-class":
-                    emit(("set_accessor", ("check_and_load_via_class", "accessor", "attrname")))
+                    emit(("set_accessor", ("check_and_load_via_class", accessor, attrname)))
                 elif first_method == "check-object":
-                    emit(("set_accessor", ("check_and_load_via_object", "accessor", "attrname")))
+                    emit(("set_accessor", ("check_and_load_via_object", accessor, attrname)))
                 elif first_method == "check-object-class":
-                    emit(("set_accessor", ("get_class_check_and_load", "accessor", "attrname")))
+                    emit(("set_accessor", ("get_class_check_and_load", accessor, attrname)))
 
             # Obtain an accessor.
 
