@@ -1758,6 +1758,7 @@ class Deducer(CommonOutput):
            preference to the initial accessor)
          * attributes needing to be traversed from the base that yield
            unambiguous objects
+         * access modes for each of the unambiguously-traversed attributes
          * remaining attributes needing to be tested and traversed
          * details of the context
          * the method of obtaining the final attribute
@@ -1893,20 +1894,24 @@ class Deducer(CommonOutput):
 
         # Determine the method of access.
 
+        is_assignment = location in self.reference_assignments
+
         # Identified attribute that must be accessed via its parent.
 
-        if attr and attr.get_name() and location in self.reference_assignments:
-            final_method = "assign"; origin = attr.get_name()
+        if attr and attr.get_name() and is_assignment:
+            final_method = "static-assign"; origin = attr.get_name()
 
         # Static, identified attribute.
 
         elif attr and attr.static():
-            final_method = "static"; origin = attr.final()
+            final_method = is_assignment and "static-assign" or "static"
+            origin = attr.final()
 
         # All other methods of access involve traversal.
 
         else:
-            final_method = "access"; origin = None
+            final_method = is_assignment and "assign" or "access"
+            origin = None
 
         # First attribute accessed at a known position via the accessor.
 
