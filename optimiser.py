@@ -56,7 +56,6 @@ class Optimiser:
 
         # Specific attribute access information.
 
-        self.access_plans = {}
         self.access_instructions = {}
 
         # Object structure information.
@@ -340,7 +339,7 @@ class Optimiser:
 
         "Expand access plans into instruction sequences."
 
-        for access_location, access_plan in self.access_plans.items():
+        for access_location, access_plan in self.deducer.access_plans.items():
 
             # Obtain the access details.
 
