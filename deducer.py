@@ -1927,7 +1927,10 @@ class Deducer(CommonOutput):
 
         # Determine the nature of the context.
 
-        context = len(traversed + remaining) == 1 and (base and "base" or "original-accessor") or "final-accessor"
+        context = is_assignment and "unset" or \
+                  len(traversed + remaining) == 1 and \
+                      (base and "base" or "original-accessor") or \
+                  "final-accessor"
 
         return name, test, test_type, base, traversed, traversal_modes, remaining, context, first_method, final_method, origin
 

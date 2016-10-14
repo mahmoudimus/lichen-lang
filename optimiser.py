@@ -373,19 +373,17 @@ class Optimiser:
             assigning = not traversed and not attrnames and final_method == "assign"
 
             # Set the context if already available.
+
+            if context == "original-accessor":
+                emit(("set_context", original_accessor))
+                accessor = "context"
+            elif context == "base":
+                emit(("set_context", base))
+                accessor = "context"
+
             # Assigning does not set the context.
 
-            if not assigning:
-                if context == "original-accessor":
-                    emit(("set_context", original_accessor))
-                    accessor = "context"
-                elif context == "base":
-                    emit(("set_context", base))
-                    accessor = "context"
-                elif context == "final-accessor" or access_first_attribute:
-                    emit(("set_accessor", original_accessor))
-                    accessor = "accessor"
-            else:
+            elif context in ("final-accessor", "unset"):
                 emit(("set_accessor", original_accessor))
                 accessor = "accessor"
 
