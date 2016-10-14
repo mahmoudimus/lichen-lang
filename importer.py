@@ -249,6 +249,35 @@ class Importer:
         else:
             return None
 
+    # Convenience methods for deducing which kind of object provided an
+    # attribute.
+
+    def get_attribute_provider(self, ref, attrname):
+
+        """
+        Return the kind of provider of the attribute accessed via 'ref' using
+        'attrname'.
+        """
+
+        kind = ref.get_kind()
+
+        if kind in ["<class>", "<module>"]:
+            return kind
+        else:
+            return self.get_instance_attribute_provider(ref.get_origin(), attrname)
+
+    def get_instance_attribute_provider(self, object_type, attrname):
+
+        """
+        Return the kind of provider of the attribute accessed via an instance of
+        'object_type' using 'attrname'.
+        """
+
+        if self.get_class_attribute(object_type, attrname):
+            return "<class>"
+        else:
+            return "<instance>"
+
     # Module management.
 
     def queue_module(self, name, accessor, required=False):

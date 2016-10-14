@@ -82,7 +82,6 @@ class Optimiser:
         self.position_parameters()
         self.populate_tables()
         self.populate_constants()
-        self.refine_access_plans()
         self.initialise_access_instructions()
 
     def to_output(self):
@@ -113,12 +112,16 @@ class Optimiser:
 
         location " " name " " test " " test type " " base
                  " " traversed attributes " " traversed attribute ambiguity
+                 " " traversal access modes
                  " " attributes to traverse " " attribute ambiguity
                  " " context " " access method " " static attribute
 
         Locations have the following format:
 
         qualified name of scope "." local name ":" name version
+
+        Traversal access modes are either "class" (obtain accessor class to
+        access attribute) or "object" (obtain attribute directly from accessor).
 
         ----
 
@@ -191,28 +194,6 @@ class Optimiser:
         try:
             for argnames in self.arg_locations:
                 print >>f, sorted_output(argnames)
-
-        finally:
-            f.close()
-
-        f = open(join(self.output, "attribute_plans"), "w")
-        try:
-            access_plans = self.access_plans.items()
-            access_plans.sort()
-
-            for location, (name, test, test_type, base,
-                traversed, traversed_ambiguity,
-                attrnames, attrnames_ambiguity, context,
-                first_method, final_method, attr) in access_plans:
-
-                print >>f, encode_access_location(location), \
-                           name, test, test_type or "{}", \
-                           base or "{}", \
-                           ".".join(traversed) or "{}", \
-                           ".".join(map(str, traversed_ambiguity)) or "{}", \
-                           ".".join(map(str, attrnames_ambiguity)) or "{}", \
-                           ".".join(attrnames) or "{}", \
-                           context, first_method, final_method, attr or "{}"
 
         finally:
             f.close()
@@ -355,25 +336,6 @@ class Optimiser:
                         l.extend([None] * (position - len(l) + 1))
                     l[position] = attrname
 
-    def refine_access_plans(self):
-
-        "Augment deduced access plans with attribute position information."
-
-        for access_location, access_plan in self.deducer.access_plans.items():
-
-            # Obtain the access details.
-
-            name, test, test_type, base, traversed, attrnames, \
-                context, first_method, final_method, origin = access_plan
-
-            traversed_ambiguity = self.get_ambiguity_for_attributes(traversed)
-            attrnames_ambiguity = self.get_ambiguity_for_attributes(attrnames)
-
-            self.access_plans[access_location] = \
-                name, test, test_type, base, traversed, traversed_ambiguity, \
-                attrnames, attrnames_ambiguity, context, \
-                first_method, final_method, origin
-
     def initialise_access_instructions(self):
 
         "Expand access plans into instruction sequences."
@@ -382,9 +344,8 @@ class Optimiser:
 
             # Obtain the access details.
 
-            name, test, test_type, base, traversed, traversed_ambiguity, \
-                attrnames, attrnames_ambiguity, context, \
-                first_method, final_method, origin = access_plan
+            name, test, test_type, base, traversed, traversal_modes, \
+                attrnames, context, first_method, final_method, origin = access_plan
 
             instructions = []
             emit = instructions.append
@@ -448,14 +409,14 @@ class Optimiser:
                 elif first_method == "check-object":
                     emit(("set_accessor", ("check_and_load_via_object", accessor, attrname)))
                 elif first_method == "check-object-class":
-                    emit(("set_accessor", ("get_class_check_and_load", accessor, attrname)))
+                    emit(("set_accessor", ("check_and_load_via_any", accessor, attrname)))
 
             # Obtain an accessor.
 
             remaining = len(traversed + attrnames)
 
             if traversed:
-                for attrname in traversed:
+                for attrname, traversal_mode in zip(traversed, traversal_modes):
 
                     # Set the context, if appropriate.
 
@@ -465,12 +426,15 @@ class Optimiser:
                     # Perform the access only if not achieved directly.
 
                     if remaining > 1 or final_method == "access":
-                        emit(("set_accessor", ("load_unambiguous", "accessor", attrname)))
+                        if traversal_mode == "class":
+                            emit(("set_accessor", ("load_via_class", "accessor", attrname)))
+                        else:
+                            emit(("set_accessor", ("load_via_object", "accessor", attrname)))
 
                     remaining -= 1
 
             if attrnames:
-                for attrname, ambiguity in zip(attrnames, attrnames_ambiguity):
+                for attrname in attrnames:
 
                     # Set the context, if appropriate.
 
@@ -480,10 +444,7 @@ class Optimiser:
                     # Perform the access only if not achieved directly.
 
                     if remaining > 1 or final_method == "access":
-                        if ambiguity == 1:
-                            emit(("set_accessor", ("load_unambiguous", "accessor", attrname)))
-                        else:
-                            emit(("set_accessor", ("load_ambiguous", "accessor", attrname)))
+                        emit(("set_accessor", ("check_and_load_via_any", "accessor", attrname)))
 
                     remaining -= 1
 

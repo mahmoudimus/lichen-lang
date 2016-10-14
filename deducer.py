@@ -399,13 +399,14 @@ class Deducer(CommonOutput):
             locations.sort()
 
             for location in locations:
-                name, test, test_type, base, traversed, attrnames, context, \
+                name, test, test_type, base, traversed, traversal_modes, attrnames, context, \
                     first_method, final_method, attr = self.access_plans[location]
 
                 print >>f_attrs, encode_access_location(location), \
                                  name, test, test_type or "{}", \
                                  base or "{}", \
                                  ".".join(traversed) or "{}", \
+                                 ".".join(traversal_modes) or "{}", \
                                  ".".join(attrnames) or "{}", \
                                  context, first_method, final_method, attr or "{}"
 
@@ -1854,13 +1855,18 @@ class Deducer(CommonOutput):
                 dynamic_base = ref.get_origin()
 
         traversed = []
+        traversal_modes = []
+        provider_kind = first(provider_kinds)
 
         # Traverse remaining attributes.
 
         while len(attrs) == 1:
             attr = first(attrs)
+            accessor_kind = attr.get_kind()
 
             traversed.append(attrname)
+            traversal_modes.append(accessor_kind == provider_kind and "object" or "class")
+
             del remaining[0]
 
             if not remaining:
@@ -1871,11 +1877,13 @@ class Deducer(CommonOutput):
             if attr.static():
                 base = attr.get_origin()
                 traversed = []
+                traversal_modes = []
 
             # Get the next attribute.
 
             attrname = remaining[0]
             attrs = self.importer.get_attributes(attr, attrname)
+            provider_kind = self.importer.get_attribute_provider(attr, attrname)
 
         # Where many attributes are suggested, no single attribute identity can
         # be loaded.
@@ -1916,6 +1924,6 @@ class Deducer(CommonOutput):
 
         context = len(traversed or remaining) == 1 and (base and "base" or "original-accessor") or "final-accessor"
 
-        return name, test, test_type, base, traversed, remaining, context, first_method, final_method, origin
+        return name, test, test_type, base, traversed, traversal_modes, remaining, context, first_method, final_method, origin
 
 # vim: tabstop=4 expandtab shiftwidth=4
