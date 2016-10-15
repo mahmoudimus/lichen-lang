@@ -344,7 +344,7 @@ class Optimiser:
             # Obtain the access details.
 
             name, test, test_type, base, traversed, traversal_modes, \
-                attrnames, context, first_method, final_method, origin = access_plan
+                attrnames, context, context_test, first_method, final_method, origin = access_plan
 
             instructions = []
             emit = instructions.append
@@ -383,7 +383,7 @@ class Optimiser:
 
             # Assigning does not set the context.
 
-            elif context in ("final-accessor", "unset"):
+            elif context in ("final-accessor", "unset") and access_first_attribute:
                 emit(("set_accessor", original_accessor))
                 accessor = "accessor"
 
@@ -404,6 +404,8 @@ class Optimiser:
 
             # Perform the first or final access.
             # The access only needs performing if the resulting accessor is used.
+
+            remaining = len(traversed + attrnames)
 
             if access_first_attribute:
 
@@ -443,9 +445,7 @@ class Optimiser:
                     else:
                         emit(("set_accessor", ("check_and_load_via_any", accessor, attrname)))
 
-            # Obtain an accessor.
-
-            remaining = len(traversed + attrnames)
+            # Traverse attributes using the accessor.
 
             if traversed:
                 for attrname, traversal_mode in zip(traversed, traversal_modes):
@@ -496,7 +496,14 @@ class Optimiser:
             if final_method == "static-assign":
                 emit(("store_member", origin, "<assexpr>"))
             elif final_method == "static":
-                emit(("load_static", origin))
+                emit(("set_accessor", ("load_static", origin)))
+
+            if context_test == "test":
+                emit(("test_context", "context", "accessor"))
+            elif context_test == "replace":
+                emit(("replace_context", "context", "accessor"))
+            else:
+                emit(("get_accessor",))
 
             self.access_instructions[access_location] = instructions
 

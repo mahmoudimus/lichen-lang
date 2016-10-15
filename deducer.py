@@ -399,7 +399,8 @@ class Deducer(CommonOutput):
             locations.sort()
 
             for location in locations:
-                name, test, test_type, base, traversed, traversal_modes, attrnames, context, \
+                name, test, test_type, base, traversed, traversal_modes, attrnames, \
+                    context, context_test, \
                     first_method, final_method, attr = self.access_plans[location]
 
                 print >>f_attrs, encode_access_location(location), \
@@ -408,7 +409,8 @@ class Deducer(CommonOutput):
                                  ".".join(traversed) or "{}", \
                                  ".".join(traversal_modes) or "{}", \
                                  ".".join(attrnames) or "{}", \
-                                 context, first_method, final_method, attr or "{}"
+                                 context, context_test, \
+                                 first_method, final_method, attr or "{}"
 
         finally:
             f_attrs.close()
@@ -1410,16 +1412,26 @@ class Deducer(CommonOutput):
         'attrname' for type deduction.
         """
 
+        (class_types,
+         only_instance_types,
+         module_types) = self.get_types_for_attribute(attrname)
+
+        self.init_reference_details(access_location)
+
+        self.identify_reference_attributes(access_location, attrname, class_types, only_instance_types, module_types, False)
+        self.record_reference_types(access_location, class_types, only_instance_types, module_types, False)
+
+    def get_types_for_attribute(self, attrname):
+
+        "Return class, instance-only and module types supporting 'attrname'."
+
         usage = ((attrname, False),)
 
         class_types = self.get_class_types_for_usage(usage)
         only_instance_types = set(self.get_instance_types_for_usage(usage)).difference(class_types)
         module_types = self.get_module_types_for_usage(usage)
 
-        self.init_reference_details(access_location)
-
-        self.identify_reference_attributes(access_location, attrname, class_types, only_instance_types, module_types, False)
-        self.record_reference_types(access_location, class_types, only_instance_types, module_types, False)
+        return class_types, only_instance_types, module_types
 
     def record_types_for_alias(self, accessor_location):
 
@@ -1761,6 +1773,7 @@ class Deducer(CommonOutput):
          * access modes for each of the unambiguously-traversed attributes
          * remaining attributes needing to be tested and traversed
          * details of the context
+         * any test to apply to the context
          * the method of obtaining the final attribute
          * any static final attribute
         """
@@ -1855,18 +1868,24 @@ class Deducer(CommonOutput):
             elif not base and ref:
                 dynamic_base = ref.get_origin()
 
-        traversed = []
-        traversal_modes = []
-        provider_kind = first(provider_kinds)
+        # Determine initial accessor details.
+
+        accessor = base or dynamic_base
+        accessor_kind = len(accessor_kinds) == 1 and first(accessor_kinds) or None
+        provider_kind = len(provider_kinds) == 1 and first(provider_kinds) or None
 
         # Traverse remaining attributes.
 
+        traversed = []
+        traversal_modes = []
+
         while len(attrs) == 1:
             attr = first(attrs)
-            accessor_kind = attr.get_kind()
 
             traversed.append(attrname)
             traversal_modes.append(accessor_kind == provider_kind and "object" or "class")
+
+            # Consume attribute names providing unambiguous attributes.
 
             del remaining[0]
 
@@ -1880,11 +1899,18 @@ class Deducer(CommonOutput):
                 traversed = []
                 traversal_modes = []
 
-            # Get the next attribute.
+            # Get the access details.
 
             attrname = remaining[0]
-            attrs = self.importer.get_attributes(attr, attrname)
+            accessor = attr.get_origin()
+            accessor_kind = attr.get_kind()
             provider_kind = self.importer.get_attribute_provider(attr, attrname)
+            accessor_kinds = [accessor_kind]
+            provider_kinds = [provider_kind]
+
+            # Get the next attribute.
+
+            attrs = self.importer.get_attributes(attr, attrname)
 
         # Where many attributes are suggested, no single attribute identity can
         # be loaded.
@@ -1925,13 +1951,111 @@ class Deducer(CommonOutput):
             first_method = "check" + (object_relative and "-object" or "") + \
                                      (class_relative and "-class" or "")
 
+        # Determine whether an unbound method is being accessed via an instance,
+        # requiring a context test.
+
+        context_test = "ignore"
+
+        # Assignments do not employ the context.
+
+        if is_assignment:
+            pass
+
+        # Obtain a selection of possible attributes if no unambiguous attribute
+        # was identified.
+
+        elif not attr:
+
+            # Use previously-deduced attributes for a simple ambiguous access.
+            # Otherwise, use the final attribute name to obtain possible
+            # attributes.
+
+            if len(remaining) > 1:
+                attrname = remaining[-1]
+
+                (class_types,
+                 only_instance_types,
+                 module_types) = self.get_types_for_attribute(attrname)
+
+                all_accessor_kinds = set()
+                all_provider_kinds = set()
+
+                if class_types:
+                    all_accessor_kinds.add("<class>")
+                    all_accessor_kinds.add("<instance>")
+                    all_provider_kinds.add("<class>")
+                if only_instance_types:
+                    all_accessor_kinds.add("<instance>")
+                    all_provider_kinds.add("<instance>")
+                if module_types:
+                    all_accessor_kinds.add("<module>")
+                    all_provider_kinds.add("<module>")
+
+                attrs = set()
+                for type in combine_types(class_types, only_instance_types, module_types):
+                    attrs.update(self.importer.get_attributes(type, attrname))
+
+            always_unbound = True
+            have_function = False
+            have_var = False
+
+            # Determine whether all attributes are unbound methods and whether
+            # functions or unidentified attributes occur.
+
+            for attr in attrs:
+                always_unbound = always_unbound and attr.has_kind("<function>") and attr.name_parent() == attr.parent()
+                have_function = have_function or attr.has_kind("<function>")
+                have_var = have_var or attr.has_kind("<var>")
+
+            # Test for class-via-instance accesses.
+
+            if accessor_kind == "<instance>" and \
+               provider_kind == "<class>":
+
+                if always_unbound:
+                    context_test = "replace"
+                else:
+                    context_test = "test"
+
+            # Test for the presence of class-via-instance accesses.
+
+            elif "<instance>" in accessor_kinds and \
+                 "<class>" in provider_kinds and \
+                 (have_function or have_var):
+
+                context_test = "test"
+
+        # With an unambiguous attribute, determine whether a test is needed.
+
+        elif accessor_kind == "<instance>" and \
+             provider_kind == "<class>" and \
+             (attr.has_kind("<var>") or
+              attr.has_kind("<function>") and
+              attr.name_parent() == attr.parent()):
+
+            if attr.has_kind("<var>"):
+                context_test = "test"
+            else:
+                context_test = "replace"
+
+        # With an unambiguous attribute with ambiguity in the access method,
+        # generate a test.
+
+        elif "<instance>" in accessor_kinds and \
+             "<class>" in provider_kinds and \
+             (attr.has_kind("<var>") or
+              attr.has_kind("<function>") and
+              attr.name_parent() == attr.parent()):
+
+            context_test = "test"
+
         # Determine the nature of the context.
 
-        context = is_assignment and "unset" or \
+        context = context_test == "ignore" and "unset" or \
                   len(traversed + remaining) == 1 and \
                       (base and "base" or "original-accessor") or \
                   "final-accessor"
 
-        return name, test, test_type, base, traversed, traversal_modes, remaining, context, first_method, final_method, origin
+        return name, test, test_type, base, traversed, traversal_modes, remaining, context, context_test, first_method, final_method, origin
 
 # vim: tabstop=4 expandtab shiftwidth=4
