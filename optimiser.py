@@ -374,33 +374,38 @@ class Optimiser:
 
             # Set the context if already available.
 
-            if context == "original-accessor":
-                emit(("set_context", original_accessor))
-                accessor = "context"
-            elif context == "base":
-                emit(("set_context", base))
-                accessor = "context"
+            if context == "base":
+                accessor = context_var = (base,)
+            elif context == "original-accessor":
+                if original_accessor == "<expr>":
+                    emit(("set_accessor", original_accessor))
+                    accessor = context_var = ("accessor",)
+                else:
+                    accessor = context_var = original_accessor
 
             # Assigning does not set the context.
 
             elif context in ("final-accessor", "unset") and access_first_attribute:
-                emit(("set_accessor", original_accessor))
-                accessor = "accessor"
+                if original_accessor == "<expr>":
+                    emit(("set_accessor", original_accessor))
+                    accessor = ("accessor",)
+                else:
+                    accessor = original_accessor
 
             # Apply any test.
 
             if test == "specific-type":
-                emit(("test_specific_type", accessor, test_type))
+                accessor = ("test_specific_type", accessor, test_type)
             elif test == "specific-instance":
-                emit(("test_specific_instance", accessor, test_type))
+                accessor = ("test_specific_instance", accessor, test_type)
             elif test == "specific-object":
-                emit(("test_specific_object", accessor, test_type))
+                accessor = ("test_specific_object", accessor, test_type)
             elif test == "common-type":
-                emit(("test_common_type", accessor, test_type))
+                accessor = ("test_common_type", accessor, test_type)
             elif test == "common-instance":
-                emit(("test_common_instance", accessor, test_type))
+                accessor = ("test_common_instance", accessor, test_type)
             elif test == "common-object":
-                emit(("test_common_object", accessor, test_type))
+                accessor = ("test_common_object", accessor, test_type)
 
             # Perform the first or final access.
             # The access only needs performing if the resulting accessor is used.
@@ -413,37 +418,37 @@ class Optimiser:
                     if assigning:
                         emit(("store_via_class", accessor, attrname, "<assexpr>"))
                     else:
-                        emit(("set_accessor", ("load_via_class", accessor, attrname)))
+                        accessor = ("load_via_class", accessor, attrname)
 
                 elif first_method == "relative-object":
                     if assigning:
                         emit(("store_via_object", accessor, attrname, "<assexpr>"))
                     else:
-                        emit(("set_accessor", ("load_via_object", accessor, attrname)))
+                        accessor = ("load_via_object", accessor, attrname)
 
                 elif first_method == "relative-object-class":
                     if assigning:
                         emit(("get_class_and_store", accessor, attrname, "<assexpr>"))
                     else:
-                        emit(("set_accessor", ("get_class_and_load", accessor, attrname)))
+                        accessor = ("get_class_and_load", accessor, attrname)
 
                 elif first_method == "check-class":
                     if assigning:
                         emit(("check_and_store_via_class", accessor, attrname, "<assexpr>"))
                     else:
-                        emit(("set_accessor", ("check_and_load_via_class", accessor, attrname)))
+                        accessor = ("check_and_load_via_class", accessor, attrname)
 
                 elif first_method == "check-object":
                     if assigning:
                         emit(("check_and_store_via_object", accessor, attrname, "<assexpr>"))
                     else:
-                        emit(("set_accessor", ("check_and_load_via_object", accessor, attrname)))
+                        accessor = ("check_and_load_via_object", accessor, attrname)
 
                 elif first_method == "check-object-class":
                     if assigning:
                         emit(("check_and_store_via_any", accessor, attrname, "<assexpr>"))
                     else:
-                        emit(("set_accessor", ("check_and_load_via_any", accessor, attrname)))
+                        accessor = ("check_and_load_via_any", accessor, attrname)
 
             # Traverse attributes using the accessor.
 
@@ -454,7 +459,7 @@ class Optimiser:
                     # Set the context, if appropriate.
 
                     if remaining == 1 and final_method != "assign" and context == "final-accessor":
-                        emit(("set_context", "accessor"))
+                        context_var = accessor
 
                     # Perform the access only if not achieved directly.
 
@@ -462,14 +467,14 @@ class Optimiser:
 
                         if traversal_mode == "class":
                             if assigning:
-                                emit(("store_via_class", "accessor", attrname, "<assexpr>"))
+                                emit(("store_via_class", accessor, attrname, "<assexpr>"))
                             else:
-                                emit(("set_accessor", ("load_via_class", "accessor", attrname)))
+                                accessor = ("load_via_class", accessor, attrname)
                         else:
                             if assigning:
-                                emit(("store_via_object", "accessor", attrname, "<assexpr>"))
+                                emit(("store_via_object", accessor, attrname, "<assexpr>"))
                             else:
-                                emit(("set_accessor", ("load_via_object", "accessor", attrname)))
+                                accessor = ("load_via_object", accessor, attrname)
 
                     remaining -= 1
 
@@ -480,30 +485,30 @@ class Optimiser:
                     # Set the context, if appropriate.
 
                     if remaining == 1 and final_method != "assign" and context == "final-accessor":
-                        emit(("set_context", "accessor"))
+                        context_var = accessor
 
                     # Perform the access only if not achieved directly.
 
                     if remaining > 1 or final_method in ("access", "assign"):
 
                         if assigning:
-                            emit(("check_and_store_via_any", "accessor", attrname, "<assexpr>"))
+                            emit(("check_and_store_via_any", accessor, attrname, "<assexpr>"))
                         else:
-                            emit(("set_accessor", ("check_and_load_via_any", "accessor", attrname)))
+                            accessor = ("check_and_load_via_any", accessor, attrname)
 
                     remaining -= 1
 
             if final_method == "static-assign":
                 emit(("store_member", origin, "<assexpr>"))
             elif final_method == "static":
-                emit(("set_accessor", ("load_static", origin)))
+                accessor = ("load_static", origin)
 
             if context_test == "test":
-                emit(("test_context", "context", "accessor"))
+                emit(("test_context", context_var, accessor))
             elif context_test == "replace":
-                emit(("replace_context", "context", "accessor"))
-            else:
-                emit(("get_accessor",))
+                emit(("replace_context", context_var, accessor))
+            elif final_method not in ("assign", "static-assign"):
+                emit(accessor)
 
             self.access_instructions[access_location] = instructions
 
