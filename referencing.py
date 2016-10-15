@@ -154,6 +154,15 @@ class Reference:
 
         return self.get_origin().rsplit(".", 1)[0]
 
+    def name_parent(self):
+
+        "Return the parent of this reference's aliased name."
+
+        if not self.get_name():
+            return None
+
+        return self.get_name().rsplit(".", 1)[0]
+
     def ancestors(self):
 
         """
