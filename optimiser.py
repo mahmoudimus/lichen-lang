@@ -377,20 +377,26 @@ class Optimiser:
             if context == "base":
                 accessor = context_var = (base,)
             elif context == "original-accessor":
+
+                # Prevent re-evaluation of any dynamic expression by storing it.
+
                 if original_accessor == "<expr>":
                     emit(("set_accessor", original_accessor))
                     accessor = context_var = ("accessor",)
                 else:
-                    accessor = context_var = original_accessor
+                    accessor = context_var = (original_accessor,)
 
             # Assigning does not set the context.
 
             elif context in ("final-accessor", "unset") and access_first_attribute:
+
+                # Prevent re-evaluation of any dynamic expression by storing it.
+
                 if original_accessor == "<expr>":
                     emit(("set_accessor", original_accessor))
                     accessor = ("accessor",)
                 else:
-                    accessor = original_accessor
+                    accessor = (original_accessor,)
 
             # Apply any test.
 
@@ -459,7 +465,8 @@ class Optimiser:
                     # Set the context, if appropriate.
 
                     if remaining == 1 and final_method != "assign" and context == "final-accessor":
-                        context_var = accessor
+                        emit(("set_context", accessor))
+                        accessor = context_var = "context"
 
                     # Perform the access only if not achieved directly.
 
@@ -485,7 +492,8 @@ class Optimiser:
                     # Set the context, if appropriate.
 
                     if remaining == 1 and final_method != "assign" and context == "final-accessor":
-                        context_var = accessor
+                        emit(("set_context", accessor))
+                        accessor = context_var = "context"
 
                     # Perform the access only if not achieved directly.
 
