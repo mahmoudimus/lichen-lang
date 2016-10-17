@@ -1900,7 +1900,7 @@ class Deducer(CommonOutput):
         traversed = []
         traversal_modes = []
 
-        while len(attrs) == 1:
+        while len(attrs) == 1 and not first(attrs).has_kind("<var>"):
             attr = first(attrs)
 
             traversed.append(attrname)
