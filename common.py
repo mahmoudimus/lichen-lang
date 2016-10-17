@@ -834,10 +834,21 @@ def get_invoked_attributes(usage):
 
     invoked = []
     if usage:
-        for attrname, invocation in usage:
+        for attrname, invocation, assignment in usage:
             if invocation:
                 invoked.append(attrname)
     return invoked
+
+def get_assigned_attributes(usage):
+
+    "Obtain assigned attribute from the given 'usage'."
+
+    assigned = []
+    if usage:
+        for attrname, invocation, assignment in usage:
+            if assignment:
+                assigned.append(attrname)
+    return assigned
 
 # Useful data.
 

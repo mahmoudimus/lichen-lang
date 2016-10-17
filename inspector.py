@@ -41,6 +41,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         BasicModule.__init__(self, name, importer)
 
+        self.in_assignment = False
         self.in_class = False
         self.in_conditional = False
         self.in_invocation = False
@@ -342,7 +343,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         elif isinstance(n, compiler.ast.AssAttr):
             if expr: self.process_structure_node(expr)
+
+            in_assignment = self.in_assignment
+            self.in_assignment = True
             self.process_attribute_access(n)
+            self.in_assignment = in_assignment
 
         # Lists and tuples are matched against the expression and their
         # items assigned to expression items.
@@ -362,12 +367,19 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         "Process the given attribute access node 'n'."
 
-        # Obtain any completed chain and return the reference to it.
+        # Parts of the attribute chain are neither invoked nor assigned.
 
         in_invocation = self.in_invocation
         self.in_invocation = False
+        in_assignment = self.in_assignment
+        self.in_assignment = False
+
+        # Obtain any completed chain and return the reference to it.
+
         name_ref = self.process_attribute_chain(n)
+
         self.in_invocation = in_invocation
+        self.in_assignment = in_assignment
 
         if self.have_access_expression(n):
             return name_ref
@@ -423,8 +435,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             immediate_access = len(self.attrs) == 1
             assignment = immediate_access and isinstance(n, compiler.ast.AssAttr)
 
-            del self.attrs[0]
-
             # Record global-based chains for subsequent resolution.
 
             is_global = self.in_function and not self.function_locals[path].has_key(name) or \
@@ -445,7 +455,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Record attribute usage in the tracker, and record the branch
             # information for the access.
 
-            branches = tracker.use_attribute(name, attrname, self.in_invocation)
+            branches = tracker.use_attribute(name, attrname, self.in_invocation,
+                self.in_assignment and immediate_access)
 
             if not branches:
                 raise InspectError("Name %s is accessed using %s before an assignment." % (
@@ -453,6 +464,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
             self.record_branches_for_access(branches, name, attrnames)
             access_number = self.record_access_details(name, attrnames, assignment)
+
+            del self.attrs[0]
             return AccessRef(name, attrnames, access_number)
 
     def process_class_node(self, n):
@@ -486,10 +499,13 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
                 bases.append(base_class)
 
         # Record bases for the class and retain the class name.
+        # Note that the function class does not inherit from the object class.
 
         class_name = self.get_object_path(n.name)
 
-        if not bases and class_name != "__builtins__.core.object":
+        if not bases and class_name != "__builtins__.core.object" and \
+                         class_name != "__builtins__.core.function":
+
             ref = self.get_object("__builtins__.object")
             bases.append(ref)
 
@@ -509,8 +525,14 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         self.in_class = class_name
         self.set_instance_attr("__class__", Reference("<class>", class_name))
         self.enter_namespace(n.name)
-        self.set_name("__fn__") # special instantiator attribute
-        self.set_name("__args__") # special instantiator attribute
+
+        # Do not provide the special instantiator attributes on the function
+        # class. Function instances provide these attributes.
+
+        if class_name != "__builtins__.core.function":
+            self.set_name("__fn__") # special instantiator attribute
+            self.set_name("__args__") # special instantiator attribute
+
         self.assign_general_local("__name__", self.get_constant("str", class_name))
         self.process_structure_node(n.code)
         self.exit_namespace()
@@ -710,10 +732,14 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         self.allocate_arguments(path, n.args)
 
         try:
-            # Process the expression, obtaining any identified reference.
+            # Communicate to the invocation target expression that it forms the
+            # target of an invocation, potentially affecting attribute accesses.
 
             in_invocation = self.in_invocation
             self.in_invocation = True
+
+            # Process the expression, obtaining any identified reference.
+
             name_ref = self.process_structure_node(n.node)
             self.in_invocation = in_invocation
 

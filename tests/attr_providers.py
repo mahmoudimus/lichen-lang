@@ -16,6 +16,13 @@ class E:
 def f(x):
     return x.a, x.b
 
+def g(x):
+
+    # Should only permit D instance and E.
+
+    x.a = 7
+    x.b = 8
+
 c = C()
 d = D()
 e = E()

@@ -19,7 +19,8 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import first, get_attrname_from_location, get_attrnames, \
+from common import first, get_assigned_attributes, \
+                   get_attrname_from_location, get_attrnames, \
                    get_invoked_attributes, get_name_path, init_item, \
                    sorted_output, CommonOutput
 from encoders import encode_attrnames, encode_access_location, \
@@ -708,7 +709,7 @@ class Deducer(CommonOutput):
             for attrnames in all_attrnames:
                 attrname = get_attrnames(attrnames)[-1]
                 access_location = (location, None, attrnames, 0)
-                self.add_usage_term(access_location, ((attrname, False),))
+                self.add_usage_term(access_location, ((attrname, False, False),))
 
     def add_usage(self, assignments, path):
 
@@ -985,10 +986,11 @@ class Deducer(CommonOutput):
         "Identify the types that can support each attribute name."
 
         self._init_attr_type_index(self.attr_class_types, self.importer.all_class_attrs)
-        self._init_attr_type_index(self.attr_instance_types, self.importer.all_combined_attrs)
+        self._init_attr_type_index(self.attr_instance_types, self.importer.all_instance_attrs, True)
+        self._init_attr_type_index(self.attr_instance_types, self.importer.all_combined_attrs, False)
         self._init_attr_type_index(self.attr_module_types, self.importer.all_module_attrs)
 
-    def _init_attr_type_index(self, attr_types, attrs):
+    def _init_attr_type_index(self, attr_types, attrs, assignment=None):
 
         """
         Initialise the 'attr_types' attribute-to-types mapping using the given
@@ -997,8 +999,20 @@ class Deducer(CommonOutput):
 
         for name, attrnames in attrs.items():
             for attrname in attrnames:
-                init_item(attr_types, attrname, set)
-                attr_types[attrname].add(name)
+
+                # Permit general access for certain kinds of object.
+
+                if assignment is None:
+                    init_item(attr_types, (attrname, False), set)
+                    init_item(attr_types, (attrname, True), set)
+                    attr_types[(attrname, False)].add(name)
+                    attr_types[(attrname, True)].add(name)
+
+                # Restrict attribute assignment for instances.
+
+                else:
+                    init_item(attr_types, (attrname, assignment), set)
+                    attr_types[(attrname, assignment)].add(name)
 
     def get_class_types_for_usage(self, usage):
 
@@ -1035,21 +1049,19 @@ class Deducer(CommonOutput):
         if not usage:
             return attrs.keys()
 
-        attrnames = []
-        for attrname, invocation in usage:
-            attrnames.append(attrname)
+        keys = []
+        for attrname, invocation, assignment in usage:
+            keys.append((attrname, assignment))
 
-        types = []
+        # Obtain types supporting the first (attribute name, assignment) key...
 
-        # Obtain types supporting the first attribute name...
+        types = set(attr_types.get(keys[0]) or [])
 
-        for name in attr_types.get(attrnames[0]) or []:
-
+        for key in keys[1:]:
+            
             # Record types that support all of the other attributes as well.
 
-            _attrnames = attrs[name]
-            if set(attrnames).issubset(_attrnames):
-                types.append(name)
+            types.intersection_update(attr_types.get(key) or [])
 
         return types
 
@@ -1241,6 +1253,7 @@ class Deducer(CommonOutput):
         """
 
         unit_path, name, attrnames, version = location
+        have_assignments = get_assigned_attributes(usage)
 
         # Detect any initialised name for the location.
 
@@ -1249,7 +1262,7 @@ class Deducer(CommonOutput):
             if ref:
                 (class_types, only_instance_types, module_types,
                     _function_types, _var_types) = separate_types([ref])
-                return class_types, only_instance_types, module_types, True, False
+                return class_types, only_instance_types, module_types, True, have_assignments
 
         # Retrieve the recorded types for the usage.
 
@@ -1261,7 +1274,7 @@ class Deducer(CommonOutput):
         # for names involved with attribute accesses.
 
         if not name:
-            return class_types, only_instance_types, module_types, False, False
+            return class_types, only_instance_types, module_types, False, have_assignments
 
         # Obtain references to known objects.
 
@@ -1271,7 +1284,8 @@ class Deducer(CommonOutput):
             self.constrain_types(path, class_types, only_instance_types, module_types)
 
         if constrained_specific:
-            return class_types, only_instance_types, module_types, constrained_specific, constrained_specific
+            return class_types, only_instance_types, module_types, constrained_specific, \
+                constrained_specific or have_assignments
 
         # Constrain "self" references.
 
@@ -1279,9 +1293,9 @@ class Deducer(CommonOutput):
             t = self.constrain_self_reference(unit_path, class_types, only_instance_types)
             if t:
                 class_types, only_instance_types, module_types, constrained = t
-                return class_types, only_instance_types, module_types, constrained, False
+                return class_types, only_instance_types, module_types, constrained, have_assignments
 
-        return class_types, only_instance_types, module_types, False, False
+        return class_types, only_instance_types, module_types, False, have_assignments
 
     def constrain_self_reference(self, unit_path, class_types, only_instance_types):
 
@@ -1381,7 +1395,7 @@ class Deducer(CommonOutput):
 
             else:
                 self.init_definition_details(location)
-                self.record_types_for_usage(location, [(attrname, False)])
+                self.record_types_for_usage(location, [(attrname, False, False)])
 
             constrained = location in self.accessor_constrained and constrained
 
@@ -1403,7 +1417,8 @@ class Deducer(CommonOutput):
 
         invocations = get_invoked_attributes(usage)
 
-        self.record_reference_types(accessor_location, class_types, instance_types, module_types, constrained, constrained_specific, invocations)
+        self.record_reference_types(accessor_location, class_types, instance_types,
+            module_types, constrained, constrained_specific, invocations)
 
     def record_types_for_attribute(self, access_location, attrname):
 
@@ -1425,7 +1440,7 @@ class Deducer(CommonOutput):
 
         "Return class, instance-only and module types supporting 'attrname'."
 
-        usage = ((attrname, False),)
+        usage = ((attrname, False, False),)
 
         class_types = self.get_class_types_for_usage(usage)
         only_instance_types = set(self.get_instance_types_for_usage(usage)).difference(class_types)

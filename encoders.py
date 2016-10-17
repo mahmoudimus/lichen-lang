@@ -41,8 +41,8 @@ def encode_usage(usage):
 
     all_attrnames = []
     for t in usage:
-        attrname, invocation = t
-        all_attrnames.append("%s%s" % (attrname, invocation and "!" or ""))
+        attrname, invocation, assignment = t
+        all_attrnames.append("%s%s" % (attrname, invocation and "!" or assignment and "=" or ""))
     return ", ".join(all_attrnames) or "{}"
 
 def decode_usage(s):
@@ -51,7 +51,7 @@ def decode_usage(s):
 
     all_attrnames = set()
     for attrname_str in s.split(", "):
-        all_attrnames.add((attrname_str.rstrip("!"), attrname_str.endswith("!")))
+        all_attrnames.add((attrname_str.rstrip("!="), attrname_str.endswith("!"), attrname_str.endswith("=")))
 
     all_attrnames = list(all_attrnames)
     all_attrnames.sort()
