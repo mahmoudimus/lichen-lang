@@ -1576,6 +1576,12 @@ class Deducer(CommonOutput):
         given location. This is only useful where a specific accessor is known
         to be a class.
 
+        If 'invocations' is given, the given attribute names indicate those
+        which are involved in invocations. Such invocations, if involving
+        functions, will employ those functions as bound methods and will
+        therefore not support classes as accessors, only instances of such
+        classes.
+
         Note that the specified types only indicate the provider types for
         attributes, whereas the recorded accessor types indicate the possible
         types of the actual objects used to access attributes.
