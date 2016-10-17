@@ -744,10 +744,7 @@ class CacheWritingModule:
         the special string "{}" representing an empty set.
 
         Each usage is a collection of names separated by ", " characters, with
-        assigned attribute names suffixed with a "*" character.
-
-        Each attribute-chain expression is a dot-separated chain of attribute
-        names, with assignments suffixed with a "*" character.
+        invoked attribute names suffixed with a "!" character.
 
         Definition versions are separated by ", " characters and indicate the
         name definition version associated with the access.
