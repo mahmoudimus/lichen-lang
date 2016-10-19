@@ -504,7 +504,8 @@ class CachedModule(BasicModule):
             function, name, value = self._get_fields(line, 3)
             init_item(self.function_locals, function, dict)
             if name != "{}":
-                self.function_locals[function][name] = decode_reference(value)
+                self.importer.function_locals[function] = \
+                    self.function_locals[function][name] = decode_reference(value)
             line = f.readline().rstrip()
 
     def _get_function_targets(self, f):

@@ -69,6 +69,7 @@ class Importer:
         self.classes = {}
         self.function_parameters = {}
         self.function_defaults = {}
+        self.function_locals = {}
         self.function_targets = {}
         self.function_arguments = {}
 

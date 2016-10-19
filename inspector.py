@@ -593,11 +593,13 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Copy and propagate the parameters.
 
         self.importer.function_parameters[function_name] = \
-        self.function_parameters[function_name] = argnames[:]
+            self.function_parameters[function_name] = argnames[:]
 
         # Define all arguments/parameters in the local namespace.
 
-        locals = self.function_locals[function_name] = {}
+        locals = \
+            self.importer.function_locals[function_name] = \
+            self.function_locals[function_name] = {}
 
         # Insert "self" into method locals.
 
