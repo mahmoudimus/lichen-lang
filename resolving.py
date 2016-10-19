@@ -41,7 +41,6 @@ class NameResolving:
         self.check_invocations()
         self.resolve_initialisers()
         self.resolve_literals()
-        self.remove_redundant_accessors()
 
     def resolve_class_bases(self):
 
@@ -352,21 +351,6 @@ class NameResolving:
                 objpath = "%s.$C%d" % (path, n)
                 value_type = self.literal_types[objpath]
                 self.initialised_names[objpath] = {0 : Reference("<instance>", value_type)}
-
-    def remove_redundant_accessors(self):
-
-        "Remove now-redundant modifier and accessor information."
-
-        for path, const_accesses in self.const_accesses.items():
-            accesses = self.attr_accessors.get(path)
-            modifiers = self.attr_access_modifiers.get(path)
-            if not accesses:
-                continue
-            for access in const_accesses.keys():
-                if accesses.has_key(access):
-                    del accesses[access]
-                if modifiers and modifiers.has_key(access):
-                    del modifiers[access]
 
     # Object resolution.
 
