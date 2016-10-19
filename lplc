@@ -3,7 +3,7 @@
 from errors import *
 from os.path import abspath, exists, join, split
 from time import time
-import importer, deducer, optimiser
+import importer, deducer, optimiser, translator
 import sys
 
 libdirs = [
@@ -69,6 +69,11 @@ if __name__ == "__main__":
         o.to_output()
 
         now = stopwatch("Optimisation", now)
+
+        t = translator.Translator(i, d, o, "_generated")
+        t.to_output()
+
+        stopwatch("Translation", now)
 
     # Report any errors.
 

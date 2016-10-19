@@ -153,11 +153,11 @@ def encode_instruction(instruction):
 
     if args:
         a = []
-        for i in args:
-            if isinstance(i, tuple):
-                a.append(encode_instruction(i))
+        for arg in args:
+            if isinstance(arg, tuple):
+                a.append(encode_instruction(arg))
             else:
-                a.append(i or "{}")
+                a.append(arg or "{}")
         argstr = "(%s)" % ", ".join(a)
         return "%s%s" % (op, argstr)
     else:
@@ -166,6 +166,90 @@ def encode_instruction(instruction):
 
 
 # Output program encoding.
+
+attribute_ops = (
+    "__load_via_class", "__load_via_object",
+    "__store_via_object",
+    )
+
+checked_ops = (
+    "__check_and_load_via_class", "__check_and_load_via_object", "__check_and_load_via_any",
+    "__check_and_store_via_class", "__check_and_store_via_object", "__check_and_store_via_any",
+    )
+
+typename_ops = (
+    "__test_common_instance",
+    )
+
+def encode_access_instruction(instruction, subs):
+
+    """
+    Encode the 'instruction' - a sequence starting with an operation and
+    followed by arguments, each of which may be an instruction sequence or a
+    plain value - to produce a function call string representation.
+
+    The 'subs' parameter defines a mapping of substitutions for special values
+    used in instructions.
+    """
+
+    op = instruction[0]
+    args = instruction[1:]
+
+    if not args:
+        argstr = ""
+
+    else:
+        # Encode the arguments.
+
+        a = []
+        for arg in args:
+            a.append(encode_access_instruction_arg(arg, subs))
+
+        # Modify certain arguments.
+
+        # Convert attribute name arguments to position symbols.
+
+        if op in attribute_ops:
+            arg = a[1]
+            a[1] = encode_symbol("pos", arg)
+
+        # Convert attribute name arguments to position and code symbols.
+
+        elif op in checked_ops:
+            arg = a[1]
+            a[1] = encode_symbol("pos", arg)
+            a.insert(2, encode_symbol("code", arg))
+
+        # Convert type name arguments to position and code symbols.
+
+        elif op in typename_ops:
+            arg = "#" % a[1]
+            a[1] = encode_symbol("pos", arg)
+            a.insert(2, encode_symbol("code", arg))
+
+        argstr = "(%s)" % ", ".join(a)
+
+    # Substitute the first element of the instruction, which may not be an
+    # operation at all.
+
+    return "%s%s" % (subs.get(op, op), argstr)
+
+def encode_access_instruction_arg(arg, subs):
+
+    "Encode 'arg' using 'subs' to define substitutions."
+
+    if isinstance(arg, tuple):
+        return encode_access_instruction(arg, subs)
+
+    # Special values only need replacing, not encoding.
+
+    elif subs.has_key(arg):
+        return subs.get(arg)
+
+    # Other values may need encoding.
+
+    else:
+        return encode_path(arg)
 
 def encode_function_pointer(path):
 
