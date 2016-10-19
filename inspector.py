@@ -21,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from branching import BranchTracker
-from common import get_argnames, init_item, predefined_constants
+from common import CommonModule, get_argnames, init_item, predefined_constants
 from modules import BasicModule, CacheWritingModule, InspectionNaming
 from errors import InspectError
 from referencing import Reference
@@ -45,6 +45,14 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         self.in_class = False
         self.in_conditional = False
         self.in_invocation = False
+
+        # Attribute chain state management.
+
+        self.chain_assignment = []
+        self.chain_invocation = []
+
+        # Accesses to global attributes.
+
         self.global_attr_accesses = {}
 
         # Usage tracking.
@@ -367,19 +375,9 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         "Process the given attribute access node 'n'."
 
-        # Parts of the attribute chain are neither invoked nor assigned.
-
-        in_invocation = self.in_invocation
-        self.in_invocation = False
-        in_assignment = self.in_assignment
-        self.in_assignment = False
-
         # Obtain any completed chain and return the reference to it.
 
         name_ref = self.process_attribute_chain(n)
-
-        self.in_invocation = in_invocation
-        self.in_assignment = in_assignment
 
         if self.have_access_expression(n):
             return name_ref
@@ -455,15 +453,14 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Record attribute usage in the tracker, and record the branch
             # information for the access.
 
-            branches = tracker.use_attribute(name, attrname, self.in_invocation,
-                self.in_assignment and immediate_access)
+            branches = tracker.use_attribute(name, attrname, self.in_invocation, assignment)
 
             if not branches:
                 raise InspectError("Name %s is accessed using %s before an assignment." % (
                     name, attrname), path, n)
 
             self.record_branches_for_access(branches, name, attrnames)
-            access_number = self.record_access_details(name, attrnames, assignment)
+            access_number = self.record_access_details(name, attrnames, self.in_assignment)
 
             del self.attrs[0]
             return AccessRef(name, attrnames, access_number)
@@ -991,6 +988,26 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Connect broken branches to the code after any loop.
 
         tracker.resume_broken_branches()
+
+    # Attribute chain handling.
+
+    def reset_attribute_chain(self):
+
+        "Reset the attribute chain for a subexpression of an attribute access."
+
+        CommonModule.reset_attribute_chain(self)
+        self.chain_assignment.append(self.in_assignment)
+        self.chain_invocation.append(self.in_invocation)
+        self.in_assignment = False
+        self.in_invocation = False
+
+    def restore_attribute_chain(self, attrs):
+
+        "Restore the attribute chain for an attribute access."
+
+        CommonModule.restore_attribute_chain(self, attrs)
+        self.in_assignment = self.chain_assignment.pop()
+        self.in_invocation = self.chain_invocation.pop()
 
     # Branch tracking methods.
 

@@ -559,7 +559,7 @@ class CommonModule:
         # Break attribute chains where non-access nodes are found.
 
         if not self.have_access_expression(n):
-            self.attrs = []
+            self.reset_attribute_chain()
 
         # Descend into the expression, extending backwards any existing chain,
         # or building another for the expression.
@@ -568,7 +568,8 @@ class CommonModule:
 
         # Restore chain information applying to this node.
 
-        self.attrs = attrs
+        if not self.have_access_expression(n):
+            self.restore_attribute_chain(attrs)
 
         # Return immediately if the expression was another access and thus a
         # continuation backwards along the chain. The above processing will
@@ -578,6 +579,18 @@ class CommonModule:
             del self.attrs[0]
 
         return name_ref
+
+    def reset_attribute_chain(self):
+
+        "Reset the attribute chain for a subexpression of an attribute access."
+
+        self.attrs = []
+
+    def restore_attribute_chain(self, attrs):
+
+        "Restore the attribute chain for an attribute access."
+
+        self.attrs = attrs
 
     def have_access_expression(self, node):
 
