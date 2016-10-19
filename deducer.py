@@ -791,29 +791,42 @@ class Deducer(CommonOutput):
             # For each combination of name and attribute names, obtain
             # applicable modifiers.
 
-            for (name, attrnames), modifiers in all_accesses.items():
+            for (name, attrname_str), modifiers in all_accesses.items():
 
                 # For each access, determine the name versions affected by
                 # assignments.
 
                 for access_number, assignment in enumerate(modifiers):
-                    if name:
-                        access_location = (path, name, attrnames, access_number)
-                    else:
-                        access_location = (path, None, attrnames, 0)
+                    if not assignment:
+                        continue
 
-                    if assignment:
-                        self.reference_assignments.add(access_location)
+                    if name:
+                        access_location = (path, name, attrname_str, access_number)
+                    else:
+                        access_location = (path, None, attrname_str, 0)
+
+                    self.reference_assignments.add(access_location)
 
                     # Associate assignments with usage.
 
-                    accessor_locations = self.get_accessors_for_access(access_location)
+                    attrnames = get_attrnames(attrname_str)
 
-                    for location in accessor_locations:
-                        for usage in self.location_index[location]:
-                            if assignment:
+                    # Assignment occurs for the only attribute.
+
+                    if len(attrnames) == 1:
+                        accessor_locations = self.get_accessors_for_access(access_location)
+
+                        for location in accessor_locations:
+                            for usage in self.location_index[location]:
                                 init_item(self.assigned_attrs, usage, set)
-                                self.assigned_attrs[usage].add((path, name, attrnames))
+                                self.assigned_attrs[usage].add((path, name, attrnames[0]))
+
+                    # Assignment occurs for the final attribute.
+
+                    else:
+                        usage = ((attrnames[-1], False, False),)
+                        init_item(self.assigned_attrs, usage, set)
+                        self.assigned_attrs[usage].add((path, name, attrnames[-1]))
 
     def init_aliases(self):
 
@@ -899,7 +912,7 @@ class Deducer(CommonOutput):
             if not usage:
                 continue
 
-            for path, name, attrnames in all_attrnames:
+            for path, name, attrname in all_attrnames:
                 class_types = self.get_class_types_for_usage(usage)
                 only_instance_types = set(self.get_instance_types_for_usage(usage)).difference(class_types)
                 module_types = self.get_module_types_for_usage(usage)
@@ -912,14 +925,14 @@ class Deducer(CommonOutput):
                     class_types, only_instance_types, module_types, constrained = t
                 objects = set(class_types).union(only_instance_types).union(module_types)
 
-                self.mutate_attribute(objects, attrnames)
+                self.mutate_attribute(objects, attrname)
 
-    def mutate_attribute(self, objects, attrnames):
+    def mutate_attribute(self, objects, attrname):
 
-        "Mutate static 'objects' with the given 'attrnames'."
+        "Mutate static 'objects' with the given 'attrname'."
 
         for name in objects:
-            attr = "%s.%s" % (name, attrnames)
+            attr = "%s.%s" % (name, attrname)
             value = self.importer.get_object(attr)
 
             # If the value is None, the attribute is
