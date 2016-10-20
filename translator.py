@@ -1094,7 +1094,15 @@ class TranslatedModule(CommonModule):
         return (self.indent + extra) * self.tabstop
 
     def indenttext(self, s, levels):
-        return s.replace("\n", "\n%s" % (levels * self.tabstop))
+        lines = s.split("\n")
+        out = [lines[0]]
+        for line in lines[1:]:
+            out.append(levels * self.tabstop + line)
+            if line.endswith("("):
+                levels += 1
+            elif line.endswith(")"):
+                levels -= 1
+        return "\n".join(out)
 
     def writeline(self, s):
         print >>self.out, "%s%s" % (self.pad(), self.indenttext(s, self.indent + 1))
