@@ -128,6 +128,14 @@ class AttrResult(Expression, TranslationResult):
     def get_origin(self):
         return self.refs and len(self.refs) == 1 and first(self.refs).get_origin()
 
+    def has_kind(self, kinds):
+        if not self.refs:
+            return False
+        for ref in self.refs:
+            if ref.has_kind(kinds):
+                return True
+        return False
+
     def __repr__(self):
         return "AttrResult(%r, %r)" % (self.s, self.origin)
 
@@ -227,6 +235,14 @@ class TranslatedModule(CommonModule):
     def in_method(self, path):
         class_name, method_name = path.rsplit(".", 1)
         return self.importer.classes.has_key(class_name) and class_name
+
+    def reset_invocations(self):
+
+        "Reset offsets within each namespace's arguments array."
+
+        self.invocation_depth = 0
+        self.invocation_argument_depth = 0
+        self.invocation_kw_argument_depth = 0
 
     # Namespace recording.
 
@@ -329,9 +345,7 @@ class TranslatedModule(CommonModule):
             self.process_function_body_node(node)
         else:
             self.in_function = False
-            self.invocation_depth = 0
-            self.invocation_argument_depth = 0
-            self.invocation_kw_argument_depth = 0
+            self.reset_invocations()
             self.start_module()
             self.process_structure(node)
             self.end_module()
@@ -633,9 +647,7 @@ class TranslatedModule(CommonModule):
 
         # Process the function body.
 
-        self.invocation_depth = 0
-        self.invocation_argument_depth = 0
-        self.invocation_kw_argument_depth = 0
+        self.reset_invocations()
 
         in_conditional = self.in_conditional
         self.in_conditional = False
@@ -756,13 +768,24 @@ class TranslatedModule(CommonModule):
 
         expr = self.process_structure_node(n.node)
         objpath = expr.get_origin()
+        target = None
 
         # Obtain details of the callable.
 
         if objpath:
             parameters = self.importer.function_parameters.get(objpath)
+            if expr.has_kind("<class>"):
+                target = encode_instantiator_pointer(objpath)
+            elif expr.has_kind("<function>"):
+                target = encode_function_pointer(objpath)
         else:
             parameters = None
+
+        # Obtain details of the argument storage, updating the offsets to allow
+        # calls in the argument list.
+
+        argstart = self.invocation_argument_depth
+        # self.invocation_argument_depth += len(parameters)
 
         stages = []
 
@@ -771,15 +794,20 @@ class TranslatedModule(CommonModule):
         # may be omitted for invocations where it would be unused).
 
         stages.append("__tmp_target = %s" % expr)
-        stages.append("__tmp_args[...] = __tmp_target.context")
+        stages.append("__tmp_args[%d] = __tmp_target.context" % argstart)
 
         # Keyword arguments are positioned within the frame.
 
         # Defaults are added to the frame where arguments are missing.
 
-        # The callable member of the callable is then obtained.
+        # Any identified target is stated.
 
-        if self.always_callable:
+        if target:
+            get_fn = "__tmp_target.fn"
+
+        # The callable member of any callable is then obtained.
+
+        elif self.always_callable:
             get_fn = "__load_via_object(__tmp_target, %s).fn" % \
                      encode_symbol("pos", "__fn__")
         else:
@@ -788,7 +816,7 @@ class TranslatedModule(CommonModule):
 
         stages.append(get_fn)
 
-        output = "(\n%s\n)(__tmp_frame)" % ",\n".join(stages)
+        output = "(\n%s\n)(&__tmp_args[%d])" % (",\n".join(stages), argstart)
 
         return make_expression("".join(output))
 

@@ -29,7 +29,11 @@ class Result:
 
     def is_name(self):
         return False
+
     def get_origin(self):
+        return None
+
+    def reference(self):
         return None
 
 class AccessRef(Result):
@@ -43,9 +47,6 @@ class AccessRef(Result):
         self.original_name = original_name
         self.attrnames = attrnames
         self.number = number
-
-    def reference(self):
-        return None
 
     def __repr__(self):
         return "AccessRef(%r, %r, %r)" % (self.original_name, self.attrnames, self.number)
@@ -77,9 +78,6 @@ class NameRef(Result):
 
     def is_name(self):
         return True
-
-    def reference(self):
-        return None
 
     def final(self):
         return None

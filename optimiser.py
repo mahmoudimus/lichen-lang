@@ -506,15 +506,38 @@ class Optimiser:
 
                     remaining -= 1
 
+            # Define or emit the means of accessing the actual target.
+
             if final_method == "static-assign":
-                emit(("__store_member", origin, "<assexpr>"))
+                parent, attrname = origin.rsplit(".", 1)
+                emit(("__store_via_object", parent, attrname, "<assexpr>"))
+
             elif final_method == "static":
                 accessor = ("__load_static", origin)
 
+            elif final_method == "static-invoke":
+                kind = self.importer.get_object(origin).get_kind()
+                accessor = ("__encode_callable", origin, kind)
+
+            # Wrap accesses in context operations.
+
             if context_test == "test":
                 emit(("__test_context", context_var, accessor))
+
             elif context_test == "replace":
-                emit(("__replace_context", context_var, accessor))
+
+                # Static invocation targets have a context added but no other
+                # transformation performed.
+
+                if final_method == "static-invoke":
+                    emit(("__update_context", context_var, accessor))
+
+                # Other invocation targets gain a context and have the bound
+                # version of the callable activated.
+
+                else:
+                    emit(("__replace_context", context_var, accessor))
+
             elif final_method not in ("assign", "static-assign"):
                 emit(accessor)
 
