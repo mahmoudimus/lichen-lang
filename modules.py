@@ -503,8 +503,9 @@ class CachedModule(BasicModule):
         while line:
             function, name, value = self._get_fields(line, 3)
             init_item(self.function_locals, function, dict)
+            init_item(self.importer.function_locals, function, dict)
             if name != "{}":
-                self.importer.function_locals[function] = \
+                self.importer.function_locals[function][name] = \
                     self.function_locals[function][name] = decode_reference(value)
             line = f.readline().rstrip()
 
