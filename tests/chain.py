@@ -23,28 +23,60 @@ class C:
             def v(self):
                 return self.u().__len__
 
-def main():
+def static():
     c = C
     d = C.D
     e = C.D.E
     f = C.D.E.m
     g = C.D.E.n
     h = C.D.p
+
+def static_via_constant():
     i = C.D.p.__len__
+
+def assign():
     C.D.q = 987
+
+def indirect():
+    e = C.D.E
     inst = e()
     method = inst.m
     return method("5")
 
-result1 = main()
+def broken():
+    inst2 = C.D.F()
+    l = inst2.u().__len__
+
+static()
+static_via_constant()
+assign()
+result1 = indirect()
+broken()
+
+# Static chains.
+
 c = C
 d = C.D
 e = C.D.E
 f = C.D.E.m
 g = C.D.E.n
 h = C.D.p
+
+# Static via constant.
+
 i = C.D.p.__len__
+
+# Static assignment.
+
 C.D.q = 987
+
+# Indirect accesses.
+
 inst = e()
 method = inst.m
 result2 = method("5")
+
+# Broken chains.
+
+inst2 = C.D.F()
+l = inst2.u().__len__
