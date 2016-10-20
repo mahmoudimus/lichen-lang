@@ -89,14 +89,14 @@ def encode_modifier_term(t):
 
     "Encode modifier 't' representing assignment status."
 
-    assignment = t
-    return assignment and "A" or "_"
+    assignment, invocation = t
+    return assignment and "=" or invocation and "!" or "_"
 
 def decode_modifier_term(s):
 
     "Decode modifier term 's' representing assignment status."
 
-    return s == "A"
+    return (s == "=", s == "!")
 
 
 
@@ -181,6 +181,10 @@ typename_ops = (
     "__test_common_instance",
     )
 
+encoding_ops = (
+    "__encode_callable",
+    )
+
 def encode_access_instruction(instruction, subs):
 
     """
@@ -226,6 +230,14 @@ def encode_access_instruction(instruction, subs):
             arg = "#" % a[1]
             a[1] = encode_symbol("pos", arg)
             a.insert(2, encode_symbol("code", arg))
+
+        # Replace encoded operations.
+
+        elif op in encoding_ops:
+            origin = a[0]
+            kind = a[1]
+            op = "__load_function"
+            a = [kind == "<class>" and encode_instantiator_pointer(origin) or encode_function_pointer(origin)]
 
         argstr = "(%s)" % ", ".join(a)
 

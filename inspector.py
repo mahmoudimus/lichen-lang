@@ -401,12 +401,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         if not isinstance(name_ref, NameRef): # includes ResolvedNameRef
 
-            assignment = isinstance(n, compiler.ast.AssAttr)
-
             init_item(self.attr_accesses, path, set)
             self.attr_accesses[path].add(attrnames)
 
-            self.record_access_details(None, attrnames, assignment)
+            self.record_access_details(None, attrnames, self.in_assignment,
+                self.in_invocation)
             del self.attrs[0]
             return
 
@@ -460,7 +459,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
                     name, attrname), path, n)
 
             self.record_branches_for_access(branches, name, attrnames)
-            access_number = self.record_access_details(name, attrnames, self.in_assignment)
+            access_number = self.record_access_details(name, attrnames,
+                self.in_assignment, self.in_invocation)
 
             del self.attrs[0]
             return AccessRef(name, attrnames, access_number)
@@ -844,7 +844,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
             if branches:
                 self.record_branches_for_access(branches, n.name, None)
-                access_number = self.record_access_details(n.name, None, False)
+                access_number = self.record_access_details(n.name, None, False, False)
                 return LocalNameRef(n.name, access_number)
 
             # Possible global or built-in name.
@@ -1118,7 +1118,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         init_item(attr_accessor_branches, access, list)
         attr_accessor_branches[access].append(branches)
 
-    def record_access_details(self, name, attrnames, assignment):
+    def record_access_details(self, name, attrnames, assignment, invocation):
 
         """
         For the given 'name' and 'attrnames', record an access indicating
@@ -1135,7 +1135,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         init_item(self.attr_access_modifiers[path], access, list)
 
         access_number = len(self.attr_access_modifiers[path][access])
-        self.attr_access_modifiers[path][access].append(assignment)
+        self.attr_access_modifiers[path][access].append((assignment, invocation))
         return access_number
 
     def record_global_access_details(self, name, attrnames):

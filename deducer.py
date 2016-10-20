@@ -83,9 +83,10 @@ class Deducer(CommonOutput):
 
         self.modified_attributes = {}
 
-        # Accesses that are assignments.
+        # Accesses that are assignments or invocations.
 
         self.reference_assignments = set()
+        self.reference_invocations = set()
 
         # Map locations to types, constrained indicators and attributes.
 
@@ -796,14 +797,18 @@ class Deducer(CommonOutput):
                 # For each access, determine the name versions affected by
                 # assignments.
 
-                for access_number, assignment in enumerate(modifiers):
-                    if not assignment:
+                for access_number, (assignment, invocation) in enumerate(modifiers):
+                    if not assignment and not invocation:
                         continue
 
                     if name:
                         access_location = (path, name, attrname_str, access_number)
                     else:
                         access_location = (path, None, attrname_str, 0)
+
+                    if invocation:
+                        self.reference_invocations.add(access_location)
+                        continue
 
                     self.reference_assignments.add(access_location)
 
@@ -1955,6 +1960,7 @@ class Deducer(CommonOutput):
         # Determine the method of access.
 
         is_assignment = location in self.reference_assignments
+        is_invocation = location in self.reference_invocations
 
         # Identified attribute that must be accessed via its parent.
 
@@ -1964,7 +1970,9 @@ class Deducer(CommonOutput):
         # Static, identified attribute.
 
         elif attr and attr.static():
-            final_method = is_assignment and "static-assign" or "static"
+            final_method = is_assignment and "static-assign" or \
+                           is_invocation and "static-invoke" or \
+                           "static"
             origin = attr.final()
 
         # All other methods of access involve traversal.
