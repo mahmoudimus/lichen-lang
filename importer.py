@@ -580,7 +580,7 @@ class Importer:
 
         for cls, attrs in self.all_class_attrs.items():
             initialiser = attrs["__init__"]
-            self.function_parameters[cls] = self.function_parameters[initialiser][1:]
+            self.function_parameters[cls] = self.function_parameters[initialiser]
             self.function_defaults[cls] = self.function_defaults[initialiser]
 
     def collect_constants(self):
