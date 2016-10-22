@@ -61,4 +61,6 @@ class BaseException(object): pass
 class Exception(BaseException): pass
 class Warning(object): pass
 
+def get_using(callable, instance): pass
+
 # vim: tabstop=4 expandtab shiftwidth=4

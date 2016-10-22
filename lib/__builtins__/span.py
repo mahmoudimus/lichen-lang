@@ -66,6 +66,6 @@ class slice(xrange):
 
         "Initialise the slice with the given 'start_or_end', 'end' and 'step'."
 
-        xrange.__init__(self, start_or_end, end, step)
+        get_using(xrange.__init__, self)(start_or_end, end, step)
 
 # vim: tabstop=4 expandtab shiftwidth=4
