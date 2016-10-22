@@ -437,7 +437,7 @@ class CallFunc(Node):
     def __str__(self):
         star_args = self.star_args and ["*%s" % self.star_args] or []
         dstar_args = self.dstar_args and ["**%s" % self.dstar_args] or []
-        return "%s(%s)" % (self.node, ", ".join(map(str, self.args + star_args + dstar_args)))
+        return "%s(%s)" % (self.node, ", ".join(map(str, tuple(self.args) + tuple(star_args) + tuple(dstar_args))))
 
 class Class(Node):
     def __init__(self, name, bases, doc, code, decorators = None, lineno=None):
