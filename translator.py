@@ -236,14 +236,6 @@ class TranslatedModule(CommonModule):
         class_name, method_name = path.rsplit(".", 1)
         return self.importer.classes.has_key(class_name) and class_name
 
-    def reset_invocations(self):
-
-        "Reset offsets within each namespace's arguments array."
-
-        self.invocation_depth = 0
-        self.invocation_argument_depth = 0
-        self.invocation_kw_argument_depth = 0
-
     # Namespace recording.
 
     def record_namespaces(self, node):
@@ -345,7 +337,6 @@ class TranslatedModule(CommonModule):
             self.process_function_body_node(node)
         else:
             self.in_function = False
-            self.reset_invocations()
             self.start_module()
             self.process_structure(node)
             self.end_module()
@@ -647,8 +638,6 @@ class TranslatedModule(CommonModule):
 
         # Process the function body.
 
-        self.reset_invocations()
-
         in_conditional = self.in_conditional
         self.in_conditional = False
 
@@ -781,44 +770,100 @@ class TranslatedModule(CommonModule):
         else:
             parameters = None
 
-        # Obtain details of the argument storage, updating the offsets to allow
-        # calls in the argument list.
-
-        argstart = self.invocation_argument_depth
-        # self.invocation_argument_depth += len(parameters)
-
         stages = []
 
-        # Arguments are presented in a temporary frame array at the current
-        # position with any context always being the first argument (although it
-        # may be omitted for invocations where it would be unused).
+        # First, the invocation target is presented.
 
         stages.append("__tmp_target = %s" % expr)
-        stages.append("__tmp_args[%d] = __tmp_target.context" % argstart)
 
-        # Keyword arguments are positioned within the frame.
+        # Arguments are presented in a temporary frame array with any context
+        # always being the first argument (although it may be set to null for
+        # invocations where it would be unused).
+
+        args = ["__CONTEXT_AS_VALUE(__tmp_target)"]
+        args += [None] * (not parameters and len(n.args) or parameters and len(parameters) or 0)
+        kwcodes = []
+        kwargs = []
+
+        for i, arg in enumerate(n.args):
+            argexpr = self.process_structure_node(arg)
+
+            # Store a keyword argument, either in the argument list or
+            # in a separate keyword argument list for subsequent lookup.
+
+            if isinstance(arg, compiler.ast.Keyword):
+
+                # With knowledge of the target, store the keyword
+                # argument directly.
+
+                if parameters:
+                    argnum = parameters.index(arg.name)
+                    args[argnum+1] = str(argexpr)
+
+                # Otherwise, store the details in a separate collection.
+
+                else:
+                    kwargs.append(str(argexpr))
+                    kwcodes.append("{%s, %s}" % (
+                        encode_symbol("ppos", arg.name),
+                        encode_symbol("pcode", arg.name)))
+
+            else:
+                args[i+1] = str(argexpr)
 
         # Defaults are added to the frame where arguments are missing.
 
-        # Any identified target is stated.
+        if parameters:
+            function_defaults = self.importer.function_defaults.get(objpath)
+            if function_defaults:
+
+                # Visit each default and set any missing arguments.
+
+                for i, (argname, default) in enumerate(function_defaults):
+                    argnum = parameters.index(argname)
+                    if not args[argnum+1]:
+                        args[argnum+1] = "__GETDEFAULT(%s, %d)" % (target, i)
+
+        if None in args:
+            print self.get_namespace_path()
+            print n
+            print expr
+            print target
+            print args
+
+        argstr = "__ARGS(%s)" % ", ".join(args)
+        kwargstr = kwargs and ("__ARGS(%s)" % ", ".join(kwargs)) or "0"
+        kwcodestr = kwcodes and ("__KWARGS(%s)" % ", ".join(kwcodes)) or "0"
+
+        # The callable is then obtained.
 
         if target:
-            get_fn = "__tmp_target.fn"
-
-        # The callable member of any callable is then obtained.
+            callable = "__tmp_target"
 
         elif self.always_callable:
-            get_fn = "__load_via_object(__tmp_target, %s).fn" % \
+            callable = "__load_via_object(__tmp_target, %s)" % \
                      encode_symbol("pos", "__fn__")
         else:
-            get_fn = "__check_and_load_via_object(__tmp_target, %s, %s).fn" % (
+            callable = "__check_and_load_via_object(__tmp_target, %s, %s)" % (
                      encode_symbol("pos", "__fn__"), encode_symbol("code", "__fn__"))
 
-        stages.append(get_fn)
+        stages.append(callable)
 
-        output = "(\n%s\n)(&__tmp_args[%d])" % (",\n".join(stages), argstart)
+        # With a known target, the function is obtained directly and called.
 
-        return make_expression("".join(output))
+        if target:
+            output = "(\n%s.fn\n)(%s)" % (",\n".join(stages), argstr)
+
+        # With unknown targets, the generic invocation function is applied to
+        # the callable and argument collections.
+
+        else:
+            output = "__invoke(\n(\n%s\n),\n%d, %s, %s,\n%d, %s\n)" % (
+                ",\n".join(stages),
+                len(kwargs), kwcodestr, kwargstr,
+                len(args), argstr)
+
+        return make_expression(output)
 
     def always_callable(self, refs):
 
@@ -1025,7 +1070,6 @@ class TranslatedModule(CommonModule):
         print >>self.out, "void __main_%s()" % encode_path(self.name)
         print >>self.out, "{"
         self.indent += 1
-        self.emit_invocation_storage(self.name)
 
     def end_module(self):
         self.indent -= 1
@@ -1057,8 +1101,6 @@ class TranslatedModule(CommonModule):
         if names:
             names.sort()
             self.writeline("__attr %s;" % ", ".join(names))
-
-        self.emit_invocation_storage(name)
 
         # Generate any self reference.
 
@@ -1096,16 +1138,6 @@ class TranslatedModule(CommonModule):
         self.indent -= 1
         self.writeline("}")
 
-    def emit_invocation_storage(self, name):
-
-        "Emit invocation temporary storage."
-
-        if self.importer.function_targets.has_key(name):
-            self.writeline("__attr __tmp_targets[%d];" % self.importer.function_targets[name])
-
-        if self.importer.function_arguments.has_key(name):
-            self.writeline("__attr __tmp_args[%d];" % self.importer.function_arguments[name])
-
     def statement(self, expr):
         # NOTE: Should never be None.
         if not expr:
@@ -1128,7 +1160,7 @@ class TranslatedModule(CommonModule):
             out.append(levels * self.tabstop + line)
             if line.endswith("("):
                 levels += 1
-            elif line.endswith(")"):
+            elif line.startswith(")"):
                 levels -= 1
         return "\n".join(out)
 
