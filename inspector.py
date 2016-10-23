@@ -41,15 +41,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         BasicModule.__init__(self, name, importer)
 
-        self.in_assignment = False
         self.in_class = False
         self.in_conditional = False
-        self.in_invocation = False
-
-        # Attribute chain state management.
-
-        self.chain_assignment = []
-        self.chain_invocation = []
 
         # Accesses to global attributes.
 
@@ -350,10 +343,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             self.record_name(n.name)
 
         elif isinstance(n, compiler.ast.AssAttr):
-            if expr: self.process_structure_node(expr)
+            if expr:
+                expr = self.process_structure_node(expr)
 
             in_assignment = self.in_assignment
-            self.in_assignment = True
+            self.in_assignment = expr
             self.process_attribute_access(n)
             self.in_assignment = in_assignment
 
@@ -988,26 +982,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Connect broken branches to the code after any loop.
 
         tracker.resume_broken_branches()
-
-    # Attribute chain handling.
-
-    def reset_attribute_chain(self):
-
-        "Reset the attribute chain for a subexpression of an attribute access."
-
-        CommonModule.reset_attribute_chain(self)
-        self.chain_assignment.append(self.in_assignment)
-        self.chain_invocation.append(self.in_invocation)
-        self.in_assignment = False
-        self.in_invocation = False
-
-    def restore_attribute_chain(self, attrs):
-
-        "Restore the attribute chain for an attribute access."
-
-        CommonModule.restore_attribute_chain(self, attrs)
-        self.in_assignment = self.chain_assignment.pop()
-        self.in_invocation = self.chain_invocation.pop()
 
     # Branch tracking methods.
 

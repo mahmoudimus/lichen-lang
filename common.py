@@ -109,9 +109,16 @@ class CommonModule:
         self.namespace_path = []
         self.in_function = False
 
-        # Attribute chains.
+        # Retain the assignment value expression and track invocations.
+
+        self.in_assignment = None
+        self.in_invocation = False
+
+        # Attribute chain state management.
 
         self.attrs = []
+        self.chain_assignment = []
+        self.chain_invocation = []
 
     def __repr__(self):
         return "CommonModule(%r, %r)" % (self.name, self.importer)
@@ -580,17 +587,25 @@ class CommonModule:
 
         return name_ref
 
+    # Attribute chain handling.
+
     def reset_attribute_chain(self):
 
         "Reset the attribute chain for a subexpression of an attribute access."
 
         self.attrs = []
+        self.chain_assignment.append(self.in_assignment)
+        self.chain_invocation.append(self.in_invocation)
+        self.in_assignment = None
+        self.in_invocation = False
 
     def restore_attribute_chain(self, attrs):
 
         "Restore the attribute chain for an attribute access."
 
         self.attrs = attrs
+        self.in_assignment = self.chain_assignment.pop()
+        self.in_invocation = self.chain_invocation.pop()
 
     def have_access_expression(self, node):
 

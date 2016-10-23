@@ -501,7 +501,10 @@ class TranslatedModule(CommonModule):
             self.statement(name_ref)
 
         elif isinstance(n, compiler.ast.AssAttr):
-            self.statement(self.process_attribute_access(n, self.process_structure_node(expr)))
+            in_assignment = self.in_assignment
+            self.in_assignment = self.process_structure_node(expr)
+            self.statement(self.process_attribute_access(n))
+            self.in_assignment = in_assignment
 
         # Lists and tuples are matched against the expression and their
         # items assigned to expression items.
@@ -517,7 +520,7 @@ class TranslatedModule(CommonModule):
         elif isinstance(n, compiler.ast.Subscript):
             self.statement(self.process_subscript_node(n, expr))
 
-    def process_attribute_access(self, n, expr=None):
+    def process_attribute_access(self, n):
 
         """
         Process the given attribute access node 'n'.
@@ -553,7 +556,7 @@ class TranslatedModule(CommonModule):
 
         subs = {
             "<expr>" : str(attr_expr),
-            "<assexpr>" : str(expr),
+            "<assexpr>" : str(self.in_assignment),
             "<context>" : "__tmp_context",
             "<accessor>" : "__tmp_value",
             }
