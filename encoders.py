@@ -227,7 +227,7 @@ def encode_access_instruction(instruction, subs):
         # Convert type name arguments to position and code symbols.
 
         elif op in typename_ops:
-            arg = "#" % a[1]
+            arg = encode_type_attribute(a[1])
             a[1] = encode_symbol("pos", arg)
             a.insert(2, encode_symbol("code", arg))
 
@@ -295,6 +295,12 @@ def encode_symbol(symbol_type, path=None):
     "Encode a symbol with the given 'symbol_type' and optional 'path'."
 
     return "__%s%s" % (symbol_type, path and "_%s" % encode_path(path) or "")
+
+def encode_type_attribute(path):
+
+    "Encode the special type attribute for 'path'."
+
+    return "#%s" % path
 
 
 
