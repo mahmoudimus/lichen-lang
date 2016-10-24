@@ -567,20 +567,33 @@ class Optimiser:
         param_locations = self.param_locations = {}
 
         for i, argnames in enumerate(self.arg_locations):
+
+            # Position the arguments after the first context argument.
+
             for argname in argnames:
-                param_locations[argname] = i
+                param_locations[argname] = i + 1
 
         for name, argnames in self.importer.function_parameters.items():
-            l = self.parameters[name] = [None] * len(argnames)
+
+            # Allocate an extra context parameter in the table.
+
+            l = self.parameters[name] = [None] + [None] * len(argnames)
 
             # Store an entry for the name along with the name's position in the
             # parameter list.
 
             for pos, argname in enumerate(argnames):
+
+                # Position the argument in the table.
+
                 position = param_locations[argname]
                 if position >= len(l):
                     l.extend([None] * (position - len(l) + 1))
-                l[position] = (argname, pos)
+
+                # Indicate an argument list position starting from 1 (after the
+                # initial context argument).
+
+                l[position] = (argname, pos + 1)
 
     def populate_tables(self):
 
