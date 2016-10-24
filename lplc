@@ -73,7 +73,7 @@ if __name__ == "__main__":
         g = generator.Generator(i, o, "_generated")
         g.to_output()
 
-        now = stopwatch("Optimisation", now)
+        now = stopwatch("Generation", now)
 
         t = translator.Translator(i, d, o, "_generated")
         t.to_output()
