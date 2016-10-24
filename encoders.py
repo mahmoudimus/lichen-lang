@@ -263,6 +263,12 @@ def encode_access_instruction_arg(arg, subs):
     else:
         return encode_path(arg)
 
+def encode_bound_reference(path):
+
+    "Encode 'path' as a bound method name."
+
+    return "__bound_%s" % encode_path(path)
+
 def encode_function_pointer(path):
 
     "Encode 'path' as a reference to an output program function."

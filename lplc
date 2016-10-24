@@ -3,7 +3,7 @@
 from errors import *
 from os.path import abspath, exists, join, split
 from time import time
-import importer, deducer, optimiser, translator
+import importer, deducer, optimiser, generator, translator
 import sys
 
 libdirs = [
@@ -67,6 +67,11 @@ if __name__ == "__main__":
 
         o = optimiser.Optimiser(i, d, "_output")
         o.to_output()
+
+        now = stopwatch("Optimisation", now)
+
+        g = generator.Generator(i, o, "_generated")
+        g.to_output()
 
         now = stopwatch("Optimisation", now)
 
