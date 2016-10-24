@@ -304,7 +304,7 @@ class Optimiser:
 
         "Populate parameter tables using parameter information."
 
-        self.arg_locations = get_allocated_locations(self.importer.function_parameters, get_parameters_and_sizes)
+        self.arg_locations = [set()] + get_allocated_locations(self.importer.function_parameters, get_parameters_and_sizes)
 
     def position_attributes(self):
 
@@ -568,16 +568,16 @@ class Optimiser:
 
         for i, argnames in enumerate(self.arg_locations):
 
-            # Position the arguments after the first context argument.
+            # Position the arguments.
 
             for argname in argnames:
-                param_locations[argname] = i + 1
+                param_locations[argname] = i
 
         for name, argnames in self.importer.function_parameters.items():
 
             # Allocate an extra context parameter in the table.
 
-            l = self.parameters[name] = [None] + [None] * len(argnames)
+            l = self.parameters[name] = [None] * len(argnames)
 
             # Store an entry for the name along with the name's position in the
             # parameter list.
@@ -593,7 +593,7 @@ class Optimiser:
                 # Indicate an argument list position starting from 1 (after the
                 # initial context argument).
 
-                l[position] = (argname, pos + 1)
+                l[position] = (argname, pos)
 
     def populate_tables(self):
 
@@ -832,6 +832,13 @@ def get_allocated_locations(d, fn):
     # Return the list of attribute names from each row of the allocated
     # attributes table.
 
-    return [set([attrname for attrname in attrnames if attrname]) for attrnames in allocated]
+    locations = []
+    for attrnames in allocated:
+        l = set()
+        for attrname in attrnames:
+            if attrname:
+                l.add(attrname)
+        locations.append(l)
+    return locations
 
 # vim: tabstop=4 expandtab shiftwidth=4
