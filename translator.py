@@ -210,6 +210,8 @@ class TranslatedModule(CommonModule):
 
         self.out = open(output_filename, "w")
         try:
+            self.start_output()
+
             # Process namespaces, writing the translation.
 
             for path, node in self.namespaces:
@@ -451,17 +453,17 @@ class TranslatedModule(CommonModule):
         # Control-flow modification statements.
 
         elif isinstance(n, compiler.ast.Break):
-            self.writeline("break;")
+            self.writestmt("break;")
 
         elif isinstance(n, compiler.ast.Continue):
-            self.writeline("continue;")
+            self.writestmt("continue;")
 
         elif isinstance(n, compiler.ast.Return):
             expr = self.process_structure_node(n.value)
             if expr:
-                self.writeline("return %s;" % expr)
+                self.writestmt("return %s;" % expr)
             else:
-                self.writeline("return;")
+                self.writestmt("return;")
 
         # Invocations.
 
@@ -566,7 +568,10 @@ class TranslatedModule(CommonModule):
         for instruction in self.optimiser.access_instructions[location]:
             output.append(encode_access_instruction(instruction, subs))
 
-        out = "(\n%s\n)" % ",\n".join(output)
+        if len(output) == 1:
+            out = output[0]
+        else:
+            out = "(\n%s\n)" % ",\n".join(output)
 
         del self.attrs[0]
         return AttrResult(out, refs)
@@ -645,7 +650,7 @@ class TranslatedModule(CommonModule):
 
         expr = self.process_structure_node(n.code)
         if expr:
-            self.writeline("return %s;" % expr)
+            self.writestmt("return %s;" % expr)
 
         self.in_conditional = in_conditional
 
@@ -1054,7 +1059,7 @@ class TranslatedModule(CommonModule):
             self.indent += 1
             if n.else_:
                 self.process_structure_node(n.else_)
-            self.writeline("break;")
+            self.writestmt("break;")
             self.indent -= 1
             self.writeline("}")
 
@@ -1067,6 +1072,15 @@ class TranslatedModule(CommonModule):
         self.writeline("}")
 
     # Output generation.
+
+    def start_output(self):
+        print >>self.out, """\
+#include "types.h"
+#include "ops.h"
+#include "progconsts.h"
+#include "progops.h"
+#include "progtypes.h"
+"""
 
     def start_module(self):
         print >>self.out, "void __main_%s()" % encode_path(self.name)
@@ -1081,6 +1095,7 @@ class TranslatedModule(CommonModule):
         print >>self.out, "__attr %s(__attr __args[])" % encode_function_pointer(name)
         print >>self.out, "{"
         self.indent += 1
+        self.writeline("__attr __tmp_context, __tmp_target, __tmp_value;")
 
         # Obtain local names from parameters.
 
@@ -1117,13 +1132,14 @@ class TranslatedModule(CommonModule):
     def end_function(self):
         self.indent -= 1
         print >>self.out, "}"
+        print >>self.out
 
     def start_if(self, first, test_ref):
 
         # NOTE: This needs to evaluate whether the operand is true or false
         # NOTE: according to Python rules.
 
-        self.writeline("%sif (%s)" % (not first and "else " or "", test_ref))
+        self.writestmt("%sif (%s)" % (not first and "else " or "", test_ref))
         self.writeline("{")
         self.indent += 1
 
@@ -1143,10 +1159,10 @@ class TranslatedModule(CommonModule):
     def statement(self, expr):
         # NOTE: Should never be None.
         if not expr:
-            self.writeline("...;")
+            self.writestmt("...;")
         s = str(expr)
         if s:
-            self.writeline("%s;" % s)
+            self.writestmt("%s;" % s)
 
     def statements(self, results):
         for result in results:
@@ -1169,7 +1185,11 @@ class TranslatedModule(CommonModule):
     def writeline(self, s):
         print >>self.out, "%s%s" % (self.pad(), self.indenttext(s, self.indent + 1))
 
+    def writestmt(self, s):
+        print >>self.out
+        self.writeline(s)
+
     def write_comment(self, s):
-        self.writeline("/* %s */" % s)
+        self.writestmt("/* %s */" % s)
 
 # vim: tabstop=4 expandtab shiftwidth=4
