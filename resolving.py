@@ -103,7 +103,7 @@ class NameResolving:
                 if ref.has_kind("<invoke>"):
                     ref = self.convert_invocation(ref)
                 l.append((pname, ref))
-            self.function_defaults[fname] = l
+            self.importer.function_defaults[fname] = self.function_defaults[fname] = l
 
         # Convert function locals referencing invocations.
 
