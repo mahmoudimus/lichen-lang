@@ -21,7 +21,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from common import CommonOutput
 from encoders import encode_bound_reference, encode_function_pointer, \
-                     encode_instantiator_pointer, encode_path, encode_symbol
+                     encode_instantiator_pointer, encode_path, encode_symbol, \
+                     encode_type_attribute
 from os import listdir
 from os.path import isdir, join, split
 from referencing import Reference
@@ -106,6 +107,7 @@ class Generator(CommonOutput):
 """
             print >>f_defs, """\
 #include "progtypes.h"
+#include "progops.h"
 #include "main.h"
 """
             print >>f_signatures, """\
@@ -154,15 +156,17 @@ class Generator(CommonOutput):
 
                 if path.endswith(".__init__"):
                     path = path[:-len(".__init__")]
-                    min_sizes[path] = argmin - 1
-                    max_sizes[path] = argmax - 1
 
             self.write_size_constants(f_consts, "pmin", min_sizes, 0)
             self.write_size_constants(f_consts, "pmax", max_sizes, 0)
 
+            # Generate parameter codes.
+
+            self.write_code_constants(f_consts, self.optimiser.all_paramnames, self.optimiser.arg_locations, "pcode", "ppos")
+
             # Generate attribute codes.
 
-            self.write_code_constants(f_consts, self.optimiser.all_attrnames, self.optimiser.locations)
+            self.write_code_constants(f_consts, self.optimiser.all_attrnames, self.optimiser.locations, "code", "pos")
 
             # Generate table and structure data.
 
@@ -254,20 +258,22 @@ class Generator(CommonOutput):
 
                 if parent_kind == "<class>":
 
+                    # A bound version of a method.
+
+                    structure = self.populate_function(path, function_instance_attrs, False)
+                    self.write_structure(f_decls, f_defs, path, table_name, structure_size, structure,
+                        encode_bound_reference(path))
+
                     # An unbound version of a method.
 
                     structure = self.populate_function(path, function_instance_attrs, True)
                     self.write_structure(f_decls, f_defs, path, table_name, structure_size, structure)
 
-                    # A bound version of a method.
+                else:
+                    # A normal function.
 
                     structure = self.populate_function(path, function_instance_attrs, False)
-                    self.write_structure(f_decls, f_defs, encode_bound_reference(path), table_name, structure_size, structure)
-
-                # A normal function.
-
-                structure = self.populate_function(path, function_instance_attrs, False)
-                self.write_structure(f_decls, f_defs, path, table_name, structure_size, structure)
+                    self.write_structure(f_decls, f_defs, path, table_name, structure_size, structure)
 
                 # Write function declarations.
                 # Signature: __attr <name>(__attr[]);
@@ -339,24 +345,24 @@ class Generator(CommonOutput):
             f_consts.write("    %s = %d" % (encode_size(size_prefix, path), size + padding))
         print >>f_consts, "\n    };"
 
-    def write_code_constants(self, f_consts, attrnames, locations):
+    def write_code_constants(self, f_consts, attrnames, locations, code_prefix, pos_prefix):
 
         """
         Write code constants to 'f_consts' for the given 'attrnames' and
         attribute 'locations'.
         """
 
-        print >>f_consts, "enum %s {" % encode_symbol("code")
+        print >>f_consts, "enum %s {" % encode_symbol(code_prefix)
         first = True
         for i, attrname in enumerate(attrnames):
             if not first:
                 print >>f_consts, ","
             else:
                 first = False
-            f_consts.write("    %s = %d" % (encode_symbol("code", attrname), i))
+            f_consts.write("    %s = %d" % (encode_symbol(code_prefix, attrname), i))
         print >>f_consts, "\n    };"
 
-        print >>f_consts, "enum %s {" % encode_symbol("pos")
+        print >>f_consts, "enum %s {" % encode_symbol(pos_prefix)
         first = True
         for i, attrnames in enumerate(locations):
             for attrname in attrnames:
@@ -364,7 +370,7 @@ class Generator(CommonOutput):
                     print >>f_consts, ","
                 else:
                     first = False
-                f_consts.write("    %s = %d" % (encode_symbol("pos", attrname), i))
+                f_consts.write("    %s = %d" % (encode_symbol(pos_prefix, attrname), i))
         print >>f_consts, "\n    };"
 
     def write_table(self, f_decls, f_defs, table_name, structure_size, table):
@@ -399,7 +405,7 @@ class Generator(CommonOutput):
             table_name, structure_size,
             ",\n        ".join([("{%s, %s}" % t) for t in table]))
 
-    def write_structure(self, f_decls, f_defs, path, table_name, structure_size, structure):
+    def write_structure(self, f_decls, f_defs, path, table_name, structure_size, structure, copy=None):
 
         """
         Write the declarations to 'f_decls' and definitions to 'f_defs' for
@@ -419,21 +425,35 @@ typedef struct {
     unsigned int pos;
     __attr attrs[%s];
 } %s;
-""" % (structure_size, encode_symbol("obj", path))
+""" % (structure_size, encode_symbol("obj", copy or path))
 
         # Write the corresponding definition.
 
-        print >>f_defs, "__obj %s = {\n    &%s,\n    %s,\n    {\n        %s\n    }};\n" % (
-            encode_path(path), table_name, encode_symbol("pos", path),
+        is_class = self.importer.get_object(path).has_kind("<class>")
+        pos = is_class and encode_symbol("pos", encode_type_attribute(path)) or "0"
+
+        print >>f_defs, """\
+__obj %s = {
+    &%s,
+    %s,
+    {
+        %s
+    }};
+""" % (
+            encode_path(copy or path), table_name, pos,
             ",\n        ".join(structure))
 
-    def get_parameters(self, ref):
-        return self.importer.function_parameters[ref.get_origin()]
-
     def get_argument_limits(self, path):
+
+        """
+        Return the argument minimum and maximum for the callable at 'path',
+        adding an argument position for a universal context.
+        """
+
         parameters = self.importer.function_parameters[path]
         defaults = self.importer.function_defaults.get(path)
-        return len(parameters) - (defaults and len(defaults) or 0), len(parameters)
+        num_parameters = len(parameters) + 1
+        return num_parameters - (defaults and len(defaults) or 0), num_parameters
 
     def get_attribute_names(self, indexes):
 
@@ -599,11 +619,11 @@ typedef struct {
                     else:
                         attr = encode_function_pointer(attr)
 
-                    structure.append("{%s, .fn=%s}" % (bound_attr and ".b=%s" % bound_attr or "0", attr))
+                    structure.append("{%s, .fn=%s}" % (bound_attr and ".b=&%s" % bound_attr or "0", attr))
                     continue
 
                 elif attrname == "__args__":
-                    structure.append("{.min=%s, .ptable=%s}" % (attr, encode_tablename("Function", origin)))
+                    structure.append("{.min=%s, .ptable=&%s}" % (attr, encode_tablename("Function", origin)))
                     continue
 
                 structure.append(self.encode_member(origin, attrname, attr, kind))
@@ -665,23 +685,18 @@ typedef struct {
         NOTE: where __call__ is provided by the class.
         """
 
-        parameters = self.get_parameters(init_ref)
-        arg_copy = "memcpy(&__tmp_args[1], args, %d * sizeof(__attr));" % (len(parameters) - 1)
+        parameters = self.importer.function_parameters[init_ref.get_origin()]
 
         print >>f_code, """\
-__attr %s(__attr args[])
+__attr %s(__attr __args[])
 {
-    __attr __tmp_args[%d];
-    __tmp_args[0] = __new(&%s, &%s, sizeof(%s));
+    __args[0] = __new(&%s, &%s, sizeof(%s));
     %s
-    %s(__tmp_args);
-    return __tmp_args[0];
+    return __args[0];
 }
 """ % (
     encode_instantiator_pointer(path),
-    len(parameters),
     encode_tablename("Instance", path), encode_path(path), encode_symbol("obj", path),
-    len(parameters) - 1 and arg_copy or "",
     encode_function_pointer(init_ref.get_origin())
     )
 
