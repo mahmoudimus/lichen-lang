@@ -73,7 +73,7 @@ from __builtins__.exception import (
 
 # Classes.
 
-from __builtins__.bool import bool
+from __builtins__.bool import bool, False, True
 from __builtins__.buffer import buffer
 from __builtins__.complex import complex
 from __builtins__.dict import dict
@@ -84,8 +84,8 @@ from __builtins__.span import xrange, slice
 from __builtins__.iterator import listiterator
 from __builtins__.list import list
 from __builtins__.long import long
-from __builtins__.none import NoneType
-from __builtins__.notimplemented import NotImplementedType
+from __builtins__.none import None, NoneType
+from __builtins__.notimplemented import NotImplemented, NotImplementedType
 from __builtins__.set import frozenset, set
 from __builtins__.str import basestring, str, unicode
 from __builtins__.tuple import tuple

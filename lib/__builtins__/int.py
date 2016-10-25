@@ -25,7 +25,7 @@ import native
 class int(object):
     def __init__(self, number_or_string=None):
         # Note member.
-        self.data = 0
+        self.__data__ = 0
 
     def __iadd__(self, other):
         "Return a new int for the operation."

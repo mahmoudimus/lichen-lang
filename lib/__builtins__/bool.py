@@ -3,7 +3,7 @@
 """
 Boolean objects.
 
-Copyright (C) 2015 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -25,5 +25,8 @@ class bool(object):
         return self
     def __str__(self):
         return self is True and "True" or "False"
+
+False = bool()
+True = bool()
 
 # vim: tabstop=4 expandtab shiftwidth=4

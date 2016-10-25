@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import init_item, predefined_constants
+from common import init_item
 from results import AccessRef, InstanceRef, InvocationRef, LocalNameRef, \
                     NameRef, ResolvedNameRef
 from referencing import Reference

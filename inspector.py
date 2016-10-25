@@ -126,12 +126,20 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         in_function = self.function_locals.has_key(path)
 
         for name in names:
-            if name in predefined_constants or in_function and name in self.function_locals[path]:
+            if in_function and name in self.function_locals[path]:
+                continue
+
+            key = "%s.%s" % (path, name)
+
+            # Find predefined constant names before anything else.
+
+            if name in predefined_constants:
+                ref = self.get_builtin(name)
+                self.set_name_reference(key, ref)
                 continue
 
             # Find local definitions (within dynamic namespaces).
 
-            key = "%s.%s" % (path, name)
             ref = self.get_resolved_object(key)
             if ref:
                 self.set_name_reference(key, ref)

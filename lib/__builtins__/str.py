@@ -26,7 +26,7 @@ import native
 class basestring(object):
     def __init__(self, data=None):
         # Note member.
-        self.data = data
+        self.__data__ = ""
 
     def __contains__(self, value): pass
 

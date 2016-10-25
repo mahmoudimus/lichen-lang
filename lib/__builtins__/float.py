@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 class float(object):
     def __init__(self, number_or_string=None):
         # Note member.
-        self.data = 0
+        self.__data__ = 0.0
 
     def __iadd__(self, other): pass
     def __isub__(self, other): pass
