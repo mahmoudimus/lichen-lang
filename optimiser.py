@@ -577,7 +577,7 @@ class Optimiser:
 
             # Allocate an extra context parameter in the table.
 
-            l = self.parameters[name] = [None] * len(argnames)
+            l = self.parameters[name] = [None] + [None] * len(argnames)
 
             # Store an entry for the name along with the name's position in the
             # parameter list.
@@ -593,7 +593,7 @@ class Optimiser:
                 # Indicate an argument list position starting from 1 (after the
                 # initial context argument).
 
-                l[position] = (argname, pos)
+                l[position] = (argname, pos + 1)
 
     def populate_tables(self):
 
