@@ -84,8 +84,10 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
         # usable directly. For targets, no constant should be assigned and thus
         # the alias (or any plain name) will be used.
 
-        origin = self.static() and self.get_origin()
-        name = origin and encode_path(origin) or name and encode_path(name) or encode_path(self.name)
+        ref = self.static()
+        origin = ref and self.get_origin()
+        static_name = origin and encode_path(origin)
+        dynamic_name = name and encode_path(name) or encode_path(self.name)
 
         # Assignments.
 
@@ -100,8 +102,13 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
         # Expressions.
 
+        elif static_name:
+            parent = ref.parent()
+            context = ref.has_kind("<function>") and parent or None
+            return "((__attr) {&%s, &%s})" % (context or "0", static_name)
+
         else:
-            return name
+            return dynamic_name
 
 class TrConstantValueRef(results.ConstantValueRef, TranslationResult):
 
@@ -1079,6 +1086,7 @@ class TranslatedModule(CommonModule):
 #include "progconsts.h"
 #include "progops.h"
 #include "progtypes.h"
+#include "main.h"
 """
 
     def start_module(self):
