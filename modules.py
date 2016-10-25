@@ -370,6 +370,7 @@ class CachedModule(BasicModule):
             f.readline() # (empty line)
 
             self._get_imports(f)
+            self._get_special(f)
             self._get_members(f)
             self._get_class_relationships(f)
             self._get_instance_attrs(f)
@@ -410,6 +411,14 @@ class CachedModule(BasicModule):
             self.queue_module(name, True)
         for name in self.imports:
             self.queue_module(name)
+
+    def _get_special(self, f):
+        f.readline() # "special:"
+        line = f.readline().rstrip()
+        while line:
+            name, ref = line.split(" ", 1)
+            self.special[name] = decode_reference(ref)
+            line = f.readline().rstrip()
 
     def _get_members(self, f):
         f.readline() # "members:"
@@ -667,6 +676,9 @@ class CacheWritingModule:
         "imports:"
         required module names
         possibly required module names
+        "special:"
+        zero or more: special name " " reference
+        (empty line)
         "members:"
         zero or more: qualified name " " reference
         (empty line)
@@ -767,6 +779,13 @@ class CacheWritingModule:
             imports = list(self.imports)
             imports.sort()
             print >>f, imports and ", ".join(imports) or "{}"
+
+            print >>f
+            print >>f, "special:"
+            names = self.special.keys()
+            names.sort()
+            for name in names:
+                print >>f, name, self.special[name]
 
             print >>f
             print >>f, "members:"
