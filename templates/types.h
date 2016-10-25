@@ -48,6 +48,10 @@ typedef struct __attr
         __obj * value;          /* attribute value */
         const __ptable * ptable;/* parameter table */
         struct __attr (*fn)();  /* callable details */
+
+        int intvalue;     	/* integer value */
+        double floatvalue;	/* floating point value */
+        char * strvalue;	/* string value */
     };
 } __attr;
 

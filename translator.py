@@ -108,7 +108,7 @@ class TrConstantValueRef(results.ConstantValueRef, TranslationResult):
     "A constant value reference in the translation."
 
     def __str__(self):
-        return "const%d" % self.number
+        return encode_literal_constant(self.number)
 
 class TrLiteralSequenceRef(results.LiteralSequenceRef, TranslationResult):
 
@@ -137,7 +137,7 @@ class AttrResult(Expression, TranslationResult):
         return False
 
     def __repr__(self):
-        return "AttrResult(%r, %r)" % (self.s, self.origin)
+        return "AttrResult(%r, %r)" % (self.s, self.get_origin())
 
 class PredefinedConstantRef(AttrResult):
 
@@ -147,7 +147,14 @@ class PredefinedConstantRef(AttrResult):
         self.value = value
 
     def __str__(self):
-        return self.value
+        if self.value in ("False", "True"):
+            return encode_path("__builtins__.bool.%s" % self.value)
+        elif self.value == "None":
+            return encode_path("__builtins__.none.%s" % self.value)
+        elif self.value == "NotImplemented":
+            return encode_path("__builtins__.notimplemented.%s" % self.value)
+        else:
+            return self.value
 
     def __repr__(self):
         return "PredefinedConstantRef(%r)" % self.value
@@ -831,13 +838,6 @@ class TranslatedModule(CommonModule):
                     if not args[argnum+1]:
                         args[argnum+1] = "__GETDEFAULT(%s, %d)" % (target, i)
 
-        if None in args:
-            print self.get_namespace_path()
-            print n
-            print expr
-            print target
-            print args
-
         argstr = "__ARGS(%s)" % ", ".join(args)
         kwargstr = kwargs and ("__ARGS(%s)" % ", ".join(kwargs)) or "0"
         kwcodestr = kwcodes and ("__KWARGS(%s)" % ", ".join(kwcodes)) or "0"
@@ -845,13 +845,13 @@ class TranslatedModule(CommonModule):
         # The callable is then obtained.
 
         if target:
-            callable = "__tmp_target"
+            callable = target
 
         elif self.always_callable:
-            callable = "__load_via_object(__tmp_target, %s)" % \
+            callable = "__load_via_object(__tmp_target.value, %s).fn" % \
                      encode_symbol("pos", "__fn__")
         else:
-            callable = "__check_and_load_via_object(__tmp_target, %s, %s)" % (
+            callable = "__check_and_load_via_object(__tmp_target.value, %s, %s).fn" % (
                      encode_symbol("pos", "__fn__"), encode_symbol("code", "__fn__"))
 
         stages.append(callable)
@@ -859,7 +859,7 @@ class TranslatedModule(CommonModule):
         # With a known target, the function is obtained directly and called.
 
         if target:
-            output = "(\n%s.fn\n)(%s)" % (",\n".join(stages), argstr)
+            output = "(\n%s\n)(%s)" % (",\n".join(stages), argstr)
 
         # With unknown targets, the generic invocation function is applied to
         # the callable and argument collections.
@@ -942,8 +942,7 @@ class TranslatedModule(CommonModule):
         # Convert operator function names to references.
 
         elif n.name.startswith("$op"):
-            opname = n.name[len("$op"):]
-            ref = self.importer.get_object("operator.%s" % opname)
+            ref = self.importer.get_module(self.name).special.get(n.name)
             return TrResolvedNameRef(n.name, ref)
 
         # Get the appropriate name for the name reference, using the same method
@@ -1095,7 +1094,8 @@ class TranslatedModule(CommonModule):
         print >>self.out, "__attr %s(__attr __args[])" % encode_function_pointer(name)
         print >>self.out, "{"
         self.indent += 1
-        self.writeline("__attr __tmp_context, __tmp_target, __tmp_value;")
+        self.writeline("__ref __tmp_context, __tmp_value;")
+        self.writeline("__attr __tmp_target;")
 
         # Obtain local names from parameters.
 

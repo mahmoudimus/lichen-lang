@@ -281,6 +281,33 @@ def encode_instantiator_pointer(path):
 
     return "__new_%s" % encode_path(path)
 
+def encode_literal_constant(n):
+
+    "Encode a name for the literal constant with the number 'n'."
+
+    return "__const%d" % n
+
+def encode_literal_constant_member(value):
+
+    "Encode the member name for the 'value' in the final program."
+
+    return "%svalue" % value.__class__.__name__
+
+def encode_literal_constant_value(value):
+
+    "Encode the given 'value' in the final program."
+
+    if isinstance(value, (int, float)):
+        return str(value)
+    else:
+        return '"%s"' % str(value).replace('"', '\\"')
+
+def encode_literal_reference(n):
+
+    "Encode a reference to a literal constant with the number 'n'."
+
+    return "__constvalue%d" % n
+
 def encode_path(path):
 
     "Encode 'path' as an output program object, translating special symbols."
@@ -289,6 +316,12 @@ def encode_path(path):
         return "__%s" % path
     else:
         return path.replace("#", "__").replace("$", "__").replace(".", "_")
+
+def encode_predefined_reference(path):
+
+    "Encode a reference to a predefined constant value for 'path'."
+
+    return "__predefined_%s" % encode_path(path)
 
 def encode_symbol(symbol_type, path=None):
 
