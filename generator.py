@@ -774,13 +774,17 @@ __obj %s = {
             return "{0, 0} /* %s */" % name
 
         # Set the context depending on the kind of attribute.
-        # For methods:          {&<path>, &<attr>}
+        # For methods:          {&<parent>, &<attr>}
         # For other attributes: {&<attr>, &<attr>}
 
         else:
-            context = (kind == "<function>" and structure_type == "<class>" and \
-                       "&%s" % encode_path(path) or "0") or \
-                       kind == "<instance>" and "&%s" % encode_path(origin) or "0"
+            if kind == "<function>" and structure_type == "<class>":
+                parent = origin.rsplit(".", 1)[0]
+                context = "&%s" % encode_path(parent)
+            elif kind == "<instance>":
+                context = "&%s" % encode_path(origin)
+            else:
+                context = "0"
             return "{%s, &%s}" % (context, encode_path(origin))
 
     def append_defaults(self, path, structure):
