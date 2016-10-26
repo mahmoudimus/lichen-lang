@@ -855,10 +855,10 @@ class TranslatedModule(CommonModule):
             callable = target
 
         elif self.always_callable:
-            callable = "__load_via_object(__tmp_target.value, %s).fn" % \
+            callable = "__load_via_object(__tmp_target.value, %s)" % \
                      encode_symbol("pos", "__fn__")
         else:
-            callable = "__check_and_load_via_object(__tmp_target.value, %s, %s).fn" % (
+            callable = "__check_and_load_via_object(__tmp_target.value, %s, %s)" % (
                      encode_symbol("pos", "__fn__"), encode_symbol("code", "__fn__"))
 
         stages.append(callable)
