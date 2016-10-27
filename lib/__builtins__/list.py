@@ -21,6 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.iterator import listiterator
 from __builtins__.sequence import _getitem, _getslice
+import native
 
 class list(object):
 
@@ -33,9 +34,9 @@ class list(object):
         if args is not None:
             self.extend(args)
 
-    def __new__(self):
         # Reserve space for a fragment reference.
-        self._elements = None
+
+        self.__data__ = None
 
     def __getitem__(self, index):
 
@@ -68,7 +69,13 @@ class list(object):
     def pop(self): pass
     def reverse(self): pass
     def sort(self, cmp=None, key=None, reverse=0): pass
-    def __len__(self): pass
+
+    def __len__(self):
+
+        "Return the length of the list."
+
+        return native._list_len(self)
+
     def __add__(self, other): pass
     def __iadd__(self, other): pass
     def __str__(self): pass
@@ -77,7 +84,7 @@ class list(object):
 
         "Lists are true if non-empty."
 
-        return self.__len__() != 0
+        return native._list_nonempty(self)
 
     def __iter__(self):
 
@@ -87,6 +94,10 @@ class list(object):
 
     # Special implementation methods.
 
-    def __get_single_item__(self, index): pass
+    def __get_single_item__(self, index):
+
+        "Return the item at 'index'."
+
+        return native._list_element(self, index)
 
 # vim: tabstop=4 expandtab shiftwidth=4

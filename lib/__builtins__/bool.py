@@ -19,14 +19,17 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class bool(object):
+class boolean(object):
     def __bool__(self):
         "Identity operation."
         return self
     def __str__(self):
         return self is True and "True" or "False"
 
-False = bool()
-True = bool()
+False = boolean()
+True = boolean()
+
+def bool(obj):
+    return obj.__bool__()
 
 # vim: tabstop=4 expandtab shiftwidth=4

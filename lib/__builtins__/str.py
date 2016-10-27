@@ -71,11 +71,13 @@ class basestring(object):
         "Return a new boolean for the comparison."
         return _negate(self.__eq__(other))
 
-    def __len__(self): pass
+    def __len__(self):
+        return native._str_len(self)
+
     def __str__(self): pass
 
     def __bool__(self):
-        return _negate(native._str_eq(self, ""))
+        return native._str_nonempty(self)
 
     def endswith(self, s): pass
     def find(self, sub, start=None, end=None): pass

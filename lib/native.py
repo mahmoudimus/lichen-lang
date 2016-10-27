@@ -45,6 +45,12 @@ def _str_add(self, other): pass
 def _str_lt(self, other): pass
 def _str_gt(self, other): pass
 def _str_eq(self, other): pass
+def _str_len(self): pass
+def _str_nonempty(self): pass
+
+def _list_len(self): pass
+def _list_nonempty(self): pass
+def _list_element(self, index): pass
 
 def _isinstance(obj, cls): pass
 
