@@ -104,7 +104,7 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
         elif static_name:
             parent = ref.parent()
-            context = ref.has_kind("<function>") and parent or None
+            context = ref.has_kind("<function>") and encode_path(parent) or None
             return "((__attr) {&%s, &%s})" % (context or "0", static_name)
 
         else:
@@ -165,6 +165,16 @@ class PredefinedConstantRef(AttrResult):
 
     def __repr__(self):
         return "PredefinedConstantRef(%r)" % self.value
+
+class BooleanResult(Expression, TranslationResult):
+
+    "A expression producing a boolean result."
+
+    def __str__(self):
+        return "__builtins___bool_bool(%s)" % self.s
+
+    def __repr__(self):
+        return "BooleanResult(%r)" % self.s
 
 def make_expression(expr):
 
@@ -744,7 +754,7 @@ class TranslatedModule(CommonModule):
                 continue
 
             if name_ref:
-                defaults.append("__SETDEFAULT(%s, %s, %s)" % (encode_path(instance_name), i, name_ref))
+                defaults.append("__SETDEFAULT(&%s, %s, %s)" % (encode_path(instance_name), i, name_ref))
 
         return defaults
 
@@ -917,18 +927,33 @@ class TranslatedModule(CommonModule):
 
     def process_logical_node(self, n):
 
-        "Process the given operator node 'n'."
+        """
+        Process the given operator node 'n'.
+
+        Convert ... to ...
+
+        <a> and <b>
+        (__tmp_result = <a>, !__BOOL(__tmp_result)) ? __tmp_result : <b>
+
+        <a> or <b>
+        (__tmp_result = <a>, __BOOL(__tmp_result)) ? __tmp_result : <b>
+        """
 
         if isinstance(n, compiler.ast.And):
-            op = " && "
+            op = "!"
         else:
-            op = " || "
+            op = ""
 
-        # NOTE: This needs to evaluate whether the operands are true or false
-        # NOTE: according to Python rules.
+        results = []
 
-        results = [("(%s)" % self.process_structure_node(node)) for node in n.nodes]
-        return make_expression("(%s)" % op.join(results))
+        for node in n.nodes[:-1]:
+            expr = self.process_structure_node(node)
+            results.append("(__tmp_result = %s, %s__BOOL(__tmp_result)) ? __tmp_result : " % (expr, op))
+
+        expr = self.process_structure_node(n.nodes[-1])
+        results.append(str(expr))
+
+        return make_expression("(%s)" % "".join(results))
 
     def process_name_node(self, n, expr=None):
 
@@ -1103,7 +1128,7 @@ class TranslatedModule(CommonModule):
         print >>self.out, "{"
         self.indent += 1
         self.writeline("__ref __tmp_context, __tmp_value;")
-        self.writeline("__attr __tmp_target;")
+        self.writeline("__attr __tmp_target, __tmp_result;")
 
         # Obtain local names from parameters.
 

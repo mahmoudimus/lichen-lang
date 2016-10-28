@@ -185,6 +185,10 @@ encoding_ops = (
     "__encode_callable",
     )
 
+static_ops = (
+    "__load_static",
+    )
+
 def encode_access_instruction(instruction, subs):
 
     """
@@ -238,6 +242,11 @@ def encode_access_instruction(instruction, subs):
             kind = a[1]
             op = "__load_function"
             a = [kind == "<class>" and encode_instantiator_pointer(origin) or encode_function_pointer(origin)]
+
+        # Obtain addresses of static objects.
+
+        elif op in static_ops:
+            a[0] = "&%s" % a[0]
 
         argstr = "(%s)" % ", ".join(a)
 
