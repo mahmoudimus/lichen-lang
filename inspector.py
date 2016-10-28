@@ -145,9 +145,9 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
                 self.set_name_reference(key, ref)
                 continue
 
-            # Find global or known built-in definitions.
+            # Find global.
 
-            ref = self.get_resolved_global_or_builtin(name)
+            ref = self.get_global(name)
             if ref:
                 self.set_name_reference(key, ref)
                 continue
