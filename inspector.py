@@ -163,16 +163,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         self.importer.all_name_references[path] = self.name_references[path] = ref
 
-    def get_resolved_global_or_builtin(self, name):
-
-        "Return the resolved global or built-in object with the given 'name'."
-
-        # In some circumstances, the name is neither global nor recognised by
-        # the importer. It is then assumed to be a general built-in.
-
-        return self.get_global(name) or \
-               self.importer.get_object("__builtins__.%s" % name)
-
     # Module structure traversal.
 
     def process_structure_node(self, n):
