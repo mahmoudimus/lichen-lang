@@ -62,14 +62,24 @@ __ref __get_class(__ref obj)
 
 /* Attribute testing operations. */
 
-int __test_specific_instance(__ref obj, __ref type)
+__ref __test_specific_instance(__ref obj, __ref type)
 {
-    return __get_class(obj) == type;
+    return __get_class(obj) == type ? obj : 0;
 }
 
-int __test_common_instance(__ref obj, int pos, int code)
+__ref __test_common_instance(__ref obj, int pos, int code)
 {
-    return __HASATTR(__get_class(obj), pos, code);
+    return __HASATTR(__get_class(obj), pos, code) ? obj : 0;
+}
+
+__ref __test_common_object(__ref obj, int pos, int code)
+{
+    return __test_common_type(obj, pos, code) || __test_common_instance(obj, pos, code) ? obj : 0;
+}
+
+__ref __test_common_type(__ref obj, int pos, int code)
+{
+    return __HASATTR(obj, pos, code) ? obj : 0;
 }
 
 /* Attribute testing and retrieval operations. */
@@ -186,7 +196,7 @@ __attr __CONTEXT_AS_VALUE(__attr attr)
 
 /* Type testing. */
 
-int __ISFUNC(__ref obj)
+__ref __ISFUNC(__ref obj)
 {
     return __test_specific_instance(obj, &__FUNCTION_TYPE);
 }

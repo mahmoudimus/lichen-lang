@@ -56,6 +56,12 @@ class TranslationResult:
 
     pass
 
+class ReturnRef(TranslationResult):
+
+    "Indicates usage of a return statement."
+
+    pass
+
 class Expression(results.Result, TranslationResult):
 
     "A general expression."
@@ -98,14 +104,14 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
             if self.static() and isinstance(self.expr, results.ResolvedNameRef) and self.expr.static():
                 return ""
             else:
-                return "%s = %s" % (name, self.expr)
+                return "%s = %s" % (dynamic_name, self.expr)
 
         # Expressions.
 
         elif static_name:
             parent = ref.parent()
             context = ref.has_kind("<function>") and encode_path(parent) or None
-            return "((__attr) {&%s, &%s})" % (context or "0", static_name)
+            return "((__attr) {%s, &%s})" % (context and "&%s" % context or "0", static_name)
 
         else:
             return dynamic_name
@@ -206,6 +212,10 @@ class TranslatedModule(CommonModule):
 
         self.namespaces = []
         self.in_conditional = False
+
+        # Exception raising adjustments.
+
+        self.in_try_finally = False
 
         # Attribute access counting.
 
@@ -370,10 +380,22 @@ class TranslatedModule(CommonModule):
 
         "Process the given 'node' or result."
 
+        # Handle processing requests on results.
+
         if isinstance(node, results.Result):
             return node
+
+        # Handle processing requests on nodes.
+
         else:
-            return CommonModule.process_structure(self, node)
+            l = CommonModule.process_structure(self, node)
+
+            # Return indications of return statement usage.
+
+            if l and isinstance(l[-1], ReturnRef):
+                return l[-1]
+            else:
+                return None
 
     def process_structure_node(self, n):
 
@@ -482,12 +504,11 @@ class TranslatedModule(CommonModule):
         elif isinstance(n, compiler.ast.Continue):
             self.writestmt("continue;")
 
+        elif isinstance(n, compiler.ast.Raise):
+            self.process_raise_node(n)
+
         elif isinstance(n, compiler.ast.Return):
-            expr = self.process_structure_node(n.value)
-            if expr:
-                self.writestmt("return %s;" % expr)
-            else:
-                self.writestmt("return;")
+            return self.process_return_node(n)
 
         # Invocations.
 
@@ -514,7 +535,7 @@ class TranslatedModule(CommonModule):
         # All other nodes are processed depth-first.
 
         else:
-            self.process_structure(n)
+            return self.process_structure(n)
 
     def process_assignment_node(self, n, expr):
 
@@ -641,7 +662,8 @@ class TranslatedModule(CommonModule):
         access = name, attrnames
         if name:
             init_item(self.attr_accesses, path, dict)
-            init_item(self.attr_accesses[path], access, lambda: 1)
+            init_item(self.attr_accesses[path], access, lambda: 0)
+            self.attr_accesses[path][access] += 1
 
     def process_class_node(self, n):
 
@@ -672,13 +694,13 @@ class TranslatedModule(CommonModule):
         in_conditional = self.in_conditional
         self.in_conditional = False
 
-        expr = self.process_structure_node(n.code)
-        if expr:
+        expr = self.process_structure_node(n.code) or PredefinedConstantRef("None")
+        if not isinstance(expr, ReturnRef):
             self.writestmt("return %s;" % expr)
 
         self.in_conditional = in_conditional
 
-        self.end_function()
+        self.end_function(function_name)
 
     def process_function_node(self, n):
 
@@ -1007,7 +1029,28 @@ class TranslatedModule(CommonModule):
         # NOTE: This needs to evaluate whether the operand is true or false
         # NOTE: according to Python rules.
 
-        return make_expression("(!(%s))" % n.expr)
+        return make_expression("(__BOOL(%s) ? %s : %s)" %
+            (n.expr, PredefinedConstantRef("False"), PredefinedConstantRef("True")))
+
+    def process_raise_node(self, n):
+
+        "Process the given raise node 'n'."
+
+        # NOTE: Determine which raise statement variants should be permitted.
+
+        self.writestmt("__Raise(%s);" % self.process_structure_node(n.expr1))
+
+    def process_return_node(self, n):
+
+        "Process the given return node 'n'."
+
+        expr = self.process_structure_node(n.value) or PredefinedConstantRef("None")
+        if self.in_try_finally:
+            self.writestmt("__Return(%s);" % expr)
+        else:
+            self.writestmt("return %s;" % expr)
+
+        return ReturnRef()
 
     def process_try_node(self, n):
 
@@ -1015,28 +1058,81 @@ class TranslatedModule(CommonModule):
         Process the given "try...except" node 'n'.
         """
 
-        # NOTE: Placeholders/macros.
+        # Use macros to implement exception handling.
 
-        self.writeline("TRY")
+        self.writestmt("__Try")
         self.writeline("{")
         self.indent += 1
         self.process_structure_node(n.body)
+
+        # Put the else statement in another try block that handles any raised
+        # exceptions and converts them to exceptions that will not be handled by
+        # the main handling block.
+
+        if n.else_:
+            self.writestmt("__Try")
+            self.writeline("{")
+            self.indent += 1
+            self.process_structure_node(n.else_)
+            self.indent -= 1
+            self.writeline("}")
+            self.writeline("__Catch (__tmp_exc)")
+            self.writeline("{")
+            self.indent += 1
+            self.writeline("if (__tmp_exc.raising) __RaiseElse(__tmp_exc.arg);")
+            self.indent -= 1
+            self.writeline("}")
+
+        # Complete the try block and enter the finally block, if appropriate.
+
+        if self.in_try_finally:
+            self.writestmt("__Complete;")
+
         self.indent -= 1
         self.writeline("}")
 
+        # Handlers are tests within a common handler block.
+
+        self.writeline("__Catch (__tmp_exc)")
+        self.writeline("{")
+        self.indent += 1
+
+        # Handle exceptions in else blocks converted to __RaiseElse, converting
+        # them back to normal exceptions.
+
+        else_str = ""
+
+        if n.else_:
+            self.writeline("if (__tmp_exc.raising_else) __Raise(__tmp_exc.arg);")
+            else_str = "else "
+
+        # Handle the completion of try blocks or the execution of return
+        # statements where finally blocks apply.
+
+        if self.in_try_finally:
+            self.writeline("%sif (__tmp_exc.completing) __Throw(__tmp_exc);" % else_str)
+            else_str = "else "
+
+        # Exception handling.
+
         for name, var, handler in n.handlers:
+
+            # Test for specific exceptions.
+
             if name is not None:
                 name_ref = self.process_structure_node(name)
-                self.writeline("EXCEPT(%s)" % name_ref)
+                self.writeline("%sif (__BOOL(__fn_native__isinstance((__attr[]) {__tmp_exc.arg, %s})))" % (else_str, name_ref))
+            else:
+                self.writeline("%sif (1)" % else_str)
+            else_str = "else "
 
             self.writeline("{")
             self.indent += 1
 
             # Establish the local for the handler.
-            # NOTE: Need to provide the exception value.
 
             if var is not None:
-                var_ref = self.process_structure_node(var)
+                var_ref = self.process_name_node(var, make_expression("__tmp_exc"))
 
             if handler is not None:
                 self.process_structure_node(handler)
@@ -1044,8 +1140,14 @@ class TranslatedModule(CommonModule):
             self.indent -= 1
             self.writeline("}")
 
-        if n.else_:
-            self.process_structure_node(n.else_)
+        # Re-raise unhandled exceptions.
+
+        self.writeline("%s__Throw(__tmp_exc);" % else_str)
+
+        # End the handler block.
+
+        self.indent -= 1
+        self.writeline("}")
 
     def process_try_finally_node(self, n):
 
@@ -1053,18 +1155,37 @@ class TranslatedModule(CommonModule):
         Process the given "try...finally" node 'n'.
         """
 
-        # NOTE: Placeholders/macros.
+        in_try_finally = self.in_try_finally
+        self.in_try_finally = True
 
-        self.writeline("TRY")
+        # Use macros to implement exception handling.
+
+        self.writestmt("__Try")
         self.writeline("{")
         self.indent += 1
         self.process_structure_node(n.body)
         self.indent -= 1
         self.writeline("}")
-        self.writeline("FINALLY")
+
+        self.in_try_finally = in_try_finally
+
+        # Finally clauses handle special exceptions.
+
+        self.writeline("__Catch (__tmp_exc)")
         self.writeline("{")
         self.indent += 1
         self.process_structure_node(n.final)
+
+        # Test for the completion of a try block.
+
+        self.writestmt("if (__tmp_exc.completing)")
+        self.writeline("{")
+        self.indent += 1
+        self.writeline("if (!__ISNULL(__tmp_exc.arg)) return __tmp_exc.arg;")
+        self.indent -= 1
+        self.writeline("}")
+        self.writeline("else __Throw(__tmp_exc);")
+
         self.indent -= 1
         self.writeline("}")
 
@@ -1085,7 +1206,7 @@ class TranslatedModule(CommonModule):
             # NOTE: This needs to evaluate whether the operand is true or false
             # NOTE: according to Python rules.
 
-            self.writeline("if (!(%s))" % test)
+            self.writeline("if (!__BOOL(%s))" % test)
             self.writeline("{")
             self.indent += 1
             if n.else_:
@@ -1107,6 +1228,7 @@ class TranslatedModule(CommonModule):
     def start_output(self):
         print >>self.out, """\
 #include "types.h"
+#include "exceptions.h"
 #include "ops.h"
 #include "progconsts.h"
 #include "progops.h"
@@ -1121,7 +1243,7 @@ class TranslatedModule(CommonModule):
 
     def end_module(self):
         self.indent -= 1
-        self.end_function()
+        print >>self.out, "}"
 
     def start_function(self, name):
         print >>self.out, "__attr %s(__attr __args[])" % encode_function_pointer(name)
@@ -1129,12 +1251,13 @@ class TranslatedModule(CommonModule):
         self.indent += 1
         self.writeline("__ref __tmp_context, __tmp_value;")
         self.writeline("__attr __tmp_target, __tmp_result;")
+        self.writeline("__exc __tmp_exc;")
 
         # Obtain local names from parameters.
 
         parameters = self.importer.function_parameters[name]
-        names = []
         locals = self.importer.function_locals[name].keys()
+        names = []
 
         for n in locals:
 
@@ -1152,27 +1275,39 @@ class TranslatedModule(CommonModule):
             names.sort()
             self.writeline("__attr %s;" % ", ".join(names))
 
+        self.write_parameters(name, True)
+
+    def end_function(self, name):
+        self.write_parameters(name, False)
+        self.indent -= 1
+        print >>self.out, "}"
+        print >>self.out
+
+    def write_parameters(self, name, define=True):
+        parameters = self.importer.function_parameters[name]
+
         # Generate any self reference.
 
         if self.in_method(name):
-            self.writeline("#define self (__args[0])")
+            if define:
+                self.writeline("#define self (__args[0])")
+            else:
+                self.writeline("#undef self")
 
         # Generate aliases for the parameters.
 
         for i, parameter in enumerate(parameters):
-            self.writeline("#define %s (__args[%d])" % (encode_path(parameter), i+1))
-
-    def end_function(self):
-        self.indent -= 1
-        print >>self.out, "}"
-        print >>self.out
+            if define:
+                self.writeline("#define %s (__args[%d])" % (encode_path(parameter), i+1))
+            else:
+                self.writeline("#undef %s" % encode_path(parameter))
 
     def start_if(self, first, test_ref):
 
         # NOTE: This needs to evaluate whether the operand is true or false
         # NOTE: according to Python rules.
 
-        self.writestmt("%sif (%s)" % (not first and "else " or "", test_ref))
+        self.writestmt("%sif (__BOOL(%s))" % (not first and "else " or "", test_ref))
         self.writeline("{")
         self.indent += 1
 

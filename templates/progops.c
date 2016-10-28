@@ -120,3 +120,8 @@ __attr __GETDEFAULT(__ref obj, int pos)
 {
     return __load_via_object(obj, __FUNCTION_INSTANCE_SIZE + pos);
 }
+
+int __BOOL(__attr attr)
+{
+    return attr.value == __builtins___bool_True.value;
+}

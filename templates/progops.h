@@ -15,3 +15,4 @@ __attr __unbound_method(__attr args[]);
 
 void __SETDEFAULT(__ref obj, int pos, __attr value);
 __attr __GETDEFAULT(__ref obj, int pos);
+int __BOOL(__attr attr);

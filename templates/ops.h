@@ -31,8 +31,10 @@ __ref __get_class(__ref obj);
 
 /* Attribute testing operations. */
 
-int __test_common_instance(__ref obj, int pos, int code);
-int __test_specific_instance(__ref obj, __ref type);
+__ref __test_common_instance(__ref obj, int pos, int code);
+__ref __test_common_object(__ref obj, int pos, int code);
+__ref __test_common_type(__ref obj, int pos, int code);
+__ref __test_specific_instance(__ref obj, __ref type);
 
 /* Attribute testing and retrieval operations. */
 
@@ -69,7 +71,7 @@ __attr __CONTEXT_AS_VALUE(__attr attr);
 
 /* Type testing. */
 
-int __ISFUNC(__ref obj);
+__ref __ISFUNC(__ref obj);
 int __ISNULL(__attr value);
 
 /* __TEST(obj, __A) -> test obj for the special type attribute __A */

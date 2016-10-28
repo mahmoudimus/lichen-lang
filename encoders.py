@@ -178,7 +178,7 @@ checked_ops = (
     )
 
 typename_ops = (
-    "__test_common_instance",
+    "__test_common_instance", "__test_common_object", "__test_common_type",
     )
 
 encoding_ops = (
@@ -253,7 +253,12 @@ def encode_access_instruction(instruction, subs):
     # Substitute the first element of the instruction, which may not be an
     # operation at all.
 
-    return "%s%s" % (subs.get(op, op), argstr)
+    if subs.has_key(op):
+        op = subs[op]
+    elif not args:
+        op = "&%s" % encode_path(op)
+
+    return "%s%s" % (op, argstr)
 
 def encode_access_instruction_arg(arg, subs):
 
