@@ -1,4 +1,4 @@
-SRC = progops.c progtypes.c ops.c $(wildcard src/*.c)
+SRC = exceptions.c progops.c progtypes.c ops.c $(wildcard src/*.c)
 OBJ = $(SRC:.c=.o)
 CFLAGS = -I.
 

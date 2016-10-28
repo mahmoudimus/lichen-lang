@@ -4,8 +4,6 @@
 #include "progconsts.h"
 #include "progtypes.h"
 
-__attr null = {0, 0};
-
 /* Direct access to functions. */
 
 __attr __load_function(__func fn)
@@ -83,7 +81,7 @@ __attr __check_and_load_via_class(__ref obj, int pos, int code)
 
 __attr __check_and_load_via_object(__ref obj, int pos, int code)
 {
-    return __HASATTR(obj, pos, code) ? __load_via_object(obj, pos) : null;
+    return __HASATTR(obj, pos, code) ? __load_via_object(obj, pos) : __NULL;
 }
 
 __attr __check_and_load_via_any(__ref obj, int pos, int code)
@@ -124,7 +122,7 @@ __attr __test_context(__ref context, __attr attr)
 
     /* NOTE: An error may be more appropriate. */
 
-    return null;
+    return __NULL;
 }
 
 __attr __replace_context(__ref context, __attr attr)
@@ -195,8 +193,8 @@ int __ISFUNC(__ref obj)
 
 int __ISNULL(__attr value)
 {
-    /* (value.context == null.context) is superfluous */
-    return (value.value == null.value);
+    /* (value.context == __NULL.context) is superfluous */
+    return (value.value == 0); /* __NULL.value */
 }
 
 /* Attribute codes and positions for type objects. */

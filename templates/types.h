@@ -65,9 +65,14 @@ typedef struct __obj
 typedef __obj * __ref;
 
 /* Special instance position value. The pos member of __obj refers to the
-   special type attribute for classes. For instances, it is set to zero. */
+   special type attribute for classes, indicating which position holds the
+   attribute describing the class type. For instances, it is set to zero. */
 
 #define __INSTANCEPOS 0
+
+/* Special null value. */
+
+#define __NULL ((__attr) {0, 0})
 
 /* Function pointer type. */
 
