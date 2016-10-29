@@ -18,6 +18,7 @@ __attr __load_static(__ref obj);
 
 __attr __load_via_class(__ref obj, int pos);
 __attr __load_via_object(__ref obj, int pos);
+__attr __get_class_and_load(__ref obj, int pos);
 
 /* Direct storage operations. */
 

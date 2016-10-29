@@ -35,10 +35,10 @@ __attr __load_via_class(__ref obj, int pos)
 
 __attr __get_class_and_load(__ref obj, int pos)
 {
-    if (!__is_instance(obj))
-        return __load_via_object(obj, pos);
-    else
+    if (__is_instance(obj))
         return __load_via_class(obj, pos);
+    else
+        return __load_via_object(obj, pos);
 }
 
 /* Direct storage operations. */

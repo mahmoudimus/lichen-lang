@@ -167,13 +167,19 @@ def encode_instruction(instruction):
 
 # Output program encoding.
 
-attribute_ops = (
-    "__load_via_class", "__load_via_object",
+attribute_loading_ops = (
+    "__load_via_class", "__load_via_object", "__get_class_and_load",
+    )
+
+attribute_ops = attribute_loading_ops + (
     "__store_via_object",
     )
 
-checked_ops = (
+checked_loading_ops = (
     "__check_and_load_via_class", "__check_and_load_via_object", "__check_and_load_via_any",
+    )
+
+checked_ops = checked_loading_ops + (
     "__check_and_store_via_class", "__check_and_store_via_object", "__check_and_store_via_any",
     )
 
@@ -188,6 +194,9 @@ encoding_ops = (
 static_ops = (
     "__load_static",
     )
+
+reference_acting_ops = attribute_ops + checked_ops + typename_ops
+attribute_producing_ops = attribute_loading_ops + checked_loading_ops
 
 def encode_access_instruction(instruction, subs):
 
@@ -210,8 +219,10 @@ def encode_access_instruction(instruction, subs):
         # Encode the arguments.
 
         a = []
+        converting_op = op
         for arg in args:
-            a.append(encode_access_instruction_arg(arg, subs))
+            a.append(encode_access_instruction_arg(arg, subs, converting_op))
+            converting_op = None
 
         # Modify certain arguments.
 
@@ -260,12 +271,19 @@ def encode_access_instruction(instruction, subs):
 
     return "%s%s" % (op, argstr)
 
-def encode_access_instruction_arg(arg, subs):
+def encode_access_instruction_arg(arg, subs, op):
 
     "Encode 'arg' using 'subs' to define substitutions."
 
     if isinstance(arg, tuple):
-        return encode_access_instruction(arg, subs)
+        encoded = encode_access_instruction(arg, subs)
+
+        # Convert attribute results to references where required.
+
+        if op and op in reference_acting_ops and arg[0] in attribute_producing_ops:
+            return "%s.value" % encoded
+        else:
+            return encoded
 
     # Special values only need replacing, not encoding.
 
