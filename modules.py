@@ -304,19 +304,22 @@ class InspectionNaming:
             self.queue_module(module_name, True)
         return Reference("<class>", "__builtins__.%s.%s" % (name, name))
 
-    def get_object(self, path):
+    def get_object(self, path, defer=True):
 
         """
         Get the details of an object with the given 'path'. Where the object
-        cannot be resolved, an unresolved reference is returned.
+        cannot be resolved, an unresolved reference is returned if 'defer' is
+        set to a true value (the default). Otherwise, None is returned.
         """
 
         if self.objects.has_key(path):
             return self.objects[path]
-        else:
+        elif defer:
             ref = Reference("<depends>", path)
             self.deferred.append(ref)
             return ref
+        else:
+            return None
 
     def import_name_from_module(self, name, module_name):
 

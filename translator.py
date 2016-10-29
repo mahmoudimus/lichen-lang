@@ -91,7 +91,7 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
         # Determine whether a qualified name is involved.
 
-        t = (self.expr and self.get_name() or self.name).rsplit(".", 1)
+        t = (self.get_name() or self.name).rsplit(".", 1)
         parent = len(t) > 1 and t[0] or None
         attrname = encode_path(t[-1])
 
@@ -121,6 +121,14 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
             parent = ref.parent()
             context = ref.has_kind("<function>") and encode_path(parent) or None
             return "((__attr) {%s, &%s})" % (context and "&%s" % context or "0", static_name)
+
+        # Qualified names must be converted into parent-relative accesses.
+
+        elif parent:
+            return "__load_via_object(&%s, %s)" % (
+                encode_path(parent), encode_symbol("pos", attrname))
+
+        # All other accesses involve the names as they were given.
 
         else:
             return attrname
@@ -603,7 +611,7 @@ class TranslatedModule(CommonModule):
         # the complete access.
 
         name_ref = attr_expr and attr_expr.is_name() and attr_expr
-        name = name_ref and name_ref.name or None
+        name = name_ref and self.get_name_for_tracking(name_ref.name, name_ref and name_ref.final()) or None
 
         location = self.get_access_location(name)
         refs = self.get_referenced_attributes(location)
@@ -1028,12 +1036,12 @@ class TranslatedModule(CommonModule):
         # as in the inspector.
 
         path = self.get_object_path(n.name)
-        ref = self.importer.get_object(path)
-        name = self.get_name_for_tracking(n.name, ref and ref.final())
 
         # Get the static identity of the name.
 
         ref = self.importer.identify(path)
+        if ref and not ref.get_name():
+            ref = ref.alias(path)
 
         # Obtain any resolved names for non-assignment names.
 
@@ -1045,7 +1053,7 @@ class TranslatedModule(CommonModule):
         # static namespace members. The reference should be configured to return
         # such names.
 
-        return TrResolvedNameRef(name, ref, expr=expr)
+        return TrResolvedNameRef(n.name, ref, expr=expr)
 
     def process_not_node(self, n):
 

@@ -1264,7 +1264,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         if not self.in_function and name not in predefined_constants:
             if self.in_class:
-                ref = self.get_object(self.get_object_path(name))
+                ref = self.get_object(self.get_object_path(name), False)
             if not ref:
                 ref = self.get_global_or_builtin(name)
 

@@ -643,7 +643,7 @@ class CommonModule:
         elif path:
             return path
 
-        # Otherwise, establish a name in the current (module) namespace.
+        # Otherwise, establish a name in the current namespace.
 
         else:
             return self.get_object_path(name)
