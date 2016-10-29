@@ -54,7 +54,7 @@ __attr __invoke(__attr callable,
     /* Check the number of arguments. */
 
     if ((min > (nargs + nkwargs)) || ((nargs + nkwargs) > max))
-        return null;
+        return __NULL;
 
     /* Copy the arguments. */
 
@@ -79,7 +79,7 @@ __attr __invoke(__attr callable,
            arguments. */
 
         if ((pos == -1) || (pos < nargs))
-            return null;
+            return __NULL;
 
         /* Set the argument using the appropriate position. */
 

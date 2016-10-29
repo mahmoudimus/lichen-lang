@@ -4,8 +4,7 @@
 #define __OPS_H__
 
 #include "types.h"
-
-extern __attr null;
+#include <string.h> /* for __COPY */
 
 /* Direct access to functions. */
 
@@ -87,5 +86,9 @@ unsigned int __TYPEPOS(__ref obj);
 
 #define __ATTRCODE(__ATTRNAME) (__code_##__ATTRNAME)
 #define __ATTRPOS(__ATTRNAME) (__pos_##__ATTRNAME)
+
+/* Copying of structures. */
+
+#define __COPY(__SOURCE, __TARGET) (memcpy(__TARGET, __SOURCE, sizeof(__SOURCE)))
 
 #endif /* __OPS_H__ */
