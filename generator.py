@@ -309,6 +309,10 @@ class Generator(CommonOutput):
             for value, n in self.optimiser.constants.items():
                 self.make_literal_constant(f_decls, f_defs, n, value)
 
+            # Finish the main source file.
+
+            self.write_main_program(f_code, f_signatures)
+
             # Output more boilerplate.
 
             print >>f_consts, """\
@@ -813,7 +817,7 @@ __obj %s = {
 __attr %s(__attr __args[])
 {
     __args[0] = __new(&%s, &%s, sizeof(%s));
-    %s
+    %s(__args);
     return __args[0];
 }
 """ % (
@@ -821,6 +825,33 @@ __attr %s(__attr __args[])
     encode_tablename("Instance", path), encode_path(path), encode_symbol("obj", path),
     encode_function_pointer(init_ref.get_origin())
     )
+
+    def write_main_program(self, f_code, f_signatures):
+
+        """
+        Write the main program to 'f_code', invoking the program's modules. Also
+        write declarations for module main functions to 'f_signatures'.
+        """
+
+        print >>f_code, """\
+int main(int argc, char *argv[])
+{"""
+
+        for name in self.importer.modules.keys():
+            function_name = "__main_%s" % encode_path(name)
+            print >>f_signatures, "void %s();" % function_name
+
+            # Emit the main module's function last.
+
+            if name != "__main__":
+                print >>f_code, """\
+    %s();""" % function_name
+
+        print >>f_code, """\
+    __main___main__();
+    return 0;
+}
+"""
 
 def encode_size(table_type, path=None):
     return "__%ssize%s" % (table_type, path and "_%s" % encode_path(path) or "")
