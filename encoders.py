@@ -289,6 +289,12 @@ def encode_function_pointer(path):
 
     return "__fn_%s" % encode_path(path)
 
+def encode_initialiser_pointer(path):
+
+    "Encode 'path' as a reference to an initialiser function structure."
+
+    return encode_path("%s.__init__" % path)
+
 def encode_instantiator_pointer(path):
 
     "Encode 'path' as a reference to an output program instantiator."

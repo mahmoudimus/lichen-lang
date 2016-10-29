@@ -81,11 +81,6 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
         "Return an output representation of the referenced name."
 
-        # Use any alias in preference to the origin of the name.
-
-        name = self.get_name()
-
-        # Use any static origin in preference to any alias.
         # For sources, any identified static origin will be constant and thus
         # usable directly. For targets, no constant should be assigned and thus
         # the alias (or any plain name) will be used.
@@ -93,7 +88,12 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
         ref = self.static()
         origin = ref and self.get_origin()
         static_name = origin and encode_path(origin)
-        dynamic_name = name and encode_path(name) or encode_path(self.name)
+
+        # Determine whether a qualified name is involved.
+
+        t = (self.expr and self.get_name() or self.name).rsplit(".", 1)
+        parent = len(t) > 1 and t[0] or None
+        attrname = encode_path(t[-1])
 
         # Assignments.
 
@@ -103,8 +103,17 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
             if self.static() and isinstance(self.expr, results.ResolvedNameRef) and self.expr.static():
                 return ""
+
+            # Qualified names must be converted into parent-relative assignments.
+
+            elif parent:
+                return "__store_via_object(&%s, %s, %s)" % (
+                    encode_path(parent), encode_symbol("pos", attrname), self.expr)
+
+            # All other assignments involve the names as they were given.
+
             else:
-                return "%s = %s" % (dynamic_name, self.expr)
+                return "%s = %s" % (attrname, self.expr)
 
         # Expressions.
 
@@ -114,7 +123,7 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
             return "((__attr) {%s, &%s})" % (context and "&%s" % context or "0", static_name)
 
         else:
-            return dynamic_name
+            return attrname
 
 class TrConstantValueRef(results.ConstantValueRef, TranslationResult):
 
@@ -721,7 +730,7 @@ class TranslatedModule(CommonModule):
 
         # Obtain details of the defaults.
 
-        defaults = self.process_function_defaults(n, name, self.get_object_path(name))
+        defaults = self.process_function_defaults(n, name, "&%s" % self.get_object_path(name))
         if defaults:
             for default in defaults:
                 self.writeline("%s;" % default)
@@ -776,7 +785,7 @@ class TranslatedModule(CommonModule):
                 continue
 
             if name_ref:
-                defaults.append("__SETDEFAULT(&%s, %s, %s)" % (encode_path(instance_name), i, name_ref))
+                defaults.append("__SETDEFAULT(%s, %s, %s)" % (encode_path(instance_name), i, name_ref))
 
         return defaults
 
@@ -818,8 +827,10 @@ class TranslatedModule(CommonModule):
             parameters = self.importer.function_parameters.get(objpath)
             if expr.has_kind("<class>"):
                 target = encode_instantiator_pointer(objpath)
+                target_structure = encode_initialiser_pointer(objpath)
             elif expr.has_kind("<function>"):
                 target = encode_function_pointer(objpath)
+                target_structure = encode_path(objpath)
         else:
             parameters = None
 
@@ -871,11 +882,15 @@ class TranslatedModule(CommonModule):
             if function_defaults:
 
                 # Visit each default and set any missing arguments.
+                # Use the target structure to obtain defaults, as opposed to the
+                # actual function involved.
 
                 for i, (argname, default) in enumerate(function_defaults):
                     argnum = parameters.index(argname)
                     if not args[argnum+1]:
-                        args[argnum+1] = "__GETDEFAULT(%s, %d)" % (target, i)
+                        args[argnum+1] = "__GETDEFAULT(&%s, %d)" % (target_structure, i)
+
+        # Encode the arguments.
 
         argstr = "__ARGS(%s)" % ", ".join(args)
         kwargstr = kwargs and ("__ARGS(%s)" % ", ".join(kwargs)) or "0"
@@ -941,9 +956,16 @@ class TranslatedModule(CommonModule):
         name = self.get_lambda_name()
         function_name = self.get_object_path(name)
 
-        defaults = self.process_function_defaults(n, name, "__tmp")
+        defaults = self.process_function_defaults(n, name, "__tmp_result")
+
+        # Without defaults, produce an attribute referring to the function.
+
         if not defaults:
-            return make_expression(encode_path(function_name))
+            return make_expression("((__attr) {0, &%s})" % encode_path(function_name))
+
+        # With defaults, copy the function structure and set the defaults on the
+        # copy.
+
         else:
             return make_expression("(__COPY(%s, __tmp), %s)" % (encode_path(function_name), ", ".join(defaults)))
 
@@ -1026,11 +1048,9 @@ class TranslatedModule(CommonModule):
 
         "Process the given operator node 'n'."
 
-        # NOTE: This needs to evaluate whether the operand is true or false
-        # NOTE: according to Python rules.
-
         return make_expression("(__BOOL(%s) ? %s : %s)" %
-            (n.expr, PredefinedConstantRef("False"), PredefinedConstantRef("True")))
+            (self.process_structure_node(n.expr), PredefinedConstantRef("False"),
+            PredefinedConstantRef("True")))
 
     def process_raise_node(self, n):
 
@@ -1240,6 +1260,7 @@ class TranslatedModule(CommonModule):
         print >>self.out, "void __main_%s()" % encode_path(self.name)
         print >>self.out, "{"
         self.indent += 1
+        self.write_temporaries()
 
     def end_module(self):
         self.indent -= 1
@@ -1249,9 +1270,7 @@ class TranslatedModule(CommonModule):
         print >>self.out, "__attr %s(__attr __args[])" % encode_function_pointer(name)
         print >>self.out, "{"
         self.indent += 1
-        self.writeline("__ref __tmp_context, __tmp_value;")
-        self.writeline("__attr __tmp_target, __tmp_result;")
-        self.writeline("__exc __tmp_exc;")
+        self.write_temporaries()
 
         # Obtain local names from parameters.
 
@@ -1283,6 +1302,11 @@ class TranslatedModule(CommonModule):
         print >>self.out, "}"
         print >>self.out
 
+    def write_temporaries(self):
+        self.writeline("__ref __tmp_context, __tmp_value;")
+        self.writeline("__attr __tmp_target, __tmp_result;")
+        self.writeline("__exc __tmp_exc;")
+
     def write_parameters(self, name, define=True):
         parameters = self.importer.function_parameters[name]
 
@@ -1303,10 +1327,6 @@ class TranslatedModule(CommonModule):
                 self.writeline("#undef %s" % encode_path(parameter))
 
     def start_if(self, first, test_ref):
-
-        # NOTE: This needs to evaluate whether the operand is true or false
-        # NOTE: according to Python rules.
-
         self.writestmt("%sif (__BOOL(%s))" % (not first and "else " or "", test_ref))
         self.writeline("{")
         self.indent += 1
