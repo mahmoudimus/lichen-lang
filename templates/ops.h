@@ -89,6 +89,6 @@ unsigned int __TYPEPOS(__ref obj);
 
 /* Copying of structures. */
 
-#define __COPY(__SOURCE, __TARGET) (memcpy(__TARGET, __SOURCE, sizeof(__SOURCE)))
+__ref __COPY(__ref obj, int size);
 
 #endif /* __OPS_H__ */

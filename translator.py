@@ -967,7 +967,10 @@ class TranslatedModule(CommonModule):
         # copy.
 
         else:
-            return make_expression("(__COPY(%s, __tmp), %s)" % (encode_path(function_name), ", ".join(defaults)))
+            return make_expression("(__tmp_result = __COPY(&%s, sizeof(%s)), %s)" % (
+                encode_path(function_name),
+                encode_symbol("obj", function_name),
+                ", ".join(defaults)))
 
     def process_logical_node(self, n):
 

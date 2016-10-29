@@ -1,5 +1,6 @@
 /* Common operations. */
 
+#include <stdlib.h>
 #include "ops.h"
 #include "progconsts.h"
 #include "progtypes.h"
@@ -217,4 +218,13 @@ unsigned int __TYPECODE(__ref obj)
 unsigned int __TYPEPOS(__ref obj)
 {
     return obj->pos;
+}
+
+/* Copying of structures. */
+
+__ref __COPY(__ref obj, int size)
+{
+    __ref copy = calloc(1, size);
+    memcpy(copy, obj, size);
+    return copy;
 }
