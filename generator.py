@@ -25,7 +25,8 @@ from encoders import encode_bound_reference, encode_function_pointer, \
                      encode_literal_constant, encode_literal_constant_member, \
                      encode_literal_constant_value, encode_literal_reference, \
                      encode_path, \
-                     encode_predefined_reference, encode_symbol, \
+                     encode_predefined_reference, encode_size, \
+                     encode_symbol, encode_tablename, \
                      encode_type_attribute
 from os import listdir
 from os.path import isdir, join, split
@@ -50,18 +51,6 @@ class Generator(CommonOutput):
     "A code generator."
 
     function_type = "__builtins__.core.function"
-
-    table_name_prefixes = {
-        "<class>" : "Class",
-        "<module>" : "Module",
-        "<instance>" : "Instance"
-        }
-
-    structure_size_prefixes = {
-        "<class>" : "c",
-        "<module>" : "m",
-        "<instance>" : "i"
-        }
 
     predefined_constant_members = (
         ("__builtins__.bool", "False"),
@@ -151,7 +140,7 @@ class Generator(CommonOutput):
             size_tables.sort()
 
             for kind, sizes in size_tables:
-                self.write_size_constants(f_consts, self.structure_size_prefixes[kind], sizes, 0)
+                self.write_size_constants(f_consts, kind, sizes, 0)
 
             # Generate parameter table size data.
 
@@ -190,8 +179,8 @@ class Generator(CommonOutput):
 
                 kind = ref.get_kind()
                 path = ref.get_origin()
-                table_name = encode_tablename(self.table_name_prefixes[kind], path)
-                structure_size = encode_size(self.structure_size_prefixes[kind], path)
+                table_name = encode_tablename(kind, path)
+                structure_size = encode_size(kind, path)
 
                 # Generate structures for classes and modules.
 
@@ -256,8 +245,8 @@ class Generator(CommonOutput):
 
             for path in functions:
                 cls = self.function_type
-                table_name = encode_tablename("Instance", cls)
-                structure_size = encode_size(self.structure_size_prefixes["<instance>"], cls)
+                table_name = encode_tablename("<instance>", cls)
+                structure_size = encode_size("<instance>", cls)
 
                 # Set a special callable attribute on the instance.
 
@@ -326,7 +315,7 @@ class Generator(CommonOutput):
 
 #endif /* __PROGTYPES_H__ */""" % (
     encode_path(self.function_type),
-    encode_size(self.structure_size_prefixes["<instance>"], self.function_type)
+    encode_size("<instance>", self.function_type)
     )
 
             print >>f_signatures, """\
@@ -400,8 +389,8 @@ class Generator(CommonOutput):
         # the constant in the program.
 
         structure = []
-        table_name = encode_tablename("Instance", cls)
-        structure_size = encode_size(self.structure_size_prefixes["<instance>"], cls)
+        table_name = encode_tablename("<instance>", cls)
+        structure_size = encode_size("<instance>", cls)
         self.populate_structure(ref, attrs, ref.get_kind(), structure)
         self.write_structure(f_decls, f_defs, structure_name, table_name, structure_size, structure)
 
@@ -421,7 +410,7 @@ class Generator(CommonOutput):
         """
 
         table = []
-        table_name = encode_tablename("Function", path)
+        table_name = encode_tablename("<function>", path)
         structure_size = encode_size("pmax", path)
         self.populate_parameter_table(function_path, table)
         self.write_parameter_table(f_decls, f_defs, table_name, structure_size, table)
@@ -732,7 +721,7 @@ __obj %s = {
                 # Special argument specification member.
 
                 elif attrname == "__args__":
-                    structure.append("{.min=%s, .ptable=&%s}" % (attr, encode_tablename("Function", origin)))
+                    structure.append("{.min=%s, .ptable=&%s}" % (attr, encode_tablename("<function>", origin)))
                     continue
 
                 # Special internal data member.
@@ -822,7 +811,9 @@ __attr %s(__attr __args[])
 }
 """ % (
     encode_instantiator_pointer(path),
-    encode_tablename("Instance", path), encode_path(path), encode_symbol("obj", path),
+    encode_tablename("<instance>", path),
+    encode_path(path),
+    encode_symbol("obj", path),
     encode_function_pointer(init_ref.get_origin())
     )
 
@@ -852,11 +843,5 @@ int main(int argc, char *argv[])
     return 0;
 }
 """
-
-def encode_size(table_type, path=None):
-    return "__%ssize%s" % (table_type, path and "_%s" % encode_path(path) or "")
-
-def encode_tablename(table_type, path):
-    return "__%sTable_%s" % (table_type, encode_path(path))
 
 # vim: tabstop=4 expandtab shiftwidth=4

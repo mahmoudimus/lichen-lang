@@ -343,17 +343,54 @@ def encode_predefined_reference(path):
 
     return "__predefined_%s" % encode_path(path)
 
+def encode_size(kind, path=None):
+
+    """
+    Encode a structure size reference for the given 'kind' of structure, with
+    'path' indicating a specific structure name.
+    """
+
+    return "__%ssize%s" % (structure_size_prefixes.get(kind, kind), path and "_%s" % encode_path(path) or "")
+
 def encode_symbol(symbol_type, path=None):
 
     "Encode a symbol with the given 'symbol_type' and optional 'path'."
 
     return "__%s%s" % (symbol_type, path and "_%s" % encode_path(path) or "")
 
+def encode_tablename(kind, path):
+
+    """
+    Encode a table reference for the given 'kind' of table structure, indicating
+    a 'path' for the specific object concerned.
+    """
+
+    return "__%sTable_%s" % (table_name_prefixes[kind], encode_path(path))
+
 def encode_type_attribute(path):
 
     "Encode the special type attribute for 'path'."
 
     return "#%s" % path
+
+
+
+# A mapping from kinds to structure size reference prefixes.
+
+structure_size_prefixes = {
+    "<class>" : "c",
+    "<module>" : "m",
+    "<instance>" : "i"
+    }
+
+# A mapping from kinds to table name prefixes.
+
+table_name_prefixes = {
+    "<class>" : "Class",
+    "<function>" : "Function",
+    "<module>" : "Module",
+    "<instance>" : "Instance"
+    }
 
 
 
