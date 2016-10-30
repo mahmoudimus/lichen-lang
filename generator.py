@@ -279,6 +279,11 @@ class Generator(CommonOutput):
                     structure = self.populate_function(path, function_instance_attrs, False)
                     self.write_structure(f_decls, f_defs, path, table_name, structure_size, structure)
 
+                # Functions with defaults need to declare instance structures.
+
+                if self.importer.function_defaults.get(path):
+                    self.write_instance_structure(f_decls, path, structure_size)
+
                 # Write function declarations.
                 # Signature: __attr <name>(__attr[]);
 
