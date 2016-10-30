@@ -281,10 +281,18 @@ class TranslatedModule(CommonModule):
 
         return self.importer.objects.get(self.get_namespace_path())
 
-    def get_builtin(self, name):
-        return self.importer.get_object("__builtins__.%s" % name)
+    def get_builtin_class(self, name):
 
-    def in_method(self, path):
+        "Return a reference to the actual object providing 'name'."
+
+        # NOTE: This makes assumptions about the __builtins__ structure.
+
+        return self.importer.get_object("__builtins__.%s.%s" % (name, name))
+
+    def is_method(self, path):
+
+        "Return whether 'path' is a method."
+
         class_name, method_name = path.rsplit(".", 1)
         return self.importer.classes.has_key(class_name) and class_name
 
@@ -362,7 +370,7 @@ class TranslatedModule(CommonModule):
         For node 'n', return a reference for the type of the given 'name'.
         """
 
-        ref = self.get_builtin(name)
+        ref = self.get_builtin_class(name)
 
         if name in ("dict", "list", "tuple"):
             return self.process_literal_sequence_node(n, name, ref, TrLiteralSequenceRef)
@@ -842,12 +850,6 @@ class TranslatedModule(CommonModule):
         else:
             parameters = None
 
-        stages = []
-
-        # First, the invocation target is presented.
-
-        stages.append("__tmp_target = %s" % expr)
-
         # Arguments are presented in a temporary frame array with any context
         # always being the first argument (although it may be set to null for
         # invocations where it would be unused).
@@ -904,19 +906,20 @@ class TranslatedModule(CommonModule):
         kwargstr = kwargs and ("__ARGS(%s)" % ", ".join(kwargs)) or "0"
         kwcodestr = kwcodes and ("__KWARGS(%s)" % ", ".join(kwcodes)) or "0"
 
-        # The callable is then obtained.
+        # First, the invocation expression is presented.
 
-        if target:
-            callable = target
+        stages = []
 
-        elif self.always_callable:
-            callable = "__load_via_object(__tmp_target.value, %s)" % \
-                     encode_symbol("pos", "__fn__")
+        # Without a known specific callable, the expression provides the target.
+
+        if not target:
+            stages.append(str(expr))
+
+        # Any specific callable is then obtained.
+
         else:
-            callable = "__check_and_load_via_object(__tmp_target.value, %s, %s)" % (
-                     encode_symbol("pos", "__fn__"), encode_symbol("code", "__fn__"))
-
-        stages.append(callable)
+            stages.append("__tmp_target = %s" % expr)
+            stages.append(target)
 
         # With a known target, the function is obtained directly and called.
 
@@ -927,8 +930,9 @@ class TranslatedModule(CommonModule):
         # the callable and argument collections.
 
         else:
-            output = "__invoke(\n(\n%s\n),\n%d, %s, %s,\n%d, %s\n)" % (
+            output = "__invoke(\n(\n%s\n),\n%d, %d, %s, %s,\n%d, %s\n)" % (
                 ",\n".join(stages),
+                self.always_callable and 1 or 0,
                 len(kwargs), kwcodestr, kwargstr,
                 len(args), argstr)
 
@@ -1022,8 +1026,7 @@ class TranslatedModule(CommonModule):
         # Convert literal references.
 
         elif n.name.startswith("$L"):
-            literal_name = n.name[len("$L"):]
-            ref = self.importer.get_object("__builtins__.%s" % literal_name)
+            ref = self.importer.get_module(self.name).special.get(n.name)
             return TrResolvedNameRef(n.name, ref)
 
         # Convert operator function names to references.
@@ -1323,7 +1326,7 @@ class TranslatedModule(CommonModule):
 
         # Generate any self reference.
 
-        if self.in_method(name):
+        if self.is_method(name):
             if define:
                 self.writeline("#define self (__args[0])")
             else:

@@ -5,7 +5,9 @@
 /* Common operations. */
 
 __attr __new(const __table *table, __ref cls, int size);
-__attr __invoke(__attr callable, unsigned int nkwargs, __param kwcodes[], __attr kwargs[], unsigned int nargs, __attr args[]);
+__attr __invoke(__attr callable, int always_callable,
+                unsigned int nkwargs, __param kwcodes[], __attr kwargs[],
+                unsigned int nargs, __attr args[]);
 
 /* Error routines. */
 

@@ -30,7 +30,7 @@ __attr __new(const __table * table, __ref cls, int size)
    is specified, starting with any context argument.
 */
 
-__attr __invoke(__attr callable,
+__attr __invoke(__attr callable, int always_callable,
                 unsigned int nkwargs, __param kwcodes[], __attr kwargs[],
                 unsigned int nargs, __attr args[])
 {
@@ -96,7 +96,9 @@ __attr __invoke(__attr callable,
 
     /* Call with the prepared arguments. */
 
-    return __load_via_object(callable.value, __pos___fn__).fn(allargs);
+    return (always_callable ? __load_via_object(callable.value, __pos___fn__)
+                            : __check_and_load_via_object(callable.value, __pos___fn__, __code___fn__)
+                            ).fn(allargs);
 }
 
 /* Error routines. */
