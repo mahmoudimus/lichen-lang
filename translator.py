@@ -287,7 +287,7 @@ class TranslatedModule(CommonModule):
 
         # NOTE: This makes assumptions about the __builtins__ structure.
 
-        return self.importer.get_object("__builtins__.%s.%s" % (name, name))
+        return self.importer.get_object("__builtins__.%s.%s" % (name, name == "bool" and "boolean" or name))
 
     def is_method(self, path):
 
