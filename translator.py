@@ -964,7 +964,7 @@ class TranslatedModule(CommonModule):
         name = self.get_lambda_name()
         function_name = self.get_object_path(name)
 
-        defaults = self.process_function_defaults(n, name, "__tmp_result")
+        defaults = self.process_function_defaults(n, name, "__tmp_value")
 
         # Without defaults, produce an attribute referring to the function.
 
@@ -975,7 +975,7 @@ class TranslatedModule(CommonModule):
         # copy.
 
         else:
-            return make_expression("(__tmp_result = __COPY(&%s, sizeof(%s)), %s)" % (
+            return make_expression("(__tmp_value = __COPY(&%s, sizeof(%s)), %s, (__attr) {0, __tmp_value})" % (
                 encode_path(function_name),
                 encode_symbol("obj", function_name),
                 ", ".join(defaults)))
