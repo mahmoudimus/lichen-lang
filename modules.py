@@ -302,7 +302,7 @@ class InspectionNaming:
         module_name = "__builtins__.%s" % name
         if self.name != module_name:
             self.queue_module(module_name, True)
-        return Reference("<class>", "__builtins__.%s.%s" % (name, name == "bool" and "boolean" or name))
+        return Reference("<class>", "__builtins__.%s.%s" % (name, name))
 
     def get_object(self, path, defer=True):
 

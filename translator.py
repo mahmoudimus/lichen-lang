@@ -178,7 +178,7 @@ class PredefinedConstantRef(AttrResult):
 
     def __str__(self):
         if self.value in ("False", "True"):
-            return encode_path("__builtins__.bool.%s" % self.value)
+            return encode_path("__builtins__.boolean.%s" % self.value)
         elif self.value == "None":
             return encode_path("__builtins__.none.%s" % self.value)
         elif self.value == "NotImplemented":
@@ -287,7 +287,7 @@ class TranslatedModule(CommonModule):
 
         # NOTE: This makes assumptions about the __builtins__ structure.
 
-        return self.importer.get_object("__builtins__.%s.%s" % (name, name == "bool" and "boolean" or name))
+        return self.importer.get_object("__builtins__.%s.%s" % (name, name))
 
     def is_method(self, path):
 

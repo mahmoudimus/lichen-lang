@@ -125,5 +125,5 @@ __attr __GETDEFAULT(__ref obj, int pos)
 
 int __BOOL(__attr attr)
 {
-    return attr.value == __builtins___bool_True.value;
+    return attr.value == __builtins___boolean_True.value;
 }

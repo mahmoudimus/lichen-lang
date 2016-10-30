@@ -73,7 +73,7 @@ from __builtins__.exception import (
 
 # Classes.
 
-from __builtins__.bool import bool, False, True
+from __builtins__.boolean import bool, False, True
 from __builtins__.buffer import buffer
 from __builtins__.complex import complex
 from __builtins__.dict import dict

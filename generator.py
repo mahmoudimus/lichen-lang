@@ -52,9 +52,11 @@ class Generator(CommonOutput):
 
     function_type = "__builtins__.core.function"
 
+    # NOTE: These must be synchronised with the library.
+
     predefined_constant_members = (
-        ("__builtins__.bool", "False"),
-        ("__builtins__.bool", "True"),
+        ("__builtins__.boolean", "False"),
+        ("__builtins__.boolean", "True"),
         ("__builtins__.none", "None"),
         ("__builtins__.notimplemented", "NotImplemented"),
         )
