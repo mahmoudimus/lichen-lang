@@ -31,7 +31,7 @@ class tuple(object):
 
         "Initialise the tuple."
 
-        self.__data__ = native._tuple_init(args) # allocate and copy elements
+        self.__data__ = native._tuple_init(args, len(args)) # allocate and copy elements
 
     def __getitem__(self, index):
 

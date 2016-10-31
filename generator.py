@@ -886,8 +886,9 @@ int main(int argc, char *argv[])
             print >>f_signatures, "void %s();" % function_name
 
             # Emit the main module's function last.
+            # Omit the native module.
 
-            if name != "__main__":
+            if name not in ("__main__", "native"):
                 print >>f_code, """\
     %s();""" % function_name
 

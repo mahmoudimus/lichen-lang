@@ -45,8 +45,9 @@ class Translator(CommonOutput):
         self.check_output()
 
         for module in self.importer.modules.values():
-            tm = TranslatedModule(module.name, self.importer, self.deducer, self.optimiser)
-            tm.translate(module.filename, join(output, "%s.c" % module.name))
+            if module.name != "native":
+                tm = TranslatedModule(module.name, self.importer, self.deducer, self.optimiser)
+                tm.translate(module.filename, join(output, "%s.c" % module.name))
 
 # Classes representing intermediate translation results.
 

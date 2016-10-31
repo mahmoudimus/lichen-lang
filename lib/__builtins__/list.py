@@ -33,7 +33,7 @@ class list(object):
 
         # Reserve space for a fragment reference.
 
-        self.__data__ = native._list_init(args) # reserve space for elements
+        self.__data__ = native._list_init(len(args)) # reserve space for elements
 
         if args is not None:
             self.extend(args)
