@@ -31,12 +31,12 @@ class list(object):
 
         "Initialise the list."
 
-        if args is not None:
-            self.extend(args)
-
         # Reserve space for a fragment reference.
 
-        self.__data__ = None
+        self.__data__ = native._list_init(args) # reserve space for elements
+
+        if args is not None:
+            self.extend(args)
 
     def __getitem__(self, index):
 

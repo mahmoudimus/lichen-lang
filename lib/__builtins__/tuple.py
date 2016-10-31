@@ -20,13 +20,18 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iterator import listiterator
-from __builtins__.sequence import _getitem, _getslice, _tuple
+from __builtins__.sequence import _getitem, _getslice
+import native
 
 class tuple(object):
 
     "Implementation of tuple."
 
-    def __init__(self, args): pass
+    def __init__(self, args=None):
+
+        "Initialise the tuple."
+
+        self.__data__ = native._tuple_init(args) # allocate and copy elements
 
     def __getitem__(self, index):
 
@@ -38,10 +43,16 @@ class tuple(object):
 
         "Return a slice starting from 'start', with the optional 'end'."
 
-        return _tuple(_getslice(self, start, end))
+        return native._list_to_tuple(_getslice(self, start, end))
 
-    def __len__(self): pass
+    def __len__(self):
+
+        "Return the length of the tuple."
+
+        return native._tuple_len(self)
+
     def __add__(self, other): pass
+
     def __str__(self): pass
 
     def __bool__(self):
@@ -58,6 +69,7 @@ class tuple(object):
 
     # Special implementation methods.
 
-    def __get_single_item__(self, index): pass
+    def __get_single_item__(self, index):
+        return native._tuple_element(self, index)
 
 # vim: tabstop=4 expandtab shiftwidth=4

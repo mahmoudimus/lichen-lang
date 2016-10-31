@@ -836,10 +836,20 @@ class TranslatedModule(CommonModule):
         expr = self.process_structure_node(n.node)
         objpath = expr.get_origin()
         target = None
+        literal_instantiation = False
 
         # Obtain details of the callable.
 
-        if objpath:
+        # Literals may be instantiated specially.
+
+        if expr.is_name() and expr.name.startswith("$L") and objpath:
+            literal_instantiation = True
+            parameters = None
+            target = encode_literal_instantiator(objpath)
+
+        # Identified targets employ function pointers directly.
+
+        elif objpath:
             parameters = self.importer.function_parameters.get(objpath)
             if expr.has_kind("<class>"):
                 target = encode_instantiator_pointer(objpath)
@@ -847,6 +857,9 @@ class TranslatedModule(CommonModule):
             elif expr.has_kind("<function>"):
                 target = encode_function_pointer(objpath)
                 target_structure = encode_path(objpath)
+
+        # Other targets are retrieved at run-time.
+
         else:
             parameters = None
 
@@ -905,6 +918,12 @@ class TranslatedModule(CommonModule):
         argstr = "__ARGS(%s)" % ", ".join(args)
         kwargstr = kwargs and ("__ARGS(%s)" % ", ".join(kwargs)) or "0"
         kwcodestr = kwcodes and ("__KWARGS(%s)" % ", ".join(kwcodes)) or "0"
+
+        # Where literal instantiation is occurring, add an argument indicating
+        # the number of values.
+
+        if literal_instantiation:
+            argstr += ", %d" % (len(args) - 1)
 
         # First, the invocation expression is presented.
 
@@ -1260,6 +1279,9 @@ class TranslatedModule(CommonModule):
     # Output generation.
 
     def start_output(self):
+
+        "Write the declarations at the top of each source file."
+
         print >>self.out, """\
 #include "types.h"
 #include "exceptions.h"
@@ -1271,16 +1293,25 @@ class TranslatedModule(CommonModule):
 """
 
     def start_module(self):
+
+        "Write the start of each module's main function."
+
         print >>self.out, "void __main_%s()" % encode_path(self.name)
         print >>self.out, "{"
         self.indent += 1
         self.write_temporaries()
 
     def end_module(self):
+
+        "End each module by closing its main function."
+
         self.indent -= 1
         print >>self.out, "}"
 
     def start_function(self, name):
+
+        "Start the function having the given 'name'."
+
         print >>self.out, "__attr %s(__attr __args[])" % encode_function_pointer(name)
         print >>self.out, "{"
         self.indent += 1
@@ -1311,17 +1342,30 @@ class TranslatedModule(CommonModule):
         self.write_parameters(name, True)
 
     def end_function(self, name):
+
+        "End the function having the given 'name'."
+
         self.write_parameters(name, False)
         self.indent -= 1
         print >>self.out, "}"
         print >>self.out
 
     def write_temporaries(self):
+
+        "Write temporary storage employed by functions."
+
         self.writeline("__ref __tmp_context, __tmp_value;")
         self.writeline("__attr __tmp_target, __tmp_result;")
         self.writeline("__exc __tmp_exc;")
 
     def write_parameters(self, name, define=True):
+
+        """
+        For the function having the given 'name', write definitions of
+        parameters found in the arguments array if 'define' is set to a true
+        value, or write "undefinitions" if 'define' is set to a false value.
+        """
+
         parameters = self.importer.function_parameters[name]
 
         # Generate any self reference.
@@ -1370,6 +1414,16 @@ class TranslatedModule(CommonModule):
         for result in results:
             self.statement(result)
 
+    def writeline(self, s):
+        print >>self.out, "%s%s" % (self.pad(), self.indenttext(s, self.indent + 1))
+
+    def writestmt(self, s):
+        print >>self.out
+        self.writeline(s)
+
+    def write_comment(self, s):
+        self.writestmt("/* %s */" % s)
+
     def pad(self, extra=0):
         return (self.indent + extra) * self.tabstop
 
@@ -1383,15 +1437,5 @@ class TranslatedModule(CommonModule):
             elif line.startswith(")"):
                 levels -= 1
         return "\n".join(out)
-
-    def writeline(self, s):
-        print >>self.out, "%s%s" % (self.pad(), self.indenttext(s, self.indent + 1))
-
-    def writestmt(self, s):
-        print >>self.out
-        self.writeline(s)
-
-    def write_comment(self, s):
-        self.writestmt("/* %s */" % s)
 
 # vim: tabstop=4 expandtab shiftwidth=4

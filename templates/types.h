@@ -31,6 +31,7 @@ typedef struct __ptable
    Attribute references are references to single attributes. */
 
 typedef struct __obj __obj;
+typedef struct __fragment __fragment;
 
 typedef struct __attr
 {
@@ -49,9 +50,10 @@ typedef struct __attr
         const __ptable * ptable;/* parameter table */
         struct __attr (*fn)();  /* callable details */
 
-        int intvalue;     	/* integer value */
-        double floatvalue;	/* floating point value */
-        char * strvalue;	/* string value */
+        int intvalue;           /* integer value */
+        double floatvalue;      /* floating point value */
+        char * strvalue;        /* string value */
+        __fragment * data;      /* sequence data */
     };
 } __attr;
 
@@ -63,6 +65,14 @@ typedef struct __obj
 } __obj;
 
 typedef __obj * __ref;
+
+/* Fragments are simple collections of attributes employed by sequence types. */
+
+typedef struct __fragment
+{
+    unsigned int size;
+    __attr attrs[];
+} __fragment;
 
 /* Special instance position value. The pos member of __obj refers to the
    special type attribute for classes, indicating which position holds the

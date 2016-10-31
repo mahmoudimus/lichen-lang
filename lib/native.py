@@ -48,9 +48,16 @@ def _str_eq(self, other): pass
 def _str_len(self): pass
 def _str_nonempty(self): pass
 
+def _list_init(args): pass
 def _list_len(self): pass
 def _list_nonempty(self): pass
 def _list_element(self, index): pass
+
+def _list_to_tuple(l): pass
+
+def _tuple_init(args): pass
+def _tuple_len(self): pass
+def _tuple_element(self, index): pass
 
 def _isinstance(obj, cls): pass
 

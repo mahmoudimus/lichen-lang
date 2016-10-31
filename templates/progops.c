@@ -21,6 +21,23 @@ __attr __new(const __table * table, __ref cls, int size)
     return self;
 }
 
+/* Generic internal data allocation. */
+
+__attr __newdata(__attr args[], unsigned int number)
+{
+    __fragment *data = calloc(sizeof(__attr), number);
+    __attr attr = {0, .data=data};
+    unsigned int i, j;
+
+    /* Copy the given number of values, starting from the second element. */
+
+    for (i = 1, j = 0; i <= number; i++, j++)
+        data->attrs[j] = args[i];
+
+    data->size = number;
+    return attr;
+}
+
 /* Generic invocation operations. */
 
 /* Invoke the given callable, supplying keyword argument details in the given

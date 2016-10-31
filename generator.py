@@ -23,7 +23,8 @@ from common import CommonOutput
 from encoders import encode_bound_reference, encode_function_pointer, \
                      encode_instantiator_pointer, \
                      encode_literal_constant, encode_literal_constant_member, \
-                     encode_literal_constant_value, encode_literal_reference, \
+                     encode_literal_constant_value, \
+                     encode_literal_instantiator, encode_literal_reference, \
                      encode_path, \
                      encode_predefined_reference, encode_size, \
                      encode_symbol, encode_tablename, \
@@ -59,6 +60,12 @@ class Generator(CommonOutput):
         ("__builtins__.boolean", "True"),
         ("__builtins__.none", "None"),
         ("__builtins__.notimplemented", "NotImplemented"),
+        )
+
+    literal_instantiator_types = (
+        "__builtins__.dict.dict",
+        "__builtins__.list.list",
+        "__builtins__.tuple.tuple",
         )
 
     def __init__(self, importer, optimiser, output):
@@ -120,7 +127,9 @@ class Generator(CommonOutput):
 """
             print >>f_code, """\
 #include <string.h>
+#include <stdio.h>
 #include "types.h"
+#include "exceptions.h"
 #include "ops.h"
 #include "progconsts.h"
 #include "progtypes.h"
@@ -201,13 +210,9 @@ class Generator(CommonOutput):
 
                         init_ref = attrs["__init__"]
 
-                        # Signature: __attr __new_<name>(__attr[]);
-
-                        print >>f_signatures, "__attr %s(__attr[]);" % encode_instantiator_pointer(path)
-
                         # Write instantiator definitions.
 
-                        self.write_instantiator(f_code, path, init_ref)
+                        self.write_instantiator(f_code, f_signatures, path, init_ref)
 
                         # Write parameter table.
 
@@ -797,11 +802,12 @@ __obj %s = {
         for name, default in self.importer.function_defaults.get(path):
             structure.append(self.encode_member(path, name, default, "<instance>"))
 
-    def write_instantiator(self, f_code, path, init_ref):
+    def write_instantiator(self, f_code, f_signatures, path, init_ref):
 
         """
-        Write an instantiator to 'f_code' for instances of the class with the
-        given 'path', with 'init_ref' as the initialiser function reference.
+        Write an instantiator to 'f_code', with a signature to 'f_signatures',
+        for instances of the class with the given 'path', with 'init_ref' as the
+        initialiser function reference.
 
         NOTE: This also needs to initialise any __fn__ and __args__ members
         NOTE: where __call__ is provided by the class.
@@ -812,8 +818,13 @@ __obj %s = {
         print >>f_code, """\
 __attr %s(__attr __args[])
 {
+    /* Allocate the structure. */
     __args[0] = __new(&%s, &%s, sizeof(%s));
+
+    /* Call the initialiser. */
     %s(__args);
+
+    /* Return the allocated object details. */
     return __args[0];
 }
 """ % (
@@ -824,6 +835,39 @@ __attr %s(__attr __args[])
     encode_function_pointer(init_ref.get_origin())
     )
 
+        print >>f_signatures, "__attr %s(__attr[]);" % encode_instantiator_pointer(path)
+
+        # Write additional literal instantiators. These do not call the
+        # initialisers but instead populate the structures directly.
+
+        if path in self.literal_instantiator_types:
+            print >>f_code, """\
+__attr %s(__attr __args[], unsigned int number)
+{
+    __attr data;
+
+    /* Allocate the structure. */
+    __args[0] = __new(&%s, &%s, sizeof(%s));
+
+    /* Allocate a structure for the data. */
+    data = __newdata(__args, number);
+
+    /* Store a reference to the data in the object's __data__ attribute. */
+    __store_via_object(__args[0].value, %s, data);
+
+    /* Return the allocated object details. */
+    return __args[0];
+}
+""" % (
+    encode_literal_instantiator(path),
+    encode_tablename("<instance>", path),
+    encode_path(path),
+    encode_symbol("obj", path),
+    encode_symbol("pos", "__data__")
+    )
+
+        print >>f_signatures, "__attr %s(__attr[], unsigned int);" % encode_literal_instantiator(path)
+
     def write_main_program(self, f_code, f_signatures):
 
         """
@@ -833,7 +877,9 @@ __attr %s(__attr __args[])
 
         print >>f_code, """\
 int main(int argc, char *argv[])
-{"""
+{
+    __Try
+    {"""
 
         for name in self.importer.modules.keys():
             function_name = "__main_%s" % encode_path(name)
@@ -846,8 +892,14 @@ int main(int argc, char *argv[])
     %s();""" % function_name
 
         print >>f_code, """\
-    __main___main__();
-    return 0;
+        __main___main__();
+        return 0;
+    }
+    __Catch_anonymous
+    {
+        fprintf(stderr, "Program terminated due to exception.\\n");
+        return 1;
+    }
 }
 """
 

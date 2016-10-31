@@ -340,6 +340,14 @@ def encode_literal_constant_value(value):
     else:
         return '"%s"' % str(value).replace('"', '\\"')
 
+def encode_literal_instantiator(path):
+
+    """
+    Encode a reference to an instantiator for a literal having the given 'path'.
+    """
+
+    return "__newliteral_%s" % encode_path(path)
+
 def encode_literal_reference(n):
 
     "Encode a reference to a literal constant with the number 'n'."
