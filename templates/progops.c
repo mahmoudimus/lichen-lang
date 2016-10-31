@@ -25,7 +25,7 @@ __attr __new(const __table * table, __ref cls, int size)
 
 __attr __newdata(__attr args[], unsigned int number)
 {
-    __fragment *data = calloc(sizeof(__attr), number);
+    __fragment *data = calloc(number, sizeof(__attr));
     __attr attr = {0, .data=data};
     unsigned int i, j;
 
