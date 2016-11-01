@@ -1,10 +1,11 @@
 /* Program type definitions. */
 
+#include <stdlib.h>
 #include "types.h"
 
 /* Common operations. */
 
-__attr __new(const __table *table, __ref cls, int size);
+__attr __new(const __table *table, __ref cls, size_t size);
 
 __attr __newdata(__attr args[], unsigned int number);
 

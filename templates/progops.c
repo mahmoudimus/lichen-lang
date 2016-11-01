@@ -11,9 +11,9 @@
 
 /* Generic instantiation operations, defining common members. */
 
-__attr __new(const __table * table, __ref cls, int size)
+__attr __new(const __table * table, __ref cls, size_t size)
 {
-    __ref obj = calloc(1, size);
+    __ref obj = (__ref) calloc(1, size);
     __attr self = {obj, obj};
     __attr tmp = {0, cls};
     obj->table = table;
@@ -25,7 +25,8 @@ __attr __new(const __table * table, __ref cls, int size)
 
 __attr __newdata(__attr args[], unsigned int number)
 {
-    __fragment *data = calloc(number, sizeof(__attr));
+    /* Manually calculate the size of the fragment. */
+    __fragment *data = (__fragment *) calloc(1, number * sizeof(__attr) + sizeof(unsigned int));
     __attr attr = {0, .data=data};
     unsigned int i, j;
 
