@@ -932,13 +932,11 @@ class TranslatedModule(CommonModule):
 
         # Without a known specific callable, the expression provides the target.
 
-        if not target:
-            stages.append(str(expr))
+        stages.append("__tmp_target = %s" % expr)
 
         # Any specific callable is then obtained.
 
-        else:
-            stages.append("__tmp_target = %s" % expr)
+        if target:
             stages.append(target)
 
         # With a known target, the function is obtained directly and called.
@@ -950,7 +948,7 @@ class TranslatedModule(CommonModule):
         # the callable and argument collections.
 
         else:
-            output = "__invoke(\n(\n%s\n),\n%d, %d, %s, %s,\n%d, %s\n)" % (
+            output = "(%s, __invoke(\n__tmp_target,\n%d, %d, %s, %s,\n%d, %s\n))" % (
                 ",\n".join(stages),
                 self.always_callable and 1 or 0,
                 len(kwargs), kwcodestr, kwargstr,
