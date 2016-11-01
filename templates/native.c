@@ -289,8 +289,7 @@ __attr __fn_native__list_nonempty(__attr __args[])
 {
     #define self (__args[1])
 
-    /* NOTE: To be written. */
-    return __builtins___none_None;
+    return __load_via_object(self.value, __pos___data__).data->size ? __builtins___boolean_True : __builtins___boolean_False;
     #undef self
 }
 

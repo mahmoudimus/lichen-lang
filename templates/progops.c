@@ -7,6 +7,7 @@
 #include "progconsts.h"
 #include "progops.h"
 #include "progtypes.h"
+#include "main.h"
 #include <stdio.h>
 
 /* Generic instantiation operations, defining common members. */
@@ -143,5 +144,9 @@ __attr __GETDEFAULT(__ref obj, int pos)
 
 int __BOOL(__attr attr)
 {
-    return attr.value == __builtins___boolean_True.value;
+    __attr args[2] = {{0, 0}, attr};
+
+    /* Invoke the bool function with the object and test against True. */
+
+    return __fn___builtins___boolean_bool(args).value == __builtins___boolean_True.value;
 }
