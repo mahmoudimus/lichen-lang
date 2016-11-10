@@ -327,7 +327,9 @@ class InspectionNaming:
 
         if module_name != self.name:
             self.queue_module(module_name)
-        return Reference("<depends>", "%s.%s" % (module_name, name))
+        ref = Reference("<depends>", "%s.%s" % (module_name, name))
+        self.deferred.append(ref)
+        return ref
 
     def add_deferred(self, ref):
 

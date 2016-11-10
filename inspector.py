@@ -794,7 +794,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Attempt to get a reference.
 
             ref = self.import_name_from_module(op, "operator")
-            self.add_deferred(ref)
 
             # Record the imported name and provide the resolved name reference.
 
