@@ -21,19 +21,16 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from native import _exit
 
-# Placeholders for run-time data.
+# Standard streams.
 
-stdin = file()
-stdout = file()
-stderr = file()
+stdin = sysfile(0)
+stdout = sysfile(1)
+stderr = sysfile(2)
+
+# NOTE: Environment details to be implemented.
 
 argv = []
 path = []
-
-hexversion = 0x20703f0  # 2.7.3 final 0
-maxint = 2147483647     # 2**31 - 1
-maxunicode = 1114111
-platform = 'posix'
 
 # Functions to be implemented natively.
 

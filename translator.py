@@ -536,6 +536,11 @@ class TranslatedModule(CommonModule):
         elif isinstance(n, compiler.ast.Return):
             return self.process_return_node(n)
 
+        # Print statements.
+
+        elif isinstance(n, (compiler.ast.Print, compiler.ast.Printnl)):
+            self.statement(self.process_print_node(n))
+
         # Invocations.
 
         elif isinstance(n, compiler.ast.CallFunc):
@@ -914,6 +919,12 @@ class TranslatedModule(CommonModule):
                     if not args[argnum+1]:
                         args[argnum+1] = "__GETDEFAULT(&%s, %d)" % (target_structure, i)
 
+        # Test for missing arguments.
+
+        if None in args:
+            raise TranslateError("Not all arguments supplied.",
+                                 self.get_namespace_path(), n)
+
         # Encode the arguments.
 
         argstr = "__ARGS(%s)" % ", ".join(args)
@@ -1041,15 +1052,11 @@ class TranslatedModule(CommonModule):
         if n.name in predefined_constants:
             return PredefinedConstantRef(n.name)
 
-        # Convert literal references.
+        # Convert literal references, operator function names, and print
+        # function names to references.
 
-        elif n.name.startswith("$L"):
-            ref = self.importer.get_module(self.name).special.get(n.name)
-            return TrResolvedNameRef(n.name, ref)
-
-        # Convert operator function names to references.
-
-        elif n.name.startswith("$op"):
+        elif n.name.startswith("$L") or n.name.startswith("$op") or \
+             n.name.startswith("$print"):
             ref = self.importer.get_module(self.name).special.get(n.name)
             return TrResolvedNameRef(n.name, ref)
 

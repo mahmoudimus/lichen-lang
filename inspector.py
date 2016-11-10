@@ -278,6 +278,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             self.process_structure(n)
             self.trackers[-1].abandon_returning_branch()
 
+        # Print statements.
+
+        elif isinstance(n, (compiler.ast.Print, compiler.ast.Printnl)):
+            self.process_print_node(n)
+
         # Invocations.
 
         elif isinstance(n, compiler.ast.CallFunc):
@@ -774,7 +779,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         path = self.get_namespace_path()
 
-        # Special names.
+        # Special names that have already been identified.
 
         if n.name.startswith("$"):
             value = self.get_special(n.name)
@@ -794,6 +799,20 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Attempt to get a reference.
 
             ref = self.import_name_from_module(op, "operator")
+
+            # Record the imported name and provide the resolved name reference.
+
+            value = ResolvedNameRef(n.name, ref)
+            self.set_special(n.name, value)
+            return value
+
+        # Special case for print operations.
+
+        elif n.name.startswith("$print"):
+
+            # Attempt to get a reference.
+
+            ref = self.get_builtin("print_")
 
             # Record the imported name and provide the resolved name reference.
 

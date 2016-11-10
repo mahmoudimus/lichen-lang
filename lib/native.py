@@ -63,4 +63,7 @@ def _tuple_element(self, index): pass
 
 def _isinstance(obj, cls): pass
 
+def _read(fd, n): pass
+def _write(fd, str): pass
+
 # vim: tabstop=4 expandtab shiftwidth=4

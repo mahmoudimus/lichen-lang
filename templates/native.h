@@ -37,6 +37,11 @@ __attr __fn_native__tuple_init(__attr __args[]);
 __attr __fn_native__tuple_len(__attr __args[]);
 __attr __fn_native__tuple_element(__attr __args[]);
 __attr __fn_native__isinstance(__attr __args[]);
+__attr __fn_native__read(__attr __args[]);
+__attr __fn_native__write(__attr __args[]);
+
+/* Module initialisation. */
+
 void __main_native();
 
 #endif /* __NATIVE_H__ */

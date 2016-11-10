@@ -1,4 +1,5 @@
 #include <stdlib.h> /* calloc, exit */
+#include <unistd.h> /* read, write */
 #include "types.h"
 #include "exceptions.h"
 #include "ops.h"
@@ -367,6 +368,30 @@ __attr __fn_native__isinstance(__attr __args[])
     #undef obj
     #undef cls
 }
+
+__attr __fn_native__read(__attr __args[])
+{
+    #define fd (__args[1])
+    #define n (__args[2])
+
+    /* NOTE: To be written. */
+    return __builtins___none_None;
+    #undef fd
+    #undef n
+}
+
+__attr __fn_native__write(__attr __args[])
+{
+    #define fd (__args[1])
+    #define str (__args[2])
+
+    /* NOTE: To be written. */
+    return __builtins___none_None;
+    #undef fd
+    #undef str
+}
+
+/* Module initialisation. */
 
 void __main_native()
 {

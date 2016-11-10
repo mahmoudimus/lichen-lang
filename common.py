@@ -510,6 +510,26 @@ class CommonModule:
             )
         return self.process_structure_node(invocation)
 
+    def process_print_node(self, n):
+
+        """
+        Process the given print node 'n' as an invocation on a stream of the
+        form...
+
+        $print(dest, args, nl)
+
+        The special function name will be translated elsewhere.
+        """
+
+        nl = isinstance(n, compiler.ast.Printnl)
+        invocation = compiler.ast.CallFunc(
+            compiler.ast.Name("$print"),
+            [n.dest or compiler.ast.Name("None"),
+             compiler.ast.List(list(n.nodes)),
+             nl and compiler.ast.Name("True") or compiler.ast.Name("false")]
+            )
+        return self.process_structure_node(invocation)
+
     def process_slice_node(self, n, expr=None):
 
         """

@@ -96,7 +96,7 @@ from __builtins__.attribute import getattr, hasattr, setattr
 from __builtins__.character import chr, hex, oct, ord, unichr
 from __builtins__.comparable import cmp, hash
 from __builtins__.identity import callable, help, id, isinstance, issubclass, repr
-from __builtins__.io import eval, open, raw_input
+from __builtins__.io import open, raw_input, print_, sysfile
 from __builtins__.iterable import all, any, enumerate, filter, iter, len, map, max, min, range, reduce, reversed, sorted, sum, zip
 from __builtins__.namespace import dir, globals, locals, vars
 from __builtins__.numeric import abs, divmod, pow, round
