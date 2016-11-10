@@ -338,7 +338,7 @@ def encode_literal_constant_value(value):
     if isinstance(value, (int, float)):
         return str(value)
     else:
-        return '"%s"' % str(value).replace('"', '\\"')
+        return '"%s"' % str(value).replace('"', '\\"').replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r")
 
 def encode_literal_instantiator(path):
 
