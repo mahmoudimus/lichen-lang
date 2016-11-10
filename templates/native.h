@@ -1,6 +1,9 @@
 #ifndef __NATIVE_H__
 #define __NATIVE_H__
 
+/* Native functions. */
+
+__attr __fn_native__exit(__attr __args[]);
 __attr __fn_native__is(__attr __args[]);
 __attr __fn_native__is_not(__attr __args[]);
 __attr __fn_native__int_add(__attr __args[]);

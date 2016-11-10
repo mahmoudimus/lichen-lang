@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <stdlib.h> /* calloc, exit */
 #include "types.h"
 #include "exceptions.h"
 #include "ops.h"
@@ -6,6 +6,17 @@
 #include "progops.h"
 #include "progtypes.h"
 #include "main.h"
+
+/* Native functions. */
+
+__attr __fn_native__exit(__attr __args[])
+{
+    #define status (__args[1])
+
+    exit(__load_via_object(status.value, __pos___data__).intvalue);
+    return __builtins___none_None;
+    #undef status
+}
 
 __attr __fn_native__is(__attr __args[])
 {
