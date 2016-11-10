@@ -890,7 +890,7 @@ int main(int argc, char *argv[])
 
             if name not in ("__main__", "native"):
                 print >>f_code, """\
-    %s();""" % function_name
+        %s();""" % function_name
 
         print >>f_code, """\
         __main___main__();
