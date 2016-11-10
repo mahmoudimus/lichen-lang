@@ -94,6 +94,13 @@ class NameResolving:
                 ref = self.convert_invocation(ref)
                 self.importer.objects[key] = self.objects[key] = ref
 
+        # Convert name references.
+
+        for key, ref in self.name_references.items():
+            if ref.has_kind("<invoke>"):
+                ref = self.convert_invocation(ref)
+                self.importer.all_name_references[key] = self.name_references[key] = ref
+
         # Convert function defaults, which are effectively extra members of the
         # module, and function locals.
 
