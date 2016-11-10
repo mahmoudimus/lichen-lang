@@ -90,7 +90,8 @@ class Reference:
         """
         Return whether the reference describes an object from the given 'kinds',
         where such kinds may be "<class>", "<function>", "<instance>",
-        "<module>" or "<var>".
+        "<module>" or "<var>". Unresolved references may also have kinds of
+        "<depends>" and "<invoke>".
         """
 
         if not isinstance(kinds, (list, tuple)):
@@ -102,6 +103,12 @@ class Reference:
         "Return the attribute names comprising the path to the origin."
 
         return self.get_origin().split(".")
+
+    def unresolved(self):
+
+        "Return whether this reference is unresolved."
+
+        return self.has_kind(["<depends>", "<invoke>"])
 
     def static(self):
 

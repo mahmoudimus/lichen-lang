@@ -410,11 +410,14 @@ class Importer:
                 # Record the resolved names and identify required modules.
 
                 else:
+                    # Find the providing module of this reference.
+                    # Where definitive details of the origin cannot be found,
+                    # identify the provider using the deferred reference.
+                    # NOTE: This may need to test for static origins.
+
+                    provider = self.get_module_provider(found.unresolved() and ref or found)
                     ref.mutate(found)
 
-                    # Find the providing module of this reference.
-
-                    provider = self.get_module_provider(ref)
                     if provider:
 
                         module.required.add(provider)
