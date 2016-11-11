@@ -667,9 +667,8 @@ __obj %s = {
         callable bound method structure).
         """
 
-        cls = self.function_type
         structure = []
-        self.populate_structure(Reference("<instance>", cls), function_instance_attrs, "<instance>", structure, unbound)
+        self.populate_structure(Reference("<function>", path), function_instance_attrs, "<instance>", structure, unbound)
 
         # Append default members.
 
@@ -687,9 +686,24 @@ __obj %s = {
         the special __fn__ attribute.
         """
 
-        origin = ref.get_origin()
+        # Populate function instance structures for functions.
 
-        for attrname in self.optimiser.structures[ref]:
+        if ref.has_kind("<function>"):
+            origin = self.function_type
+            structure_ref = Reference("<instance>", self.function_type)
+
+        # Otherwise, just populate the appropriate structures.
+
+        else:
+            origin = ref.get_origin()
+            structure_ref = ref
+
+        # Refer to instantiator function tables for classes, specific function
+        # tables for individual functions.
+
+        ptable = encode_tablename("<function>", ref.get_origin())
+
+        for attrname in self.optimiser.structures[structure_ref]:
 
             # Handle gaps in the structure.
 
@@ -733,7 +747,7 @@ __obj %s = {
                 # Special argument specification member.
 
                 elif attrname == "__args__":
-                    structure.append("{.min=%s, .ptable=&%s}" % (attr, encode_tablename("<function>", origin)))
+                    structure.append("{.min=%s, .ptable=&%s}" % (attr, ptable))
                     continue
 
                 # Special internal data member.
