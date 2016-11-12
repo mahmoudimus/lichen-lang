@@ -124,8 +124,10 @@ class NameResolving:
 
         "Convert the given invocation 'ref', handling instantiation."
 
+        alias = ref.get_name()
         ref = self.importer.identify(ref.get_origin())
-        return ref and ref.has_kind("<class>") and ref.instance_of() or Reference("<var>")
+        ref = ref and ref.has_kind("<class>") and ref.instance_of() or Reference("<var>")
+        return ref and ref.alias(alias) or None
 
     def resolve_accesses(self, path, name, ref):
 
