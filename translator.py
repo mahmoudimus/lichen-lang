@@ -1097,7 +1097,10 @@ class TranslatedModule(CommonModule):
 
         # NOTE: Determine which raise statement variants should be permitted.
 
-        self.writestmt("__Raise(%s);" % self.process_structure_node(n.expr1))
+        if n.expr1:
+            self.writestmt("__Raise(%s);" % self.process_structure_node(n.expr1))
+        else:
+            self.writestmt("__Complete;")
 
     def process_return_node(self, n):
 
