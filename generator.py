@@ -30,7 +30,7 @@ from encoders import encode_bound_reference, encode_function_pointer, \
                      encode_symbol, encode_tablename, \
                      encode_type_attribute
 from os import listdir
-from os.path import isdir, join, split
+from os.path import exists, isdir, join, split
 from referencing import Reference
 
 def copy(source, target):
@@ -73,22 +73,37 @@ class Generator(CommonOutput):
         self.optimiser = optimiser
         self.output = output
 
-    def to_output(self):
+    def to_output(self, debug=False):
 
         "Write the generated code."
 
         self.check_output()
         self.write_structures()
-        self.copy_templates()
+        self.copy_templates(debug)
 
-    def copy_templates(self):
+    def copy_templates(self, debug=False):
 
         "Copy template files to the generated output directory."
 
         templates = join(split(__file__)[0], "templates")
 
         for filename in listdir(templates):
-            copy(join(templates, filename), self.output)
+            target = self.output
+
+            # Handle debug resources.
+
+            if filename.endswith("-debug"):
+                if debug:
+                    target = join(self.output, filename[:-len("-debug")])
+                else:
+                    continue
+
+            # Handle non-debug resources.
+
+            if debug and exists(join(templates, "%s-debug" % filename)):
+                continue
+
+            copy(join(templates, filename), target)
 
     def write_structures(self):
 

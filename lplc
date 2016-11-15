@@ -39,6 +39,7 @@ if __name__ == "__main__":
 
     verbose = "-v" in args
     reset = "-r" in args
+    debug = "-g" in args
 
     # Load the program.
 
@@ -71,7 +72,7 @@ if __name__ == "__main__":
         now = stopwatch("Optimisation", now)
 
         g = generator.Generator(i, o, "_generated")
-        g.to_output()
+        g.to_output(debug)
 
         now = stopwatch("Generation", now)
 
