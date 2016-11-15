@@ -20,7 +20,6 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from native import _read, _write
-from sys import stdout
 
 class sysfile:
 
@@ -61,6 +60,12 @@ def print_(dest, args, nl):
     Write to 'dest' the string representation of 'args', adding a newline if
     'nl' is given as a true value.
     """
+
+    # Import locally to ensure that the object is initialised.
+    # Otherwise, if imported at the module level, the sys module may not have
+    # been set up.
+
+    from sys import stdout
 
     # Write to standard output if dest is not specified.
 
