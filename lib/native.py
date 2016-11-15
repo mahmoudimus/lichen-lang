@@ -20,24 +20,27 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 def _exit(status): pass
+def _get_argv(): pass
+def _get_path(): pass
 
 def _is(x, y): pass
 def _is_not(x, y): pass
 
 def _int_add(self, other): pass
-def _int_sub(self, other): pass
-def _int_mul(self, other): pass
 def _int_div(self, other): pass
 def _int_mod(self, other): pass
+def _int_mul(self, other): pass
 def _int_pow(self, other): pass
-def _int_and(self, other): pass
-def _int_or(self, other): pass
-def _int_xor(self, other): pass
+def _int_sub(self, other): pass
 
-def _int_rsub(self, other): pass
 def _int_rdiv(self, other): pass
 def _int_rmod(self, other): pass
 def _int_rpow(self, other): pass
+def _int_rsub(self, other): pass
+
+def _int_and(self, other): pass
+def _int_or(self, other): pass
+def _int_xor(self, other): pass
 
 def _int_lt(self, other): pass
 def _int_gt(self, other): pass

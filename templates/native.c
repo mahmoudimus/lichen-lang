@@ -19,6 +19,24 @@ __attr __fn_native__exit(__attr __args[])
     #undef status
 }
 
+__attr __fn_native__get_argv(__attr __args[])
+{
+    #define status (__args[1])
+
+    /* NOTE: To be written. */
+    return __builtins___none_None;
+    #undef status
+}
+
+__attr __fn_native__get_path(__attr __args[])
+{
+    #define status (__args[1])
+
+    /* NOTE: To be written. */
+    return __builtins___none_None;
+    #undef status
+}
+
 __attr __fn_native__is(__attr __args[])
 {
     #define x (__args[1])
@@ -291,9 +309,15 @@ __attr __fn_native__list_init(__attr __args[])
 __attr __fn_native__list_len(__attr __args[])
 {
     #define self (__args[1])
+    /* self.__data__ interpreted as fragment */
+    unsigned int size = __load_via_object(self.value, __pos___data__).data->size;
 
-    /* NOTE: To be written. */
-    return __builtins___none_None;
+    /* Create a new integer and mutate the __data__ attribute. */
+    __attr length = __new(&__InstanceTable___builtins___int_int, &__builtins___int_int, sizeof(__obj___builtins___int_int));
+    length.value->attrs[__pos___data__].intvalue = size;
+
+    /* Return the new integer. */
+    return length;
     #undef self
 }
 
@@ -361,7 +385,7 @@ __attr __fn_native__isinstance(__attr __args[])
     #define obj (__args[1])
     #define cls (__args[2])
 
-    if (__HASATTR(obj.value, __TYPEPOS(cls.value), __TYPECODE(cls.value)))
+    if (__is_instance(obj.value) && __HASATTR(__get_class(obj.value), __TYPEPOS(cls.value), __TYPECODE(cls.value)))
         return obj;
     else
         return __builtins___none_None;

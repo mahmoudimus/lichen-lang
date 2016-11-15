@@ -23,9 +23,18 @@ from __builtins__.operator import _binary_op, _negate
 import native
 
 class int(object):
+
+    "An integer abstraction."
+
     def __init__(self, number_or_string=None):
-        # Note member.
-        self.__data__ = 0
+
+        "Initialise the integer with the given 'number_or_string'."
+
+        if isinstance(number_or_string, int):
+            self.__data__ = number_or_string.__data__
+        else:
+            # NOTE: To be implemented.
+            self.__data__ = None
 
     def __iadd__(self, other):
         "Return a new int for the operation."

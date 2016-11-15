@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import _exit
+from native import _exit, _get_argv, _get_path
 
 # Standard streams.
 
@@ -29,8 +29,8 @@ stderr = sysfile(2)
 
 # NOTE: Environment details to be implemented.
 
-argv = []
-path = []
+argv = _get_argv()
+path = _get_path()
 
 # Functions to be implemented natively.
 
