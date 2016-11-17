@@ -397,6 +397,7 @@ class Importer:
         "Resolve dependencies between modules."
 
         self.waiting = {}
+        self.depends = {}
 
         for module in self.modules.values():
 
@@ -418,7 +419,11 @@ class Importer:
                     provider = self.get_module_provider(found.unresolved() and ref or found)
                     ref.mutate(found)
 
-                    if provider:
+                    # Record any external dependency.
+
+                    if provider and provider != module.name:
+
+                        # Record the provider dependency.
 
                         module.required.add(provider)
                         self.accessing_modules[provider].add(module.name)
@@ -436,6 +441,12 @@ class Importer:
                             self.required.add(provider)
                             if self.verbose:
                                 print >>sys.stderr, "Requiring", provider, "for", ref
+
+                        # Record a module ordering dependency.
+
+                        if not found.static():
+                            init_item(self.depends, module.name, set)
+                            self.depends[module.name].add(provider)
 
         # Check modules again to see if they are now required and should now
         # cause the inclusion of other modules providing objects to the program.
@@ -457,6 +468,43 @@ class Importer:
                     if self.verbose:
                         print >>sys.stderr, "Requiring", provider
                     self.require_providers(provider)
+
+    def order_modules(self):
+
+        "Produce a module initialisation ordering."
+
+        self.check_ordering()
+        return self.order_modules_for_module("__main__", set())
+
+    def order_modules_for_module(self, module_name, visited):
+
+        """
+        Order the modules required by 'module_name', using 'visited' to track
+        visited modules.
+        """
+
+        if module_name in visited:
+            return []
+
+        module = self.modules[module_name]
+        visited.add(module_name)
+        ordered = [module_name]
+
+        for module_name in module.required:
+            modules = self.order_modules_for_module(module_name, visited)
+            ordered[:0] = modules
+            visited.update(modules)
+
+        return ordered
+
+    def check_ordering(self):
+
+        "Check the ordering dependencies."
+
+        for module_name, modules in self.depends.items():
+            for provider in modules:
+                if self.depends.has_key(provider) and module_name in self.depends[provider]:
+                    raise ProgramError, "Modules %s and %s may not depend on each other for non-static objects." % (module_name, provider)
 
     def find_dependency(self, ref):
 

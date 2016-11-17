@@ -61,9 +61,9 @@ def print_(dest, args, nl):
     'nl' is given as a true value.
     """
 
-    # Import locally to ensure that the object is initialised.
-    # Otherwise, if imported at the module level, the sys module may not have
-    # been set up.
+    # If imported at the module level, the sys module must be set up first,
+    # which should be ensured by the module ordering activity, and a module
+    # attribute will be employed to hold a reference to sys.stdout.
 
     from sys import stdout
 

@@ -910,19 +910,17 @@ int main(int argc, char *argv[])
     __Try
     {"""
 
-        for name in self.importer.modules.keys():
+        for name in self.importer.order_modules():
             function_name = "__main_%s" % encode_path(name)
             print >>f_signatures, "void %s();" % function_name
 
-            # Emit the main module's function last.
             # Omit the native module.
 
-            if name not in ("__main__", "native"):
+            if name != "native":
                 print >>f_code, """\
         %s();""" % function_name
 
         print >>f_code, """\
-        __main___main__();
         return 0;
     }
     __Catch_anonymous
