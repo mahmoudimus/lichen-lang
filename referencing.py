@@ -114,7 +114,7 @@ class Reference:
 
         "Return this reference if it refers to a static object, None otherwise."
 
-        return not self.has_kind(["<var>", "<instance>"]) and self or None
+        return self.has_kind(["<class>", "<function>", "<module>"]) and self or None
 
     def final(self):
 
