@@ -87,7 +87,7 @@ from __builtins__.long import long
 from __builtins__.none import None, NoneType
 from __builtins__.notimplemented import NotImplemented, NotImplementedType
 from __builtins__.set import frozenset, set
-from __builtins__.str import basestring, str, unicode
+from __builtins__.str import basestring, str, string, unicode
 from __builtins__.tuple import tuple
 
 # Functions.

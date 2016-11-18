@@ -299,10 +299,12 @@ class InspectionNaming:
 
         # NOTE: This makes assumptions about the __builtins__ structure.
 
-        module_name = "__builtins__.%s" % name
+        modname = name == "string" and "str" or name
+
+        module_name = "__builtins__.%s" % modname
         if self.name != module_name:
             self.queue_module(module_name, True)
-        return Reference("<class>", "__builtins__.%s.%s" % (name, name))
+        return Reference("<class>", "__builtins__.%s.%s" % (modname, name))
 
     def get_object(self, path, defer=True):
 

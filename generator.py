@@ -369,8 +369,9 @@ class Generator(CommonOutput):
 
         # NOTE: This makes assumptions about the __builtins__ structure.
 
-        typename = value.__class__.__name__
-        ref = Reference("<instance>", "__builtins__.%s.%s" % (typename, typename))
+        modname = value.__class__.__name__
+        typename = modname == "str" and "string" or modname
+        ref = Reference("<instance>", "__builtins__.%s.%s" % (modname, typename))
 
         self.make_constant(f_decls, f_defs, ref, const_path, structure_name, value)
 

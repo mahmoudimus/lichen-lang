@@ -74,7 +74,8 @@ class basestring(object):
     def __len__(self):
         return native._str_len(self)
 
-    def __str__(self): pass
+    def __str__(self):
+        return self
 
     def __bool__(self):
         return native._str_nonempty(self)
@@ -101,10 +102,16 @@ class basestring(object):
 
         return listiterator(self)
 
-class str(basestring):
+class string(basestring):
     pass
 
 class unicode(basestring):
     def encode(self, encoding): pass
+
+def str(obj):
+
+    "Return the string representation of 'obj'."
+
+    return obj.__str__()
 
 # vim: tabstop=4 expandtab shiftwidth=4

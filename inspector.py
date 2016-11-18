@@ -70,8 +70,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         # Detect and record imports and globals declared in the module.
 
-        self.assign_general_local("__name__", self.get_constant("str", self.name))
-        self.assign_general_local("__file__", self.get_constant("str", filename))
+        self.assign_general_local("__name__", self.get_constant("string", self.name))
+        self.assign_general_local("__file__", self.get_constant("string", filename))
         self.process_structure(self.astnode)
 
         # Set the class of the module after the definition has occurred.
@@ -291,7 +291,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Constant usage.
 
         elif isinstance(n, compiler.ast.Const):
-            return self.get_literal_instance(n, n.value.__class__.__name__)
+            typename = n.value.__class__.__name__
+            return self.get_literal_instance(n, typename == "str" and "string" or typename)
 
         elif isinstance(n, compiler.ast.Dict):
             return self.get_literal_instance(n, "dict")
@@ -527,7 +528,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             self.set_name("__fn__") # special instantiator attribute
             self.set_name("__args__") # special instantiator attribute
 
-        self.assign_general_local("__name__", self.get_constant("str", class_name))
+        self.assign_general_local("__name__", self.get_constant("string", class_name))
         self.process_structure_node(n.code)
         self.exit_namespace()
         self.in_class = in_class
