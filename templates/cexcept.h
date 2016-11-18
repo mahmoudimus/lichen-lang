@@ -9,8 +9,8 @@ http://www.nicemice.net/amc/
 An interface for exception-handling in ANSI C (C89 and subsequent ISO
 standards), developed jointly with Cosmin Truta. 
 
-    Copyright (c) 2000-2008 Adam M. Costello and Cosmin Truta.
     Copyright (c) 2016 Paul Boddie (modified for Lichen).
+    Copyright (c) 2000-2008 Adam M. Costello and Cosmin Truta.
     This software may be modified only if its author and version
     information is updated accurately, and may be redistributed
     only if accompanied by this unaltered notice.  Subject to those

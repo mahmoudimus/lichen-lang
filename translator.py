@@ -234,6 +234,7 @@ class TranslatedModule(CommonModule):
         # Exception raising adjustments.
 
         self.in_try_finally = False
+        self.in_try_except = False
 
         # Attribute access counting.
 
@@ -1107,7 +1108,7 @@ class TranslatedModule(CommonModule):
         "Process the given return node 'n'."
 
         expr = self.process_structure_node(n.value) or PredefinedConstantRef("None")
-        if self.in_try_finally:
+        if self.in_try_finally or self.in_try_except:
             self.writestmt("__Return(%s);" % expr)
         else:
             self.writestmt("return %s;" % expr)
@@ -1119,6 +1120,9 @@ class TranslatedModule(CommonModule):
         """
         Process the given "try...except" node 'n'.
         """
+
+        in_try_except = self.in_try_except
+        self.in_try_except = True
 
         # Use macros to implement exception handling.
 
@@ -1153,27 +1157,23 @@ class TranslatedModule(CommonModule):
         self.indent -= 1
         self.writeline("}")
 
+        self.in_try_except = in_try_except
+
         # Handlers are tests within a common handler block.
 
         self.writeline("__Catch (__tmp_exc)")
         self.writeline("{")
         self.indent += 1
 
+        # Introduce an if statement to handle the completion of a try block.
+
+        self.process_try_completion()
+
         # Handle exceptions in else blocks converted to __RaiseElse, converting
         # them back to normal exceptions.
 
-        else_str = ""
-
         if n.else_:
-            self.writeline("if (__tmp_exc.raising_else) __Raise(__tmp_exc.arg);")
-            else_str = "else "
-
-        # Handle the completion of try blocks or the execution of return
-        # statements where finally blocks apply.
-
-        if self.in_try_finally:
-            self.writeline("%sif (__tmp_exc.completing) __Throw(__tmp_exc);" % else_str)
-            else_str = "else "
+            self.writeline("else if (__tmp_exc.raising_else) __Raise(__tmp_exc.arg);")
 
         # Exception handling.
 
@@ -1183,10 +1183,9 @@ class TranslatedModule(CommonModule):
 
             if name is not None:
                 name_ref = self.process_structure_node(name)
-                self.writeline("%sif (__BOOL(__fn_native__isinstance((__attr[]) {__tmp_exc.arg, %s})))" % (else_str, name_ref))
+                self.writeline("else if (__BOOL(__fn_native__isinstance((__attr[]) {__tmp_exc.arg, %s})))" % name_ref)
             else:
-                self.writeline("%sif (1)" % else_str)
-            else_str = "else "
+                self.writeline("else if (1)")
 
             self.writeline("{")
             self.indent += 1
@@ -1204,7 +1203,7 @@ class TranslatedModule(CommonModule):
 
         # Re-raise unhandled exceptions.
 
-        self.writeline("%s__Throw(__tmp_exc);" % else_str)
+        self.writeline("else __Throw(__tmp_exc);")
 
         # End the handler block.
 
@@ -1238,15 +1237,29 @@ class TranslatedModule(CommonModule):
         self.indent += 1
         self.process_structure_node(n.final)
 
-        # Test for the completion of a try block.
+        # Introduce an if statement to handle the completion of a try block.
+
+        self.process_try_completion()
+        self.writeline("else __Throw(__tmp_exc);")
+
+        self.indent -= 1
+        self.writeline("}")
+
+    def process_try_completion(self):
+
+        "Generate a test for the completion of a try block."
 
         self.writestmt("if (__tmp_exc.completing)")
         self.writeline("{")
         self.indent += 1
-        self.writeline("if (!__ISNULL(__tmp_exc.arg)) return __tmp_exc.arg;")
-        self.indent -= 1
-        self.writeline("}")
-        self.writeline("else __Throw(__tmp_exc);")
+
+        # Only use the normal return statement if no surrounding try blocks
+        # apply.
+
+        if not self.in_try_finally and not self.in_try_except:
+            self.writeline("if (!__ISNULL(__tmp_exc.arg)) return __tmp_exc.arg;")
+        else:
+            self.writeline("if (!__ISNULL(__tmp_exc.arg)) __Throw(__tmp_exc);")
 
         self.indent -= 1
         self.writeline("}")
