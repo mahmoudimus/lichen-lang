@@ -8,7 +8,7 @@
 #include "progops.h"
 #include "progtypes.h"
 #include "main.h"
-#include <stdio.h>
+#include "exceptions.h"
 
 /* Generic instantiation operations, defining common members. */
 
@@ -124,10 +124,10 @@ __attr __invoke(__attr callable, int always_callable,
 
 __attr __unbound_method(__attr args[])
 {
-    /* NOTE: Should raise an exception. */
-
-    fprintf(stderr, "Unbound method called!\n");
-    exit(1);
+    __attr excargs[1];
+    __attr exc = __new___builtins___core_UnboundMethodInvocation(excargs);
+    __Raise(exc);
+    return __builtins___none_None; /* superfluous */
 }
 
 /* Generic operations depending on specific program details. */
