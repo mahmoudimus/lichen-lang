@@ -399,6 +399,7 @@ class TranslatedModule(CommonModule):
             self.process_function_body_node(node)
         else:
             self.in_function = False
+            self.function_target = 0
             self.start_module()
             self.process_structure(node)
             self.end_module()
@@ -725,6 +726,7 @@ class TranslatedModule(CommonModule):
 
         in_conditional = self.in_conditional
         self.in_conditional = False
+        self.function_target = 0
 
         expr = self.process_structure_node(n.code) or PredefinedConstantRef("None")
         if not isinstance(expr, ReturnRef):
@@ -874,10 +876,15 @@ class TranslatedModule(CommonModule):
         # always being the first argument (although it may be set to null for
         # invocations where it would be unused).
 
-        args = ["__CONTEXT_AS_VALUE(__tmp_target)"]
+        args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
         args += [None] * (not parameters and len(n.args) or parameters and len(parameters) or 0)
         kwcodes = []
         kwargs = []
+
+        # Any invocations in the arguments will store target details in a
+        # different location.
+
+        self.function_target += 1
 
         for i, arg in enumerate(n.args):
             argexpr = self.process_structure_node(arg)
@@ -904,6 +911,10 @@ class TranslatedModule(CommonModule):
 
             else:
                 args[i+1] = str(argexpr)
+
+        # Reference the current target again.
+
+        self.function_target -= 1
 
         # Defaults are added to the frame where arguments are missing.
 
@@ -944,7 +955,7 @@ class TranslatedModule(CommonModule):
 
         # Without a known specific callable, the expression provides the target.
 
-        stages.append("__tmp_target = %s" % expr)
+        stages.append("__tmp_targets[%d] = %s" % (self.function_target, expr))
 
         # Any specific callable is then obtained.
 
@@ -960,8 +971,9 @@ class TranslatedModule(CommonModule):
         # the callable and argument collections.
 
         else:
-            output = "(%s, __invoke(\n__tmp_target,\n%d, %d, %s, %s,\n%d, %s\n))" % (
+            output = "(%s, __invoke(\n__tmp_targets[%d],\n%d, %d, %s, %s,\n%d, %s\n))" % (
                 ",\n".join(stages),
+                self.function_target,
                 self.always_callable and 1 or 0,
                 len(kwargs), kwcodestr, kwargstr,
                 len(args), argstr)
@@ -1322,7 +1334,7 @@ class TranslatedModule(CommonModule):
         print >>self.out, "void __main_%s()" % encode_path(self.name)
         print >>self.out, "{"
         self.indent += 1
-        self.write_temporaries()
+        self.write_temporaries(self.importer.function_targets.get(self.name))
 
     def end_module(self):
 
@@ -1338,7 +1350,7 @@ class TranslatedModule(CommonModule):
         print >>self.out, "__attr %s(__attr __args[])" % encode_function_pointer(name)
         print >>self.out, "{"
         self.indent += 1
-        self.write_temporaries()
+        self.write_temporaries(self.importer.function_targets.get(name))
 
         # Obtain local names from parameters.
 
@@ -1373,12 +1385,17 @@ class TranslatedModule(CommonModule):
         print >>self.out, "}"
         print >>self.out
 
-    def write_temporaries(self):
+    def write_temporaries(self, targets):
 
-        "Write temporary storage employed by functions."
+        """
+        Write temporary storage employed by functions, providing space for the
+        given number of 'targets'.
+        """
+
+        targets = targets is not None and "__tmp_targets[%d], " % targets or ""
 
         self.writeline("__ref __tmp_context, __tmp_value;")
-        self.writeline("__attr __tmp_target, __tmp_result;")
+        self.writeline("__attr %s__tmp_result;" % targets)
         self.writeline("__exc __tmp_exc;")
 
     def write_parameters(self, name, define=True):

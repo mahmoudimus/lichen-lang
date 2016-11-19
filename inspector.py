@@ -1410,6 +1410,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         requirements for the given 'path' and 'args'.
         """
 
+        # Class and module initialisation is ultimately combined.
+
+        if not self.in_function:
+            path = self.name
+
         init_item(self.function_targets, path, lambda: [0, 0])
         t = self.function_targets[path]
         t[0] += 1
@@ -1423,6 +1428,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
     def deallocate_arguments(self, path, args):
 
         "Deallocate temporary argument storage for the given 'path' and 'args'."
+
+        # Class and module initialisation is ultimately combined.
+
+        if not self.in_function:
+            path = self.name
 
         self.function_targets[path][0] -= 1
         self.function_arguments[path][0] -= len(args) + 1
