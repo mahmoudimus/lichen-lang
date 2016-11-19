@@ -256,16 +256,16 @@ class Generator(CommonOutput):
 
             # Generate function instances.
 
-            functions = set()
-
-            for ref in self.importer.objects.values():
-                if ref.has_kind("<function>"):
-                    functions.add(ref.get_origin())
-
-            functions = list(functions)
+            functions = self.importer.function_parameters.keys()
             functions.sort()
 
             for path in functions:
+
+                # Instantiators are generated above.
+
+                if self.importer.classes.has_key(path) or not self.importer.get_object(path):
+                    continue
+
                 cls = self.function_type
                 table_name = encode_tablename("<instance>", cls)
                 structure_size = encode_size("<instance>", cls)
@@ -277,8 +277,8 @@ class Generator(CommonOutput):
 
                 # Produce two structures where a method is involved.
 
-                ref = self.importer.get_object(path)
-                parent_ref = self.importer.get_object(ref.parent())
+                parent, name = path.rsplit(".", 1)
+                parent_ref = self.importer.get_object(parent)
                 parent_kind = parent_ref and parent_ref.get_kind()
 
                 # Populate and write each structure.
