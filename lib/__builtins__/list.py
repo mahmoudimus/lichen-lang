@@ -78,7 +78,14 @@ class list(object):
 
     def __add__(self, other): pass
     def __iadd__(self, other): pass
-    def __str__(self): pass
+
+    def __str__(self):
+
+        "Return a string representation of the list."
+
+        # NOTE: To be implemented, maybe using a buffer.
+
+        return "[...]"
 
     def __bool__(self):
 

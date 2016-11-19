@@ -33,11 +33,6 @@ def _int_mul(self, other): pass
 def _int_pow(self, other): pass
 def _int_sub(self, other): pass
 
-def _int_rdiv(self, other): pass
-def _int_rmod(self, other): pass
-def _int_rpow(self, other): pass
-def _int_rsub(self, other): pass
-
 def _int_and(self, other): pass
 def _int_or(self, other): pass
 def _int_xor(self, other): pass
@@ -45,6 +40,9 @@ def _int_xor(self, other): pass
 def _int_lt(self, other): pass
 def _int_gt(self, other): pass
 def _int_eq(self, other): pass
+def _int_ne(self, other): pass
+
+def _int_str(self): pass
 
 def _str_add(self, other): pass
 def _str_lt(self, other): pass

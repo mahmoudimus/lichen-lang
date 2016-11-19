@@ -77,14 +77,14 @@ class int(object):
 
     def __rsub__(self, other):
         "Return a new int for the operation."
-        return _binary_op(self, other, native._int_rsub)
+        return _binary_op(other, self, native._int_sub)
 
     __mul__ = __rmul__ = __imul__
     __div__ = __idiv__
 
     def __rdiv__(self, other):
         "Return a new int for the operation."
-        return _binary_op(self, other, native._int_rdiv)
+        return _binary_op(other, self, native._int_div)
 
     def __floordiv__(self, other): pass
     def __rfloordiv__(self, other): pass
@@ -94,13 +94,13 @@ class int(object):
 
     def __rmod__(self, other):
         "Return a new int for the operation."
-        return _binary_op(self, other, native._int_rmod)
+        return _binary_op(other, self, native._int_mod)
 
     __pow__ = __ipow__
 
     def __rpow__(self, other):
         "Return a new int for the operation."
-        return _binary_op(self, other, native._int_rpow)
+        return _binary_op(other, self, native._int_pow)
 
     __and__ = __rand__ = __iand__
     __or__ = __ror__ = __ior__
@@ -133,7 +133,11 @@ class int(object):
     def __invert__(self): pass
     def __neg__(self): pass
     def __pos__(self): pass
-    def __str__(self): pass
+
+    def __str__(self):
+        "Return a string representation."
+        return native._int_str(self)
+
     def __lshift__(self): pass
     def __rlshift__(self): pass
     def __rshift__(self): pass
@@ -143,6 +147,6 @@ class int(object):
 
     def __bool__(self):
         "Return whether this int is non-zero."
-        return _negate(native._int_eq(self, 0))
+        return native._int_ne(self, 0)
 
 # vim: tabstop=4 expandtab shiftwidth=4

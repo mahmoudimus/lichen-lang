@@ -29,6 +29,9 @@ __attr __fn_native__int_rsub(__attr __args[]);
 __attr __fn_native__int_lt(__attr __args[]);
 __attr __fn_native__int_gt(__attr __args[]);
 __attr __fn_native__int_eq(__attr __args[]);
+__attr __fn_native__int_ne(__attr __args[]);
+
+__attr __fn_native__int_str(__attr __args[]);
 
 __attr __fn_native__str_add(__attr __args[]);
 __attr __fn_native__str_lt(__attr __args[]);
