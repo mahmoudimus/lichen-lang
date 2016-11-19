@@ -96,7 +96,10 @@ class list(object):
 
     def __get_single_item__(self, index):
 
-        "Return the item at 'index'."
+        "Return the item at the normalised (positive) 'index'."
+
+        if index >= len(self):
+            raise IndexError(index)
 
         return native._list_element(self, index)
 
