@@ -16,6 +16,10 @@ def g(x):
         n = m
     print n
 
+f()
+g(0)
+g(1)
+
 l = [1, 2, 3]
 x = l
 a, b, c = l
