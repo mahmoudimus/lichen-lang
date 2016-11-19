@@ -908,6 +908,7 @@ __attr %s(__attr __args[], unsigned int number)
         print >>f_code, """\
 int main(int argc, char *argv[])
 {
+    __exc __tmp_exc;
     __Try
     {"""
 
@@ -924,7 +925,7 @@ int main(int argc, char *argv[])
         print >>f_code, """\
         return 0;
     }
-    __Catch_anonymous
+    __Catch(__tmp_exc)
     {
         fprintf(stderr, "Program terminated due to exception.\\n");
         return 1;
