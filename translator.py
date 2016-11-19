@@ -1146,6 +1146,7 @@ class TranslatedModule(CommonModule):
             self.writeline("{")
             self.indent += 1
             self.writeline("if (__tmp_exc.raising) __RaiseElse(__tmp_exc.arg);")
+            self.writeline("else if (__tmp_exc.completing) __Throw(__tmp_exc);")
             self.indent -= 1
             self.writeline("}")
 
@@ -1183,7 +1184,7 @@ class TranslatedModule(CommonModule):
 
             if name is not None:
                 name_ref = self.process_structure_node(name)
-                self.writeline("else if (__BOOL(__fn_native__isinstance((__attr[]) {__tmp_exc.arg, %s})))" % name_ref)
+                self.writeline("else if (__BOOL(__fn_native__isinstance((__attr[]) {{0, 0}, __tmp_exc.arg, %s})))" % name_ref)
             else:
                 self.writeline("else if (1)")
 
