@@ -311,16 +311,16 @@ class CommonModule:
 
         return self.process_structure_node(assignment)
 
-    def process_assignment_for_function(self, original_name, name):
+    def process_assignment_for_function(self, original_name, source):
 
         """
         Return an assignment operation making 'original_name' refer to the given
-        'name'.
+        'source'.
         """
 
         assignment = compiler.ast.Assign(
             [compiler.ast.AssName(original_name, "OP_ASSIGN")],
-            compiler.ast.Name(name)
+            source
             )
 
         return self.process_structure_node(assignment)

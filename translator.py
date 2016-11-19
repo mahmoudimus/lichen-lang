@@ -102,7 +102,7 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
             # Eliminate assignments between constants.
 
-            if self.static() and isinstance(self.expr, results.ResolvedNameRef) and self.expr.static():
+            if ref and isinstance(self.expr, results.ResolvedNameRef) and self.expr.static():
                 return ""
 
             # Qualified names must be converted into parent-relative assignments.
@@ -746,24 +746,32 @@ class TranslatedModule(CommonModule):
         # Where a function is declared conditionally, use a separate name for
         # the definition, and assign the definition to the stated name.
 
+        original_name = n.name
+
         if self.in_conditional or self.in_function:
-            original_name = n.name
             name = self.get_lambda_name()
         else:
-            original_name = None
             name = n.name
+
+        objpath = self.get_object_path(name)
 
         # Obtain details of the defaults.
 
-        defaults = self.process_function_defaults(n, name, "&%s" % self.get_object_path(name))
+        defaults = self.process_function_defaults(n, name, "&%s" % objpath)
         if defaults:
             for default in defaults:
                 self.writeline("%s;" % default)
 
-        # Where a function is set conditionally, assign the name.
+        # Where a function is set conditionally or where the name may refer to
+        # different values, assign the name.
 
-        if original_name:
-            self.process_assignment_for_function(original_name, name)
+        ref = self.importer.identify(objpath)
+
+        if self.in_conditional or self.in_function:
+            self.process_assignment_for_function(original_name, compiler.ast.Name(name))
+        elif not ref.static():
+            self.process_assignment_for_function(original_name,
+                make_expression("((__attr) {0, &%s})" % encode_path(objpath)))
 
     def process_function_defaults(self, n, name, instance_name):
 
