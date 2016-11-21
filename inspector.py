@@ -169,6 +169,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         "Process the individual node 'n'."
 
+        path = self.get_namespace_path()
+
         # Module global detection.
 
         if isinstance(n, compiler.ast.Global):
@@ -225,10 +227,10 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Assignments within non-Assign nodes.
 
         elif isinstance(n, compiler.ast.AssName):
-            self.process_assignment_node(n, None)
+            raise InspectError("Name assignment appearing outside assignment statement.", path, n)
 
         elif isinstance(n, compiler.ast.AssAttr):
-            self.process_attribute_access(n)
+            raise InspectError("Attribute assignment appearing outside assignment statement.", path, n)
 
         # Accesses.
 
@@ -306,13 +308,13 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Unsupported nodes.
 
         elif isinstance(n, compiler.ast.GenExpr):
-            raise InspectError("Generator expressions are not supported.", self.get_namespace_path(), n)
+            raise InspectError("Generator expressions are not supported.", path, n)
 
         elif isinstance(n, compiler.ast.IfExp):
-            raise InspectError("If-else expressions are not supported.", self.get_namespace_path(), n)
+            raise InspectError("If-else expressions are not supported.", path, n)
 
         elif isinstance(n, compiler.ast.ListComp):
-            raise InspectError("List comprehensions are not supported.", self.get_namespace_path(), n)
+            raise InspectError("List comprehensions are not supported.", path, n)
 
         # All other nodes are processed depth-first.
 

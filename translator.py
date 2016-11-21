@@ -480,15 +480,6 @@ class TranslatedModule(CommonModule):
             for node in n.nodes:
                 self.process_assignment_node(node, n.expr)
 
-        # Assignments within non-Assign nodes.
-        # NOTE: Cover all possible nodes employing these.
-
-        elif isinstance(n, compiler.ast.AssName):
-            self.process_assignment_node(n, compiler.ast.Name("$temp"))
-
-        elif isinstance(n, compiler.ast.AssAttr):
-            self.process_attribute_access(n)
-
         # Accesses.
 
         elif isinstance(n, compiler.ast.Getattr):
