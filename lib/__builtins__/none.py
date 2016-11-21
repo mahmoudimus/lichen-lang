@@ -21,8 +21,16 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 class NoneType:
     def __bool__(self):
+
         "None is always false."
+
         return False
+
+    def __str__(self):
+
+        "Return a string representation."
+
+        return "None"
 
 None = NoneType()
 
