@@ -6,13 +6,9 @@
 #include "types.h"
 #include <string.h> /* for __COPY */
 
-/* Direct access to functions. */
-
-__attr __load_function(__func fn);
-
 /* Direct access and manipulation of static objects. */
 
-__attr __load_static(__ref obj);
+__attr __load_static(__ref parent, __ref obj);
 
 /* Direct retrieval operations, returning attributes. */
 

@@ -512,12 +512,9 @@ class Optimiser:
                 parent, attrname = origin.rsplit(".", 1)
                 emit(("__store_via_object", parent, attrname, "<assexpr>"))
 
-            elif final_method == "static":
-                accessor = ("__load_static", origin)
-
-            elif final_method == "static-invoke":
-                kind = self.importer.get_object(origin).get_kind()
-                accessor = ("__encode_callable", origin, kind)
+            elif final_method in ("static", "static-invoke"):
+                parent, attrname = origin.rsplit(".", 1)
+                accessor = ("__load_static", parent, origin)
 
             # Wrap accesses in context operations.
 

@@ -5,19 +5,11 @@
 #include "progconsts.h"
 #include "progtypes.h"
 
-/* Direct access to functions. */
-
-__attr __load_function(__func fn)
-{
-    __attr out = {0, .fn=fn};
-    return out;
-}
-
 /* Direct access and manipulation of static objects. */
 
-__attr __load_static(__ref obj)
+__attr __load_static(__ref parent, __ref obj)
 {
-    __attr out = {0, .value=obj};
+    __attr out = {.context=parent, .value=obj};
     return out;
 }
 

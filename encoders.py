@@ -187,10 +187,6 @@ typename_ops = (
     "__test_common_instance", "__test_common_object", "__test_common_type",
     )
 
-encoding_ops = (
-    "__encode_callable",
-    )
-
 static_ops = (
     "__load_static",
     )
@@ -246,18 +242,11 @@ def encode_access_instruction(instruction, subs):
             a[1] = encode_symbol("pos", arg)
             a.insert(2, encode_symbol("code", arg))
 
-        # Replace encoded operations.
-
-        elif op in encoding_ops:
-            origin = a[0]
-            kind = a[1]
-            op = "__load_function"
-            a = [kind == "<class>" and encode_instantiator_pointer(origin) or encode_function_pointer(origin)]
-
         # Obtain addresses of static objects.
 
         elif op in static_ops:
             a[0] = "&%s" % a[0]
+            a[1] = "&%s" % a[1]
 
         argstr = "(%s)" % ", ".join(a)
 
