@@ -50,7 +50,8 @@ class Reference:
         if self.kind == "<var>":
             return self.kind
         else:
-            return "%s:%s" % (self.kind, self.origin)
+            alias = self.name and ";%s" % self.name or ""
+            return "%s:%s%s" % (self.kind, self.origin, alias)
 
     def __hash__(self):
 
@@ -213,6 +214,8 @@ def decode_reference(s, name=None):
 
     elif ":" in s:
         kind, origin = s.split(":")
+        if ";" in origin:
+            origin, name = origin.split(";")
         return Reference(kind, origin, name)
 
     # Kind-only, origin is indicated name.
