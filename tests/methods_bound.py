@@ -9,6 +9,7 @@ def f(obj, i):
         return obj.m
 
 c = C()
-result1 = f(c, 1)
+print f(c, 1)    # 1
+print f(c, 0)(2) # 2
 fn = f(c, 0)
-result2 = fn(2)
+print fn(2)      # 2

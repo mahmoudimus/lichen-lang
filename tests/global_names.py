@@ -8,4 +8,4 @@ def f():
 
 g = C
 result = f()
-assert result == 3
+print result
