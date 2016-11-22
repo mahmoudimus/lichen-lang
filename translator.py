@@ -78,6 +78,10 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
     "A reference to a name in the translation."
 
+    def __init__(self, name, ref, expr=None, parameter=None):
+        results.ResolvedNameRef.__init__(self, name, ref, expr)
+        self.parameter = parameter
+
     def __str__(self):
 
         "Return an output representation of the referenced name."
@@ -114,7 +118,7 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
             # All other assignments involve the names as they were given.
 
             else:
-                return "%s = %s" % (attrname, self.expr)
+                return "(%s%s) = %s" % (self.parameter and "*" or "", attrname, self.expr)
 
         # Expressions.
 
@@ -132,7 +136,7 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
         # All other accesses involve the names as they were given.
 
         else:
-            return attrname
+            return "(%s%s)" % (self.parameter and "*" or "", attrname)
 
 class TrConstantValueRef(results.ConstantValueRef, TranslationResult):
 
@@ -297,6 +301,12 @@ class TranslatedModule(CommonModule):
 
         class_name, method_name = path.rsplit(".", 1)
         return self.importer.classes.has_key(class_name) and class_name
+
+    def in_method(self):
+
+        "Return whether the current namespace provides a method."
+
+        return self.in_function and self.is_method(self.get_namespace_path())
 
     # Namespace recording.
 
@@ -1089,11 +1099,18 @@ class TranslatedModule(CommonModule):
             locals = self.importer.function_locals.get(self.get_namespace_path())
             ref = locals and locals.get(n.name)
 
+        # Determine whether the name refers to a parameter. The generation of
+        # parameter references is different from other names.
+
+        parameters = self.importer.function_parameters.get(self.get_namespace_path())
+        parameter = n.name == "self" and self.in_method() or \
+                    parameters and n.name in parameters
+
         # Qualified names are used for resolved static references or for
         # static namespace members. The reference should be configured to return
         # such names.
 
-        return TrResolvedNameRef(n.name, ref, expr=expr)
+        return TrResolvedNameRef(n.name, ref, expr=expr, parameter=parameter)
 
     def process_not_node(self, n):
 
@@ -1373,13 +1390,12 @@ class TranslatedModule(CommonModule):
             names.sort()
             self.writeline("__attr %s;" % ", ".join(names))
 
-        self.write_parameters(name, True)
+        self.write_parameters(name)
 
     def end_function(self, name):
 
         "End the function having the given 'name'."
 
-        self.write_parameters(name, False)
         self.indent -= 1
         print >>self.out, "}"
         print >>self.out
@@ -1397,12 +1413,11 @@ class TranslatedModule(CommonModule):
         self.writeline("__attr %s__tmp_result;" % targets)
         self.writeline("__exc __tmp_exc;")
 
-    def write_parameters(self, name, define=True):
+    def write_parameters(self, name):
 
         """
         For the function having the given 'name', write definitions of
-        parameters found in the arguments array if 'define' is set to a true
-        value, or write "undefinitions" if 'define' is set to a false value.
+        parameters found in the arguments array.
         """
 
         parameters = self.importer.function_parameters[name]
@@ -1410,18 +1425,12 @@ class TranslatedModule(CommonModule):
         # Generate any self reference.
 
         if self.is_method(name):
-            if define:
-                self.writeline("#define self (__args[0])")
-            else:
-                self.writeline("#undef self")
+            self.writeline("__attr * const self = &__args[0];")
 
         # Generate aliases for the parameters.
 
         for i, parameter in enumerate(parameters):
-            if define:
-                self.writeline("#define %s (__args[%d])" % (encode_path(parameter), i+1))
-            else:
-                self.writeline("#undef %s" % encode_path(parameter))
+            self.writeline("__attr * const %s = &__args[%d];" % (encode_path(parameter), i+1))
 
     def start_if(self, first, test_ref):
         self.writestmt("%sif (__BOOL(%s))" % (not first and "else " or "", test_ref))
