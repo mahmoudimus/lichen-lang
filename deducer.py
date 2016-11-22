@@ -2019,19 +2019,19 @@ class Deducer(CommonOutput):
                  only_instance_types,
                  module_types) = self.get_types_for_attribute(attrname)
 
-                all_accessor_kinds = set()
-                all_provider_kinds = set()
+                accessor_kinds = set()
+                provider_kinds = set()
 
                 if class_types:
-                    all_accessor_kinds.add("<class>")
-                    all_accessor_kinds.add("<instance>")
-                    all_provider_kinds.add("<class>")
+                    accessor_kinds.add("<class>")
+                    accessor_kinds.add("<instance>")
+                    provider_kinds.add("<class>")
                 if only_instance_types:
-                    all_accessor_kinds.add("<instance>")
-                    all_provider_kinds.add("<instance>")
+                    accessor_kinds.add("<instance>")
+                    provider_kinds.add("<instance>")
                 if module_types:
-                    all_accessor_kinds.add("<module>")
-                    all_provider_kinds.add("<module>")
+                    accessor_kinds.add("<module>")
+                    provider_kinds.add("<module>")
 
                 attrs = set()
                 for type in combine_types(class_types, only_instance_types, module_types):
