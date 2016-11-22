@@ -1,7 +1,7 @@
 #include <stdlib.h> /* calloc, exit, realloc */
 #include <unistd.h> /* read, write */
 #include <math.h>   /* ceil, log10, pow */
-#include <string.h> /* strcmp, strlen */
+#include <string.h> /* strcmp, strncpy, strlen */
 #include <stdio.h>  /* snprintf */
 #include "types.h"
 #include "exceptions.h"
@@ -362,7 +362,7 @@ __attr __fn_native__list_append(__attr __args[])
     if (size >= capacity)
     {
         /* NOTE: Consider various restrictions on capacity increases. */
-        n = data->capacity * 2;
+        n = capacity ? capacity * 2 : 1;
         data = realloc(data, __FRAGMENT_SIZE(n));
         data->capacity = n;
     }
@@ -441,8 +441,8 @@ __attr __fn_native__buffer_str(__attr __args[])
     __attr * const self = &__args[1];
     /* self.__data__ interpreted as buffer */
     __fragment *data = __load_via_object(self->value, __pos___data__).data;
-    unsigned int size = 0, i, j;
-    char *s;
+    unsigned int size = 0, i, j, n;
+    char *s, *o;
 
     /* Calculate the size of the string. */
     for (i = 0; i < data->size; i++)
@@ -452,8 +452,13 @@ __attr __fn_native__buffer_str(__attr __args[])
     s = calloc(size + 1, sizeof(char));
 
     /* Build a single string from the buffer contents. */
-    for (i = 0, j = 0; i < data->size; j += strlen(data->attrs[i].strvalue), i++)
-        strcpy(s + j, data->attrs[i].strvalue);
+    for (i = 0, j = 0; i < data->size; i++)
+    {
+        o = __load_via_object(data->attrs[i].value, __pos___data__).strvalue;
+        n = strlen(o);
+        strncpy(s + j, o, n);
+        j += n;
+    }
 
     /* Return a new string. */
     return __new_str(s);

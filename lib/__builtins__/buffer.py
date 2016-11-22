@@ -25,11 +25,18 @@ class buffer(object):
 
     "A buffer, used to build strings."
 
-    def __init__(self, args=None, size=None):
+    def __init__(self, args=None, size=0):
 
         "Initialise a buffer from the given 'args' or the given 'size'."
 
-        self.__data__ = _list_init(len(args) or size or 0)
+        if args is not None:
+            n = len(args)
+        elif isinstance(size, int):
+            n = size
+        else:
+            raise TypeError(size)
+
+        self.__data__ = _list_init(n)
 
         # Append all arguments in string form to the buffer.
 
