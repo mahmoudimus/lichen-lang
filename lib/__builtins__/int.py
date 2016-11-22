@@ -131,8 +131,14 @@ class int(object):
         return _negate(self.__eq__(other))
 
     def __invert__(self): pass
-    def __neg__(self): pass
-    def __pos__(self): pass
+
+    def __neg__(self):
+        "Apply the unary negation operator."
+        return native._int_neg(self)
+
+    def __pos__(self):
+        "Apply the unary positive operator."
+        return self
 
     def __str__(self):
         "Return a string representation."

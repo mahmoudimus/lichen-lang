@@ -30,6 +30,7 @@ def _int_add(self, other): pass
 def _int_div(self, other): pass
 def _int_mod(self, other): pass
 def _int_mul(self, other): pass
+def _int_neg(self): pass
 def _int_pow(self, other): pass
 def _int_sub(self, other): pass
 

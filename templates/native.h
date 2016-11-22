@@ -14,6 +14,7 @@ __attr __fn_native__int_add(__attr __args[]);
 __attr __fn_native__int_div(__attr __args[]);
 __attr __fn_native__int_mod(__attr __args[]);
 __attr __fn_native__int_mul(__attr __args[]);
+__attr __fn_native__int_neg(__attr __args[]);
 __attr __fn_native__int_pow(__attr __args[]);
 __attr __fn_native__int_sub(__attr __args[]);
 

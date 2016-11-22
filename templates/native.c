@@ -153,6 +153,17 @@ __attr __fn_native__int_mod(__attr __args[])
     #undef other
 }
 
+__attr __fn_native__int_neg(__attr __args[])
+{
+    #define self (__args[1])
+    /* self.__data__ interpreted as int */
+    int i = __load_via_object(self.value, __pos___data__).intvalue;
+
+    /* Return the new integer. */
+    return __new_int(-i);
+    #undef self
+}
+
 __attr __fn_native__int_pow(__attr __args[])
 {
     #define self (__args[1])
