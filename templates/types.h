@@ -70,9 +70,11 @@ typedef __obj * __ref;
 
 typedef struct __fragment
 {
-    unsigned int size;
+    unsigned int size, capacity;
     __attr attrs[];
 } __fragment;
+
+#define __FRAGMENT_SIZE(NUMBER) (NUMBER * sizeof(__attr) + 2 * sizeof(unsigned int))
 
 /* Special instance position value. The pos member of __obj refers to the
    special type attribute for classes, indicating which position holds the

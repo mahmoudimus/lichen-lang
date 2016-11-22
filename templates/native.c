@@ -1,4 +1,4 @@
-#include <stdlib.h> /* calloc, exit */
+#include <stdlib.h> /* calloc, exit, realloc */
 #include <unistd.h> /* read, write */
 #include <math.h>   /* ceil, log10, pow */
 #include <string.h> /* strcmp, strlen */
@@ -370,13 +370,73 @@ __attr __fn_native__str_nonempty(__attr __args[])
 
 __attr __fn_native__list_init(__attr __args[])
 {
-    #define size (__args[1])
-    /* size.__data__ interpreted as fragment */
-    __fragment *data = calloc(__load_via_object(size.value, __pos___data__).intvalue, sizeof(__attr));
+    #define __size (__args[1])
+    /* __size.__data__ interpreted as int */
+    unsigned int n = __load_via_object(__size.value, __pos___data__).intvalue;
+
+    /* Allocate space for the list. */
+    __fragment *data = calloc(1, __FRAGMENT_SIZE(n));
     __attr attr = {0, .data=data};
 
+    /* The initial capacity is the same as the given size. */
+    data->size = 0;
+    data->capacity = n;
     return attr;
-    #undef size
+    #undef __size
+}
+
+__attr __fn_native__list_append(__attr __args[])
+{
+    #define self (__args[1])
+    #define __value (__args[2])
+    /* self.__data__ interpreted as list */
+    __fragment *data = __load_via_object(self.value, __pos___data__).data;
+    unsigned int size = data->size, capacity = data->capacity;
+    unsigned int n;
+
+    /* Re-allocate the fragment if the capacity has been reached. */
+    if (size >= capacity)
+    {
+        /* NOTE: Consider various restrictions on capacity increases. */
+        n = data->capacity * 2;
+        data = realloc(data, __FRAGMENT_SIZE(n));
+        data->capacity = n;
+    }
+
+    /* Insert the new element and increment the list size. */
+    data->attrs[size] = __value;
+    data->size = size + 1;
+    return __builtins___none_None;
+    #undef self
+    #undef __value
+}
+
+__attr __fn_native__list_concat(__attr __args[])
+{
+    #define self (__args[1])
+    #define __other (__args[2])
+    /* self.__data__, __other.__data__ interpreted as list */
+    __fragment *data = __load_via_object(self.value, __pos___data__).data;
+    __fragment *other_data = __load_via_object(__other.value, __pos___data__).data;
+    unsigned int size = data->size, capacity = data->capacity;
+    unsigned int other_size = other_data->size;
+    unsigned int i, j, n;
+
+    /* Re-allocate the fragment if the capacity has been reached. */
+    if (size + other_size >= capacity)
+    {
+        n = size + other_size;
+        data = realloc(data, __FRAGMENT_SIZE(n));
+        data->capacity = n;
+    }
+
+    /* Copy the elements from the other list and increment the list size. */
+    for (i = size, j = 0; j < other_size; i++, j++)
+        data->attrs[i] = other_data->attrs[j];
+    data->size = n;
+    return __builtins___none_None;
+    #undef self
+    #undef __other
 }
 
 __attr __fn_native__list_len(__attr __args[])
@@ -419,6 +479,30 @@ __attr __fn_native__list_to_tuple(__attr __args[])
     /* NOTE: To be written. */
     return __builtins___none_None;
     #undef l
+}
+
+__attr __fn_native__buffer_str(__attr __args[])
+{
+    #define self (__args[1])
+    /* self.__data__ interpreted as buffer */
+    __fragment *data = __load_via_object(self.value, __pos___data__).data;
+    unsigned int size = 0, i, j;
+    char *s;
+
+    /* Calculate the size of the string. */
+    for (i = 0; i < data->size; i++)
+        size += strlen(data->attrs[i].strvalue);
+
+    /* Reserve space for a new string. */
+    s = calloc(size + 1, sizeof(char));
+
+    /* Build a single string from the buffer contents. */
+    for (i = 0, j = 0; i < data->size; j += strlen(data->attrs[i].strvalue), i++)
+        strcpy(s + j, data->attrs[i].strvalue);
+
+    /* Return a new string. */
+    return __new_str(s);
+    #undef self
 }
 
 __attr __fn_native__tuple_init(__attr __args[])

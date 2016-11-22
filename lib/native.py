@@ -52,9 +52,13 @@ def _str_len(self): pass
 def _str_nonempty(self): pass
 
 def _list_init(size): pass
+def _list_append(self, value): pass
+def _list_concat(self, other): pass
 def _list_len(self): pass
 def _list_nonempty(self): pass
 def _list_element(self, index): pass
+
+def _buffer_str(self): pass
 
 def _list_to_tuple(l): pass
 

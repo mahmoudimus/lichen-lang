@@ -26,8 +26,9 @@ __attr __new(const __table * table, __ref cls, size_t size)
 
 __attr __newdata(__attr args[], unsigned int number)
 {
-    /* Manually calculate the size of the fragment. */
-    __fragment *data = (__fragment *) calloc(1, number * sizeof(__attr) + sizeof(unsigned int));
+    /* Calculate the size of the fragment. */
+
+    __fragment *data = (__fragment *) calloc(1, __FRAGMENT_SIZE(number));
     __attr attr = {0, .data=data};
     unsigned int i, j;
 
@@ -37,6 +38,7 @@ __attr __newdata(__attr args[], unsigned int number)
         data->attrs[j] = args[i];
 
     data->size = number;
+    data->capacity = number;
     return attr;
 }
 

@@ -3,7 +3,7 @@
 """
 Buffer object.
 
-Copyright (C) 2015 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,9 +19,39 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from native import _list_init, _list_append, _list_concat, _buffer_str
+
 class buffer(object):
-    def __init__(self, size): pass
-    def append(self, s): pass
-    def __str__(self): pass
+
+    "A buffer, used to build strings."
+
+    def __init__(self, args=None, size=None):
+
+        "Initialise a buffer from the given 'args' or the given 'size'."
+
+        self.__data__ = _list_init(len(args) or size or 0)
+
+        # Append all arguments in string form to the buffer.
+
+        if args:
+            for arg in args:
+                _list_append(self, str(arg))
+
+    def append(self, s):
+
+        "Append 's' to the buffer."
+
+        if isinstance(s, buffer):
+            _list_concat(self, s)
+        elif isinstance(s, string):
+            _list_append(self, s)
+        else:
+            raise TypeError(s)
+
+    def __str__(self):
+
+        "Return a string representation."
+
+        return _buffer_str(self)
 
 # vim: tabstop=4 expandtab shiftwidth=4

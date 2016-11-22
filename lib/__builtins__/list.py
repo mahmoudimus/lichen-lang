@@ -31,9 +31,10 @@ class list(object):
 
         "Initialise the list."
 
-        # Reserve space for a fragment reference.
+        # Reserve an attribute for a fragment reference along with some space
+        # for elements.
 
-        self.__data__ = native._list_init(len(args)) # reserve space for elements
+        self.__data__ = native._list_init(len(args))
 
         if args is not None:
             self.extend(args)
@@ -56,7 +57,13 @@ class list(object):
 
     def __setslice__(self, start, end, slice): pass
     def __delslice__(self, start, end): pass
-    def append(self, value): pass
+
+    def append(self, value):
+
+        "Append 'value' to the list."
+
+        native._list_append(self, value)
+
     def insert(self, i, value): pass
 
     def extend(self, iterable):
@@ -77,15 +84,38 @@ class list(object):
         return native._list_len(self)
 
     def __add__(self, other): pass
-    def __iadd__(self, other): pass
+
+    def __iadd__(self, other):
+
+        "Concatenate 'other' to the list."
+
+        if isinstance(other, list):
+            native._list_concat(self, other)
+        else:
+            self.extend(other)
+        return self
 
     def __str__(self):
 
         "Return a string representation of the list."
 
-        # NOTE: To be implemented, maybe using a buffer.
+        b = buffer()
+        i = 0
+        l = self.__len__()
+        first = True
 
-        return "[...]"
+        # NOTE: Should really show quoted forms of the items.
+
+        b.append("[")
+        while i < l:
+            if first:
+                first = False
+            else:
+                b.append(", ")
+            b.append(self.__get_single_item__(i))
+        b.append("]")
+
+        return str(b)
 
     def __bool__(self):
 
