@@ -768,7 +768,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         self.process_function_node(n, name)
 
         origin = self.get_object_path(name)
-        return ResolvedNameRef(name, Reference("<function>", origin))
+
+        if self.function_defaults.get(origin):
+            return None
+        else:
+            return ResolvedNameRef(name, Reference("<function>", origin))
 
     def process_logical_node(self, n):
 
