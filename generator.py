@@ -152,48 +152,6 @@ class Generator(CommonOutput):
 #include "main.h"
 """
 
-            # Generate structure size data.
-
-            size_tables = {}
-
-            for kind in ["<class>", "<module>", "<instance>"]:
-                size_tables[kind] = {}
-
-            for ref, structure in self.optimiser.structures.items():
-                size_tables[ref.get_kind()][ref.get_origin()] = len(structure)
-
-            size_tables = size_tables.items()
-            size_tables.sort()
-
-            for kind, sizes in size_tables:
-                self.write_size_constants(f_consts, kind, sizes, 0)
-
-            # Generate parameter table size data.
-
-            min_sizes = {}
-            max_sizes = {}
-
-            for path, parameters in self.optimiser.parameters.items():
-                argmin, argmax = self.get_argument_limits(path)
-                min_sizes[path] = argmin
-                max_sizes[path] = argmax
-
-                # Record instantiator limits.
-
-                if path.endswith(".__init__"):
-                    path = path[:-len(".__init__")]
-
-            self.write_size_constants(f_consts, "pmin", min_sizes, 0)
-            self.write_size_constants(f_consts, "pmax", max_sizes, 0)
-
-            # Generate parameter codes.
-
-            self.write_code_constants(f_consts, self.optimiser.all_paramnames, self.optimiser.arg_locations, "pcode", "ppos")
-
-            # Generate attribute codes.
-
-            self.write_code_constants(f_consts, self.optimiser.all_attrnames, self.optimiser.locations, "code", "pos")
-
             # Generate table and structure data.
 
             function_instance_attrs = None
@@ -238,7 +196,7 @@ class Generator(CommonOutput):
                     if kind == "<class>":
                         self.write_instance_structure(f_decls, path, structure_size)
 
-                    self.write_structure(f_decls, f_defs, path, table_name, structure_size, structure,
+                    self.write_structure(f_decls, f_defs, path, table_name, structure,
                         kind == "<class>" and path)
 
                 # Record function instance details for function generation below.
@@ -258,6 +216,7 @@ class Generator(CommonOutput):
 
             functions = self.importer.function_parameters.keys()
             functions.sort()
+            extra_function_instances = []
 
             for path in functions:
 
@@ -268,7 +227,7 @@ class Generator(CommonOutput):
 
                 cls = self.function_type
                 table_name = encode_tablename("<instance>", cls)
-                structure_size = encode_size("<instance>", cls)
+                structure_size = encode_size("<instance>", path)
 
                 # Set a special callable attribute on the instance.
 
@@ -288,23 +247,24 @@ class Generator(CommonOutput):
                     # A bound version of a method.
 
                     structure = self.populate_function(path, function_instance_attrs, False)
-                    self.write_structure(f_decls, f_defs, encode_bound_reference(path), table_name, structure_size, structure)
+                    self.write_structure(f_decls, f_defs, encode_bound_reference(path), table_name, structure)
 
                     # An unbound version of a method.
 
                     structure = self.populate_function(path, function_instance_attrs, True)
-                    self.write_structure(f_decls, f_defs, path, table_name, structure_size, structure)
+                    self.write_structure(f_decls, f_defs, path, table_name, structure)
 
                 else:
                     # A normal function.
 
                     structure = self.populate_function(path, function_instance_attrs, False)
-                    self.write_structure(f_decls, f_defs, path, table_name, structure_size, structure)
+                    self.write_structure(f_decls, f_defs, path, table_name, structure)
 
                 # Functions with defaults need to declare instance structures.
 
                 if self.importer.function_defaults.get(path):
                     self.write_instance_structure(f_decls, path, structure_size)
+                    extra_function_instances.append(path)
 
                 # Write function declarations.
                 # Signature: __attr <name>(__attr[]);
@@ -328,6 +288,55 @@ class Generator(CommonOutput):
             # Finish the main source file.
 
             self.write_main_program(f_code, f_signatures)
+
+            # Record size information for certain function instances as well as
+            # for classes, modules and other instances.
+
+            size_tables = {}
+
+            for kind in ["<class>", "<module>", "<instance>"]:
+                size_tables[kind] = {}
+
+            # Generate structure size data.
+
+            for ref, structure in self.optimiser.structures.items():
+                size_tables[ref.get_kind()][ref.get_origin()] = len(structure)
+
+            for path in extra_function_instances:
+                defaults = self.importer.function_defaults[path]
+                size_tables["<instance>"][path] = size_tables["<instance>"][self.function_type] + len(defaults)
+
+            size_tables = size_tables.items()
+            size_tables.sort()
+
+            for kind, sizes in size_tables:
+                self.write_size_constants(f_consts, kind, sizes, 0)
+
+            # Generate parameter table size data.
+
+            min_sizes = {}
+            max_sizes = {}
+
+            for path, parameters in self.optimiser.parameters.items():
+                argmin, argmax = self.get_argument_limits(path)
+                min_sizes[path] = argmin
+                max_sizes[path] = argmax
+
+                # Record instantiator limits.
+
+                if path.endswith(".__init__"):
+                    path = path[:-len(".__init__")]
+
+            self.write_size_constants(f_consts, "pmin", min_sizes, 0)
+            self.write_size_constants(f_consts, "pmax", max_sizes, 0)
+
+            # Generate parameter codes.
+
+            self.write_code_constants(f_consts, self.optimiser.all_paramnames, self.optimiser.arg_locations, "pcode", "ppos")
+
+            # Generate attribute codes.
+
+            self.write_code_constants(f_consts, self.optimiser.all_attrnames, self.optimiser.locations, "code", "pos")
 
             # Output more boilerplate.
 
@@ -418,9 +427,8 @@ class Generator(CommonOutput):
 
         structure = []
         table_name = encode_tablename("<instance>", cls)
-        structure_size = encode_size("<instance>", cls)
         self.populate_structure(ref, attrs, ref.get_kind(), structure)
-        self.write_structure(f_decls, f_defs, structure_name, table_name, structure_size, structure)
+        self.write_structure(f_decls, f_defs, structure_name, table_name, structure)
 
         # Define a macro for the constant.
 
@@ -539,13 +547,12 @@ typedef struct {
 } %s;
 """ % (structure_size, encode_symbol("obj", path))
 
-    def write_structure(self, f_decls, f_defs, structure_name, table_name, structure_size, structure, path=None):
+    def write_structure(self, f_decls, f_defs, structure_name, table_name, structure, path=None):
 
         """
         Write the declarations to 'f_decls' and definitions to 'f_defs' for
         the object having the given 'structure_name', the given 'table_name',
-        and the given 'structure_size', with 'structure' details used to
-        populate the definition.
+        and the given 'structure' details used to populate the definition.
         """
 
         if f_decls:
