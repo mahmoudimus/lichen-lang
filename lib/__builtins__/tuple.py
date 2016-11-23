@@ -20,10 +20,10 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iterator import listiterator
-from __builtins__.sequence import _getitem, _getslice
+from __builtins__.sequence import sequence
 import native
 
-class tuple(object):
+class tuple(sequence):
 
     "Implementation of tuple."
 
@@ -33,17 +33,11 @@ class tuple(object):
 
         self.__data__ = native._tuple_init(args, len(args)) # allocate and copy elements
 
-    def __getitem__(self, index):
-
-        "Return the item or slice specified by 'index'."
-
-        return _getitem(self, index)
-
     def __getslice__(self, start, end=None):
 
         "Return a slice starting from 'start', with the optional 'end'."
 
-        return native._list_to_tuple(_getslice(self, start, end))
+        return native._list_to_tuple(get_using(sequence.__getslice__, self)(start, end))
 
     def __len__(self):
 
@@ -54,6 +48,8 @@ class tuple(object):
     def __add__(self, other): pass
 
     def __str__(self): pass
+
+    __repr__ = __str__
 
     def __bool__(self):
 

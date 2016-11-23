@@ -20,10 +20,10 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iterator import listiterator
-from __builtins__.sequence import _getitem, _getslice
+from __builtins__.sequence import sequence
 import native
 
-class list(object):
+class list(sequence):
 
     "Implementation of list."
 
@@ -39,22 +39,9 @@ class list(object):
         if args is not None:
             self.extend(args)
 
-    def __getitem__(self, index):
-
-        "Return the item or slice specified by 'index'."
-
-        return _getitem(self, index)
-
     def __contains__(self, value): pass
     def __setitem__(self, index, value): pass
     def __delitem__(self, index): pass
-
-    def __getslice__(self, start, end=None):
-
-        "Return a slice starting from 'start', with the optional 'end'."
-
-        return _getslice(self, start, end)
-
     def __setslice__(self, start, end, slice): pass
     def __delslice__(self, start, end): pass
 
