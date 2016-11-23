@@ -355,6 +355,7 @@ __attr __fn_native__list_append(__attr __args[])
     __attr * const value = &__args[2];
     /* self.__data__ interpreted as list */
     __fragment *data = __load_via_object(self->value, __pos___data__).data;
+    __fragment *newdata = data;
     unsigned int size = data->size, capacity = data->capacity;
     unsigned int n;
 
@@ -363,23 +364,28 @@ __attr __fn_native__list_append(__attr __args[])
     {
         /* NOTE: Consider various restrictions on capacity increases. */
         n = capacity ? capacity * 2 : 1;
-        data = realloc(data, __FRAGMENT_SIZE(n));
-        data->capacity = n;
+        newdata = realloc(data, __FRAGMENT_SIZE(n));
+        newdata->capacity = n;
     }
 
     /* Insert the new element and increment the list size. */
-    data->attrs[size] = *value;
-    data->size = size + 1;
+    newdata->attrs[size] = *value;
+    newdata->size = size + 1;
+
+    /* Replace the __data__ attribute if appropriate. */
+    if (newdata != data)
+        __store_via_object(self->value, __pos___data__, ((__attr) {0, .data=newdata}));
     return __builtins___none_None;
 }
 
 __attr __fn_native__list_concat(__attr __args[])
 {
     __attr * const self = &__args[1];
-    __attr * const __other = &__args[2];
-    /* self.__data__, __other.__data__ interpreted as list */
+    __attr * const other = &__args[2];
+    /* self.__data__, other.__data__ interpreted as list */
     __fragment *data = __load_via_object(self->value, __pos___data__).data;
-    __fragment *other_data = __load_via_object(__other->value, __pos___data__).data;
+    __fragment *other_data = __load_via_object(other->value, __pos___data__).data;
+    __fragment *newdata = data;
     unsigned int size = data->size, capacity = data->capacity;
     unsigned int other_size = other_data->size;
     unsigned int i, j, n;
@@ -388,14 +394,18 @@ __attr __fn_native__list_concat(__attr __args[])
     if (size + other_size >= capacity)
     {
         n = size + other_size;
-        data = realloc(data, __FRAGMENT_SIZE(n));
-        data->capacity = n;
+        newdata = realloc(data, __FRAGMENT_SIZE(n));
+        newdata->capacity = n;
     }
 
     /* Copy the elements from the other list and increment the list size. */
     for (i = size, j = 0; j < other_size; i++, j++)
-        data->attrs[i] = other_data->attrs[j];
-    data->size = n;
+        newdata->attrs[i] = other_data->attrs[j];
+    newdata->size = n;
+
+    /* Replace the __data__ attribute if appropriate. */
+    if (newdata != data)
+        __store_via_object(self->value, __pos___data__, ((__attr) {0, .data=newdata}));
     return __builtins___none_None;
 }
 
