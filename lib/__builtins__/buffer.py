@@ -53,7 +53,7 @@ class buffer(object):
         elif isinstance(s, string):
             _list_append(self, s)
         else:
-            raise TypeError(s)
+            _list_append(self, str(s))
 
     def __str__(self):
 
