@@ -919,7 +919,11 @@ class TranslatedModule(CommonModule):
                         encode_symbol("pcode", arg.name)))
 
             else:
-                args[i+1] = str(argexpr)
+                try:
+                    args[i+1] = str(argexpr)
+                except IndexError:
+                    raise TranslateError("Too many arguments specified.",
+                                         self.get_namespace_path(), n)
 
         # Reference the current target again.
 
