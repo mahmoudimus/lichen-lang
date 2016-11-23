@@ -38,15 +38,18 @@ class buffer(object):
 
         self.__data__ = _list_init(n)
 
-        # Append all arguments in string form to the buffer.
+        # Append all arguments to the buffer.
 
         if args:
             for arg in args:
-                _list_append(self, str(arg))
+                self.append(arg)
 
     def append(self, s):
 
-        "Append 's' to the buffer."
+        """
+        Append 's' to the buffer, concatenating buffers and adding other objects
+        in string form.
+        """
 
         if isinstance(s, buffer):
             _list_concat(self, s)
