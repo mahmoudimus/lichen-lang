@@ -96,12 +96,6 @@ class basestring(object):
     def strip(self, chars=None): pass
     def upper(self): pass
 
-    def __iter__(self):
-
-        "Return an iterator."
-
-        return listiterator(self)
-
 class string(basestring):
     pass
 

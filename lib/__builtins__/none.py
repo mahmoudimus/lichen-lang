@@ -20,6 +20,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 class NoneType:
+
+    "The type of the None object."
+
     def __bool__(self):
 
         "None is always false."
