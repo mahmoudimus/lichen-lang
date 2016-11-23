@@ -144,6 +144,8 @@ class int(object):
         "Return a string representation."
         return native._int_str(self)
 
+    __repr__ = __str__
+
     def __lshift__(self): pass
     def __rlshift__(self): pass
     def __rshift__(self): pass

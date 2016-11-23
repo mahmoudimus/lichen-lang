@@ -112,11 +112,13 @@ class list(object):
                 first = False
             else:
                 b.append(", ")
-            b.append(self.__get_single_item__(i))
+            b.append(repr(self.__get_single_item__(i)))
             i += 1
         b.append("]")
 
         return str(b)
+
+    __repr__ = __str__
 
     def __bool__(self):
 

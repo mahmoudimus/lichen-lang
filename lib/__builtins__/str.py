@@ -75,7 +75,14 @@ class basestring(object):
         return native._str_len(self)
 
     def __str__(self):
+        "Return a string representation."
         return self
+
+    def __repr__(self):
+        "Return a string literal representation."
+        # NOTE: To be implemented with proper quoting.
+        b = buffer(['"', self, '"'])
+        return str(b)
 
     def __bool__(self):
         return native._str_nonempty(self)
