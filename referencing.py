@@ -50,7 +50,7 @@ class Reference:
         if self.kind == "<var>":
             return self.kind
         else:
-            alias = self.name and ";%s" % self.name or ""
+            alias = self.name and self.name != self.origin and ";%s" % self.name or ""
             return "%s:%s%s" % (self.kind, self.origin, alias)
 
     def __hash__(self):
