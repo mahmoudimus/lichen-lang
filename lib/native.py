@@ -63,6 +63,8 @@ def _list_setelement(self, index, value): pass
 
 def _buffer_str(self): pass
 
+def _object_getattr(obj, name, default): pass
+
 def _isinstance(obj, cls): pass
 
 def _read(fd, n): pass

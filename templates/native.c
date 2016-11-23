@@ -494,6 +494,16 @@ __attr __fn_native__buffer_str(__attr __args[])
     return __new_str(s);
 }
 
+__attr __fn_native__object_getattr(__attr __args[])
+{
+    __attr * const obj = &__args[1];
+    __attr * const name = &__args[2];
+    __attr * const _default = &__args[3];
+
+    /* NOTE: To be written. */
+    return __builtins___none_None;
+}
+
 __attr __fn_native__isinstance(__attr __args[])
 {
     __attr * const obj = &__args[1];
