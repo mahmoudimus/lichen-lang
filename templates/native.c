@@ -349,6 +349,19 @@ __attr __fn_native__list_init(__attr __args[])
     return attr;
 }
 
+__attr __fn_native__list_setsize(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    __attr * const size = &__args[2];
+    /* self.__data__ interpreted as list */
+    __fragment *data = __load_via_object(self->value, __pos___data__).data;
+    /* size.__data__ interpreted as int */
+    unsigned int n = __load_via_object(size->value, __pos___data__).intvalue;
+
+    data->size = n;
+    return __builtins___none_None;
+}
+
 __attr __fn_native__list_append(__attr __args[])
 {
     __attr * const self = &__args[1];
@@ -438,11 +451,18 @@ __attr __fn_native__list_element(__attr __args[])
     return elements[i];
 }
 
-__attr __fn_native__list_to_tuple(__attr __args[])
+__attr __fn_native__list_setelement(__attr __args[])
 {
-    __attr * const l = &__args[1];
+    __attr * const self = &__args[1];
+    __attr * const index = &__args[2];
+    __attr * const value = &__args[3];
+    /* self.__data__ interpreted as fragment */
+    __attr *elements = __load_via_object(self->value, __pos___data__).data->attrs;
+    /* index.__data__ interpreted as int */
+    int i = __load_via_object(index->value, __pos___data__).intvalue;
 
-    /* NOTE: To be written. */
+    /* Set the element. */
+    elements[i] = *value;
     return __builtins___none_None;
 }
 
@@ -472,38 +492,6 @@ __attr __fn_native__buffer_str(__attr __args[])
 
     /* Return a new string. */
     return __new_str(s);
-}
-
-__attr __fn_native__tuple_init(__attr __args[])
-{
-    __attr * const size = &__args[1];
-    /* size.__data__ interpreted as fragment */
-    __fragment *data = calloc(__load_via_object(size->value, __pos___data__).intvalue, sizeof(__attr));
-    __attr attr = {0, .data=data};
-
-    return attr;
-}
-
-__attr __fn_native__tuple_len(__attr __args[])
-{
-    __attr * const self = &__args[1];
-    /* self.__data__ interpreted as fragment */
-    unsigned int size = __load_via_object(self->value, __pos___data__).data->size;
-
-    /* Return the new integer. */
-    return __new_int(size);
-}
-
-__attr __fn_native__tuple_element(__attr __args[])
-{
-    __attr * const self = &__args[1];
-    __attr * const index = &__args[2];
-    /* self.__data__ interpreted as fragment */
-    __attr *elements = __load_via_object(self->value, __pos___data__).data->attrs;
-    /* index.__data__ interpreted as int */
-    int i = __load_via_object(index->value, __pos___data__).intvalue;
-
-    return elements[i];
 }
 
 __attr __fn_native__isinstance(__attr __args[])

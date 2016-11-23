@@ -31,23 +31,40 @@ class tuple(sequence):
 
         "Initialise the tuple."
 
-        self.__data__ = native._tuple_init(args, len(args)) # allocate and copy elements
+        # Reserve an attribute for a fragment reference along with some space
+        # for elements.
+
+        size = args is not None and len(args) or 0
+        self.__data__ = native._list_init(size)
+        native._list_setsize(self, size)
+
+        # Populate the tuple.
+
+        if args is not None:
+            i = 0
+            for arg in args:
+                native._list_setelement(self, i, arg)
+                i += 1
 
     def __getslice__(self, start, end=None):
 
         "Return a slice starting from 'start', with the optional 'end'."
 
-        return native._list_to_tuple(get_using(sequence.__getslice__, self)(start, end))
+        return tuple(get_using(sequence.__getslice__, self)(start, end))
 
     def __len__(self):
 
         "Return the length of the tuple."
 
-        return native._tuple_len(self)
+        return native._list_len(self)
 
     def __add__(self, other): pass
 
-    def __str__(self): pass
+    def __str__(self):
+
+        "Return a string representation."
+
+        return self._str("(", ")")
 
     __repr__ = __str__
 
@@ -66,6 +83,18 @@ class tuple(sequence):
     # Special implementation methods.
 
     def __get_single_item__(self, index):
-        return native._tuple_element(self, index)
+
+        "Return the item at the normalised (positive) 'index'."
+
+        if index >= len(self):
+            raise IndexError(index)
+
+        return native._list_element(self, index)
+
+    def __set_single_item__(self, index, value):
+
+        "Set at the normalised (positive) 'index' the given 'value'."
+
+        raise TypeError(self)
 
 # vim: tabstop=4 expandtab shiftwidth=4

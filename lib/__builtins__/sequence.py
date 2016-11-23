@@ -25,6 +25,27 @@ class sequence:
 
     "A common base class for sequence types."
 
+    def _str(self, opening, closing):
+
+        "Serialise this object with the given 'opening' and 'closing' strings."
+
+        b = buffer()
+        i = 0
+        l = self.__len__()
+        first = True
+
+        b.append(opening)
+        while i < l:
+            if first:
+                first = False
+            else:
+                b.append(", ")
+            b.append(repr(self.__get_single_item__(i)))
+            i += 1
+        b.append(closing)
+
+        return str(b)
+
     def __getitem__(self, index):
 
         "Return the item or slice specified by 'index'."
@@ -40,6 +61,27 @@ class sequence:
 
         elif _isinstance(index, slice):
             return self.__getslice__(index.start, index.end)
+
+        # No other kinds of objects are supported as indexes.
+
+        else:
+            raise TypeError
+
+    def __setitem__(self, index, value):
+
+        "Set at 'index' the given 'value'."
+
+        # Normalise any integer indexes, converting negative indexes to positive
+        # ones.
+
+        if _isinstance(index, int):
+            index = _normalise_index(index, self.__len__())
+            return self.__set_single_item__(index, value)
+
+        # Handle slices separately.
+
+        elif _isinstance(index, slice):
+            return self.__setslice__(index.start, index.end, value)
 
         # No other kinds of objects are supported as indexes.
 

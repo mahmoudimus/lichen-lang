@@ -34,13 +34,12 @@ class list(sequence):
         # Reserve an attribute for a fragment reference along with some space
         # for elements.
 
-        self.__data__ = native._list_init(len(args))
+        self.__data__ = native._list_init(args is not None and len(args) or 0)
 
         if args is not None:
             self.extend(args)
 
     def __contains__(self, value): pass
-    def __setitem__(self, index, value): pass
     def __delitem__(self, index): pass
     def __setslice__(self, start, end, slice): pass
     def __delslice__(self, start, end): pass
@@ -84,26 +83,9 @@ class list(sequence):
 
     def __str__(self):
 
-        "Return a string representation of the list."
+        "Return a string representation."
 
-        b = buffer()
-        i = 0
-        l = self.__len__()
-        first = True
-
-        # NOTE: Should really show quoted forms of the items.
-
-        b.append("[")
-        while i < l:
-            if first:
-                first = False
-            else:
-                b.append(", ")
-            b.append(repr(self.__get_single_item__(i)))
-            i += 1
-        b.append("]")
-
-        return str(b)
+        return self._str("[", "]")
 
     __repr__ = __str__
 
@@ -129,5 +111,14 @@ class list(sequence):
             raise IndexError(index)
 
         return native._list_element(self, index)
+
+    def __set_single_item__(self, index, value):
+
+        "Set at the normalised (positive) 'index' the given 'value'."
+
+        if index >= len(self):
+            raise IndexError(index)
+
+        return native._list_setelement(self, index, value)
 
 # vim: tabstop=4 expandtab shiftwidth=4

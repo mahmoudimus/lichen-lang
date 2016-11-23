@@ -79,7 +79,7 @@ class basestring(object):
         return self
 
     def __repr__(self):
-        "Return a string literal representation."
+        "Return a program representation."
         # NOTE: To be implemented with proper quoting.
         b = buffer(['"', self, '"'])
         return str(b)

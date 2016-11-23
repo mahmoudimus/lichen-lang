@@ -42,18 +42,15 @@ __attr __fn_native__str_len(__attr __args[]);
 __attr __fn_native__str_nonempty(__attr __args[]);
 
 __attr __fn_native__list_init(__attr __args[]);
+__attr __fn_native__list_setsize(__attr __args[]);
 __attr __fn_native__list_append(__attr __args[]);
 __attr __fn_native__list_concat(__attr __args[]);
 __attr __fn_native__list_len(__attr __args[]);
 __attr __fn_native__list_nonempty(__attr __args[]);
 __attr __fn_native__list_element(__attr __args[]);
-__attr __fn_native__list_to_tuple(__attr __args[]);
+__attr __fn_native__list_setelement(__attr __args[]);
 
 __attr __fn_native__buffer_str(__attr __args[]);
-
-__attr __fn_native__tuple_init(__attr __args[]);
-__attr __fn_native__tuple_len(__attr __args[]);
-__attr __fn_native__tuple_element(__attr __args[]);
 
 __attr __fn_native__isinstance(__attr __args[]);
 
