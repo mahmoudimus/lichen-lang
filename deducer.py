@@ -406,7 +406,8 @@ class Deducer(CommonOutput):
                     first_method, final_method, attr = self.access_plans[location]
 
                 print >>f_attrs, encode_access_location(location), \
-                                 name, test, test_type or "{}", \
+                                 name or "{}", \
+                                 test, test_type or "{}", \
                                  base or "{}", \
                                  ".".join(traversed) or "{}", \
                                  ".".join(traversal_modes) or "{}", \
@@ -1872,7 +1873,7 @@ class Deducer(CommonOutput):
 
         # Constant accessors are static.
 
-        else:
+        elif name:
             ref = self.importer.identify("%s.%s" % (path, name))
             if ref:
                 base = ref.get_origin()
