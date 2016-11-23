@@ -27,7 +27,7 @@ from errors import InspectError
 from referencing import Reference
 from resolving import NameResolving
 from results import AccessRef, InstanceRef, InvocationRef, LiteralSequenceRef, \
-                    LocalNameRef, NameRef, ResolvedNameRef
+                    LocalNameRef, NameRef, ResolvedNameRef, VariableRef
 import compiler
 import sys
 
@@ -757,7 +757,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             elif isinstance(name_ref, NameRef):
                 return InvocationRef(name_ref)
 
-            return None
+            # Provide a general reference to indicate that something is produced
+            # by the invocation, useful for retaining assignment expression
+            # details.
+
+            return VariableRef()
 
         finally:
             self.deallocate_arguments(path, n.args)

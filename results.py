@@ -30,11 +30,23 @@ class Result:
     def is_name(self):
         return False
 
+    def reference(self):
+        return None
+
+    def get_name(self):
+        return None
+
     def get_origin(self):
         return None
 
-    def reference(self):
+    def static(self):
         return None
+
+    def final(self):
+        return None
+
+    def has_kind(self, kinds):
+        return False
 
 class AccessRef(Result):
 
@@ -161,5 +173,12 @@ class LiteralSequenceRef(ResolvedNameRef):
 
     def __repr__(self):
         return "LiteralSequenceRef(%r, %r, %r, %r)" % (self.name, self.ref, self.node, self.items)
+
+class VariableRef(Result):
+
+    "A variable reference."
+
+    def __repr__(self):
+        return "VariableRef()"
 
 # vim: tabstop=4 expandtab shiftwidth=4
