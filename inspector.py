@@ -740,12 +740,14 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Process the expression, obtaining any identified reference.
 
             name_ref = self.process_structure_node(n.node)
-            self.in_invocation = in_invocation
+            self.in_invocation = False
 
             # Process the arguments.
 
             for arg in n.args:
                 self.process_structure_node(arg)
+
+            self.in_invocation = in_invocation
 
             # Detect class invocations.
 
