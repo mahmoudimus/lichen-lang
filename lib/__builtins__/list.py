@@ -113,6 +113,7 @@ class list(object):
             else:
                 b.append(", ")
             b.append(self.__get_single_item__(i))
+            i += 1
         b.append("]")
 
         return str(b)
