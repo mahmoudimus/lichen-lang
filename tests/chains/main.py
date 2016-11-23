@@ -6,3 +6,8 @@ f = c.Class
 
 def t():
     x = c.Class
+    return x
+
+print C.attr
+print f.attr
+print t().attr

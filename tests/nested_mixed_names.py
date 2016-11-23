@@ -17,4 +17,7 @@ def f(x):
     return g
 
 result = f(C())(2)
+print result[0]
+print result[1]
+print result[2]
 assert result == (3, 2, 4)

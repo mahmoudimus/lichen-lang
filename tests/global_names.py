@@ -8,4 +8,4 @@ def f():
 
 g = C
 result = f()
-print result
+print result # 3

@@ -19,8 +19,8 @@ c = C(1, 2, 3)
 d = D(1, 2, 3)
 e = E(1, 2, 3)
 
-result1 = c.c() # 1
-result2 = d.c() # 1
-result3 = e.c() # 3
-result4 = d.d() # 2
-result5 = e.d() # 2
+print c.c() # 1
+print d.c() # 1
+print e.c() # 3
+print d.d() # 2
+print e.d() # 2
