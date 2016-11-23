@@ -19,7 +19,10 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class complex(object):
+class complex:
+
+    "A complex number representation."
+
     def __init__(self, real, imag=None):
         self.real = real
         self.imag = imag
@@ -51,7 +54,15 @@ class complex(object):
     def __neg__(self): pass
     def __pos__(self): pass
     def __str__(self): pass
-    def __bool__(self): pass
+
+    __repr__ = __str__
+
+    def __bool__(self):
+
+        "Return a boolean interpretation of the number."
+
+        return self.real and self.imag
+
     def conjugate(self): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

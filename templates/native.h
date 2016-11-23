@@ -52,6 +52,8 @@ __attr __fn_native__list_setelement(__attr __args[]);
 
 __attr __fn_native__buffer_str(__attr __args[]);
 
+__attr __fn_native__get_using(__attr __args[]);
+
 __attr __fn_native__object_getattr(__attr __args[]);
 
 __attr __fn_native__isinstance(__attr __args[]);

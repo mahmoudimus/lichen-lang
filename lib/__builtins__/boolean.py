@@ -20,16 +20,30 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 class boolean(object):
+
+    "The type of the True and False objects."
+
     def __bool__(self):
+
         "Identity operation."
+
         return self
+
     def __str__(self):
+
+        "Return a string representation."
+
         return self is True and "True" or "False"
+
+    __repr__ = __str__
 
 False = boolean()
 True = boolean()
 
 def bool(obj):
+
+    "Evaluate 'obj' as a boolean value."
+
     return obj.__bool__()
 
 # vim: tabstop=4 expandtab shiftwidth=4

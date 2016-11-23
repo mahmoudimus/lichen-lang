@@ -35,6 +35,8 @@ class NoneType:
 
         return "None"
 
+    __repr__ = __str__
+
 None = NoneType()
 
 # vim: tabstop=4 expandtab shiftwidth=4

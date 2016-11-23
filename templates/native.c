@@ -494,6 +494,14 @@ __attr __fn_native__buffer_str(__attr __args[])
     return __new_str(s);
 }
 
+__attr __fn_native__get_using(__attr __args[])
+{
+    __attr * const callable = &__args[1];
+    __attr * const instance = &__args[2];
+
+    return __replace_context(instance->value, *callable);
+}
+
 __attr __fn_native__object_getattr(__attr __args[])
 {
     __attr * const obj = &__args[1];

@@ -19,17 +19,31 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from native import _get_using
+
 class object:
 
     "The root class of all objects except functions."
 
     def __init__(self):
+
         "No-operation."
+
         pass
 
     def __bool__(self):
+
         "Objects are true by default."
+
         return True
+
+    def __str__(self):
+
+        "Return a string representation."
+
+        return self.__name__
+
+    __repr__ = __str__
 
 class function:
 
@@ -48,20 +62,40 @@ class function:
         self.__args__ = None
 
     def __bool__(self):
+
         "Functions are true by default."
+
         return True
+
+    def __str__(self):
+
+        "Return a string representation."
+
+        return "<function>" # NOTE: Could be made specific.
+
+    __repr__ = __str__
 
 class type(object):
 
     "The class of all classes."
 
-    pass
+    def __str__(self):
+
+        "Return a string representation."
+
+        return "<type>"
+
+    __repr__ = __str__
 
 class BaseException(object): pass
 class Exception(BaseException): pass
 class UnboundMethodInvocation(Exception): pass
 class Warning(object): pass
 
-def get_using(callable, instance): pass
+def get_using(callable, instance):
+
+    "Return 'callable' bound to 'instance'."
+
+    return _get_using(callable, instance)
 
 # vim: tabstop=4 expandtab shiftwidth=4
