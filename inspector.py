@@ -1278,6 +1278,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         elif isinstance(value, InvocationRef):
             return value.reference()
 
+        # Variable references are unknown results.
+
+        elif isinstance(value, VariableRef):
+            return value.reference()
+
         else:
             return value
 
