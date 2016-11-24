@@ -82,6 +82,14 @@ __ref __test_common_type(__ref obj, int pos, int code)
 
 /* Attribute testing and retrieval operations. */
 
+static __attr __check_and_load_via_object_null(__ref obj, int pos, int code)
+{
+    if (__HASATTR(obj, pos, code))
+        return __load_via_object(obj, pos);
+    else
+        return __NULL;
+}
+
 __attr __check_and_load_via_class(__ref obj, int pos, int code)
 {
     return __check_and_load_via_object(__get_class(obj), pos, code);
@@ -89,12 +97,16 @@ __attr __check_and_load_via_class(__ref obj, int pos, int code)
 
 __attr __check_and_load_via_object(__ref obj, int pos, int code)
 {
-    return __HASATTR(obj, pos, code) ? __load_via_object(obj, pos) : __NULL;
+    if (__HASATTR(obj, pos, code))
+        return __load_via_object(obj, pos);
+
+    __raise_type_error();
+    return __NULL;
 }
 
 __attr __check_and_load_via_any(__ref obj, int pos, int code)
 {
-    __attr out = __check_and_load_via_object(obj, pos, code);
+    __attr out = __check_and_load_via_object_null(obj, pos, code);
     if (out.value == 0)
         out = __check_and_load_via_class(obj, pos, code);
     return out;
@@ -132,8 +144,7 @@ __attr __test_context(__ref context, __attr attr)
     if (!__is_instance(context) && __test_common_type(context, __TYPEPOS(attr.context), __TYPECODE(attr.context)))
         return __update_context(context, attr);
 
-    /* NOTE: An error may be more appropriate. */
-
+    __raise_type_error();
     return __NULL;
 }
 

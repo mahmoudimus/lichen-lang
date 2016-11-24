@@ -52,6 +52,7 @@ class Generator(CommonOutput):
     "A code generator."
 
     function_type = "__builtins__.core.function"
+    type_error_type = "__builtins__.core.TypeError"
 
     # NOTE: These must be synchronised with the library.
 
@@ -348,10 +349,12 @@ class Generator(CommonOutput):
 
 #define __FUNCTION_TYPE %s
 #define __FUNCTION_INSTANCE_SIZE %s
+#define __TYPE_ERROR_INSTANTIATOR %s
 
 #endif /* __PROGTYPES_H__ */""" % (
     encode_path(self.function_type),
-    encode_size("<instance>", self.function_type)
+    encode_size("<instance>", self.function_type),
+    encode_instantiator_pointer(self.type_error_type)
     )
 
             print >>f_signatures, """\

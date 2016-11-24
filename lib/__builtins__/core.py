@@ -87,8 +87,14 @@ class type(object):
 
     __repr__ = __str__
 
-class BaseException(object): pass
+class BaseException:
+
+    "The root of all exception types."
+
+    pass
+
 class Exception(BaseException): pass
+class TypeError(Exception): pass
 class UnboundMethodInvocation(Exception): pass
 class Warning(object): pass
 

@@ -42,6 +42,15 @@ __attr __newdata(__attr args[], unsigned int number)
     return attr;
 }
 
+/* A helper for raising type errors within common operations. */
+
+void __raise_type_error()
+{
+    __attr args[1];
+    __attr exc = __TYPE_ERROR_INSTANTIATOR(args);
+    __Raise(exc);
+}
+
 /* Generic invocation operations. */
 
 /* Invoke the given callable, supplying keyword argument details in the given

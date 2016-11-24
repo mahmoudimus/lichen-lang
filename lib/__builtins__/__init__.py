@@ -20,7 +20,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.core import function, get_using, object, type, \
-                              BaseException, Exception, Warning
+                              BaseException, Exception, TypeError, \
+                              UnboundMethodInvocation, Warning
 
 # Exceptions.
 
@@ -58,7 +59,6 @@ from __builtins__.exception import (
     SystemError,
     SystemExit,
     TabError,
-    TypeError,
     UnboundLocalError,
     UnicodeDecodeError,
     UnicodeEncodeError,

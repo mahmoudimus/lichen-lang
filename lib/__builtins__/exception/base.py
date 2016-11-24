@@ -3,7 +3,7 @@
 """
 Base exception objects.
 
-Copyright (C) 2015 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,6 @@ class NotImplementedError(Exception): pass
 class ReferenceError(Exception): pass
 class StandardError(Exception): pass
 class StopIteration(Exception): pass
-class TypeError(Exception): pass
 class ValueError(Exception): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

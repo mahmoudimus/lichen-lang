@@ -32,7 +32,6 @@ from __builtins__.exception.base import (
     ReferenceError,
     StandardError,
     StopIteration,
-    TypeError,
     ValueError
     )
 
