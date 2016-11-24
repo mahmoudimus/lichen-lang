@@ -53,6 +53,11 @@ __ref __get_class(__ref obj)
     return __load_via_object(obj, __pos___class__).value;
 }
 
+__attr __get_class_attr(__ref obj)
+{
+    return __load_via_object(obj, __pos___class__);
+}
+
 /* Attribute testing operations. */
 
 __ref __test_specific_instance(__ref obj, __ref type)

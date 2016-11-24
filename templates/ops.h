@@ -24,6 +24,7 @@ int __store_via_object(__ref obj, int pos, __attr value);
 
 int __is_instance(__ref obj);
 __ref __get_class(__ref obj);
+__attr __get_class_attr(__ref obj);
 
 /* Attribute testing operations. */
 

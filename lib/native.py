@@ -68,6 +68,7 @@ def _get_using(callable, instance): pass
 def _object_getattr(obj, name, default): pass
 
 def _isinstance(obj, cls): pass
+def _issubclass(obj, cls): pass
 
 def _read(fd, n): pass
 def _write(fd, str): pass

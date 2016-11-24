@@ -19,31 +19,68 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import _isinstance
+from native import _isinstance, _issubclass
 
-def callable(obj): pass
-def help(*args): pass
-def id(obj): pass
+def callable(obj):
+
+    "Return whether 'obj' is callable."
+
+    # NOTE: Classes and functions are callable, modules are not callable,
+    # NOTE: only instances with __call__ methods should be callable.
+
+    pass
+
+def help(*args):
+
+    # NOTE: This should show any docstring, but it is currently unsupported.
+
+    pass
+
+def id(obj):
+
+    # NOTE: This should show an object's address, but it is currently
+    # NOTE: unsupported.
+
+    pass
+
+def isclass(obj):
+
+    "Return whether 'obj' is a class."
+
+    return obj.__class__ is type
 
 def isinstance(obj, cls_or_tuple):
 
     """
     Return whether 'obj' is an instance of 'cls_or_tuple', where the latter is
-    either a class or a tuple of classes.
+    either a class or a sequence of classes.
     """
-
-    # NOTE: CPython insists on tuples, but any sequence might be considered
-    # NOTE: acceptable.
 
     if _isinstance(cls_or_tuple, tuple):
         for cls in cls_or_tuple:
-            if obj.__class__ is cls or _isinstance(obj, cls):
+            if obj.__class__ is cls or isclass(cls) and _isinstance(obj, cls):
                 return True
         return False
     else:
-        return obj.__class__ is cls_or_tuple or _isinstance(obj, cls_or_tuple)
+        return obj.__class__ is cls_or_tuple or isclass(cls_or_tuple) and _isinstance(obj, cls_or_tuple)
 
-def issubclass(obj, cls_or_tuple): pass
+def issubclass(obj, cls_or_tuple):
+
+    """
+    Return whether 'obj' is a class that is a subclass of 'cls_or_tuple', where
+    the latter is either a class or a sequence of classes. If 'obj' is the same
+    as the given class or classes, True is also returned.
+    """
+
+    if not isclass(obj):
+        return False
+    elif _isinstance(cls_or_tuple, tuple):
+        for cls in cls_or_tuple:
+            if obj is cls or isclass(cls) and _issubclass(obj, cls):
+                return True
+        return False
+    else:
+        return obj is cls_or_tuple or isclass(cls_or_tuple) and _issubclass(obj, cls_or_tuple)
 
 def repr(obj):
 

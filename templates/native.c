@@ -13,7 +13,7 @@
 
 /* Utility functions. */
 
-inline __attr __new_int(int i)
+static __attr __new_int(int i)
 {
     /* Create a new integer and mutate the __data__ attribute. */
     __attr attr = __new(&__InstanceTable___builtins___int_int, &__builtins___int_int, sizeof(__obj___builtins___int_int));
@@ -21,7 +21,7 @@ inline __attr __new_int(int i)
     return attr;
 }
 
-inline __attr __new_str(char *s)
+static __attr __new_str(char *s)
 {
     /* Create a new string and mutate the __data__ attribute. */
     __attr attr = __new(&__InstanceTable___builtins___str_string, &__builtins___str_string, sizeof(__obj___builtins___str_string));
@@ -512,12 +512,30 @@ __attr __fn_native__object_getattr(__attr __args[])
     return __builtins___none_None;
 }
 
+static int __issubclass(__ref obj, __attr cls)
+{
+    return (__HASATTR(obj, __TYPEPOS(cls.value), __TYPECODE(cls.value)));
+}
+
 __attr __fn_native__isinstance(__attr __args[])
 {
     __attr * const obj = &__args[1];
     __attr * const cls = &__args[2];
 
-    if (__is_instance(obj->value) && __HASATTR(__get_class(obj->value), __TYPEPOS(cls->value), __TYPECODE(cls->value)))
+    /* cls must be a class. */
+    if (__is_instance(obj->value) && __issubclass(__get_class(obj->value), *cls))
+        return __builtins___boolean_True;
+    else
+        return __builtins___boolean_False;
+}
+
+__attr __fn_native__issubclass(__attr __args[])
+{
+    __attr * const obj = &__args[1];
+    __attr * const cls = &__args[2];
+
+    /* obj and cls must be classes. */
+    if (__issubclass(obj->value, *cls))
         return __builtins___boolean_True;
     else
         return __builtins___boolean_False;
