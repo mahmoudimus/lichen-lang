@@ -903,7 +903,7 @@ __attr %s(__attr __args[], unsigned int number)
     encode_symbol("pos", "__data__")
     )
 
-        print >>f_signatures, "__attr %s(__attr[], unsigned int);" % encode_literal_instantiator(path)
+            print >>f_signatures, "__attr %s(__attr[], unsigned int);" % encode_literal_instantiator(path)
 
     def write_main_program(self, f_code, f_signatures):
 
