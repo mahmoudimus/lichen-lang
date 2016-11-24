@@ -55,7 +55,8 @@ class TranslationResult:
 
     "An abstract translation result mix-in."
 
-    pass
+    def get_accessor_kinds(self):
+        return None
 
 class ReturnRef(TranslationResult):
 
@@ -156,9 +157,10 @@ class AttrResult(Expression, TranslationResult):
 
     "A translation result for an attribute access."
 
-    def __init__(self, s, refs):
+    def __init__(self, s, refs, accessor_kinds):
         Expression.__init__(self, s)
         self.refs = refs
+        self.accessor_kinds = accessor_kinds
 
     def get_origin(self):
         return self.refs and len(self.refs) == 1 and first(self.refs).get_origin()
@@ -170,6 +172,9 @@ class AttrResult(Expression, TranslationResult):
             if ref.has_kind(kinds):
                 return True
         return False
+
+    def get_accessor_kinds(self):
+        return self.accessor_kinds
 
     def __repr__(self):
         return "AttrResult(%r, %r)" % (self.s, self.get_origin())
@@ -653,7 +658,7 @@ class TranslatedModule(CommonModule):
             out = "(\n%s\n)" % ",\n".join(output)
 
         del self.attrs[0]
-        return AttrResult(out, refs)
+        return AttrResult(out, refs, self.get_accessor_kinds(location))
 
     def get_referenced_attributes(self, location):
 
@@ -667,6 +672,12 @@ class TranslatedModule(CommonModule):
         for attrtype, objpath, attr in self.deducer.referenced_attrs[access_location or location]:
             refs.append(attr)
         return refs
+
+    def get_accessor_kinds(self, location):
+
+        "Return the accessor kinds for 'location'."
+
+        return self.optimiser.accessor_kinds[location]
 
     def get_access_location(self, name):
 
@@ -869,12 +880,24 @@ class TranslatedModule(CommonModule):
 
         elif objpath:
             parameters = self.importer.function_parameters.get(objpath)
+
+            # Class invocation involves instantiators.
+
             if expr.has_kind("<class>"):
                 target = encode_instantiator_pointer(objpath)
                 target_structure = encode_initialiser_pointer(objpath)
+
+            # Only plain functions and bound methods employ function pointers.
+
             elif expr.has_kind("<function>"):
-                target = encode_function_pointer(objpath)
-                target_structure = encode_path(objpath)
+
+                # Test for functions and methods.
+
+                accessor_kinds = expr.get_accessor_kinds()
+
+                if not self.is_method(objpath) or accessor_kinds and len(accessor_kinds) == 1 and first(accessor_kinds) == "<instance>":
+                    target = encode_function_pointer(objpath)
+                    target_structure = encode_path(objpath)
 
         # Other targets are retrieved at run-time.
 

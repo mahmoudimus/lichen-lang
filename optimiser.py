@@ -57,6 +57,7 @@ class Optimiser:
         # Specific attribute access information.
 
         self.access_instructions = {}
+        self.accessor_kinds = {}
 
         # Object structure information.
 
@@ -343,8 +344,11 @@ class Optimiser:
 
             # Obtain the access details.
 
-            name, test, test_type, base, traversed, traversal_modes, \
-                attrnames, context, context_test, first_method, final_method, origin = access_plan
+            name, test, test_type, base, \
+                traversed, traversal_modes, attrnames, \
+                context, context_test, \
+                first_method, final_method, \
+                origin, accessor_kinds = access_plan
 
             instructions = []
             emit = instructions.append
@@ -539,6 +543,7 @@ class Optimiser:
                 emit(accessor)
 
             self.access_instructions[access_location] = instructions
+            self.accessor_kinds[access_location] = accessor_kinds
 
     def get_ambiguity_for_attributes(self, attrnames):
 

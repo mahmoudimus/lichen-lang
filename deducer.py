@@ -391,7 +391,7 @@ class Deducer(CommonOutput):
 
         location " " name " " test " " test type " " base " " traversed attributes
                  " " attributes to traverse " " context " " access method
-                 " " static attribute
+                 " " static attribute " " accessor kinds
         """
 
         f_attrs = open(join(self.output, "attribute_plans"), "w")
@@ -401,9 +401,11 @@ class Deducer(CommonOutput):
             locations.sort()
 
             for location in locations:
-                name, test, test_type, base, traversed, traversal_modes, attrnames, \
+                name, test, test_type, base, \
+                    traversed, traversal_modes, attrnames, \
                     context, context_test, \
-                    first_method, final_method, attr = self.access_plans[location]
+                    first_method, final_method, \
+                    attr, accessor_kinds = self.access_plans[location]
 
                 print >>f_attrs, encode_access_location(location), \
                                  name or "{}", \
@@ -413,7 +415,8 @@ class Deducer(CommonOutput):
                                  ".".join(traversal_modes) or "{}", \
                                  ".".join(attrnames) or "{}", \
                                  context, context_test, \
-                                 first_method, final_method, attr or "{}"
+                                 first_method, final_method, attr or "{}", \
+                                 ",".join(accessor_kinds)
 
         finally:
             f_attrs.close()
@@ -2099,6 +2102,10 @@ class Deducer(CommonOutput):
                       (base and "base" or "original-accessor") or \
                   "final-accessor"
 
-        return name, test, test_type, base, traversed, traversal_modes, remaining, context, context_test, first_method, final_method, origin
+        return name, test, test_type, base, \
+               traversed, traversal_modes, remaining, \
+               context, context_test, \
+               first_method, final_method, \
+               origin, accessor_kinds
 
 # vim: tabstop=4 expandtab shiftwidth=4
