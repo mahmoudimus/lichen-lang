@@ -139,13 +139,19 @@ __attr __test_context(__ref context, __attr attr)
 
     if (__is_instance(attr.context))
         return attr;
-    if (__is_instance(context) && __test_common_instance(context, __TYPEPOS(attr.context), __TYPECODE(attr.context)))
-        return __replace_context(context, attr);
-    if (!__is_instance(context) && __test_common_type(context, __TYPEPOS(attr.context), __TYPECODE(attr.context)))
-        return __update_context(context, attr);
 
-    __raise_type_error();
-    return __NULL;
+    /* Test any instance context against the context employed by the
+       attribute. */
+
+    if (__is_instance(context))
+        if (__test_common_instance(context, __TYPEPOS(attr.context), __TYPECODE(attr.context)))
+            return __replace_context(context, attr);
+        else
+            __raise_type_error();
+
+    /* Otherwise, preserve the attribute as retrieved. */
+
+    return attr;
 }
 
 __attr __replace_context(__ref context, __attr attr)
