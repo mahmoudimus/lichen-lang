@@ -69,6 +69,7 @@ def h(obj, fn):
 # Main program.
 
 c = C()
+d = D()
 
 try:
     print f(C, 1)               # fails
@@ -100,3 +101,13 @@ try:
     print h(c, getd)            # should fail with an error caused by a guard
 except TypeError:
     print "h(c, getd): getd provides an unsuitable result."
+
+try:
+    print h(d, 0)(4)            # should fail with an error caused by a test
+except TypeError:
+    print "h(d, 0): d is not a suitable argument."
+
+try:
+    print g(c, 1)(5)
+except TypeError:
+    print "g(c, 1)(5): attempt to invoke an integer result from g."

@@ -66,7 +66,7 @@ __attr __invoke(__attr callable, int always_callable,
 {
     /* Obtain the __args__ special member, referencing the parameter table. */
 
-    __attr minparams = __load_via_object(callable.value, __pos___args__);
+    __attr minparams = __check_and_load_via_object(callable.value, __pos___args__, __code___args__);
 
     /* Refer to the table and minimum/maximum. */
 
