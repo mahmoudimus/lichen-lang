@@ -404,18 +404,8 @@ class Optimiser:
 
             # Apply any test.
 
-            if test == "specific-type":
-                accessor = ("__test_specific_type", accessor, test_type)
-            elif test == "specific-instance":
-                accessor = ("__test_specific_instance", accessor, test_type)
-            elif test == "specific-object":
-                accessor = ("__test_specific_object", accessor, test_type)
-            elif test == "common-type":
-                accessor = ("__test_common_type", accessor, test_type)
-            elif test == "common-instance":
-                accessor = ("__test_common_instance", accessor, test_type)
-            elif test == "common-object":
-                accessor = ("__test_common_object", accessor, test_type)
+            if test[0] == "test":
+                accessor = ("__%s_%s_%s" % test, accessor, test_type)
 
             # Perform the first or final access.
             # The access only needs performing if the resulting accessor is used.
