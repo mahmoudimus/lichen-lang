@@ -938,6 +938,7 @@ class TranslatedModule(CommonModule):
         expr = self.process_structure_node(n.node)
         objpath = expr.get_origin()
         target = None
+        function = None
         literal_instantiation = False
 
         # Obtain details of the callable.
@@ -963,6 +964,7 @@ class TranslatedModule(CommonModule):
             # Only plain functions and bound methods employ function pointers.
 
             elif expr.has_kind("<function>"):
+                function = objpath
 
                 # Test for functions and methods.
 
@@ -1070,10 +1072,13 @@ class TranslatedModule(CommonModule):
 
         if target:
             stages.append(target)
+        elif function:
+            stages.append("__load_via_object(&%s, %s).fn" % (
+                encode_path(function), encode_symbol("pos", "__fn__")))
 
         # With a known target, the function is obtained directly and called.
 
-        if target:
+        if target or function:
             output = "(\n%s\n)(%s)" % (",\n".join(stages), argstr)
 
         # With unknown targets, the generic invocation function is applied to
