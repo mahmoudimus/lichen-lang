@@ -587,6 +587,11 @@ class TranslatedModule(CommonModule):
             name_ref = self.process_name_node(n, self.process_structure_node(expr))
             self.statement(name_ref)
 
+            # Employ guards after assignments if required.
+
+            if expr and name_ref.is_name():
+                self.generate_guard(name_ref.name)
+
         elif isinstance(n, compiler.ast.AssAttr):
             in_assignment = self.in_assignment
             self.in_assignment = self.process_structure_node(expr)
@@ -772,28 +777,7 @@ class TranslatedModule(CommonModule):
         # Process any guards defined for the parameters.
 
         for name in self.importer.function_parameters.get(function_name):
-
-            # Get the accessor details and any guards defined for it.
-
-            location = self.get_accessor_location(name)
-            test = self.deducer.accessor_guard_tests.get(location)
-            if test:
-                guard, guard_type = test
-
-                if guard == "specific":
-                    ref = first(self.deducer.accessor_all_types[location])
-                    argstr = "&%s" % encode_path(ref.get_origin())
-                elif guard == "common":
-                    ref = first(self.deducer.accessor_all_general_types[location])
-                    typeattr = encode_type_attribute(ref.get_origin())
-                    argstr = "%s, %s" % (encode_symbol("pos", typeattr), encode_symbol("code", typeattr))
-                else:
-                    continue
-
-                # Write a test that raises a TypeError upon failure.
-
-                self.writestmt("if (!__test_%s_%s(%s->value, %s)) __raise_type_error();" % (
-                    guard, guard_type, name, argstr))
+            self.generate_guard(name)
 
         # Produce the body and any additional return statement.
 
@@ -804,6 +788,38 @@ class TranslatedModule(CommonModule):
         self.in_conditional = in_conditional
 
         self.end_function(function_name)
+
+    def generate_guard(self, name):
+
+        """
+        Get the accessor details for 'name', found in the current namespace, and
+        generate any guards defined for it.
+        """
+
+        # Obtain the location, keeping track of assignment versions.
+
+        location = self.get_accessor_location(name)
+        test = self.deducer.accessor_guard_tests.get(location)
+
+        # Generate any guard from the deduced information.
+
+        if test:
+            guard, guard_type = test
+
+            if guard == "specific":
+                ref = first(self.deducer.accessor_all_types[location])
+                argstr = "&%s" % encode_path(ref.get_origin())
+            elif guard == "common":
+                ref = first(self.deducer.accessor_all_general_types[location])
+                typeattr = encode_type_attribute(ref.get_origin())
+                argstr = "%s, %s" % (encode_symbol("pos", typeattr), encode_symbol("code", typeattr))
+            else:
+                return
+
+            # Write a test that raises a TypeError upon failure.
+
+            self.writestmt("if (!__test_%s_%s(%s->value, %s)) __raise_type_error();" % (
+                guard, guard_type, name, argstr))
 
     def process_function_node(self, n):
 
