@@ -34,6 +34,10 @@ except UnboundMethodInvocation:
 print get_using(fn, c)(2)       # 2
 print get_using(f(C, 0), c)(2)  # 2
 
-#print g(C, 1)                  # should fail with an error caused by a guard
+try:
+    print g(C, 1)               # should fail with an error caused by a guard
+except TypeError:
+    print "g(C, 1): C is not a suitable argument."
+
 print g(c, 1)                   # 1
 print g(c, 0)(3)                # 3

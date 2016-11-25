@@ -111,30 +111,17 @@ def get_kinds(all_types):
 
     return map(lambda ref: ref.get_kind(), all_types)
 
-def test_for_kind(prefix, kind):
+def test_label_for_kind(kind):
 
-    "Return a test condition identifier featuring 'prefix' and 'kind'."
+    "Return the label used for 'kind' in test details."
 
-    return "%s-%s" % (prefix, kind == "<instance>" and "instance" or "type")
+    return kind == "<instance>" and "instance" or "type"
 
-def test_for_kinds(prefix, all_kinds):
+def test_label_for_type(ref):
 
-    """ 
-    Return an identifier describing test conditions incorporating the given
-    'prefix' and involving 'all_kinds', being a collection of object kinds.
-    """
+    "Return the label used for 'ref' in test details."
 
-    return test_for_kind(prefix, first(all_kinds))
-
-def test_for_type(prefix, ref):
-
-    """ 
-    Return an identifier describing a test condition incorporating the given
-    'prefix' and involving 'ref', being a program type reference. The kind of
-    the reference is employed in the identifier.
-    """
-
-    return test_for_kind(prefix, ref.get_kind())
+    return test_label_for_kind(ref.get_kind())
 
 
 

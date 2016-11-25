@@ -65,6 +65,16 @@ __ref __test_specific_instance(__ref obj, __ref type)
     return __get_class(obj) == type ? obj : 0;
 }
 
+__ref __test_specific_object(__ref obj, __ref type)
+{
+    return __test_specific_type(obj, type) || __test_specific_instance(obj, type) ? obj : 0;
+}
+
+__ref __test_specific_type(__ref obj, __ref type)
+{
+    return obj == type ? obj : 0;
+}
+
 __ref __test_common_instance(__ref obj, int pos, int code)
 {
     return __HASATTR(__get_class(obj), pos, code) ? obj : 0;

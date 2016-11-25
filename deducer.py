@@ -25,7 +25,7 @@ from common import first, get_assigned_attributes, \
                    sorted_output, CommonOutput
 from encoders import encode_attrnames, encode_access_location, \
                      encode_constrained, encode_location, encode_usage, \
-                     get_kinds, test_for_kinds, test_for_type
+                     get_kinds, test_label_for_kind, test_label_for_type
 from errors import DeduceError
 from os.path import join
 from referencing import combine_types, is_single_class_type, separate_types, \
@@ -260,23 +260,25 @@ class Deducer(CommonOutput):
                     print >>f_warnings, encode_location(location), "; ".join(map(encode_usage, attrnames))
 
                 guard_test = self.accessor_guard_tests.get(location)
+                if guard_test:
+                    guard_test_type, guard_test_arg = guard_test
 
                 # Write specific type guard details.
 
-                if guard_test and guard_test.startswith("specific"):
-                    print >>f_guards, encode_location(location), guard_test, \
-                        get_kinds(all_types)[0], \
+                if guard_test and guard_test_type == "specific":
+                    print >>f_guards, encode_location(location), "-".join(guard_test), \
+                        first(get_kinds(all_types)), \
                         sorted_output(all_types)
 
                 # Write common type guard details.
 
-                elif guard_test and guard_test.startswith("common"):
-                    print >>f_guards, encode_location(location), guard_test, \
-                        get_kinds(all_general_types)[0], \
+                elif guard_test and guard_test_type == "common":
+                    print >>f_guards, encode_location(location), "-".join(guard_test), \
+                        first(get_kinds(all_general_types)), \
                         sorted_output(all_general_types)
 
                 print >>f_type_summary, encode_location(location), encode_constrained(constrained), \
-                    guard_test or "unguarded", sorted_output(all_general_types), len(all_types)
+                    guard_test and "-".join(guard_test) or "unguarded", sorted_output(all_general_types), len(all_types)
 
         finally:
             f_type_summary.close()
@@ -362,18 +364,18 @@ class Deducer(CommonOutput):
 
                     # Write the need to test at run time.
 
-                    if test_type == "validate":
-                        print >>f_tests, encode_access_location(location), test_type
+                    if test_type[0] == "validate":
+                        print >>f_tests, encode_access_location(location), "-".join(test_type)
 
                     # Write any type checks for anonymous accesses.
 
                     elif test_type and self.reference_test_accessor_type.get(location):
-                        print >>f_tests, encode_access_location(location), test_type, \
+                        print >>f_tests, encode_access_location(location), "-".join(test_type[1:]), \
                             sorted_output(all_accessed_attrs), \
                             self.reference_test_accessor_type[location]
 
                     print >>f_attr_summary, encode_access_location(location), encode_constrained(constrained), \
-                        test_type or "untested", sorted_output(all_accessed_attrs)
+                        test_type and "-".join(test_type) or "untested", sorted_output(all_accessed_attrs)
 
                 else:
                     print >>f_warnings, encode_access_location(location)
@@ -409,7 +411,8 @@ class Deducer(CommonOutput):
 
                 print >>f_attrs, encode_access_location(location), \
                                  name or "{}", \
-                                 test, test_type or "{}", \
+                                 test and "-".join(test) or "{}", \
+                                 test_type or "{}", \
                                  base or "{}", \
                                  ".".join(traversed) or "{}", \
                                  ".".join(traversal_modes) or "{}", \
@@ -473,16 +476,16 @@ class Deducer(CommonOutput):
                 # Record specific type guard details.
 
                 if len(all_types) == 1:
-                    self.accessor_guard_tests[location] = test_for_type("specific", first(all_types))
+                    self.accessor_guard_tests[location] = ("specific", test_label_for_type(first(all_types)))
                 elif is_single_class_type(all_types):
-                    self.accessor_guard_tests[location] = "specific-object"
+                    self.accessor_guard_tests[location] = ("specific", "object")
 
                 # Record common type guard details.
 
                 elif len(all_general_types) == 1:
-                    self.accessor_guard_tests[location] = test_for_type("common", first(all_types))
+                    self.accessor_guard_tests[location] = ("common", test_label_for_type(first(all_types)))
                 elif is_single_class_type(all_general_types):
-                    self.accessor_guard_tests[location] = "common-object"
+                    self.accessor_guard_tests[location] = ("common", "object")
 
                 # Otherwise, no convenient guard can be defined.
 
@@ -581,15 +584,15 @@ class Deducer(CommonOutput):
 
             if constrained:
                 if single_accessor_type:
-                    self.reference_test_types[location] = test_for_type("constrained-specific", first(all_accessor_types))
+                    self.reference_test_types[location] = ("constrained", "specific", test_label_for_type(first(all_accessor_types)))
                 elif single_accessor_class_type:
-                    self.reference_test_types[location] = "constrained-specific-object"
+                    self.reference_test_types[location] = ("constrained", "specific", "object")
                 elif single_accessor_general_type:
-                    self.reference_test_types[location] = test_for_type("constrained-common", first(all_accessor_general_types))
+                    self.reference_test_types[location] = ("constrained", "common", test_label_for_type(first(all_accessor_general_types)))
                 elif single_accessor_general_class_type:
-                    self.reference_test_types[location] = "constrained-common-object"
+                    self.reference_test_types[location] = ("constrained", "common", "object")
                 else:
-                    self.reference_test_types[location] = "constrained-many"
+                    self.reference_test_types[location] = ("constrained", "many")
 
             # Suitably guarded accesses, where the nature of the
             # accessor can be guaranteed, do not require the attribute
@@ -598,13 +601,13 @@ class Deducer(CommonOutput):
 
             elif guarded and all_accessed_attrs.issubset(guard_attrs):
                 if single_accessor_type:
-                    self.reference_test_types[location] = test_for_type("guarded-specific", first(all_accessor_types))
+                    self.reference_test_types[location] = ("guarded", "specific", test_label_for_type(first(all_accessor_types)))
                 elif single_accessor_class_type:
-                    self.reference_test_types[location] = "guarded-specific-object"
+                    self.reference_test_types[location] = ("guarded", "specific", "object")
                 elif single_accessor_general_type:
-                    self.reference_test_types[location] = test_for_type("guarded-common", first(all_accessor_general_types))
+                    self.reference_test_types[location] = ("guarded", "common", test_label_for_type(first(all_accessor_general_types)))
                 elif single_accessor_general_class_type:
-                    self.reference_test_types[location] = "guarded-common-object"
+                    self.reference_test_types[location] = ("guarded", "common", "object")
 
             # Record the need to test the type of anonymous and
             # unconstrained accessors.
@@ -614,9 +617,9 @@ class Deducer(CommonOutput):
                 if provider != '__builtins__.object':
                     all_accessor_kinds = set(get_kinds(all_accessor_types))
                     if len(all_accessor_kinds) == 1:
-                        test_type = test_for_kinds("specific", all_accessor_kinds)
+                        test_type = ("test", "specific", first(all_accessor_kinds))
                     else:
-                        test_type = "specific-object"
+                        test_type = ("test", "specific", "object")
                     self.reference_test_types[location] = test_type
                     self.reference_test_accessor_type[location] = provider
 
@@ -625,16 +628,16 @@ class Deducer(CommonOutput):
                 if provider != '__builtins__.object':
                     all_accessor_kinds = set(get_kinds(all_accessor_general_types))
                     if len(all_accessor_kinds) == 1:
-                        test_type = test_for_kinds("common", all_accessor_kinds)
+                        test_type = ("test", "common", first(all_accessor_kinds))
                     else:
-                        test_type = "common-object"
+                        test_type = ("test", "common", "object")
                     self.reference_test_types[location] = test_type
                     self.reference_test_accessor_type[location] = provider
 
             # Record the need to test the identity of the attribute.
 
             else:
-                self.reference_test_types[location] = "validate"
+                self.reference_test_types[location] = ("validate",)
 
     def initialise_access_plans(self):
 
@@ -1749,54 +1752,11 @@ class Deducer(CommonOutput):
 
         return attrs
 
-    constrained_specific_tests = (
-        "constrained-specific-instance",
-        "constrained-specific-type",
-        "constrained-specific-object",
-        )
-
-    constrained_common_tests = (
-        "constrained-common-instance",
-        "constrained-common-type",
-        "constrained-common-object",
-        )
-
-    guarded_specific_tests = (
-        "guarded-specific-instance",
-        "guarded-specific-type",
-        "guarded-specific-object",
-        )
-
-    guarded_common_tests = (
-        "guarded-common-instance",
-        "guarded-common-type",
-        "guarded-common-object",
-        )
-
-    specific_tests = (
-        "specific-instance",
-        "specific-type",
-        "specific-object",
-        )
-
-    common_tests = (
-        "common-instance",
-        "common-type",
-        "common-object",
-        )
-
     class_tests = (
-        "guarded-specific-type",
-        "guarded-common-type",
-        "specific-type",
-        "common-type",
-        )
-
-    class_or_instance_tests = (
-        "guarded-specific-object",
-        "guarded-common-object",
-        "specific-object",
-        "common-object",
+        ("guarded", "specific", "type"),
+        ("guarded", "common", "type"),
+        ("test", "specific", "type"),
+        ("test", "common", "type"),
         )
 
     def get_access_plan(self, location):
@@ -1883,22 +1843,22 @@ class Deducer(CommonOutput):
 
             # Usage of previously-generated guard and test details.
 
-            elif test in self.constrained_specific_tests:
+            elif test[:2] == ("constrained", "specific"):
                 ref = first(accessor_types)
 
-            elif test in self.constrained_common_tests:
+            elif test[:2] == ("constrained", "common"):
                 ref = first(accessor_general_types)
 
-            elif test in self.guarded_specific_tests:
+            elif test[:2] == ("guarded", "specific"):
                 ref = first(accessor_types)
 
-            elif test in self.guarded_common_tests:
+            elif test[:2] == ("guarded", "common"):
                 ref = first(accessor_general_types)
 
             # For attribute-based tests, tentatively identify a dynamic base.
             # Such tests allow single or multiple kinds of a type.
 
-            elif test in self.common_tests or test in self.specific_tests:
+            elif test[0] == "test" and test[1] in ("common", "specific"):
                 dynamic_base = test_type
 
             # Static accessors.

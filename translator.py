@@ -245,9 +245,10 @@ class TranslatedModule(CommonModule):
         self.in_try_finally = False
         self.in_try_except = False
 
-        # Attribute access counting.
+        # Attribute access and accessor counting.
 
         self.attr_accesses = {}
+        self.attr_accessors = {}
 
     def __repr__(self):
         return "TranslatedModule(%r, %r)" % (self.name, self.importer)
@@ -710,6 +711,34 @@ class TranslatedModule(CommonModule):
             init_item(self.attr_accesses[path], access, lambda: 0)
             self.attr_accesses[path][access] += 1
 
+    def get_accessor_location(self, name):
+
+        """
+        Using the current namespace and the given 'name', return the accessor
+        location.
+        """
+
+        path = self.get_path_for_access()
+
+        # Get the location used by the deducer and optimiser and find any
+        # recorded accessor.
+
+        access_number = self.get_accessor_number(path, name)
+        self.update_accessor_number(path, name)
+        return (path, name, None, access_number)
+
+    def get_accessor_number(self, path, name):
+        if self.attr_accessors.has_key(path) and self.attr_accessors[path].has_key(name):
+            return self.attr_accessors[path][name]
+        else:
+            return 0
+
+    def update_accessor_number(self, path, name):
+        if name:
+            init_item(self.attr_accessors, path, dict)
+            init_item(self.attr_accessors[path], name, lambda: 0)
+            self.attr_accessors[path][name] += 1
+
     def process_class_node(self, n):
 
         "Process the given class node 'n'."
@@ -739,6 +768,34 @@ class TranslatedModule(CommonModule):
         in_conditional = self.in_conditional
         self.in_conditional = False
         self.function_target = 0
+
+        # Process any guards defined for the parameters.
+
+        for name in self.importer.function_parameters.get(function_name):
+
+            # Get the accessor details and any guards defined for it.
+
+            location = self.get_accessor_location(name)
+            test = self.deducer.accessor_guard_tests.get(location)
+            if test:
+                guard, guard_type = test
+
+                if guard == "specific":
+                    ref = first(self.deducer.accessor_all_types[location])
+                    argstr = "&%s" % encode_path(ref.get_origin())
+                elif guard == "common":
+                    ref = first(self.deducer.accessor_all_general_types[location])
+                    typeattr = encode_type_attribute(ref.get_origin())
+                    argstr = "%s, %s" % (encode_symbol("pos", typeattr), encode_symbol("code", typeattr))
+                else:
+                    continue
+
+                # Write a test that raises a TypeError upon failure.
+
+                self.writestmt("if (!__test_%s_%s(%s->value, %s)) __raise_type_error();" % (
+                    guard, guard_type, name, argstr))
+
+        # Produce the body and any additional return statement.
 
         expr = self.process_structure_node(n.code) or PredefinedConstantRef("None")
         if not isinstance(expr, ReturnRef):
