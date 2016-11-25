@@ -1,25 +1,50 @@
 class C:
+
+    "Class providing class and instance attributes."
+
     def __init__(self):
         self.a = 1
+
     def m(self, x):
         return x
 
 class D:
+
+    "An alternative class."
+
     pass
 
 def getc():
+
+    "Return an instance of C to test object suitability."
+
     return C()
 
 def getd():
+
+    "Return an instance of D to test object suitability."
+
     return D()
 
 def f(obj, i):
+
+    """
+    Obtain an attribute on 'obj', performing an operation depending on 'i'.
+    This tests attribute access and invocation.
+    """
+
     if i:
         return obj.m(i)         # should cause access to an unbound method
     else:
         return obj.m
 
 def g(obj, i):
+
+    """
+    Obtain an attribute on 'obj', performing an operation depending on 'i'.
+    This tests attribute access and invocation, restricting 'obj' using a guard.
+    """
+
     obj.a                       # only provided by instances of C
     if i:
         return obj.m(i)         # should use the method directly since obj is an instance
@@ -27,12 +52,21 @@ def g(obj, i):
         return obj.m
 
 def h(obj, fn):
+
+    """
+    Obtain an attribute on 'obj', performing an operation depending on 'fn'.
+    This tests attribute access and invocation, restricting 'obj' using a guard
+    on a re-assignment of the name.
+    """
+
     if fn:
         obj = fn()
         obj.a                   # only provided by instances of C
         return obj.m(1)
     else:
         return obj.m
+
+# Main program.
 
 c = C()
 
