@@ -370,7 +370,7 @@ class Deducer(CommonOutput):
                     # Write any type checks for anonymous accesses.
 
                     elif test_type and self.reference_test_accessor_type.get(location):
-                        print >>f_tests, encode_access_location(location), "-".join(test_type[1:]), \
+                        print >>f_tests, encode_access_location(location), "-".join(test_type), \
                             sorted_output(all_accessed_attrs), \
                             self.reference_test_accessor_type[location]
 
