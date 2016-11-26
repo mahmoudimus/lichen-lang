@@ -24,8 +24,8 @@ def f():
 
     print c             # "<type>"
     print d             # "<type>"
-    print cm            # "<function>"
-    print dm            # "<function>"
+    print cm            # "__main__.C.m"
+    print dm            # "__main__.C.m"
 
     c = E
     d = F       # E
@@ -34,8 +34,8 @@ def f():
 
     print c             # "<type>"
     print d             # "<type>"
-    print cm            # "<function>"
-    print dm            # "<function>"
+    print cm            # "__main__.E.m"
+    print dm            # "__main__.E.m"
 
 f()
 
@@ -44,17 +44,17 @@ Dm = D.m
 Em = E.m
 Fm = F.m
 
-print Cm                # "<function>"
-print Dm                # "<function>"
-print Em                # "<function>"
-print Fm                # "<function>"
+print Cm                # "__main__.C.m"
+print Dm                # "__main__.C.m"
+print Em                # "__main__.E.m"
+print Fm                # "__main__.E.m"
 
 def g():
     Cm = E.m
     Dm = F.m    # E.m
 
-    print Cm            # "<function>"
-    print Dm            # "<function>"
+    print Cm            # "__main__.E.m"
+    print Dm            # "__main__.E.m"
 
 g()
 
@@ -63,10 +63,13 @@ def h():
     Em = C.m
     Fm = D.m    # C.m
 
-    print Cm            # "<function>"
-    print Dm            # "<function>"
+    print Em            # "__main__.C.m"
+    print Fm            # "__main__.C.m"
 
 h()
+
+print Em            	# "__main__.C.m"
+print Fm            	# "__main__.C.m"
 
 Ci = C()
 Ei = E()
@@ -88,6 +91,8 @@ def j():
     print Ei            # "__main__.C"
 
 j()
+
+print Ei            	# "__main__.C"
 
 L = []
 M = [1]

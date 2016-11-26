@@ -60,6 +60,7 @@ class function:
 
         self.__fn__ = None
         self.__args__ = None
+        self.__fname__ = None
 
     def __bool__(self):
 
@@ -71,7 +72,7 @@ class function:
 
         "Return a string representation."
 
-        return "<function>" # NOTE: Could be made specific.
+        return self.__fname__
 
     __repr__ = __str__
 

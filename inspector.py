@@ -640,6 +640,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         self.enter_namespace(name)
 
+        # Define a name attribute value for the function instance.
+
+        ref = self.get_builtin_class("string")
+        self.reserve_constant(function_name, function_name, ref.get_origin())
+
         # Track attribute usage within the namespace.
 
         path = self.get_namespace_path()
@@ -1256,12 +1261,16 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         using the optional 'ref'.
         """
 
-        init_item(self.instance_attrs, self.in_class, set)
-        self.instance_attrs[self.in_class].add(name)
+        self._set_instance_attr(self.in_class, name, ref)
+
+    def _set_instance_attr(self, path, name, ref=None):
+
+        init_item(self.instance_attrs, path, set)
+        self.instance_attrs[path].add(name)
 
         if ref:
-            init_item(self.instance_attr_constants, self.in_class, dict)
-            self.instance_attr_constants[self.in_class][name] = ref
+            init_item(self.instance_attr_constants, path, dict)
+            self.instance_attr_constants[path][name] = ref
 
     def get_initialising_value(self, value):
 

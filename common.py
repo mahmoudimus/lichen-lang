@@ -231,8 +231,25 @@ class CommonModule:
 
         # Record the value and type for the constant.
 
-        self.constant_values[objpath] = name_ref.value, name_ref.get_origin()
+        self._reserve_constant(objpath, name_ref.value, name_ref.get_origin())
         return name_ref
+
+    def reserve_constant(self, objpath, value, origin):
+
+        """
+        Reserve a constant within 'objpath' with the given 'value' and having a
+        type with the given 'origin'.
+        """
+
+        constant_name = self.get_constant_name(value)
+        objpath = self.get_object_path(constant_name)
+        self._reserve_constant(objpath, value, origin)
+
+    def _reserve_constant(self, objpath, value, origin):
+
+        "Store a constant for 'objpath' with the given 'value' and 'origin'."
+
+        self.constant_values[objpath] = value, origin
 
     def get_literal_reference(self, name, ref, items, cls):
 

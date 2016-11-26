@@ -783,6 +783,18 @@ __obj %s = {
                                                       encode_literal_constant_value(attr)))
                     continue
 
+                # Special cases.
+
+                elif attrname in ("__fname__",  "__name__"):
+                    path = ref.get_origin()
+                    local_number = self.importer.all_constants[path][path]
+                    constant_name = "$c%d" % local_number
+                    attr_path = "%s.%s" % (path, constant_name)
+                    constant_number = self.optimiser.constant_numbers[attr_path]
+                    constant_value = "__const%d" % constant_number
+                    structure.append("%s /* %s */" % (constant_value, attrname))
+                    continue
+
                 structure.append(self.encode_member(origin, attrname, attr, kind))
 
     def encode_member(self, path, name, ref, structure_type):
@@ -812,16 +824,6 @@ __obj %s = {
         if (path, name) in self.predefined_constant_members:
             attr_path = encode_predefined_reference("%s.%s" % (path, name))
             return "{&%s, &%s} /* %s */" % (attr_path, attr_path, name)
-
-        # Special cases.
-
-        if name == "__name__":
-            local_number = self.importer.all_constants[path][path]
-            constant_name = "$c%d" % local_number
-            attr_path = "%s.%s" % (path, constant_name)
-            constant_number = self.optimiser.constant_numbers[attr_path]
-            constant_value = "__const%d" % constant_number
-            return "%s /* %s */" % (constant_value, name)
 
         # General undetermined members.
 
