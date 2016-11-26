@@ -48,7 +48,8 @@ class Reference:
         """
 
         if self.kind == "<var>":
-            return self.kind
+            alias = self.name and ";%s" % self.name or ""
+            return "%s%s" % (self.kind, alias)
         else:
             alias = self.name and self.name != self.origin and ";%s" % self.name or ""
             return "%s:%s%s" % (self.kind, self.origin, alias)
@@ -223,6 +224,12 @@ def decode_reference(s, name=None):
         if ";" in origin:
             origin, name = origin.split(";")
         return Reference(kind, origin, name)
+
+    # Kind and name.
+
+    elif ";" in s:
+        kind, name = s.split(";")
+        return Reference(kind, None, name)
 
     # Kind-only, origin is indicated name.
 
