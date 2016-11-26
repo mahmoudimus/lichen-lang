@@ -145,6 +145,12 @@ class Reference:
 
         return Reference(self.get_kind(), self.get_origin(), name)
 
+    def unaliased(self):
+
+        "Return this reference without any alias."
+
+        return Reference(self.get_kind(), self.get_origin())
+
     def mutate(self, ref):
 
         "Mutate this reference to have the same details as 'ref'."

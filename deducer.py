@@ -657,7 +657,7 @@ class Deducer(CommonOutput):
         d = {}
         for attrtype, objtype, attr in self.referenced_attrs[location]:
             init_item(d, attrtype, set)
-            d[attrtype].add(attr)
+            d[attrtype].add(attr.unaliased())
         l = d.items()
         l.sort() # class, module, instance
         return l
