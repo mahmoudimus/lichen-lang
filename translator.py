@@ -1073,8 +1073,8 @@ class TranslatedModule(CommonModule):
         if target:
             stages.append(target)
         elif function:
-            stages.append("__load_via_object(&%s, %s).fn" % (
-                encode_path(function), encode_symbol("pos", "__fn__")))
+            stages.append("__load_via_object(__tmp_targets[%d].value, %s).fn" % (
+                self.function_target, encode_symbol("pos", "__fn__")))
 
         # With a known target, the function is obtained directly and called.
 

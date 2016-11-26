@@ -76,6 +76,7 @@ try:
 except UnboundMethodInvocation:
     print "f(C, 1): Unbound method is not callable."
 
+print f(c, 1)                   # 1
 fn = f(C, 0)
 
 try:
