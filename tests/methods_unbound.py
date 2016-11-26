@@ -77,6 +77,12 @@ except UnboundMethodInvocation:
     print "f(C, 1): Unbound method is not callable."
 
 print f(c, 1)                   # 1
+
+try:
+    print f(d, 1)               # should fail with an error caused by a guard
+except TypeError:
+    print "f(d, 1): d is not a suitable argument."
+
 fn = f(C, 0)
 
 try:
