@@ -804,14 +804,24 @@ __obj %s = {
 
             if self.optimiser.constant_numbers.has_key(attr_path):
                 constant_number = self.optimiser.constant_numbers[attr_path]
-                constant_value = "const%d" % constant_number
-                return "{&%s, &%s} /* %s */" % (constant_value, constant_value, name)
+                constant_value = "__const%d" % constant_number
+                return "%s /* %s */" % (constant_value, name)
 
         # Predefined constant references.
 
         if (path, name) in self.predefined_constant_members:
             attr_path = encode_predefined_reference("%s.%s" % (path, name))
             return "{&%s, &%s} /* %s */" % (attr_path, attr_path, name)
+
+        # Special cases.
+
+        if name == "__name__":
+            local_number = self.importer.all_constants[path][path]
+            constant_name = "$c%d" % local_number
+            attr_path = "%s.%s" % (path, constant_name)
+            constant_number = self.optimiser.constant_numbers[attr_path]
+            constant_value = "__const%d" % constant_number
+            return "%s /* %s */" % (constant_value, name)
 
         # General undetermined members.
 
