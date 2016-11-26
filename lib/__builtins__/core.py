@@ -79,13 +79,9 @@ class type(object):
 
     "The class of all classes."
 
-    def __str__(self):
+    # __str__ and __repr__ are handled by str and repr for classes.
 
-        "Return a string representation."
-
-        return "<type>"
-
-    __repr__ = __str__
+    pass
 
 class BaseException:
 

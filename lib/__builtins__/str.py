@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __builtins__.identity import isclass
 from __builtins__.iterator import listiterator
 from __builtins__.operator import _binary_op, _negate
 import native
@@ -113,6 +114,14 @@ def str(obj):
 
     "Return the string representation of 'obj'."
 
-    return obj.__str__()
+    # Classes do not provide __str__ directly.
+
+    if isclass(obj):
+        return "<type>"
+
+    # Class attributes of instances provide __str__.
+
+    else:
+        return obj.__str__()
 
 # vim: tabstop=4 expandtab shiftwidth=4
