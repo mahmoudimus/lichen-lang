@@ -1190,24 +1190,31 @@ class TranslatedModule(CommonModule):
         # Get the appropriate name for the name reference, using the same method
         # as in the inspector.
 
-        path = self.get_object_path(n.name)
+        path = self.get_namespace_path()
+        objpath = self.get_object_path(n.name)
+
+        # Determine any assigned globals.
+
+        globals = self.importer.get_module(self.name).scope_globals.get(path)
+        if globals and n.name in globals:
+            objpath = self.get_global_path(n.name)
 
         # Get the static identity of the name.
 
-        ref = self.importer.identify(path)
+        ref = self.importer.identify(objpath)
         if ref and not ref.get_name():
-            ref = ref.alias(path)
+            ref = ref.alias(objpath)
 
         # Obtain any resolved names for non-assignment names.
 
         if not expr and not ref and self.in_function:
-            locals = self.importer.function_locals.get(self.get_namespace_path())
+            locals = self.importer.function_locals.get(path)
             ref = locals and locals.get(n.name)
 
         # Determine whether the name refers to a parameter. The generation of
         # parameter references is different from other names.
 
-        parameters = self.importer.function_parameters.get(self.get_namespace_path())
+        parameters = self.importer.function_parameters.get(path)
         parameter = n.name == "self" and self.in_method() or \
                     parameters and n.name in parameters
 
