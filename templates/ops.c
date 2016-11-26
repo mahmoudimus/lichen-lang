@@ -41,6 +41,14 @@ int __store_via_object(__ref obj, int pos, __attr value)
     return 1;
 }
 
+int __get_class_and_store(__ref obj, int pos, __attr value)
+{
+    /* Forbid class-relative assignments. */
+
+    __raise_type_error();
+    return 0;
+}
+
 /* Introspection. */
 
 int __is_instance(__ref obj)
@@ -124,6 +132,14 @@ __attr __check_and_load_via_any(__ref obj, int pos, int code)
 
 /* Attribute testing and storage operations. */
 
+int __check_and_store_via_class(__ref obj, int pos, int code, __attr value)
+{
+    /* Forbid class-relative assignments. */
+
+    __raise_type_error();
+    return 0;
+}
+
 int __check_and_store_via_object(__ref obj, int pos, int code, __attr value)
 {
     if (__HASATTR(obj, pos, code))
@@ -131,6 +147,10 @@ int __check_and_store_via_object(__ref obj, int pos, int code, __attr value)
         __store_via_object(obj, pos, value);
         return 1;
     }
+
+    /* No suitable attribute. */
+
+    __raise_type_error();
     return 0;
 }
 
@@ -138,7 +158,11 @@ int __check_and_store_via_any(__ref obj, int pos, int code, __attr value)
 {
     if (__check_and_store_via_object(obj, pos, code, value))
         return 1;
-    return __check_and_store_via_object(__get_class(obj), pos, code, value);
+
+    /* Forbid class-relative assignments. */
+
+    __raise_type_error();
+    return 0;
 }
 
 /* Context-related operations. */

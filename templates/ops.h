@@ -19,6 +19,7 @@ __attr __get_class_and_load(__ref obj, int pos);
 /* Direct storage operations. */
 
 int __store_via_object(__ref obj, int pos, __attr value);
+int __get_class_and_store(__ref obj, int pos, __attr value);
 
 /* Introspection. */
 
@@ -43,6 +44,7 @@ __attr __check_and_load_via_any(__ref obj, int pos, int code);
 
 /* Attribute testing and storage operations. */
 
+int __check_and_store_via_class(__ref obj, int pos, int code, __attr value);
 int __check_and_store_via_object(__ref obj, int pos, int code, __attr value);
 int __check_and_store_via_any(__ref obj, int pos, int code, __attr value);
 
