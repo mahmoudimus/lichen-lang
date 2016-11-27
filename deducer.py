@@ -1834,11 +1834,14 @@ class Deducer(CommonOutput):
         if const_access:
             base = len(objtypes) == 1 and first(objtypes)
 
-        # Constant accessors are static.
+        # Name-based accesses.
 
         elif name:
             ref = self.importer.identify("%s.%s" % (path, name))
-            if ref:
+
+            # Constant accessors are static.
+
+            if ref and ref.static():
                 base = ref.get_origin()
 
             # Usage of previously-generated guard and test details.
