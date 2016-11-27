@@ -266,6 +266,11 @@ def encode_access_instruction_arg(arg, subs, op):
     elif subs.has_key(arg):
         return subs.get(arg)
 
+    # Convert static references to the appropriate type.
+
+    elif op and op in reference_acting_ops and arg != "<accessor>":
+        return "&%s" % encode_path(arg)
+
     # Other values may need encoding.
 
     else:
