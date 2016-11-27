@@ -1781,7 +1781,7 @@ class Deducer(CommonOutput):
          * any static final attribute
         """
 
-        const_access = self.const_accesses_rev.has_key(location)
+        const_access = self.const_accesses_rev.get(location)
 
         path, name, attrnames, version = location
         remaining = attrnames.split(".")
@@ -1923,8 +1923,8 @@ class Deducer(CommonOutput):
 
         # Determine the method of access.
 
-        is_assignment = location in self.reference_assignments
-        is_invocation = location in self.reference_invocations
+        is_assignment = location in self.reference_assignments or const_access in self.reference_assignments
+        is_invocation = location in self.reference_invocations or const_access in self.reference_invocations
 
         # Identified attribute that must be accessed via its parent.
 
