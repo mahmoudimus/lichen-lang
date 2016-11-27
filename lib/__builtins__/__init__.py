@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.core import function, get_using, object, type, \
-                              BaseException, Exception, TypeError, \
+                              BaseException, Exception, MemoryError, TypeError, \
                               UnboundMethodInvocation, Warning
 
 # Exceptions.
@@ -43,7 +43,6 @@ from __builtins__.exception import (
     KeyError,
     KeyboardInterrupt,
     LookupError,
-    MemoryError,
     NameError,
     NotImplementedError,
     OSError,

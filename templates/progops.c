@@ -14,7 +14,7 @@
 
 __attr __new(const __table * table, __ref cls, size_t size)
 {
-    __ref obj = (__ref) calloc(1, size);
+    __ref obj = (__ref) __ALLOCATE(1, size);
     __attr self = {obj, obj};
     __attr tmp = {0, cls};
     obj->table = table;
@@ -28,7 +28,7 @@ __attr __newdata(__attr args[], unsigned int number)
 {
     /* Calculate the size of the fragment. */
 
-    __fragment *data = (__fragment *) calloc(1, __FRAGMENT_SIZE(number));
+    __fragment *data = (__fragment *) __ALLOCATE(1, __FRAGMENT_SIZE(number));
     __attr attr = {0, .data=data};
     unsigned int i, j;
 
@@ -48,6 +48,15 @@ void __raise_type_error()
 {
     __attr args[1];
     __attr exc = __TYPE_ERROR_INSTANTIATOR(args);
+    __Raise(exc);
+}
+
+/* A helper for raising memory errors within common operations. */
+
+void __raise_memory_error()
+{
+    __attr args[1];
+    __attr exc = __MEMORY_ERROR_INSTANTIATOR(args);
     __Raise(exc);
 }
 

@@ -1,4 +1,4 @@
-#include <stdlib.h> /* calloc, exit, realloc */
+#include <stdlib.h> /* exit */
 #include <unistd.h> /* read, write */
 #include <math.h>   /* ceil, log10, pow */
 #include <string.h> /* strcmp, strncpy, strlen */
@@ -252,7 +252,7 @@ __attr __fn_native__int_str(__attr __args[])
     /* self.__data__ interpreted as int */
     int i = __load_via_object(self->value, __pos___data__).intvalue;
     int n = i != 0 ? (int) ceil(log10(i+1)) + 1 : 2;
-    char *s = calloc(n, sizeof(char));
+    char *s = (char *) __ALLOCATE(n, sizeof(char));
 
     if (i < 0) n++;
     snprintf(s, n, "%d", i);
@@ -269,7 +269,7 @@ __attr __fn_native__str_add(__attr __args[])
     char *s = __load_via_object(self->value, __pos___data__).strvalue;
     char *o = __load_via_object(other->value, __pos___data__).strvalue;
     int n = strlen(s) + strlen(o) + 1;
-    char *r = calloc(n, sizeof(char));
+    char *r = (char *) __ALLOCATE(n, sizeof(char));
 
     strncpy(r, s, n);
     strncpy(r + strlen(s), o, n - strlen(s));
@@ -340,7 +340,7 @@ __attr __fn_native__list_init(__attr __args[])
     unsigned int n = __load_via_object(size->value, __pos___data__).intvalue;
 
     /* Allocate space for the list. */
-    __fragment *data = calloc(1, __FRAGMENT_SIZE(n));
+    __fragment *data = (__fragment *) __ALLOCATE(1, __FRAGMENT_SIZE(n));
     __attr attr = {0, .data=data};
 
     /* The initial capacity is the same as the given size. */
@@ -377,7 +377,7 @@ __attr __fn_native__list_append(__attr __args[])
     {
         /* NOTE: Consider various restrictions on capacity increases. */
         n = capacity ? capacity * 2 : 1;
-        newdata = realloc(data, __FRAGMENT_SIZE(n));
+        newdata = (__fragment *) __REALLOCATE(data, __FRAGMENT_SIZE(n));
         newdata->capacity = n;
     }
 
@@ -407,7 +407,7 @@ __attr __fn_native__list_concat(__attr __args[])
     if (size + other_size >= capacity)
     {
         n = size + other_size;
-        newdata = realloc(data, __FRAGMENT_SIZE(n));
+        newdata = (__fragment *) __REALLOCATE(data, __FRAGMENT_SIZE(n));
         newdata->capacity = n;
     }
 
@@ -479,7 +479,7 @@ __attr __fn_native__buffer_str(__attr __args[])
         size += strlen(__load_via_object(data->attrs[i].value, __pos___data__).strvalue);
 
     /* Reserve space for a new string. */
-    s = calloc(size + 1, sizeof(char));
+    s = (char *) __ALLOCATE(size + 1, sizeof(char));
 
     /* Build a single string from the buffer contents. */
     for (i = 0, j = 0; i < data->size; i++)

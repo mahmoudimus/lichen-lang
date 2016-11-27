@@ -5,6 +5,9 @@
 #include "progconsts.h"
 #include "progtypes.h"
 
+extern void __raise_type_error();
+extern void __raise_memory_error();
+
 /* Direct access and manipulation of static objects. */
 
 __attr __load_static(__ref parent, __ref obj)
@@ -272,11 +275,29 @@ unsigned int __TYPEPOS(__ref obj)
     return obj->pos;
 }
 
+/* Memory allocation. */
+
+void *__ALLOCATE(size_t nmemb, size_t size)
+{
+    void *ptr = calloc(nmemb, size);
+    if (ptr == NULL)
+        __raise_memory_error();
+    return ptr;
+}
+
+void *__REALLOCATE(void *ptr, size_t size)
+{
+    void *nptr = realloc(ptr, size);
+    if (nptr == NULL)
+        __raise_memory_error();
+    return nptr;
+}
+
 /* Copying of structures. */
 
 __ref __COPY(__ref obj, int size)
 {
-    __ref copy = calloc(1, size);
+    __ref copy = (__ref) __ALLOCATE(1, size);
     memcpy(copy, obj, size);
     return copy;
 }

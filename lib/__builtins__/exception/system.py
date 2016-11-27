@@ -3,7 +3,7 @@
 """
 System exception objects.
 
-Copyright (C) 2015 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -20,7 +20,6 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 class EnvironmentError(Exception): pass
-class MemoryError(Exception): pass
 class OSError(Exception): pass
 class RuntimeError(Exception): pass
 class RuntimeWarning(Warning): pass

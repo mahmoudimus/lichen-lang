@@ -91,6 +91,7 @@ class BaseException:
     pass
 
 class Exception(BaseException): pass
+class MemoryError(Exception): pass
 class TypeError(Exception): pass
 class UnboundMethodInvocation(Exception): pass
 class Warning(object): pass

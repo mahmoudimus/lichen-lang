@@ -69,7 +69,6 @@ from __builtins__.exception.program import (
 
 from __builtins__.exception.system import (
     EnvironmentError,
-    MemoryError,
     OSError,
     RuntimeError,
     RuntimeWarning,

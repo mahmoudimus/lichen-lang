@@ -89,6 +89,11 @@ unsigned int __TYPEPOS(__ref obj);
 #define __ATTRCODE(__ATTRNAME) (__code_##__ATTRNAME)
 #define __ATTRPOS(__ATTRNAME) (__pos_##__ATTRNAME)
 
+/* Memory allocation. */
+
+void *__ALLOCATE(size_t nmemb, size_t size);
+void *__REALLOCATE(void *ptr, size_t size);
+
 /* Copying of structures. */
 
 __ref __COPY(__ref obj, int size);
