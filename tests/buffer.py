@@ -3,10 +3,11 @@ b.append("Hello")
 b.append(" ")
 b.append("world")
 b.append("!")
-print b
+print b                 # Hello world!
 
 b = buffer(["Hello "])
-print b
+print repr(b)           # buffer(["Hello "])
+
 b2 = buffer(["world!"])
 b.append(b2)
-print b
+print b                 # Hello world!

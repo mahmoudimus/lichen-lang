@@ -21,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from native import _list_init, _list_append, _list_concat, _buffer_str
 
-class buffer(object):
+class buffer:
 
     "A buffer, used to build strings."
 
@@ -63,5 +63,11 @@ class buffer(object):
         "Return a string representation."
 
         return _buffer_str(self)
+
+    def __repr__(self):
+
+        "Return a program representation."
+
+        return buffer(["buffer([", repr(str(self)), "])"])
 
 # vim: tabstop=4 expandtab shiftwidth=4
