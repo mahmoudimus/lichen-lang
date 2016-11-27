@@ -754,9 +754,36 @@ class TranslatedModule(CommonModule):
             class_name = self.get_namespace_path()
             self.write_comment("Class: %s" % class_name)
 
+            self.initialise_inherited_members(class_name)
+
             self.process_structure(n)
+            self.write_comment("End class: %s" % class_name)
 
         self.exit_namespace()
+
+    def initialise_inherited_members(self, class_name):
+
+        "Initialise members of 'class_name' inherited from its ancestors."
+
+        for name, path in self.importer.all_class_attrs[class_name].items():
+            target = "%s.%s" % (class_name, name)
+
+            # Ignore attributes with definitions.
+
+            ref = self.importer.identify(target)
+            if ref:
+                continue
+
+            # Reference inherited attributes.
+
+            ref = self.importer.identify(path)
+            if ref and not ref.static():
+                parent, attrname = path.rsplit(".", 1)
+
+                self.writestmt("__store_via_object(&%s, %s, __load_via_object(&%s, %s));" % (
+                    encode_path(class_name), encode_symbol("pos", name),
+                    encode_path(parent), encode_symbol("pos", attrname)
+                    ))
 
     def process_function_body_node(self, n):
 
@@ -816,10 +843,18 @@ class TranslatedModule(CommonModule):
             else:
                 return
 
+            # Produce an appropriate access to an attribute's value.
+
+            parameters = self.importer.function_parameters.get(self.get_namespace_path())
+            if parameters and name in parameters:
+                name_to_value = "%s->value" % name
+            else:
+                name_to_value = "%s.value" % name
+
             # Write a test that raises a TypeError upon failure.
 
-            self.writestmt("if (!__test_%s_%s(%s->value, %s)) __raise_type_error();" % (
-                guard, guard_type, name, argstr))
+            self.writestmt("if (!__test_%s_%s(%s, %s)) __raise_type_error();" % (
+                guard, guard_type, name_to_value, argstr))
 
     def process_function_node(self, n):
 
