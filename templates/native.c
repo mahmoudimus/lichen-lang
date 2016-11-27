@@ -476,7 +476,7 @@ __attr __fn_native__buffer_str(__attr __args[])
 
     /* Calculate the size of the string. */
     for (i = 0; i < data->size; i++)
-        size += strlen(data->attrs[i].strvalue);
+        size += strlen(__load_via_object(data->attrs[i].value, __pos___data__).strvalue);
 
     /* Reserve space for a new string. */
     s = calloc(size + 1, sizeof(char));
