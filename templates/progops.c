@@ -130,7 +130,7 @@ __attr __invoke(__attr callable, int always_callable,
     for (pos = nargs; pos < max; pos++)
     {
         if (allargs[pos].value == 0)
-            allargs[pos] = __GETDEFAULT(callable.value, pos - nargs);
+            allargs[pos] = __GETDEFAULT(callable.value, pos - min);
     }
 
     /* Call with the prepared arguments. */
