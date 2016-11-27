@@ -54,7 +54,7 @@ class sequence:
         # ones.
 
         if _isinstance(index, int):
-            index = _normalise_index(index, self.__len__())
+            index = _get_absolute_index(index, self.__len__())
             return self.__get_single_item__(index)
 
         # Handle slices separately.
@@ -75,7 +75,7 @@ class sequence:
         # ones.
 
         if _isinstance(index, int):
-            index = _normalise_index(index, self.__len__())
+            index = _get_absolute_index(index, self.__len__())
             return self.__set_single_item__(index, value)
 
         # Handle slices separately.
@@ -100,7 +100,7 @@ class sequence:
         if start is None:
             start = 0
         else:
-            start = _normalise_index(start, length)
+            start = _get_absolute_index(start, length)
 
         # Handle a null end as the first position after the end of the sequence,
         # otherwise normalising any end index.
@@ -108,7 +108,7 @@ class sequence:
         if end is None:
             end = length
         else:
-            end = _normalise_index(end, length)
+            end = _get_absolute_index(end, length)
 
         result = []
 
@@ -117,6 +117,16 @@ class sequence:
             start += 1
 
         return result
+
+    def _check_index(self, index):
+
+        """
+        Check the given absolute 'index', raising an IndexError if out of
+        bounds.
+        """
+
+        if index < 0 or index >= len(self):
+            raise IndexError(index)
 
 def _get_absolute_index(index, length):
 
@@ -129,12 +139,6 @@ def _get_absolute_index(index, length):
         return length + index
     else:
         return index
-
-def _normalise_index(index, length):
-
-    "Normalise 'index' for a collection having the specified 'length'."
-
-    return _min(length, _max(0, _get_absolute_index(index, length)))
 
 def _max(x, y):
 

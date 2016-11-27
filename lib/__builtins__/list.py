@@ -107,18 +107,14 @@ class list(sequence):
 
         "Return the item at the normalised (positive) 'index'."
 
-        if index >= len(self):
-            raise IndexError(index)
-
+        self._check_index(index)
         return native._list_element(self, index)
 
     def __set_single_item__(self, index, value):
 
         "Set at the normalised (positive) 'index' the given 'value'."
 
-        if index >= len(self):
-            raise IndexError(index)
-
+        self._check_index(index)
         return native._list_setelement(self, index, value)
 
 # vim: tabstop=4 expandtab shiftwidth=4
