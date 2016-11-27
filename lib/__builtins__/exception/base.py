@@ -19,13 +19,15 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class GeneratorExit(Exception): pass
-class IndexError(Exception): pass
+class IndexError(Exception):
+
+    "An error condition involving an index."
+
+    def __init__(self, index):
+        self.index = index
+
 class KeyError(Exception): pass
-class LookupError(Exception): pass
 class NotImplementedError(Exception): pass
-class ReferenceError(Exception): pass
-class StandardError(Exception): pass
 class StopIteration(Exception): pass
 class ValueError(Exception): pass
 

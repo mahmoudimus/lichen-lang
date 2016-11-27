@@ -24,13 +24,9 @@ from __builtins__.exception.assertion import (
     )
 
 from __builtins__.exception.base import (
-    GeneratorExit,
     IndexError,
     KeyError,
-    LookupError,
     NotImplementedError,
-    ReferenceError,
-    StandardError,
     StopIteration,
     ValueError
     )
