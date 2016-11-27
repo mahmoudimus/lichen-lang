@@ -117,7 +117,7 @@ def str(obj):
     # Classes do not provide __str__ directly.
 
     if isclass(obj):
-        return "<type>"
+        return obj.__name__
 
     # Class attributes of instances provide __str__.
 

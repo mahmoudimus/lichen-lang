@@ -41,7 +41,7 @@ class object:
 
         "Return a string representation."
 
-        return self.__name__
+        return str(buffer(["<", self.__name__, " instance>"]))
 
     __repr__ = __str__
 

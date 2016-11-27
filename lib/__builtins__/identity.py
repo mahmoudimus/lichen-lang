@@ -89,7 +89,7 @@ def repr(obj):
     # Classes do not provide __repr__ directly.
 
     if isclass(obj):
-        return "<type>"
+        return obj,__name__
 
     # Class attributes of instances provide __repr__.
 
