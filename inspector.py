@@ -927,7 +927,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Establish the local for the handler.
 
             if var is not None:
-                self.process_structure_node(var)
+                self.process_assignment_node(var, None)
             if handler is not None:
                 self.process_structure_node(handler)
 

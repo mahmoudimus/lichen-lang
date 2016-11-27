@@ -1369,7 +1369,7 @@ class TranslatedModule(CommonModule):
             # Establish the local for the handler.
 
             if var is not None:
-                var_ref = self.process_name_node(var, make_expression("__tmp_exc"))
+                self.writestmt("%s;" % self.process_name_node(var, make_expression("__tmp_exc.arg")))
 
             if handler is not None:
                 self.process_structure_node(handler)
