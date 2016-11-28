@@ -306,7 +306,7 @@ class TranslatedModule(CommonModule):
         "Return whether 'path' is a method."
 
         class_name, method_name = path.rsplit(".", 1)
-        return self.importer.classes.has_key(class_name) and class_name
+        return self.importer.classes.has_key(class_name) and class_name or None
 
     def in_method(self):
 
@@ -890,8 +890,12 @@ class TranslatedModule(CommonModule):
         if self.in_conditional or self.in_function:
             self.process_assignment_for_function(original_name, compiler.ast.Name(name))
         elif not ref.static():
+            context = self.is_method(objpath)
+
             self.process_assignment_for_function(original_name,
-                make_expression("((__attr) {0, &%s})" % encode_path(objpath)))
+                make_expression("((__attr) {%s, &%s})" % (
+                    context and "&%s" % encode_path(context) or "0",
+                    encode_path(objpath))))
 
     def process_function_defaults(self, n, name, instance_name):
 

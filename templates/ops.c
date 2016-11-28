@@ -172,9 +172,9 @@ int __check_and_store_via_any(__ref obj, int pos, int code, __attr value)
 
 __attr __test_context(__ref context, __attr attr)
 {
-    /* Preserve any existing instance context. */
+    /* Preserve any existing null or instance context. */
 
-    if (__is_instance(attr.context))
+    if ((attr.context == 0) || __is_instance(attr.context))
         return attr;
 
     /* Test any instance context against the context employed by the
