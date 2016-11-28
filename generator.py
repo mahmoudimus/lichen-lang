@@ -941,6 +941,7 @@ __attr %s(__attr __args[], unsigned int number)
 int main(int argc, char *argv[])
 {
     __exc __tmp_exc;
+
     __Try
     {"""
 
@@ -959,7 +960,10 @@ int main(int argc, char *argv[])
     }
     __Catch(__tmp_exc)
     {
-        fprintf(stderr, "Program terminated due to exception.\\n");
+        fprintf(stderr, "Program terminated due to exception: %s.\\n",
+                __load_via_object(
+                    __fn___builtins___str_str((__attr[]) {{0, 0}, __tmp_exc.arg}).value,
+                    __pos___data__).strvalue);
         return 1;
     }
 }
