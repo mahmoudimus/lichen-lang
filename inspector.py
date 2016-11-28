@@ -76,7 +76,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         # Set the class of the module after the definition has occurred.
 
-        ref = self.get_builtin("object")
+        ref = self.get_builtin("module")
         self.set_name("__class__", ref)
 
         # Get module-level attribute usage details.

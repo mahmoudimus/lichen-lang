@@ -45,6 +45,18 @@ class object:
 
     __repr__ = __str__
 
+class module:
+
+    "The class of module objects."
+
+    def __str__(self):
+
+        "Return a string representation."
+
+        return self.__name__
+
+    __repr__ = __str__
+
 class function:
 
     """

@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.core import function, get_using, object, type, \
+from __builtins__.core import function, get_using, module, object, type, \
                               BaseException, Exception, MemoryError, TypeError, \
                               UnboundMethodInvocation, Warning
 
