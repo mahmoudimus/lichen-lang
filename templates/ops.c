@@ -59,6 +59,11 @@ int __is_instance(__ref obj)
     return obj->pos == __INSTANCEPOS;
 }
 
+int __is_type_instance(__ref obj)
+{
+    return __HASATTR(__get_class(obj), __TYPE_CLASS_POS, __TYPE_CLASS_CODE);
+}
+
 __ref __get_class(__ref obj)
 {
     return __load_via_object(obj, __pos___class__).value;
@@ -185,6 +190,11 @@ __attr __test_context(__ref context, __attr attr)
             return __replace_context(context, attr);
         else
             __raise_type_error();
+
+    /* Test for access to a type class attribute using a type instance. */
+
+    if (__test_specific_type(attr.context, &__TYPE_CLASS_TYPE) && __is_type_instance(context))
+        return __replace_context(context, attr);
 
     /* Otherwise, preserve the attribute as retrieved. */
 

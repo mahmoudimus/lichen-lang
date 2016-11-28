@@ -97,13 +97,21 @@ class function:
 
     __repr__ = __str__
 
-class type(object):
+class type:
 
-    "The class of all classes."
+    """
+    The class of all classes. Methods of this class do not treat contexts as
+    instances, even though classes are meant to be instances of this class.
+    Instead, contexts are either classes or instances.
+    """
 
-    # __str__ and __repr__ are handled by str and repr for classes.
+    def __str__(self):
 
-    pass
+        "Return a string representation."
+
+        return self.__name__
+
+    __repr__ = __str__
 
 class BaseException:
 

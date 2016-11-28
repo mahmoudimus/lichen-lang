@@ -86,14 +86,8 @@ def repr(obj):
 
     "Return a program representation for 'obj'."
 
-    # Classes do not provide __repr__ directly.
-
-    if isclass(obj):
-        return obj.__name__
-
     # Class attributes of instances provide __repr__.
 
-    else:
-        return obj.__repr__()
+    return obj.__repr__()
 
 # vim: tabstop=4 expandtab shiftwidth=4

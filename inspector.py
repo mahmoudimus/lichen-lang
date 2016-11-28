@@ -530,7 +530,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             self.set_name("__fn__") # special instantiator attribute
             self.set_name("__args__") # special instantiator attribute
 
-        self.assign_general_local("__name__", self.get_constant("string", class_name))
+        self.set_name("__name__", self.get_constant("string", class_name).reference())
+
         self.process_structure_node(n.code)
         self.exit_namespace()
         self.in_class = in_class

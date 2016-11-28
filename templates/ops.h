@@ -24,6 +24,7 @@ int __get_class_and_store(__ref obj, int pos, __attr value);
 /* Introspection. */
 
 int __is_instance(__ref obj);
+int __is_type_instance(__ref obj);
 __ref __get_class(__ref obj);
 __attr __get_class_attr(__ref obj);
 

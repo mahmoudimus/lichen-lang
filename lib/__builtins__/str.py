@@ -114,14 +114,8 @@ def str(obj):
 
     "Return the string representation of 'obj'."
 
-    # Classes do not provide __str__ directly.
-
-    if isclass(obj):
-        return obj.__name__
-
     # Class attributes of instances provide __str__.
 
-    else:
-        return obj.__str__()
+    return obj.__str__()
 
 # vim: tabstop=4 expandtab shiftwidth=4

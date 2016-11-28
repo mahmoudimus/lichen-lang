@@ -1354,7 +1354,7 @@ class Deducer(CommonOutput):
         "Return whether 'path' refers to a method."
 
         class_name, method_name = path.rsplit(".", 1)
-        return self.importer.classes.has_key(class_name) and class_name
+        return class_name != "__builtins__.core.type" and self.importer.classes.has_key(class_name) and class_name
 
     def init_reference_details(self, location):
 
