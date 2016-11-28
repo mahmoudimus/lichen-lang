@@ -788,9 +788,16 @@ __obj %s = {
 
                 # Special cases.
 
-                elif attrname in ("__fname__",  "__name__"):
+                elif attrname in ("__file__", "__fname__",  "__mname__", "__name__"):
                     path = ref.get_origin()
-                    local_number = self.importer.all_constants[path][path]
+
+                    if attrname == "__file__":
+                        module = self.importer.get_module(path)
+                        value = module.filename
+                    else:
+                        value = path
+
+                    local_number = self.importer.all_constants[path][value]
                     constant_name = "$c%d" % local_number
                     attr_path = "%s.%s" % (path, constant_name)
                     constant_number = self.optimiser.constant_numbers[attr_path]

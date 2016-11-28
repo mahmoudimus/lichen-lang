@@ -70,14 +70,14 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         # Detect and record imports and globals declared in the module.
 
-        self.assign_general_local("__name__", self.get_constant("string", self.name))
-        self.assign_general_local("__file__", self.get_constant("string", filename))
         self.process_structure(self.astnode)
 
         # Set the class of the module after the definition has occurred.
 
         ref = self.get_builtin("module")
         self.set_name("__class__", ref)
+        self.set_name("__mname__", self.get_constant("string", self.name).reference())
+        self.set_name("__file__", self.get_constant("string", filename).reference())
 
         # Get module-level attribute usage details.
 

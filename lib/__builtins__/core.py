@@ -49,11 +49,20 @@ class module:
 
     "The class of module objects."
 
+    def __init__(self):
+
+        """
+        Reserve special attributes for module instances.
+        """
+
+        self.__file__ = None
+        self.__mname__ = None
+
     def __str__(self):
 
         "Return a string representation."
 
-        return self.__name__
+        return self.__mname__
 
     __repr__ = __str__
 
