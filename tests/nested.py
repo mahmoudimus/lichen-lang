@@ -7,9 +7,9 @@ def f(x):
         return h
     return g
 
-result = f(1)(2)(3)
-print result[0]
-print result[1]
-print result[2]
-print result[3]
-assert result == (1, 2, 3, 4)
+fn = f(1)
+print fn                        # __main__.f.$l0
+print fn(2)                     # __main__.f.$l0.$l0
+print fn(2)(3)                  # (1, 2, 3, 4)
+print fn(2)(3, 5)               # (5, 2, 3, 4)
+print fn(2)(3, 5, 6)            # (5, 6, 3, 4)

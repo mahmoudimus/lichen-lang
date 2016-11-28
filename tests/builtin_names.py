@@ -1,2 +1,4 @@
 def f():
-    StopIteration
+    return StopIteration
+
+print f()

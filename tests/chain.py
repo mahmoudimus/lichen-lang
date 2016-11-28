@@ -31,8 +31,17 @@ def static():
     g = C.D.E.n
     h = C.D.p
 
+    print c                                 # __main__.C
+    print d                                 # __main__.C.D
+    print e                                 # __main__.C.D.E
+    print f                                 # __main__.C.D.E.m
+    print g                                 # 123
+    print h                                 # "456"
+
 def static_via_constant():
     i = C.D.p.__len__
+
+    print i                                 # __builtins__.str.basestring.__len__
 
 def assign():
     C.D.q = 987
@@ -46,12 +55,17 @@ def indirect():
 def broken():
     inst2 = C.D.F()
     l = inst2.u().__len__
+    return l
 
 static()
 static_via_constant()
 assign()
-result1 = indirect()
-broken()
+print indirect()                            # __builtins__.str.basestring.__len__
+print indirect()()                          # 3
+print broken()                              # __builtins__.str.basestring.__len__
+print broken()()                            # 3
+
+print C.D.q                                 # 987
 
 # Static chains.
 
@@ -62,21 +76,36 @@ f = C.D.E.m
 g = C.D.E.n
 h = C.D.p
 
+print c                                     # __main__.C
+print d                                     # __main__.C.D
+print e                                     # __main__.C.D.E
+print f                                     # __main__.C.D.E.m
+print g                                     # 123
+print h                                     # "456"
+
 # Static via constant.
 
 i = C.D.p.__len__
 
+print i                                     # __builtins__.str.basestring.__len__
+print i()                                   # 3
+
 # Static assignment.
 
-C.D.q = 987
+C.D.q = 654
+
+print C.D.q                                 # 654
 
 # Indirect accesses.
 
 inst = e()
 method = inst.m
-result2 = method("5")
+print method("5")                           # __builtins__.str.basestring.__len__
+print method("5")()                         # 3
 
 # Broken chains.
 
 inst2 = C.D.F()
 l = inst2.u().__len__
+print l                                     # __builtins__.str.basestring.__len__
+print l()                                   # 3
