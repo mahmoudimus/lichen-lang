@@ -960,13 +960,16 @@ int main(int argc, char *argv[])
     }
     __Catch(__tmp_exc)
     {
-        fprintf(stderr, "Program terminated due to exception: %s.\\n",
+        fprintf(stderr, "Program terminated due to exception: %%s.\\n",
                 __load_via_object(
-                    __fn___builtins___str_str((__attr[]) {{0, 0}, __tmp_exc.arg}).value,
-                    __pos___data__).strvalue);
+                    %s((__attr[]) {{0, 0}, __tmp_exc.arg}).value,
+                    %s).strvalue);
         return 1;
     }
 }
-"""
+""" % (
+    encode_function_pointer("__builtins__.str.str"),
+    encode_symbol("pos", "__data__")
+    )
 
 # vim: tabstop=4 expandtab shiftwidth=4
