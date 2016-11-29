@@ -25,9 +25,6 @@ from operator.core import binary_op, is_, is_not
 # lambda functions. Thus, the appropriate methods are defined locally, but no
 # attempt to obtain them is made until the generic function is called.
 
-# NOTE: The compiler should make it possible for the following functions to call
-# NOTE: the generic operator implementations with no additional call overhead.
-
 # Binary operator functions.
 
 def add(a, b):
@@ -46,10 +43,10 @@ def floordiv(a, b):
     return binary_op(a, b, lambda a: a.__floordiv__, lambda b: b.__rfloordiv__)
 
 def in_(a, b):
-    return a.__contains__(b)
+    return b.__contains__(a)
 
 def not_in(a, b):
-    return not a.__contains__(b)
+    return not b.__contains__(a)
 
 def lshift(a, b):
     return binary_op(a, b, lambda a: a.__lshift__, lambda b: b.__rlshift__)
