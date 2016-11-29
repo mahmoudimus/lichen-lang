@@ -53,7 +53,7 @@ typedef struct __attr
         int intvalue;           /* integer value */
         double floatvalue;      /* floating point value */
         char * strvalue;        /* string value */
-        __fragment * data;      /* sequence data */
+        __fragment * seqvalue;  /* sequence data */
     };
 } __attr;
 
@@ -66,7 +66,8 @@ typedef struct __obj
 
 typedef __obj * __ref;
 
-/* Fragments are simple collections of attributes employed by sequence types. */
+/* Fragments are simple collections of attributes employed by sequence types.
+   They provide the basis of lists and tuples. */
 
 typedef struct __fragment
 {

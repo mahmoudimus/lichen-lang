@@ -919,7 +919,7 @@ __attr %s(__attr __args[], unsigned int number)
     __args[0] = __new(&%s, &%s, sizeof(%s));
 
     /* Allocate a structure for the data. */
-    data = __newdata(__args, number);
+    data = __newfragment(__args, number);
 
     /* Store a reference to the data in the object's __data__ attribute. */
     __store_via_object(__args[0].value, %s, data);

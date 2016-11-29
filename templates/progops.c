@@ -24,12 +24,12 @@ __attr __new(const __table * table, __ref cls, size_t size)
 
 /* Generic internal data allocation. */
 
-__attr __newdata(__attr args[], unsigned int number)
+__attr __newfragment(__attr args[], unsigned int number)
 {
     /* Calculate the size of the fragment. */
 
     __fragment *data = (__fragment *) __ALLOCATE(1, __FRAGMENT_SIZE(number));
-    __attr attr = {0, .data=data};
+    __attr attr = {0, .seqvalue=data};
     unsigned int i, j;
 
     /* Copy the given number of values, starting from the second element. */

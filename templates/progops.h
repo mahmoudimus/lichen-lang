@@ -7,7 +7,7 @@
 
 __attr __new(const __table *table, __ref cls, size_t size);
 
-__attr __newdata(__attr args[], unsigned int number);
+__attr __newfragment(__attr args[], unsigned int number);
 
 __attr __invoke(__attr callable, int always_callable,
                 unsigned int nkwargs, __param kwcodes[], __attr kwargs[],

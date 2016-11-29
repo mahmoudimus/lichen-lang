@@ -341,7 +341,7 @@ __attr __fn_native__list_init(__attr __args[])
 
     /* Allocate space for the list. */
     __fragment *data = (__fragment *) __ALLOCATE(1, __FRAGMENT_SIZE(n));
-    __attr attr = {0, .data=data};
+    __attr attr = {0, .seqvalue=data};
 
     /* The initial capacity is the same as the given size. */
     data->size = 0;
@@ -354,7 +354,7 @@ __attr __fn_native__list_setsize(__attr __args[])
     __attr * const self = &__args[1];
     __attr * const size = &__args[2];
     /* self.__data__ interpreted as list */
-    __fragment *data = __load_via_object(self->value, __pos___data__).data;
+    __fragment *data = __load_via_object(self->value, __pos___data__).seqvalue;
     /* size.__data__ interpreted as int */
     unsigned int n = __load_via_object(size->value, __pos___data__).intvalue;
 
@@ -367,7 +367,7 @@ __attr __fn_native__list_append(__attr __args[])
     __attr * const self = &__args[1];
     __attr * const value = &__args[2];
     /* self.__data__ interpreted as list */
-    __fragment *data = __load_via_object(self->value, __pos___data__).data;
+    __fragment *data = __load_via_object(self->value, __pos___data__).seqvalue;
     __fragment *newdata = data;
     unsigned int size = data->size, capacity = data->capacity;
     unsigned int n;
@@ -387,7 +387,7 @@ __attr __fn_native__list_append(__attr __args[])
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(self->value, __pos___data__, ((__attr) {0, .data=newdata}));
+        __store_via_object(self->value, __pos___data__, ((__attr) {0, .seqvalue=newdata}));
     return __builtins___none_None;
 }
 
@@ -396,8 +396,8 @@ __attr __fn_native__list_concat(__attr __args[])
     __attr * const self = &__args[1];
     __attr * const other = &__args[2];
     /* self.__data__, other.__data__ interpreted as list */
-    __fragment *data = __load_via_object(self->value, __pos___data__).data;
-    __fragment *other_data = __load_via_object(other->value, __pos___data__).data;
+    __fragment *data = __load_via_object(self->value, __pos___data__).seqvalue;
+    __fragment *other_data = __load_via_object(other->value, __pos___data__).seqvalue;
     __fragment *newdata = data;
     unsigned int size = data->size, capacity = data->capacity;
     unsigned int other_size = other_data->size;
@@ -418,7 +418,7 @@ __attr __fn_native__list_concat(__attr __args[])
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(self->value, __pos___data__, ((__attr) {0, .data=newdata}));
+        __store_via_object(self->value, __pos___data__, ((__attr) {0, .seqvalue=newdata}));
     return __builtins___none_None;
 }
 
@@ -426,7 +426,7 @@ __attr __fn_native__list_len(__attr __args[])
 {
     __attr * const self = &__args[1];
     /* self.__data__ interpreted as fragment */
-    unsigned int size = __load_via_object(self->value, __pos___data__).data->size;
+    unsigned int size = __load_via_object(self->value, __pos___data__).seqvalue->size;
 
     /* Return the new integer. */
     return __new_int(size);
@@ -436,7 +436,7 @@ __attr __fn_native__list_nonempty(__attr __args[])
 {
     __attr * const self = &__args[1];
 
-    return __load_via_object(self->value, __pos___data__).data->size ? __builtins___boolean_True : __builtins___boolean_False;
+    return __load_via_object(self->value, __pos___data__).seqvalue->size ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
 __attr __fn_native__list_element(__attr __args[])
@@ -444,7 +444,7 @@ __attr __fn_native__list_element(__attr __args[])
     __attr * const self = &__args[1];
     __attr * const index = &__args[2];
     /* self.__data__ interpreted as fragment */
-    __attr *elements = __load_via_object(self->value, __pos___data__).data->attrs;
+    __attr *elements = __load_via_object(self->value, __pos___data__).seqvalue->attrs;
     /* index.__data__ interpreted as int */
     int i = __load_via_object(index->value, __pos___data__).intvalue;
 
@@ -457,7 +457,7 @@ __attr __fn_native__list_setelement(__attr __args[])
     __attr * const index = &__args[2];
     __attr * const value = &__args[3];
     /* self.__data__ interpreted as fragment */
-    __attr *elements = __load_via_object(self->value, __pos___data__).data->attrs;
+    __attr *elements = __load_via_object(self->value, __pos___data__).seqvalue->attrs;
     /* index.__data__ interpreted as int */
     int i = __load_via_object(index->value, __pos___data__).intvalue;
 
@@ -470,7 +470,7 @@ __attr __fn_native__buffer_str(__attr __args[])
 {
     __attr * const self = &__args[1];
     /* self.__data__ interpreted as buffer */
-    __fragment *data = __load_via_object(self->value, __pos___data__).data;
+    __fragment *data = __load_via_object(self->value, __pos___data__).seqvalue;
     unsigned int size = 0, i, j, n;
     char *s, *o;
 

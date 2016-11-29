@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 """
-Native library functions.
+Native library functions. None of these are actually defined here. Instead,
+native implementations are substituted when each program is built.
 
 Copyright (C) 2011, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
@@ -19,12 +20,18 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+# Environment support.
+
 def _exit(status): pass
 def _get_argv(): pass
 def _get_path(): pass
 
+# Identity testing.
+
 def _is(x, y): pass
 def _is_not(x, y): pass
+
+# Integer operations.
 
 def _int_add(self, other): pass
 def _int_div(self, other): pass
@@ -45,12 +52,16 @@ def _int_ne(self, other): pass
 
 def _int_str(self): pass
 
+# String operations.
+
 def _str_add(self, other): pass
 def _str_lt(self, other): pass
 def _str_gt(self, other): pass
 def _str_eq(self, other): pass
 def _str_len(self): pass
 def _str_nonempty(self): pass
+
+# List operations.
 
 def _list_init(size): pass
 def _list_setsize(self, size): pass
@@ -61,14 +72,21 @@ def _list_nonempty(self): pass
 def _list_element(self, index): pass
 def _list_setelement(self, index, value): pass
 
+# Buffer operations.
+
 def _buffer_str(self): pass
+
+# Method binding.
 
 def _get_using(callable, instance): pass
 
-def _object_getattr(obj, name, default): pass
+# Introspection.
 
+def _object_getattr(obj, name, default): pass
 def _isinstance(obj, cls): pass
 def _issubclass(obj, cls): pass
+
+# Input/output.
 
 def _read(fd, n): pass
 def _write(fd, str): pass
