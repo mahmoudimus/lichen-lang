@@ -33,3 +33,11 @@ print 1 not in l        # False
 print 4 not in l        # True
 print "four" not in l   # False
 print "one" not in l    # True
+
+print l.index(1)        # 0
+print l.index("four")   # 3
+
+try:
+    print l.index(4)    # should raise an exception
+except ValueError, exc:
+    print "l.index(4): failed to find argument", exc.value

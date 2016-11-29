@@ -62,6 +62,19 @@ class sequence:
 
         return False
 
+    def index(self, value):
+
+        "Return the index of 'value' or raise ValueError."
+
+        i = 0
+        l = len(self)
+        while i < l:
+            if self[i] == value:
+                return i
+            i += 1
+
+        raise ValueError(value)
+
     def __getitem__(self, index):
 
         "Return the item or slice specified by 'index'."
@@ -81,7 +94,7 @@ class sequence:
         # No other kinds of objects are supported as indexes.
 
         else:
-            raise TypeError
+            raise TypeError()
 
     def __setitem__(self, index, value):
 
@@ -102,7 +115,7 @@ class sequence:
         # No other kinds of objects are supported as indexes.
 
         else:
-            raise TypeError
+            raise TypeError()
 
     def __getslice__(self, start, end=None):
 
