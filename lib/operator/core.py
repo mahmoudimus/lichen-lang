@@ -24,7 +24,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from native import _is as is_, _is_not as is_not
 
-def binary_op(a, b, left_accessor, right_accessor):
+def binary_op(a, b, left_accessor, right_accessor, default=None):
 
     """
     A single parameterised function providing the binary operator mechanism for
@@ -57,11 +57,14 @@ def binary_op(a, b, left_accessor, right_accessor):
             return result
 
     # Where no methods were available, or if neither method could support the
-    # operation, raise an exception.
+    # operation, raise an exception or provide a default result.
 
-    raise TypeError
+    if default is None:
+        raise TypeError
+    else:
+        return default
 
-def unary_op(a, accessor):
+def unary_op(a, accessor, default=None):
 
     """
     A single parameterised function providing the unary operator mechanism for
@@ -81,9 +84,12 @@ def unary_op(a, accessor):
             return result
 
     # Where no method was available, or if the method could not support the
-    # operation, raise an exception.
+    # operation, raise an exception or provide a default result.
 
-    raise TypeError
+    if default is None:
+        raise TypeError
+    else:
+        return default
 
 def augassign(a, b, augmented_accessor, left_accessor, right_accessor):
 

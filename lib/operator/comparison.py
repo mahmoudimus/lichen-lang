@@ -3,7 +3,7 @@
 """
 Operator support.
 
-Copyright (C) 2010, 2013, 2015 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2010, 2013, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -25,13 +25,10 @@ from operator.core import binary_op
 # lambda functions. Thus, the appropriate methods are defined locally, but no
 # attempt to obtain them is made until the generic function is called.
 
-# NOTE: The compiler should make it possible for the following functions to call
-# NOTE: the generic operator implementations with no additional call overhead.
-
 # Comparison functions.
 
 def eq(a, b):
-    return binary_op(a, b, lambda a: a.__eq__, lambda b: b.__eq__)
+    return binary_op(a, b, lambda a: a.__eq__, lambda b: b.__eq__, False)
 
 def ge(a, b):
     return binary_op(a, b, lambda a: a.__ge__, lambda b: b.__le__)
@@ -46,6 +43,6 @@ def lt(a, b):
     return binary_op(a, b, lambda a: a.__lt__, lambda b: b.__gt__)
 
 def ne(a, b):
-    return binary_op(a, b, lambda a: a.__ne__, lambda b: b.__ne__)
+    return binary_op(a, b, lambda a: a.__ne__, lambda b: b.__ne__, True)
 
 # vim: tabstop=4 expandtab shiftwidth=4
