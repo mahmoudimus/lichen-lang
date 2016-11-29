@@ -29,6 +29,12 @@ class IndexError(Exception):
 class KeyError(Exception): pass
 class NotImplementedError(Exception): pass
 class StopIteration(Exception): pass
-class ValueError(Exception): pass
+
+class ValueError(Exception):
+
+    "An error concerned with a particular value."
+
+    def __init__(self, value):
+        self.value = value
 
 # vim: tabstop=4 expandtab shiftwidth=4
