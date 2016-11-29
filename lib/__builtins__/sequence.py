@@ -46,6 +46,22 @@ class sequence:
 
         return str(b)
 
+    def __contains__(self, value):
+
+        "Return whether the list contains 'value'."
+
+        # Perform a linear search of the sequence contents.
+
+        for v in self:
+
+            # Return True if the current value is equal to the specified one.
+            # Note that this is not an identity test, but an equality test.
+
+            if v == value:
+                return True
+
+        return False
+
     def __getitem__(self, index):
 
         "Return the item or slice specified by 'index'."

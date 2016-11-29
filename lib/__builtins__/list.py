@@ -39,7 +39,6 @@ class list(sequence):
         if args is not None:
             self.extend(args)
 
-    def __contains__(self, value): pass
     def __delitem__(self, index): pass
     def __setslice__(self, start, end, slice): pass
     def __delslice__(self, start, end): pass

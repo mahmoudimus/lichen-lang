@@ -24,3 +24,12 @@ try:
     print l[-5]         # should raise an exception
 except IndexError, exc:
     print "l[-5]: failed with argument", exc.index
+
+print 1 in l            # True
+print 4 in l            # False
+print "four" in l       # True
+print "one" in l        # False
+print 1 not in l        # False
+print 4 not in l        # True
+print "four" not in l   # False
+print "one" not in l    # True
