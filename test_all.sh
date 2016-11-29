@@ -12,8 +12,7 @@ expect_failure() {
 check_type_warnings() {
 
     if [ -e "_deduced/type_warnings" ] && \
-       [ `stat -c %s "_deduced/type_warnings"` -ne 0 ] && \
-       ! expect_failure ; then
+       [ `stat -c %s "_deduced/type_warnings"` -ne 0 ] ; then
 
        echo "Type warnings in deduced information." 1>&2
        return 1
@@ -39,14 +38,19 @@ for FILENAME in tests/* ; do
     # Run tests without an existing cache.
 
     echo "$FILENAME..." 1>&2
-    if ! ./lplc "$FILENAME" -r ; then exit 1 ; fi
+    if ! ./lplc "$FILENAME" -r ; then
+        if ! expect_failure; then
+            exit 1
+        else
+            echo 1>&2
+            continue
+        fi
+    fi
 
     # Check for unresolved names in the cache.
 
     echo " (depends)..." 1>&2
-    if grep '<depends>' -r "_cache" && \
-       ! expect_failure ; then
-
+    if grep '<depends>' -r "_cache" ; then
        echo "Unresolved names in the cache." 1>&2
        exit 1
     fi
