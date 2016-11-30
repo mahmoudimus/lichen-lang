@@ -69,6 +69,32 @@ def reduce(function, sequence, initial=None): pass
 def reversed(sequence): pass
 def sorted(iterable, cmp=None, key=None, reverse=False): pass
 def sum(sequence, start=0): pass
-def zip(*args): pass
+
+def zip(args):
+
+    """
+    Zip the given 'args' together, producing for each index position tuples
+    containing the values for that position from each of the 'args'.
+    """
+
+    result = []
+    pos = 0
+
+    # Repeat until one of the arguments runs out of elements.
+
+    while True:
+        l = []
+
+        # Visit each argument in turn, collecting elements in the given
+        # position.
+
+        for arg in args:
+            try:
+                l.append(arg[pos])
+            except IndexError:
+                return result
+
+        result.append(tuple(l))
+        pos += 1
 
 # vim: tabstop=4 expandtab shiftwidth=4
