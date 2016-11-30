@@ -110,7 +110,7 @@ class dict:
 
         if i is None:
             if default is self.MISSING:
-                raise KeyError
+                raise KeyError(key)
             else:
                 return default
 
@@ -134,7 +134,12 @@ class dict:
 
         return native._dict_values(self)
 
-    def items(self): pass
+    def items(self):
+
+        "Return the items, each being a (key, value) tuple, in this dictionary."
+
+        return zip([self.keys(), self.values()])
+
     def get(self, key): pass
     def setdefault(self, key, value): pass
     def update(self, other): pass

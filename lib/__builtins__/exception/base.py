@@ -26,7 +26,13 @@ class IndexError(Exception):
     def __init__(self, index):
         self.index = index
 
-class KeyError(Exception): pass
+class KeyError(Exception):
+
+    "An error concerned with a dictionary key."
+
+    def __init__(self, key):
+        self.key = key
+
 class NotImplementedError(Exception): pass
 class StopIteration(Exception): pass
 
