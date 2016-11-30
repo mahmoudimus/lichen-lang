@@ -877,7 +877,7 @@ class TranslatedModule(CommonModule):
 
         # Obtain details of the defaults.
 
-        defaults = self.process_function_defaults(n, name, "&%s" % objpath)
+        defaults = self.process_function_defaults(n, name, objpath)
         if defaults:
             for default in defaults:
                 self.writeline("%s;" % default)
@@ -897,13 +897,14 @@ class TranslatedModule(CommonModule):
                     context and "&%s" % encode_path(context) or "0",
                     encode_path(objpath))))
 
-    def process_function_defaults(self, n, name, instance_name):
+    def process_function_defaults(self, n, name, objpath, instance_name=None):
 
         """
         Process the given function or lambda node 'n', initialising defaults
         that are dynamically set. The given 'name' indicates the name of the
-        function. The given 'instance_name' indicates the name of any separate
-        instance of the function created to hold the defaults.
+        function. The given 'objpath' indicates the origin of the function.
+        The given 'instance_name' indicates the name of any separate instance
+        of the function created to hold the defaults.
 
         Return a list of operations setting defaults on a function instance.
         """
@@ -915,9 +916,19 @@ class TranslatedModule(CommonModule):
 
         # Determine whether any unidentified defaults are involved.
 
-        need_defaults = [argname for argname, default in function_defaults if default.has_kind("<var>")]
-        if not need_defaults:
+        for argname, default in function_defaults:
+            if not default.static():
+                break
+        else:
             return None
+
+        # Handle bound methods.
+
+        if not instance_name:
+            if self.is_method(objpath):
+                instance_name = "&%s" % encode_bound_reference(objpath)
+            else:
+                instance_name = "&%s" % encode_path(objpath)
 
         # Where defaults are involved but cannot be identified, obtain a new
         # instance of the lambda and populate the defaults.
@@ -942,7 +953,7 @@ class TranslatedModule(CommonModule):
                 continue
 
             if name_ref:
-                defaults.append("__SETDEFAULT(%s, %s, %s)" % (encode_path(instance_name), i, name_ref))
+                defaults.append("__SETDEFAULT(%s, %s, %s)" % (instance_name, i, name_ref))
 
         return defaults
 
@@ -998,7 +1009,7 @@ class TranslatedModule(CommonModule):
 
             if expr.has_kind("<class>"):
                 target = encode_instantiator_pointer(objpath)
-                target_structure = encode_initialiser_pointer(objpath)
+                target_structure = "&%s" % encode_bound_reference("%s.__init__" % objpath)
 
             # Only plain functions and bound methods employ function pointers.
 
@@ -1011,7 +1022,9 @@ class TranslatedModule(CommonModule):
 
                 if not self.is_method(objpath) or accessor_kinds and len(accessor_kinds) == 1 and first(accessor_kinds) == "<instance>":
                     target = encode_function_pointer(objpath)
-                    target_structure = encode_path(objpath)
+                    target_structure = self.is_method(objpath) and \
+                        encode_bound_reference(objpath) or \
+                        "&%s" % encode_path(objpath)
 
         # Other targets are retrieved at run-time.
 
@@ -1079,7 +1092,7 @@ class TranslatedModule(CommonModule):
                 for i, (argname, default) in enumerate(function_defaults):
                     argnum = parameters.index(argname)
                     if not args[argnum+1]:
-                        args[argnum+1] = "__GETDEFAULT(&%s, %d)" % (target_structure, i)
+                        args[argnum+1] = "__GETDEFAULT(%s, %d)" % (target_structure, i)
 
         # Test for missing arguments.
 
@@ -1163,7 +1176,7 @@ class TranslatedModule(CommonModule):
         name = self.get_lambda_name()
         function_name = self.get_object_path(name)
 
-        defaults = self.process_function_defaults(n, name, "__tmp_value")
+        defaults = self.process_function_defaults(n, name, function_name, "__tmp_value")
 
         # Without defaults, produce an attribute referring to the function.
 
