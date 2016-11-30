@@ -25,6 +25,16 @@ class sequence:
 
     "A common base class for sequence types."
 
+    def _check_index(self, index):
+
+        """
+        Check the given absolute 'index', raising an IndexError if out of
+        bounds.
+        """
+
+        if index < 0 or index >= len(self):
+            raise IndexError(index)
+
     def _str(self, opening, closing):
 
         "Serialise this object with the given 'opening' and 'closing' strings."
@@ -147,15 +157,29 @@ class sequence:
 
         return result
 
-    def _check_index(self, index):
+    def __eq__(self, other):
 
-        """
-        Check the given absolute 'index', raising an IndexError if out of
-        bounds.
-        """
+        "Return whether this sequence is equal to 'other'."
 
-        if index < 0 or index >= len(self):
-            raise IndexError(index)
+        # Sequences must have equal lengths to be equal.
+
+        n = self.__len__()
+        if len(other) != n:
+            return False
+
+        i = 0
+        while i < n:
+            if self.__getitem__(i) != other.__getitem__(i):
+                return False
+            i += 1
+
+        return True
+
+    def __ne__(self, other):
+
+        "Return whether this sequence is not equal to 'other'."
+
+        return not self.__eq__(other)
 
 def _get_absolute_index(index, length):
 
