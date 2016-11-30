@@ -2,11 +2,9 @@
 
 #include <stdlib.h>
 #include "ops.h"
+#include "progops.h" /* for raising errors */
 #include "progconsts.h"
 #include "progtypes.h"
-
-extern void __raise_type_error();
-extern void __raise_memory_error();
 
 /* Direct access and manipulation of static objects. */
 
