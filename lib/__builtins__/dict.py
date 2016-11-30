@@ -3,7 +3,7 @@
 """
 Dictionary objects.
 
-Copyright (C) 2015 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -20,20 +20,120 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iterator import listiterator
+import native
 
-class dict(object):
-    def __init__(self, *args): pass
-    def __setitem__(self, key, value): pass
+class dict:
+
+    "A dictionary representation mapping keys to values."
+
+    MISSING = object()
+
+    def __init__(self, args=None):
+
+        "Initialise the dictionary."
+
+        # Reserve an attribute for a hashtable reference along with some space
+        # for elements.
+
+        self.__data__ = native._dict_init(args is not None and len(args) or 0)
+
+        if args is not None:
+            for key, value in args:
+                self.__setitem__(key, value)
+
+    def _get_index(self, key):
+
+        "Check 'key' and return an index or raise TypeError."
+
+        index = key.__hash__()
+        if not native._isinstance(index, int):
+            raise TypeError
+
+        return index
+
+    def _find_entry(self, key, index):
+
+        "Search for 'key', using an 'index' identifying the bucket involved."
+
+        size = native._dict_bucketsize(self, index)
+        i = 0
+
+        while i < size:
+            found = native._dict_key(self, index, i)
+            if found == key:
+                return i
+            i += 1
+
+        return None
+
+    def __setitem__(self, key, value):
+
+        "Set a mapping from 'key' to 'value' in the dictionary."
+
+        # Find an index identifying the bucket involved.
+
+        index = self._get_index(key)
+
+        # Find the entry index within the bucket of the key.
+
+        i = self._find_entry(key, index)
+
+        # With no existing entry, append to the bucket.
+
+        if i is None:
+            native._dict_additem(self, index, key, value)
+
+        # With an existing entry, replace the item.
+
+        else:
+            native._dict_setitem(self, index, i, key, value)
+
     def __delitem__(self, key, value): pass
 
-    def __getitem__(self, key):
-        # Note usage.
-        KeyError
+    def __getitem__(self, key, default=MISSING):
+
+        """
+        Return the value stored for 'key'. If 'key' does not have an entry in
+        the dictionary, a KeyError will be raised unless 'default' is specified.
+        In which case, 'default' will be returned instead.
+        """
+
+        # Find an index identifying the bucket involved.
+
+        index = self._get_index(key)
+
+        # Find the entry index within the bucket of the key.
+
+        i = self._find_entry(key, index)
+
+        # With no entry index, either raise an exception or return the default.
+
+        if i is None:
+            if default is self.MISSING:
+                raise KeyError
+            else:
+                return default
+
+        # With a valid entry index, obtain the corresponding value.
+
+        else:
+            return native._dict_value(self, index, i)
 
     def clear(self): pass
     def has_key(self): pass
-    def keys(self): pass
-    def values(self): pass
+
+    def keys(self):
+
+        "Return the keys for this dictionary."
+
+        return native._dict_keys(self)
+
+    def values(self):
+
+        "Return the values in this dictionary."
+
+        return native._dict_values(self)
+
     def items(self): pass
     def get(self, key): pass
     def setdefault(self, key, value): pass

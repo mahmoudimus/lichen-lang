@@ -24,11 +24,40 @@ __attr __new(const __table * table, __ref cls, size_t size)
 
 /* Generic internal data allocation. */
 
-__attr __newfragment(__attr args[], unsigned int number)
+__fragment *__new_fragment(unsigned int n) 
+{
+    /* Allocate space for the list. */
+    __fragment *data = (__fragment *) __ALLOCATE(1, __FRAGMENT_SIZE(n));
+
+    /* The initial capacity is the same as the given size. */
+    data->size = 0;
+    data->capacity = n;
+    return data;
+}
+
+__mapping *__new_mapping(unsigned int n) 
+{
+    /* Allocate a number of buckets. */
+    __mapping *data = (__mapping *) __ALLOCATE(1, __MAPPING_SIZE(__MAPPING_BUCKETS));
+    unsigned int i;
+
+    /* Allocate fragments with an initial size of 2 * n / __MAPPING_BUCKETS,
+       assuming a mostly uniform distribution of values across the buckets. */
+
+    for (i = 0; i < __MAPPING_BUCKETS; i++)
+    {
+        data->keys[i] = __new_fragment(2 * n / __MAPPING_BUCKETS);
+        data->values[i] = __new_fragment(2 * n / __MAPPING_BUCKETS);
+    }
+
+    return data;
+}
+
+void __newdata_sequence(__attr args[], unsigned int number)
 {
     /* Calculate the size of the fragment. */
 
-    __fragment *data = (__fragment *) __ALLOCATE(1, __FRAGMENT_SIZE(number));
+    __fragment *data = __new_fragment(number);
     __attr attr = {0, .seqvalue=data};
     unsigned int i, j;
 
@@ -38,8 +67,39 @@ __attr __newfragment(__attr args[], unsigned int number)
         data->attrs[j] = args[i];
 
     data->size = number;
-    data->capacity = number;
-    return attr;
+
+    /* Store a reference to the data in the object's __data__ attribute. */
+
+    __store_via_object(args[0].value, __pos___data__, attr);
+}
+
+void __newdata_mapping(__attr args[], unsigned int number)
+{
+    __mapping *data = __new_mapping(number);
+    __attr attr = {0, .mapvalue=data};
+    __fragment *f;
+    __attr callargs[3];
+    unsigned int i;
+
+    /* Store a reference to the data in the object's __data__ attribute. */
+
+    __store_via_object(args[0].value, __pos___data__, attr);
+
+    /* Store the given number of values, starting from the second element. */
+
+    for (i = 1; i <= number; i++)
+    {
+        /* Obtain the tuple elements. */
+
+        f = __load_via_object(args[i].value, __pos___data__).seqvalue;
+        callargs[0] = args[0];
+        callargs[1] = f->attrs[0];
+        callargs[2] = f->attrs[1];
+
+        /* Call __setitem__ with the key and value. */
+
+        __fn___builtins___dict_dict___setitem__(callargs);
+    }
 }
 
 /* A helper for raising type errors within common operations. */

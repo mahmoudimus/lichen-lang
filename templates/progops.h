@@ -7,7 +7,13 @@
 
 __attr __new(const __table *table, __ref cls, size_t size);
 
-__attr __newfragment(__attr args[], unsigned int number);
+__fragment *__new_fragment(unsigned int n);
+
+__mapping *__new_mapping(unsigned int n);
+
+void __newdata_sequence(__attr args[], unsigned int number);
+
+void __newdata_mapping(__attr args[], unsigned int number);
 
 __attr __invoke(__attr callable, int always_callable,
                 unsigned int nkwargs, __param kwcodes[], __attr kwargs[],

@@ -24,6 +24,7 @@ from encoders import encode_bound_reference, encode_function_pointer, \
                      encode_instantiator_pointer, \
                      encode_literal_constant, encode_literal_constant_member, \
                      encode_literal_constant_value, \
+                     encode_literal_data_initialiser, \
                      encode_literal_instantiator, encode_literal_reference, \
                      encode_path, \
                      encode_predefined_reference, encode_size, \
@@ -65,11 +66,16 @@ class Generator(CommonOutput):
         ("__builtins__.notimplemented", "NotImplemented"),
         )
 
-    literal_instantiator_types = (
+    literal_mapping_types = (
         "__builtins__.dict.dict",
+        )
+
+    literal_sequence_types = (
         "__builtins__.list.list",
         "__builtins__.tuple.tuple",
         )
+
+    literal_instantiator_types = literal_mapping_types + literal_sequence_types
 
     def __init__(self, importer, optimiser, output):
         self.importer = importer
@@ -910,19 +916,19 @@ __attr %s(__attr __args[])
         # initialisers but instead populate the structures directly.
 
         if path in self.literal_instantiator_types:
+            if path in self.literal_mapping_types:
+                style = "mapping"
+            else:
+                style = "sequence"
+
             print >>f_code, """\
 __attr %s(__attr __args[], unsigned int number)
 {
-    __attr data;
-
     /* Allocate the structure. */
     __args[0] = __new(&%s, &%s, sizeof(%s));
 
-    /* Allocate a structure for the data. */
-    data = __newfragment(__args, number);
-
-    /* Store a reference to the data in the object's __data__ attribute. */
-    __store_via_object(__args[0].value, %s, data);
+    /* Allocate a structure for the data and set it on the __data__ attribute. */
+    %s(__args, number);
 
     /* Return the allocated object details. */
     return __args[0];
@@ -932,7 +938,7 @@ __attr %s(__attr __args[], unsigned int number)
     encode_tablename("<instance>", path),
     encode_path(path),
     encode_symbol("obj", path),
-    encode_symbol("pos", "__data__")
+    encode_literal_data_initialiser(style)
     )
 
             print >>f_signatures, "__attr %s(__attr[], unsigned int);" % encode_literal_instantiator(path)

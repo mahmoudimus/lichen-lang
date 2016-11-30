@@ -32,6 +32,7 @@ typedef struct __ptable
 
 typedef struct __obj __obj;
 typedef struct __fragment __fragment;
+typedef struct __mapping __mapping;
 
 typedef struct __attr
 {
@@ -54,6 +55,7 @@ typedef struct __attr
         double floatvalue;      /* floating point value */
         char * strvalue;        /* string value */
         __fragment * seqvalue;  /* sequence data */
+        __mapping * mapvalue;   /* mapping data */
     };
 } __attr;
 
@@ -76,6 +78,20 @@ typedef struct __fragment
 } __fragment;
 
 #define __FRAGMENT_SIZE(NUMBER) (NUMBER * sizeof(__attr) + 2 * sizeof(unsigned int))
+
+/* Mappings are simple collections of fragment references used to hold the
+   "buckets" used in hash tables. Here, separate lists of keys and values hold
+   attributes referring to the actual keys and corresponding values. */
+
+#define __MAPPING_BUCKETS 10
+
+typedef struct __mapping
+{
+    __fragment *keys[__MAPPING_BUCKETS];
+    __fragment *values[__MAPPING_BUCKETS];
+} __mapping;
+
+#define __MAPPING_SIZE(NUMBER) (2 * NUMBER * sizeof(__fragment *) + sizeof(unsigned int))
 
 /* Special instance position value. The pos member of __obj refers to the
    special type attribute for classes, indicating which position holds the

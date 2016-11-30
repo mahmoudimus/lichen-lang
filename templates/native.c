@@ -29,6 +29,36 @@ static __attr __new_str(char *s)
     return attr;
 }
 
+static __attr __new_list(__fragment *f)
+{
+    /* Create a new list and mutate the __data__ attribute. */
+    __attr attr = __new(&__InstanceTable___builtins___list_list, &__builtins___list_list, sizeof(__obj___builtins___list_list));
+    attr.value->attrs[__pos___data__].seqvalue = f;
+    return attr;
+}
+
+static __fragment *__fragment_append(__fragment *data, __attr * const value)
+{
+    __fragment *newdata = data;
+    unsigned int size = data->size, capacity = data->capacity;
+    unsigned int n;
+
+    /* Re-allocate the fragment if the capacity has been reached. */
+    if (size >= capacity)
+    {
+        /* NOTE: Consider various restrictions on capacity increases. */
+        n = capacity ? capacity * 2 : 1;
+        newdata = (__fragment *) __REALLOCATE(data, __FRAGMENT_SIZE(n));
+        newdata->capacity = n;
+    }
+
+    /* Insert the new element and increment the list size. */
+    newdata->attrs[size] = *value;
+    newdata->size = size + 1;
+
+    return newdata;
+}
+
 /* Native functions. */
 
 __attr __fn_native__exit(__attr __args[])
@@ -338,14 +368,9 @@ __attr __fn_native__list_init(__attr __args[])
     __attr * const size = &__args[1];
     /* size.__data__ interpreted as int */
     unsigned int n = __load_via_object(size->value, __pos___data__).intvalue;
+    __attr attr = {0, .seqvalue=__new_fragment(n)};
 
-    /* Allocate space for the list. */
-    __fragment *data = (__fragment *) __ALLOCATE(1, __FRAGMENT_SIZE(n));
-    __attr attr = {0, .seqvalue=data};
-
-    /* The initial capacity is the same as the given size. */
-    data->size = 0;
-    data->capacity = n;
+    /* Return the __data__ attribute. */
     return attr;
 }
 
@@ -368,22 +393,7 @@ __attr __fn_native__list_append(__attr __args[])
     __attr * const value = &__args[2];
     /* self.__data__ interpreted as list */
     __fragment *data = __load_via_object(self->value, __pos___data__).seqvalue;
-    __fragment *newdata = data;
-    unsigned int size = data->size, capacity = data->capacity;
-    unsigned int n;
-
-    /* Re-allocate the fragment if the capacity has been reached. */
-    if (size >= capacity)
-    {
-        /* NOTE: Consider various restrictions on capacity increases. */
-        n = capacity ? capacity * 2 : 1;
-        newdata = (__fragment *) __REALLOCATE(data, __FRAGMENT_SIZE(n));
-        newdata->capacity = n;
-    }
-
-    /* Insert the new element and increment the list size. */
-    newdata->attrs[size] = *value;
-    newdata->size = size + 1;
+    __fragment *newdata = __fragment_append(data, value);
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
@@ -463,6 +473,159 @@ __attr __fn_native__list_setelement(__attr __args[])
 
     /* Set the element. */
     elements[i] = *value;
+    return __builtins___none_None;
+}
+
+__attr __fn_native__dict_init(__attr __args[])
+{
+    __attr * const size = &__args[1];
+    /* size.__data__ interpreted as int */
+    unsigned int n = __load_via_object(size->value, __pos___data__).intvalue;
+    __mapping *data = __new_mapping(n);
+    __attr attr = {0, .mapvalue=data};
+
+    /* Return the __data__ attribute. */
+    return attr;
+}
+
+__attr __fn_native__dict_bucketsize(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    __attr * const index = &__args[2];
+    /* self.__data__ interpreted as dict */
+    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    /* index.__data__ interpreted as int */
+    int k = __load_via_object(index->value, __pos___data__).intvalue % __MAPPING_BUCKETS;
+
+    /* Return size of bucket k. */
+    return __new_int(data->keys[k]->size);
+}
+
+__attr __fn_native__dict_keys(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    /* self.__data__ interpreted as dict */
+    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    unsigned int k, i, j, size = 0;
+    __fragment *f;
+
+    /* Count the number of keys. */
+    for (k = 0; k < __MAPPING_BUCKETS; k++)
+        size += data->keys[k]->size;
+
+    /* Create a fragment for the keys. */
+    f =  __new_fragment(size);
+
+    /* Populate the fragment with the keys. */
+    for (j = 0, k = 0; k < __MAPPING_BUCKETS; k++)
+        for (i = 0; i < data->keys[k]->size; i++, j++)
+            f->attrs[j] = data->keys[k]->attrs[i];
+    f->size = size;
+
+    /* Return a list. */
+    return __new_list(f);
+}
+
+__attr __fn_native__dict_values(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    /* self.__data__ interpreted as dict */
+    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    unsigned int k, i, j, size = 0;
+    __fragment *f;
+
+    /* Count the number of values. */
+    for (k = 0; k < __MAPPING_BUCKETS; k++)
+        size += data->values[k]->size;
+
+    /* Create a fragment for the values. */
+    f =  __new_fragment(size);
+
+    /* Populate the fragment with the values. */
+    for (j = 0, k = 0; k < __MAPPING_BUCKETS; k++)
+        for (i = 0; i < data->values[k]->size; i++, j++)
+            f->attrs[j] = data->values[k]->attrs[i];
+    f->size = size;
+
+    /* Return a list. */
+    return __new_list(f);
+}
+
+__attr __fn_native__dict_key(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    __attr * const index = &__args[2];
+    __attr * const element = &__args[3];
+    /* self.__data__ interpreted as dict */
+    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    /* index.__data__ interpreted as int */
+    int k = __load_via_object(index->value, __pos___data__).intvalue % __MAPPING_BUCKETS;
+    /* element.__data__ interpreted as int */
+    int i = __load_via_object(element->value, __pos___data__).intvalue;
+
+    /* Return key from bucket k, element i. */
+    return data->keys[k]->attrs[i];
+}
+
+__attr __fn_native__dict_value(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    __attr * const index = &__args[2];
+    __attr * const element = &__args[3];
+    /* self.__data__ interpreted as dict */
+    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    /* index.__data__ interpreted as int */
+    int k = __load_via_object(index->value, __pos___data__).intvalue % __MAPPING_BUCKETS;
+    /* element.__data__ interpreted as int */
+    int i = __load_via_object(element->value, __pos___data__).intvalue;
+
+    /* Return value from bucket k, element i. */
+    return data->values[k]->attrs[i];
+}
+
+__attr __fn_native__dict_additem(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    __attr * const index = &__args[2];
+    __attr * const key = &__args[3];
+    __attr * const value = &__args[4];
+    /* self.__data__ interpreted as dict */
+    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    /* index.__data__ interpreted as int */
+    int k = __load_via_object(index->value, __pos___data__).intvalue % __MAPPING_BUCKETS;
+    __fragment *keys = data->keys[k], *newkeys;
+    __fragment *values = data->values[k], *newvalues;
+
+    /* Append the item. */
+    newkeys = __fragment_append(keys, key);
+    newvalues = __fragment_append(values, value);
+
+    /* Replace the fragments if appropriate. */
+    if (newkeys != keys)
+        data->keys[k] = newkeys;
+    if (newvalues != values)
+        data->values[k] = newvalues;
+    return __builtins___none_None;
+}
+
+__attr __fn_native__dict_setitem(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    __attr * const index = &__args[2];
+    __attr * const element = &__args[3];
+    __attr * const key = &__args[4];
+    __attr * const value = &__args[5];
+    /* self.__data__ interpreted as dict */
+    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    /* index.__data__ interpreted as int */
+    int k = __load_via_object(index->value, __pos___data__).intvalue % __MAPPING_BUCKETS;
+    /* element.__data__ interpreted as int */
+    int i = __load_via_object(element->value, __pos___data__).intvalue;
+
+    /* Replace the item. */
+    data->keys[k]->attrs[i] = *key;
+    data->values[k]->attrs[i] = *value;
+
     return __builtins___none_None;
 }
 

@@ -36,6 +36,10 @@ class int(object):
             # NOTE: To be implemented.
             self.__data__ = None
 
+    def __hash__(self):
+        "Return a value for hashing purposes."
+        return self
+
     def __iadd__(self, other):
         "Return a new int for the operation."
         return _binary_op(self, other, native._int_add)

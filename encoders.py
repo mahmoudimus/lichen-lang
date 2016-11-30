@@ -321,6 +321,15 @@ def encode_literal_constant_value(value):
     else:
         return '"%s"' % str(value).replace('"', '\\"').replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r")
 
+def encode_literal_data_initialiser(style):
+
+    """
+    Encode a reference to a function populating the data for a literal having
+    the given 'style' ("mapping" or "sequence").
+    """
+
+    return "__newdata_%s" % style
+
 def encode_literal_instantiator(path):
 
     """
