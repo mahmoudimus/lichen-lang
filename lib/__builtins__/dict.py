@@ -41,6 +41,29 @@ class dict:
             for key, value in args:
                 self.__setitem__(key, value)
 
+    def __str__(self):
+
+        "Return a string representation."
+
+        b = buffer()
+        b.append("{")
+
+        first = True
+
+        for key, value in self.items():
+            if first:
+                first = False
+            else:
+                b.append(", ")
+            b.append(key.__repr__())
+            b.append(" : ")
+            b.append(value.__repr__())
+
+        b.append("}")
+        return str(b)
+
+    __repr__ = __str__
+
     def _get_index(self, key):
 
         "Check 'key' and return an index or raise TypeError."
