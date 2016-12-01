@@ -3,7 +3,7 @@
 """
 Character-related functions.
 
-Copyright (C) 2015 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,10 +19,21 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from native import _str_ord
+
 def chr(i): pass
 def hex(number): pass
 def oct(number): pass
-def ord(c): pass
+
+def ord(c):
+
+    "Return the value of the given character 'c'."
+
+    if isinstance(c, string) and len(c) == 1:
+        return _str_ord(c)
+    else:
+        raise ValueError(c)
+
 def unichr(i): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

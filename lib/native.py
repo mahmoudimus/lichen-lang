@@ -55,11 +55,12 @@ def _int_str(self): pass
 # String operations.
 
 def _str_add(self, other): pass
-def _str_lt(self, other): pass
-def _str_gt(self, other): pass
 def _str_eq(self, other): pass
+def _str_gt(self, other): pass
+def _str_lt(self, other): pass
 def _str_len(self): pass
 def _str_nonempty(self): pass
+def _str_ord(self): pass
 def _str_substr(self, start, size): pass
 
 # List operations.

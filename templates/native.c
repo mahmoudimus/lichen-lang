@@ -363,6 +363,15 @@ __attr __fn_native__str_nonempty(__attr __args[])
     return strlen(s) ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
+__attr __fn_native__str_ord(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    /* self.__data__ interpreted as string */
+    char *s = __load_via_object(self->value, __pos___data__).strvalue;
+
+    return __new_int((unsigned int) s[0]);
+}
+
 __attr __fn_native__str_substr(__attr __args[])
 {
     __attr * const self = &__args[1];
