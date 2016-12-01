@@ -89,12 +89,13 @@ void __newdata_mapping(__attr args[], unsigned int number)
 
     /* Store the given number of values, starting from the second element. */
 
+    callargs[0] = args[0];
+
     for (i = 1; i <= number; i++)
     {
         /* Obtain the tuple elements. */
 
         f = __load_via_object(args[i].value, __pos___data__).seqvalue;
-        callargs[0] = args[0];
         callargs[1] = f->attrs[0];
         callargs[2] = f->attrs[1];
 
