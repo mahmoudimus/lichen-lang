@@ -302,7 +302,7 @@ __attr __fn_native__str_add(__attr __args[])
     char *r = (char *) __ALLOCATE(n, sizeof(char));
 
     strncpy(r, s, n);
-    strncpy(r + strlen(s), o, n - strlen(s));
+    strncpy(r + strlen(s), o, n - strlen(s)); /* should null terminate */
 
     /* Return a new string. */
     return __new_str(r);
@@ -361,6 +361,24 @@ __attr __fn_native__str_nonempty(__attr __args[])
     char *s = __load_via_object(self->value, __pos___data__).strvalue;
 
     return strlen(s) ? __builtins___boolean_True : __builtins___boolean_False;
+}
+
+__attr __fn_native__str_substr(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    __attr * const start = &__args[2];
+    __attr * const size = &__args[3];
+    /* self.__data__ interpreted as string */
+    char *s = __load_via_object(self->value, __pos___data__).strvalue, *sub;
+    /* start.__data__ interpreted as int */
+    int i = __load_via_object(start->value, __pos___data__).intvalue;
+    /* size.__data__ interpreted as int */
+    int l = __load_via_object(size->value, __pos___data__).intvalue;
+
+    /* Reserve space for a new string. */
+    sub = (char *) __ALLOCATE(l + 1, sizeof(char));
+    strncpy(sub, s + i, l); /* does not null terminate but final byte should be zero */
+    return __new_str(sub);
 }
 
 __attr __fn_native__list_init(__attr __args[])
@@ -649,7 +667,7 @@ __attr __fn_native__buffer_str(__attr __args[])
     {
         o = __load_via_object(data->attrs[i].value, __pos___data__).strvalue;
         n = strlen(o);
-        strncpy(s + j, o, n);
+        strncpy(s + j, o, n); /* does not null terminate but final byte should be zero */
         j += n;
     }
 

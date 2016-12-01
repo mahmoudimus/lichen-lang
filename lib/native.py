@@ -60,6 +60,7 @@ def _str_gt(self, other): pass
 def _str_eq(self, other): pass
 def _str_len(self): pass
 def _str_nonempty(self): pass
+def _str_substr(self, start, size): pass
 
 # List operations.
 

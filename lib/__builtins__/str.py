@@ -20,9 +20,10 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.operator import _binary_op, _negate
+from __builtins__.sequence import itemaccess
 import native
 
-class basestring:
+class basestring(itemaccess):
 
     "The base class for all strings."
 
@@ -120,6 +121,15 @@ class basestring:
     def startswith(self, s): pass
     def strip(self, chars=None): pass
     def upper(self): pass
+
+    # Special implementation methods.
+
+    def __get_single_item__(self, index):
+
+        "Return the item at the normalised (positive) 'index'."
+
+        self._check_index(index)
+        return native._str_substr(self, index, 1)
 
 class string(basestring):
     pass

@@ -40,6 +40,7 @@ __attr __fn_native__str_gt(__attr __args[]);
 __attr __fn_native__str_eq(__attr __args[]);
 __attr __fn_native__str_len(__attr __args[]);
 __attr __fn_native__str_nonempty(__attr __args[]);
+__attr __fn_native__str_substr(__attr __args[]);
 
 __attr __fn_native__list_init(__attr __args[]);
 __attr __fn_native__list_setsize(__attr __args[]);

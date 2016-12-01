@@ -21,9 +21,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from native import _isinstance
 
-class sequence:
+class itemaccess:
 
-    "A common base class for sequence types."
+    "An abstract class providing item access."
 
     def _check_index(self, index):
 
@@ -34,56 +34,6 @@ class sequence:
 
         if index < 0 or index >= len(self):
             raise IndexError(index)
-
-    def _str(self, opening, closing):
-
-        "Serialise this object with the given 'opening' and 'closing' strings."
-
-        b = buffer()
-        i = 0
-        l = self.__len__()
-        first = True
-
-        b.append(opening)
-        while i < l:
-            if first:
-                first = False
-            else:
-                b.append(", ")
-            b.append(repr(self.__get_single_item__(i)))
-            i += 1
-        b.append(closing)
-
-        return str(b)
-
-    def __contains__(self, value):
-
-        "Return whether the list contains 'value'."
-
-        # Perform a linear search of the sequence contents.
-
-        for v in self:
-
-            # Return True if the current value is equal to the specified one.
-            # Note that this is not an identity test, but an equality test.
-
-            if v == value:
-                return True
-
-        return False
-
-    def index(self, value):
-
-        "Return the index of 'value' or raise ValueError."
-
-        i = 0
-        l = len(self)
-        while i < l:
-            if self[i] == value:
-                return i
-            i += 1
-
-        raise ValueError(value)
 
     def __getitem__(self, index):
 
@@ -157,6 +107,60 @@ class sequence:
 
         return result
 
+class sequence(itemaccess):
+
+    "A common base class for sequence types."
+
+    def _str(self, opening, closing):
+
+        "Serialise this object with the given 'opening' and 'closing' strings."
+
+        b = buffer()
+        i = 0
+        l = self.__len__()
+        first = True
+
+        b.append(opening)
+        while i < l:
+            if first:
+                first = False
+            else:
+                b.append(", ")
+            b.append(repr(self.__get_single_item__(i)))
+            i += 1
+        b.append(closing)
+
+        return str(b)
+
+    def __contains__(self, value):
+
+        "Return whether the list contains 'value'."
+
+        # Perform a linear search of the sequence contents.
+
+        for v in self:
+
+            # Return True if the current value is equal to the specified one.
+            # Note that this is not an identity test, but an equality test.
+
+            if v == value:
+                return True
+
+        return False
+
+    def index(self, value):
+
+        "Return the index of 'value' or raise ValueError."
+
+        i = 0
+        l = len(self)
+        while i < l:
+            if self[i] == value:
+                return i
+            i += 1
+
+        raise ValueError(value)
+
     def __eq__(self, other):
 
         "Return whether this sequence is equal to 'other'."
@@ -210,7 +214,5 @@ def _min(x, y):
         return x
     else:
         return y
-
-def _tuple(l): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4
