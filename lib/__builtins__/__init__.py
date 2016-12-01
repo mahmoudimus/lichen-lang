@@ -76,7 +76,7 @@ from __builtins__.file import file
 from __builtins__.float import float
 from __builtins__.int import int
 from __builtins__.span import xrange, slice
-from __builtins__.iterator import listiterator
+from __builtins__.iterator import itemiterator
 from __builtins__.list import list
 from __builtins__.long import long
 from __builtins__.none import None, NoneType

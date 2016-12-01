@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.iterator import listiterator
+from __builtins__.iterator import itemiterator
 import native
 
 class dict:
@@ -148,6 +148,6 @@ class dict:
 
         "Return an iterator."
 
-        return listiterator(self.keys())
+        return itemiterator(self.keys())
 
 # vim: tabstop=4 expandtab shiftwidth=4

@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.iterator import listiterator
+from __builtins__.iterator import itemiterator
 from __builtins__.sequence import sequence
 import native
 
@@ -78,7 +78,7 @@ class tuple(sequence):
 
         "Return an iterator."
 
-        return listiterator(self)
+        return itemiterator(self)
 
     # Special implementation methods.
 
