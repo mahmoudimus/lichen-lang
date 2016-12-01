@@ -910,6 +910,7 @@ __attr %s(__attr __args[])
     encode_function_pointer(init_ref.get_origin())
     )
 
+        print >>f_signatures, "#define __HAVE_%s" % encode_path(path)
         print >>f_signatures, "__attr %s(__attr[]);" % encode_instantiator_pointer(path)
 
         # Write additional literal instantiators. These do not call the

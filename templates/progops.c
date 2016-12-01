@@ -73,6 +73,8 @@ void __newdata_sequence(__attr args[], unsigned int number)
     __store_via_object(args[0].value, __pos___data__, attr);
 }
 
+#ifdef __HAVE___builtins___dict_dict
+
 void __newdata_mapping(__attr args[], unsigned int number)
 {
     __mapping *data = __new_mapping(number);
@@ -101,6 +103,8 @@ void __newdata_mapping(__attr args[], unsigned int number)
         __fn___builtins___dict_dict___setitem__(callargs);
     }
 }
+
+#endif /* __HAVE___builtins___dict_dict */
 
 /* A helper for raising type errors within common operations. */
 
