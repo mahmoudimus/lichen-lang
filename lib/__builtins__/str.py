@@ -19,26 +19,27 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.identity import isclass
-from __builtins__.iterator import listiterator
 from __builtins__.operator import _binary_op, _negate
 import native
 
-class basestring(object):
-    def __init__(self, data=None):
-        # Note member.
-        self.__data__ = ""
+class basestring:
 
-    def __contains__(self, value): pass
+    "The base class for all strings."
 
-    def __getitem__(self, index):
-        # Note usage.
-        IndexError
+    def __init__(self):
 
-    def __getslice__(self, start, end=None): pass
+        "Initialise the string."
+
+        # Note the __data__ member. Since strings are either initialised from
+        # literals or converted using routines defined for other types, no form
+        # of actual initialisation is performed here.
+
+        self.__data__ = None
 
     def __iadd__(self, other):
+
         "Return a new string for the operation."
+
         return _binary_op(self, other, native._str_add)
 
     __add__ = __radd__ = __iadd__
@@ -49,38 +50,54 @@ class basestring(object):
     def __rmod__(self, other): pass
 
     def __lt__(self, other):
+
         "Return a new boolean for the comparison."
+
         return _binary_op(self, other, native._str_lt)
 
     def __gt__(self, other):
+
         "Return a new boolean for the comparison."
+
         return _binary_op(self, other, native._str_gt)
 
     def __le__(self, other):
+
         "Return a new boolean for the comparison."
+
         return _negate(self.__gt__(other))
 
     def __ge__(self, other):
+
         "Return a new boolean for the comparison."
+
         return _negate(self.__lt__(other))
 
     def __eq__(self, other):
+
         "Return a new boolean for the comparison."
+
         return _binary_op(self, other, native._str_eq)
 
     def __ne__(self, other):
+
         "Return a new boolean for the comparison."
+
         return _negate(self.__eq__(other))
 
     def __len__(self):
         return native._str_len(self)
 
     def __str__(self):
+
         "Return a string representation."
+
         return self
 
     def __repr__(self):
+
         "Return a program representation."
+
         # NOTE: To be implemented with proper quoting.
         b = buffer(['"', self, '"'])
         return str(b)
