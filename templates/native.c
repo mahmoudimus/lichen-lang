@@ -1,4 +1,4 @@
-#include <stdlib.h> /* exit */
+#include <stdlib.h> /* abs, exit */
 #include <unistd.h> /* read, write */
 #include <math.h>   /* ceil, log10, pow */
 #include <string.h> /* strcmp, strncpy, strlen */
@@ -281,7 +281,7 @@ __attr __fn_native__int_str(__attr __args[])
     __attr * const self = &__args[1];
     /* self.__data__ interpreted as int */
     int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int n = i != 0 ? (int) ceil(log10(i+1)) + 1 : 2;
+    int n = i != 0 ? (int) ceil(log10(abs(i)+1)) + 1 : 2;
     char *s = (char *) __ALLOCATE(n, sizeof(char));
 
     if (i < 0) n++;
