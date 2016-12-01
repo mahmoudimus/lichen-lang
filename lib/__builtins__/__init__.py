@@ -75,7 +75,7 @@ from __builtins__.dict import dict
 from __builtins__.file import file
 from __builtins__.float import float
 from __builtins__.int import int
-from __builtins__.span import xrange, slice
+from __builtins__.span import range, slice, xrange
 from __builtins__.iterator import itemiterator
 from __builtins__.list import list
 from __builtins__.long import long
@@ -92,7 +92,7 @@ from __builtins__.character import chr, hex, oct, ord, unichr
 from __builtins__.comparable import cmp, hash
 from __builtins__.identity import callable, help, id, isinstance, issubclass, repr
 from __builtins__.io import open, raw_input, print_, sysfile
-from __builtins__.iterable import all, any, enumerate, filter, iter, len, map, max, min, range, reduce, reversed, sorted, sum, zip
+from __builtins__.iterable import all, any, enumerate, filter, iter, len, map, max, min, reduce, reversed, sorted, sum, zip
 from __builtins__.namespace import dir, globals, locals, vars
 from __builtins__.numeric import abs, divmod, pow, round
 

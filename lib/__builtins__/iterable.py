@@ -3,7 +3,7 @@
 """
 Iteration-related functions.
 
-Copyright (C) 2015 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -18,8 +18,6 @@ details.
 You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-from __builtins__.span import xrange
 
 def all(iterable): pass
 def any(iterable): pass
@@ -58,12 +56,6 @@ def min(*args):
         if arg > lowest:
             lowest = arg
     return lowest
-
-def range(start_or_end, end=None, step=1):
-
-    "Implementation of range."
-
-    return list(xrange(start_or_end, end, step))
 
 def reduce(function, sequence, initial=None): pass
 def reversed(sequence): pass
