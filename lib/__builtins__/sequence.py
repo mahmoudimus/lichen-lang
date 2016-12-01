@@ -49,7 +49,7 @@ class itemaccess:
         # Handle slices separately.
 
         elif _isinstance(index, slice):
-            return self.__getslice__(index.start, index.end)
+            return self.__getslice__(index.start, index.end, index.step)
 
         # No other kinds of objects are supported as indexes.
 
@@ -77,9 +77,16 @@ class itemaccess:
         else:
             raise TypeError()
 
-    def __getslice__(self, start, end=None):
+    def __getslice__(self, start, end=None, step=1):
 
-        "Return a slice starting from 'start', with the optional 'end'."
+        """
+        Return a slice of the sequence starting from the 'start' index, ending
+        before the optional 'end' (or at the end of the sequence), and providing
+        items at the frequency given by 'step' (with a default step of 1).
+        """
+
+        if step == 0:
+            raise ValueError(step)
 
         length = self.__len__()
 
@@ -101,9 +108,9 @@ class itemaccess:
 
         result = []
 
-        while start < end:
+        while step > 0 and start < end or step < 0 and start > end:
             result.append(self.__get_single_item__(start))
-            start += 1
+            start += step
 
         return result
 

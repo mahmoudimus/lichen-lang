@@ -80,4 +80,6 @@ from operator.unary import (
     pos,
     )
 
+from __builtins__.span import slice # for Sliceobj instantiation
+
 # vim: tabstop=4 expandtab shiftwidth=4
