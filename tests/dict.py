@@ -5,9 +5,11 @@ def g(d):
     for key, value in d.items():
         return value
 
-d = {10 : "a", 20 : "b"}
+d = {10 : "a", 20 : "b", "c" : 30}
+print d
 print d[10]                             # a
 print d[20]                             # b
+print d["c"]                            # 30
 try:
     print d[30]                         # should fail with an exception
 except KeyError, exc:
@@ -17,20 +19,23 @@ l = f(d)
 print l
 print 10 in l                          	# True
 print 20 in l                          	# True
+print "c" in l                          # True
 print 30 in l                          	# False
 
 l = d.values()
 print l
 print "a" in l                          # True
 print "b" in l                          # True
+print 30 in l                           # True
 print "c" in l                          # False
 
-v = g(d) # either "a" or "b"
+v = g(d) # either "a" or "b" or 30
 print v
-print v == "a" or v == "b"              # True
-print v == 10 or v == 20                # False
+print v == "a" or v == "b" or v == 30   # True
+print v == 10 or v == 20 or v == "c"    # False
 
 l = d.items()
 print l
 print (10, "a") in l                    # True
+print ("c", 30) in l                    # True
 print (10, "b") in l                    # False

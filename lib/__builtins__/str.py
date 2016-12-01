@@ -27,6 +27,9 @@ class basestring(itemaccess):
 
     "The base class for all strings."
 
+    _p = 0x03ffffff
+    _a = 31
+
     def __init__(self):
 
         "Initialise the string."
@@ -36,6 +39,20 @@ class basestring(itemaccess):
         # of actual initialisation is performed here.
 
         self.__data__ = None
+
+    def __hash__(self):
+
+        "Return a value for hashing purposes."
+
+        result = 0
+        l = self.__len__()
+        i = 0
+
+        while i < l:
+            result = (result * self._a + ord(self.__get_single_item__(i))) % self._p
+            i += 1
+
+        return result
 
     def __iadd__(self, other):
 

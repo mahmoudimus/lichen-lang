@@ -20,3 +20,5 @@ try:
     print ord(s)            # should raise an exception
 except ValueError, exc:
     print "ord(s): value is not appropriate", exc.value
+
+print hash(s)
