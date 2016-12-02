@@ -66,7 +66,7 @@ class list(sequence):
 
         "Return the length of the list."
 
-        return native._list_len(self)
+        return native._list_len(self.__data__)
 
     def __add__(self, other): pass
 
@@ -75,7 +75,7 @@ class list(sequence):
         "Concatenate 'other' to the list."
 
         if isinstance(other, list):
-            native._list_concat(self, other)
+            native._list_concat(self, other.__data__)
         else:
             self.extend(other)
         return self
@@ -92,7 +92,7 @@ class list(sequence):
 
         "Lists are true if non-empty."
 
-        return native._list_nonempty(self)
+        return native._list_nonempty(self.__data__)
 
     def __iter__(self):
 
@@ -107,13 +107,13 @@ class list(sequence):
         "Return the item at the normalised (positive) 'index'."
 
         self._check_index(index)
-        return native._list_element(self, index)
+        return native._list_element(self.__data__, index)
 
     def __set_single_item__(self, index, value):
 
         "Set at the normalised (positive) 'index' the given 'value'."
 
         self._check_index(index)
-        return native._list_setelement(self, index, value)
+        return native._list_setelement(self.__data__, index, value)
 
 # vim: tabstop=4 expandtab shiftwidth=4

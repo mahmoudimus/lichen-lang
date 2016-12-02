@@ -36,14 +36,14 @@ class tuple(sequence):
 
         size = args is not None and len(args) or 0
         self.__data__ = native._list_init(size)
-        native._list_setsize(self, size)
+        native._list_setsize(self.__data__, size)
 
         # Populate the tuple.
 
         if args is not None:
             i = 0
             for arg in args:
-                native._list_setelement(self, i, arg)
+                native._list_setelement(self.__data__, i, arg)
                 i += 1
 
     def __getslice__(self, start, end=None):
@@ -56,7 +56,7 @@ class tuple(sequence):
 
         "Return the length of the tuple."
 
-        return native._list_len(self)
+        return native._list_len(self.__data__)
 
     def __add__(self, other): pass
 
@@ -87,7 +87,7 @@ class tuple(sequence):
         "Return the item at the normalised (positive) 'index'."
 
         self._check_index(index)
-        return native._list_element(self, index)
+        return native._list_element(self.__data__, index)
 
     def __set_single_item__(self, index, value):
 

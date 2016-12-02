@@ -52,7 +52,7 @@ class buffer:
         """
 
         if isinstance(s, buffer):
-            _list_concat(self, s)
+            _list_concat(self, s.__data__)
         elif isinstance(s, string):
             _list_append(self, s)
         else:
@@ -62,7 +62,7 @@ class buffer:
 
         "Return a string representation."
 
-        return _buffer_str(self)
+        return _buffer_str(self.__data__)
 
     def __repr__(self):
 

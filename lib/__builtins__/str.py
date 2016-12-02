@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.operator import _binary_op, _negate
+from __builtins__.operator import _negate
 from __builtins__.sequence import itemaccess
 import native
 
@@ -54,11 +54,20 @@ class basestring(itemaccess):
 
         return result
 
+    def _binary_op(self, op, other):
+
+        "Perform 'op' on this int and 'other' if appropriate."
+
+        if isinstance(other, basestring):
+            return op(self.__data__, other.__data__)
+        else:
+            return NotImplemented
+
     def __iadd__(self, other):
 
-        "Return a new string for the operation."
+        "Return a string combining this string with 'other'."
 
-        return _binary_op(self, other, native._str_add)
+        return self._binary_op(native._str_add, other)
 
     __add__ = __radd__ = __iadd__
 
@@ -69,42 +78,45 @@ class basestring(itemaccess):
 
     def __lt__(self, other):
 
-        "Return a new boolean for the comparison."
+        "Return whether this string is less than 'other'."
 
-        return _binary_op(self, other, native._str_lt)
+        return self._binary_op(native._str_lt, other)
 
     def __gt__(self, other):
 
-        "Return a new boolean for the comparison."
+        "Return whether this string is greater than 'other'."
 
-        return _binary_op(self, other, native._str_gt)
+        return self._binary_op(native._str_gt, other)
 
     def __le__(self, other):
 
-        "Return a new boolean for the comparison."
+        "Return whether this string is less than or equal to 'other'."
 
         return _negate(self.__gt__(other))
 
     def __ge__(self, other):
 
-        "Return a new boolean for the comparison."
+        "Return whether this string is greater than or equal to 'other'."
 
         return _negate(self.__lt__(other))
 
     def __eq__(self, other):
 
-        "Return a new boolean for the comparison."
+        "Return whether this string is equal to 'other'."
 
-        return _binary_op(self, other, native._str_eq)
+        return self._binary_op(native._str_eq, other)
 
     def __ne__(self, other):
 
-        "Return a new boolean for the comparison."
+        "Return whether this string is not equal to 'other'."
 
         return _negate(self.__eq__(other))
 
     def __len__(self):
-        return native._str_len(self)
+
+        "Return the length of this string."
+
+        return native._str_len(self.__data__)
 
     def __str__(self):
 
@@ -121,7 +133,7 @@ class basestring(itemaccess):
         return str(b)
 
     def __bool__(self):
-        return native._str_nonempty(self)
+        return native._str_nonempty(self.__data__)
 
     def endswith(self, s): pass
     def find(self, sub, start=None, end=None): pass
@@ -146,7 +158,7 @@ class basestring(itemaccess):
         "Return the item at the normalised (positive) 'index'."
 
         self._check_index(index)
-        return native._str_substr(self, index, 1)
+        return native._str_substr(self.__data__, index, 1)
 
 class string(basestring):
     pass

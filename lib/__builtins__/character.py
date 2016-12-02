@@ -30,7 +30,7 @@ def ord(c):
     "Return the value of the given character 'c'."
 
     if isinstance(c, string) and len(c) == 1:
-        return _str_ord(c)
+        return _str_ord(c.__data__)
     else:
         raise ValueError(c)
 

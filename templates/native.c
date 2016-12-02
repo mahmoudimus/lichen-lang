@@ -103,11 +103,11 @@ __attr __fn_native__is_not(__attr __args[])
 
 __attr __fn_native__int_add(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -116,11 +116,11 @@ __attr __fn_native__int_add(__attr __args[])
 
 __attr __fn_native__int_sub(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -129,11 +129,11 @@ __attr __fn_native__int_sub(__attr __args[])
 
 __attr __fn_native__int_mul(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -142,11 +142,11 @@ __attr __fn_native__int_mul(__attr __args[])
 
 __attr __fn_native__int_div(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -155,11 +155,11 @@ __attr __fn_native__int_div(__attr __args[])
 
 __attr __fn_native__int_mod(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -168,9 +168,9 @@ __attr __fn_native__int_mod(__attr __args[])
 
 __attr __fn_native__int_neg(__attr __args[])
 {
-    __attr * const self = &__args[1];
-    /* self.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
+    __attr * const _data = &__args[1];
+    /* _data interpreted as int */
+    int i = _data->intvalue;
 
     /* Return the new integer. */
     return __new_int(-i);
@@ -178,11 +178,11 @@ __attr __fn_native__int_neg(__attr __args[])
 
 __attr __fn_native__int_pow(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -191,11 +191,11 @@ __attr __fn_native__int_pow(__attr __args[])
 
 __attr __fn_native__int_and(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -204,11 +204,11 @@ __attr __fn_native__int_and(__attr __args[])
 
 __attr __fn_native__int_or(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -217,11 +217,11 @@ __attr __fn_native__int_or(__attr __args[])
 
 __attr __fn_native__int_xor(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -230,11 +230,11 @@ __attr __fn_native__int_xor(__attr __args[])
 
 __attr __fn_native__int_lt(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return a boolean result. */
     return i < j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -242,11 +242,11 @@ __attr __fn_native__int_lt(__attr __args[])
 
 __attr __fn_native__int_gt(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return a boolean result. */
     return i > j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -254,11 +254,11 @@ __attr __fn_native__int_gt(__attr __args[])
 
 __attr __fn_native__int_eq(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return a boolean result. */
     return i == j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -266,11 +266,11 @@ __attr __fn_native__int_eq(__attr __args[])
 
 __attr __fn_native__int_ne(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__ and other.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
-    int j = __load_via_object(other->value, __pos___data__).intvalue;
+    /* _data and other interpreted as int */
+    int i = _data->intvalue;
+    int j = other->intvalue;
 
     /* Return a boolean result. */
     return i != j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -278,9 +278,9 @@ __attr __fn_native__int_ne(__attr __args[])
 
 __attr __fn_native__int_str(__attr __args[])
 {
-    __attr * const self = &__args[1];
-    /* self.__data__ interpreted as int */
-    int i = __load_via_object(self->value, __pos___data__).intvalue;
+    __attr * const _data = &__args[1];
+    /* _data interpreted as int */
+    int i = _data->intvalue;
     int n = i != 0 ? (int) ceil(log10(abs(i)+1)) + 1 : 2;
     char *s = (char *) __ALLOCATE(n, sizeof(char));
 
@@ -293,11 +293,11 @@ __attr __fn_native__int_str(__attr __args[])
 
 __attr __fn_native__str_add(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__, other.__data__ interpreted as string */
-    char *s = __load_via_object(self->value, __pos___data__).strvalue;
-    char *o = __load_via_object(other->value, __pos___data__).strvalue;
+    /* _data, other interpreted as string */
+    char *s = _data->strvalue;
+    char *o = other->strvalue;
     int n = strlen(s) + strlen(o) + 1;
     char *r = (char *) __ALLOCATE(n, sizeof(char));
 
@@ -310,11 +310,11 @@ __attr __fn_native__str_add(__attr __args[])
 
 __attr __fn_native__str_lt(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__, other.__data__ interpreted as string */
-    char *s = __load_via_object(self->value, __pos___data__).strvalue;
-    char *o = __load_via_object(other->value, __pos___data__).strvalue;
+    /* _data, other interpreted as string */
+    char *s = _data->strvalue;
+    char *o = other->strvalue;
 
     /* NOTE: Using simple byte-level string operations. */
     return strcmp(s, o) < 0 ? __builtins___boolean_True : __builtins___boolean_False;
@@ -322,11 +322,11 @@ __attr __fn_native__str_lt(__attr __args[])
 
 __attr __fn_native__str_gt(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__, other.__data__ interpreted as string */
-    char *s = __load_via_object(self->value, __pos___data__).strvalue;
-    char *o = __load_via_object(other->value, __pos___data__).strvalue;
+    /* _data, other interpreted as string */
+    char *s = _data->strvalue;
+    char *o = other->strvalue;
 
     /* NOTE: Using simple byte-level string operations. */
     return strcmp(s, o) > 0 ? __builtins___boolean_True : __builtins___boolean_False;
@@ -334,11 +334,11 @@ __attr __fn_native__str_gt(__attr __args[])
 
 __attr __fn_native__str_eq(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__, other.__data__ interpreted as string */
-    char *s = __load_via_object(self->value, __pos___data__).strvalue;
-    char *o = __load_via_object(other->value, __pos___data__).strvalue;
+    /* _data, other interpreted as string */
+    char *s = _data->strvalue;
+    char *o = other->strvalue;
 
     /* NOTE: Using simple byte-level string operations. */
     return strcmp(s, o) == 0 ? __builtins___boolean_True : __builtins___boolean_False;
@@ -346,9 +346,9 @@ __attr __fn_native__str_eq(__attr __args[])
 
 __attr __fn_native__str_len(__attr __args[])
 {
-    __attr * const self = &__args[1];
-    /* self.__data__ interpreted as string */
-    char *s = __load_via_object(self->value, __pos___data__).strvalue;
+    __attr * const _data = &__args[1];
+    /* _data interpreted as string */
+    char *s = _data->strvalue;
 
     /* Return the new integer. */
     return __new_int(strlen(s));
@@ -356,29 +356,29 @@ __attr __fn_native__str_len(__attr __args[])
 
 __attr __fn_native__str_nonempty(__attr __args[])
 {
-    __attr * const self = &__args[1];
-    /* self.__data__ interpreted as string */
-    char *s = __load_via_object(self->value, __pos___data__).strvalue;
+    __attr * const _data = &__args[1];
+    /* _data interpreted as string */
+    char *s = _data->strvalue;
 
     return strlen(s) ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
 __attr __fn_native__str_ord(__attr __args[])
 {
-    __attr * const self = &__args[1];
-    /* self.__data__ interpreted as string */
-    char *s = __load_via_object(self->value, __pos___data__).strvalue;
+    __attr * const _data = &__args[1];
+    /* _data interpreted as string */
+    char *s = _data->strvalue;
 
     return __new_int((unsigned int) s[0]);
 }
 
 __attr __fn_native__str_substr(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const start = &__args[2];
     __attr * const size = &__args[3];
-    /* self.__data__ interpreted as string */
-    char *s = __load_via_object(self->value, __pos___data__).strvalue, *sub;
+    /* _data interpreted as string */
+    char *s = _data->strvalue, *sub;
     /* start.__data__ interpreted as int */
     int i = __load_via_object(start->value, __pos___data__).intvalue;
     /* size.__data__ interpreted as int */
@@ -403,10 +403,10 @@ __attr __fn_native__list_init(__attr __args[])
 
 __attr __fn_native__list_setsize(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const size = &__args[2];
-    /* self.__data__ interpreted as list */
-    __fragment *data = __load_via_object(self->value, __pos___data__).seqvalue;
+    /* _data interpreted as list */
+    __fragment *data = _data->seqvalue;
     /* size.__data__ interpreted as int */
     unsigned int n = __load_via_object(size->value, __pos___data__).intvalue;
 
@@ -432,9 +432,9 @@ __attr __fn_native__list_concat(__attr __args[])
 {
     __attr * const self = &__args[1];
     __attr * const other = &__args[2];
-    /* self.__data__, other.__data__ interpreted as list */
+    /* self.__data__, other interpreted as list */
     __fragment *data = __load_via_object(self->value, __pos___data__).seqvalue;
-    __fragment *other_data = __load_via_object(other->value, __pos___data__).seqvalue;
+    __fragment *other_data = other->seqvalue;
     __fragment *newdata = data;
     unsigned int size = data->size, capacity = data->capacity;
     unsigned int other_size = other_data->size;
@@ -461,9 +461,9 @@ __attr __fn_native__list_concat(__attr __args[])
 
 __attr __fn_native__list_len(__attr __args[])
 {
-    __attr * const self = &__args[1];
-    /* self.__data__ interpreted as fragment */
-    unsigned int size = __load_via_object(self->value, __pos___data__).seqvalue->size;
+    __attr * const _data = &__args[1];
+    /* _data interpreted as fragment */
+    unsigned int size = _data->seqvalue->size;
 
     /* Return the new integer. */
     return __new_int(size);
@@ -471,17 +471,17 @@ __attr __fn_native__list_len(__attr __args[])
 
 __attr __fn_native__list_nonempty(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
 
-    return __load_via_object(self->value, __pos___data__).seqvalue->size ? __builtins___boolean_True : __builtins___boolean_False;
+    return _data->seqvalue->size ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
 __attr __fn_native__list_element(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const index = &__args[2];
-    /* self.__data__ interpreted as fragment */
-    __attr *elements = __load_via_object(self->value, __pos___data__).seqvalue->attrs;
+    /* _data interpreted as fragment */
+    __attr *elements = _data->seqvalue->attrs;
     /* index.__data__ interpreted as int */
     int i = __load_via_object(index->value, __pos___data__).intvalue;
 
@@ -490,11 +490,11 @@ __attr __fn_native__list_element(__attr __args[])
 
 __attr __fn_native__list_setelement(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const index = &__args[2];
     __attr * const value = &__args[3];
-    /* self.__data__ interpreted as fragment */
-    __attr *elements = __load_via_object(self->value, __pos___data__).seqvalue->attrs;
+    /* _data interpreted as fragment */
+    __attr *elements = _data->seqvalue->attrs;
     /* index.__data__ interpreted as int */
     int i = __load_via_object(index->value, __pos___data__).intvalue;
 
@@ -679,9 +679,9 @@ __attr __fn_native__dict_setitem(__attr __args[])
 
 __attr __fn_native__buffer_str(__attr __args[])
 {
-    __attr * const self = &__args[1];
-    /* self.__data__ interpreted as buffer */
-    __fragment *data = __load_via_object(self->value, __pos___data__).seqvalue;
+    __attr * const _data = &__args[1];
+    /* _data interpreted as buffer */
+    __fragment *data = _data->seqvalue;
     unsigned int size = 0, i, j, n;
     char *s, *o;
 
