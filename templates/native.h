@@ -53,6 +53,8 @@ __attr __fn_native__list_element(__attr __args[]);
 __attr __fn_native__list_setelement(__attr __args[]);
 
 __attr __fn_native__dict_init(__attr __args[]);
+__attr __fn_native__dict_items(__attr __args[]);
+__attr __fn_native__dict_buckets(__attr __args[]);
 __attr __fn_native__dict_bucketsize(__attr __args[]);
 __attr __fn_native__dict_keys(__attr __args[]);
 __attr __fn_native__dict_values(__attr __args[]);

@@ -20,6 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iterator import itemiterator
+from __builtins__.sequence import _max
 import native
 
 class dict:
@@ -32,10 +33,7 @@ class dict:
 
         "Initialise the dictionary."
 
-        # Reserve an attribute for a hashtable reference along with some space
-        # for elements.
-
-        self.__data__ = native._dict_init(args is not None and len(args) or 0)
+        self.__data__ = self._get_data(args is not None and len(args) / 2 or 0)
 
         if args is not None:
             for key, value in args:
@@ -64,6 +62,15 @@ class dict:
 
     __repr__ = __str__
 
+    def _get_data(self, capacity):
+
+        """
+        Reserve an attribute for a hashtable reference along with some space
+        for elements.
+        """
+
+        return native._dict_init(_max(capacity, 5))
+
     def _get_index(self, key):
 
         "Check 'key' and return an index or raise TypeError."
@@ -78,20 +85,31 @@ class dict:
 
         "Search for 'key', using an 'index' identifying the bucket involved."
 
-        size = native._dict_bucketsize(self, index)
+        size = native._dict_bucketsize(self.__data__, index)
         i = 0
 
         while i < size:
-            found = native._dict_key(self, index, i)
+            found = native._dict_key(self.__data__, index, i)
             if found == key:
                 return i
             i += 1
 
         return None
 
-    def __setitem__(self, key, value):
+    def _resize(self, capacity):
 
-        "Set a mapping from 'key' to 'value' in the dictionary."
+        "Resize the hashtable to have the given 'capacity'."
+
+        newdata = self._get_data(capacity)
+
+        for key, value in self.items():
+            self._setitem(newdata, key, value)
+
+        self.__data__ = newdata
+
+    def _setitem(self, data, key, value):
+
+        "Set in the 'data' an item having the given 'key' and 'value'."
 
         # Find an index identifying the bucket involved.
 
@@ -104,12 +122,24 @@ class dict:
         # With no existing entry, append to the bucket.
 
         if i is None:
-            native._dict_additem(self, index, key, value)
+            native._dict_additem(data, index, key, value)
 
         # With an existing entry, replace the item.
 
         else:
-            native._dict_setitem(self, index, i, key, value)
+            native._dict_setitem(data, index, i, key, value)
+
+    def __setitem__(self, key, value):
+
+        "Set a mapping from 'key' to 'value' in the dictionary."
+
+        size = native._dict_items(self.__data__)
+        capacity = native._dict_buckets(self.__data__)
+
+        if size > capacity:
+            self._resize(capacity * 2)
+
+        self._setitem(self.__data__, key, value)
 
     def __delitem__(self, key, value): pass
 
@@ -140,7 +170,7 @@ class dict:
         # With a valid entry index, obtain the corresponding value.
 
         else:
-            return native._dict_value(self, index, i)
+            return native._dict_value(self.__data__, index, i)
 
     def clear(self): pass
     def has_key(self): pass
@@ -149,13 +179,13 @@ class dict:
 
         "Return the keys for this dictionary."
 
-        return native._dict_keys(self)
+        return native._dict_keys(self.__data__)
 
     def values(self):
 
         "Return the values in this dictionary."
 
-        return native._dict_values(self)
+        return native._dict_values(self.__data__)
 
     def items(self):
 

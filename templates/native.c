@@ -515,12 +515,30 @@ __attr __fn_native__dict_init(__attr __args[])
     return attr;
 }
 
+__attr __fn_native__dict_items(__attr __args[])
+{
+    __attr * const _data = &__args[1];
+    /* _data interpreted as dict */
+    __mapping *data = _data->mapvalue;
+
+    return __new_int(data->size);
+}
+
+__attr __fn_native__dict_buckets(__attr __args[])
+{
+    __attr * const _data = &__args[1];
+    /* _data interpreted as dict */
+    __mapping *data = _data->mapvalue;
+
+    return __new_int(data->capacity);
+}
+
 __attr __fn_native__dict_bucketsize(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const index = &__args[2];
-    /* self.__data__ interpreted as dict */
-    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    /* _data interpreted as dict */
+    __mapping *data = _data->mapvalue;
     /* index.__data__ interpreted as int */
     int k = __load_via_object(index->value, __pos___data__).intvalue % data->capacity;
 
@@ -530,9 +548,9 @@ __attr __fn_native__dict_bucketsize(__attr __args[])
 
 __attr __fn_native__dict_keys(__attr __args[])
 {
-    __attr * const self = &__args[1];
-    /* self.__data__ interpreted as dict */
-    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    __attr * const _data = &__args[1];
+    /* _data interpreted as dict */
+    __mapping *data = _data->mapvalue;
     unsigned int k, i, j, size = 0;
     __fragment *f;
 
@@ -555,9 +573,9 @@ __attr __fn_native__dict_keys(__attr __args[])
 
 __attr __fn_native__dict_values(__attr __args[])
 {
-    __attr * const self = &__args[1];
-    /* self.__data__ interpreted as dict */
-    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    __attr * const _data = &__args[1];
+    /* _data interpreted as dict */
+    __mapping *data = _data->mapvalue;
     unsigned int k, i, j, size = 0;
     __fragment *f;
 
@@ -580,11 +598,11 @@ __attr __fn_native__dict_values(__attr __args[])
 
 __attr __fn_native__dict_key(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const index = &__args[2];
     __attr * const element = &__args[3];
-    /* self.__data__ interpreted as dict */
-    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    /* _data interpreted as dict */
+    __mapping *data = _data->mapvalue;
     /* index.__data__ interpreted as int */
     int k = __load_via_object(index->value, __pos___data__).intvalue % data->capacity;
     /* element.__data__ interpreted as int */
@@ -596,11 +614,11 @@ __attr __fn_native__dict_key(__attr __args[])
 
 __attr __fn_native__dict_value(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const index = &__args[2];
     __attr * const element = &__args[3];
-    /* self.__data__ interpreted as dict */
-    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    /* _data interpreted as dict */
+    __mapping *data = _data->mapvalue;
     /* index.__data__ interpreted as int */
     int k = __load_via_object(index->value, __pos___data__).intvalue % data->capacity;
     /* element.__data__ interpreted as int */
@@ -612,12 +630,12 @@ __attr __fn_native__dict_value(__attr __args[])
 
 __attr __fn_native__dict_additem(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const index = &__args[2];
     __attr * const key = &__args[3];
     __attr * const value = &__args[4];
-    /* self.__data__ interpreted as dict */
-    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    /* _data interpreted as dict */
+    __mapping *data = _data->mapvalue;
     /* index.__data__ interpreted as int */
     int k = __load_via_object(index->value, __pos___data__).intvalue % data->capacity;
     unsigned int size = data->size;
@@ -640,13 +658,13 @@ __attr __fn_native__dict_additem(__attr __args[])
 
 __attr __fn_native__dict_setitem(__attr __args[])
 {
-    __attr * const self = &__args[1];
+    __attr * const _data = &__args[1];
     __attr * const index = &__args[2];
     __attr * const element = &__args[3];
     __attr * const key = &__args[4];
     __attr * const value = &__args[5];
-    /* self.__data__ interpreted as dict */
-    __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
+    /* _data interpreted as dict */
+    __mapping *data = _data->mapvalue;
     /* index.__data__ interpreted as int */
     int k = __load_via_object(index->value, __pos___data__).intvalue % data->capacity;
     /* element.__data__ interpreted as int */

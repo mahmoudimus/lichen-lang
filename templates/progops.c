@@ -27,42 +27,39 @@ __attr __new(const __table * table, __ref cls, size_t size)
 __fragment *__new_fragment(unsigned int n) 
 {
     /* Allocate space for the list. */
+
     __fragment *data = (__fragment *) __ALLOCATE(1, __FRAGMENT_SIZE(n));
 
     /* The initial capacity is the same as the given size. */
+
     data->size = 0;
     data->capacity = n;
     return data;
 }
 
-static inline unsigned int __mapping_buckets(unsigned int n)
-{
-    return n > 0 ? n / 2 : 5;
-}
-
 __mapping *__new_mapping(unsigned int n) 
 {
     /* Allocate a number of buckets. */
-    unsigned int capacity = __mapping_buckets(n);
-    __mapping *data = (__mapping *) __ALLOCATE(1, __MAPPING_SIZE(capacity));
+
+    __mapping *data = (__mapping *) __ALLOCATE(1, __MAPPING_SIZE(n));
     unsigned int i;
 
     /* Create arrays for key and value buckets. */
 
-    data->keys = (__fragment **) __ALLOCATE(capacity, sizeof(__fragment *));
-    data->values = (__fragment **) __ALLOCATE(capacity, sizeof(__fragment *));
+    data->keys = (__fragment **) __ALLOCATE(n, sizeof(__fragment *));
+    data->values = (__fragment **) __ALLOCATE(n, sizeof(__fragment *));
 
     /* Allocate fragments with an initial size of 2, assuming a mostly uniform
        distribution of values across the buckets will occur. */
 
-    for (i = 0; i < capacity; i++)
+    for (i = 0; i < n; i++)
     {
         data->keys[i] = __new_fragment(2);
         data->values[i] = __new_fragment(2);
     }
 
     data->size = 0;
-    data->capacity = capacity;
+    data->capacity = n;
     return data;
 }
 

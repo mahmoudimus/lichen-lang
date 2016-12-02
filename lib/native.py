@@ -77,6 +77,8 @@ def _list_setelement(self, index, value): pass
 # Dictionary operations.
 
 def _dict_init(size): pass
+def _dict_items(self): pass
+def _dict_buckets(self): pass
 def _dict_bucketsize(self, index): pass
 def _dict_key(self, index, element): pass
 def _dict_value(self, index, element): pass
