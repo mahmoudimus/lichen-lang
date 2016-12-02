@@ -83,15 +83,14 @@ typedef struct __fragment
    "buckets" used in hash tables. Here, separate lists of keys and values hold
    attributes referring to the actual keys and corresponding values. */
 
-#define __MAPPING_BUCKETS 10
-
 typedef struct __mapping
 {
-    __fragment *keys[__MAPPING_BUCKETS];
-    __fragment *values[__MAPPING_BUCKETS];
+    unsigned int size, capacity;
+    __fragment **keys;          /* array of key arrays */
+    __fragment **values;        /* array of value arrays */
 } __mapping;
 
-#define __MAPPING_SIZE(NUMBER) (2 * NUMBER * sizeof(__fragment *) + sizeof(unsigned int))
+#define __MAPPING_SIZE(NUMBER) (2 * NUMBER * sizeof(__fragment *) + 2 * sizeof(unsigned int))
 
 /* Special instance position value. The pos member of __obj refers to the
    special type attribute for classes, indicating which position holds the

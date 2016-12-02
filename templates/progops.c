@@ -35,21 +35,34 @@ __fragment *__new_fragment(unsigned int n)
     return data;
 }
 
+static inline unsigned int __mapping_buckets(unsigned int n)
+{
+    return n > 0 ? n / 2 : 5;
+}
+
 __mapping *__new_mapping(unsigned int n) 
 {
     /* Allocate a number of buckets. */
-    __mapping *data = (__mapping *) __ALLOCATE(1, __MAPPING_SIZE(__MAPPING_BUCKETS));
+    unsigned int capacity = __mapping_buckets(n);
+    __mapping *data = (__mapping *) __ALLOCATE(1, __MAPPING_SIZE(capacity));
     unsigned int i;
 
-    /* Allocate fragments with an initial size of 2 * n / __MAPPING_BUCKETS,
-       assuming a mostly uniform distribution of values across the buckets. */
+    /* Create arrays for key and value buckets. */
 
-    for (i = 0; i < __MAPPING_BUCKETS; i++)
+    data->keys = (__fragment **) __ALLOCATE(capacity, sizeof(__fragment *));
+    data->values = (__fragment **) __ALLOCATE(capacity, sizeof(__fragment *));
+
+    /* Allocate fragments with an initial size of 2, assuming a mostly uniform
+       distribution of values across the buckets will occur. */
+
+    for (i = 0; i < capacity; i++)
     {
-        data->keys[i] = __new_fragment(2 * n / __MAPPING_BUCKETS);
-        data->values[i] = __new_fragment(2 * n / __MAPPING_BUCKETS);
+        data->keys[i] = __new_fragment(2);
+        data->values[i] = __new_fragment(2);
     }
 
+    data->size = 0;
+    data->capacity = capacity;
     return data;
 }
 

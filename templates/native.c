@@ -522,7 +522,7 @@ __attr __fn_native__dict_bucketsize(__attr __args[])
     /* self.__data__ interpreted as dict */
     __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
     /* index.__data__ interpreted as int */
-    int k = __load_via_object(index->value, __pos___data__).intvalue % __MAPPING_BUCKETS;
+    int k = __load_via_object(index->value, __pos___data__).intvalue % data->capacity;
 
     /* Return size of bucket k. */
     return __new_int(data->keys[k]->size);
@@ -537,14 +537,14 @@ __attr __fn_native__dict_keys(__attr __args[])
     __fragment *f;
 
     /* Count the number of keys. */
-    for (k = 0; k < __MAPPING_BUCKETS; k++)
+    for (k = 0; k < data->capacity; k++)
         size += data->keys[k]->size;
 
     /* Create a fragment for the keys. */
     f =  __new_fragment(size);
 
     /* Populate the fragment with the keys. */
-    for (j = 0, k = 0; k < __MAPPING_BUCKETS; k++)
+    for (j = 0, k = 0; k < data->capacity; k++)
         for (i = 0; i < data->keys[k]->size; i++, j++)
             f->attrs[j] = data->keys[k]->attrs[i];
     f->size = size;
@@ -562,14 +562,14 @@ __attr __fn_native__dict_values(__attr __args[])
     __fragment *f;
 
     /* Count the number of values. */
-    for (k = 0; k < __MAPPING_BUCKETS; k++)
+    for (k = 0; k < data->capacity; k++)
         size += data->values[k]->size;
 
     /* Create a fragment for the values. */
     f =  __new_fragment(size);
 
     /* Populate the fragment with the values. */
-    for (j = 0, k = 0; k < __MAPPING_BUCKETS; k++)
+    for (j = 0, k = 0; k < data->capacity; k++)
         for (i = 0; i < data->values[k]->size; i++, j++)
             f->attrs[j] = data->values[k]->attrs[i];
     f->size = size;
@@ -586,7 +586,7 @@ __attr __fn_native__dict_key(__attr __args[])
     /* self.__data__ interpreted as dict */
     __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
     /* index.__data__ interpreted as int */
-    int k = __load_via_object(index->value, __pos___data__).intvalue % __MAPPING_BUCKETS;
+    int k = __load_via_object(index->value, __pos___data__).intvalue % data->capacity;
     /* element.__data__ interpreted as int */
     int i = __load_via_object(element->value, __pos___data__).intvalue;
 
@@ -602,7 +602,7 @@ __attr __fn_native__dict_value(__attr __args[])
     /* self.__data__ interpreted as dict */
     __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
     /* index.__data__ interpreted as int */
-    int k = __load_via_object(index->value, __pos___data__).intvalue % __MAPPING_BUCKETS;
+    int k = __load_via_object(index->value, __pos___data__).intvalue % data->capacity;
     /* element.__data__ interpreted as int */
     int i = __load_via_object(element->value, __pos___data__).intvalue;
 
@@ -619,7 +619,8 @@ __attr __fn_native__dict_additem(__attr __args[])
     /* self.__data__ interpreted as dict */
     __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
     /* index.__data__ interpreted as int */
-    int k = __load_via_object(index->value, __pos___data__).intvalue % __MAPPING_BUCKETS;
+    int k = __load_via_object(index->value, __pos___data__).intvalue % data->capacity;
+    unsigned int size = data->size;
     __fragment *keys = data->keys[k], *newkeys;
     __fragment *values = data->values[k], *newvalues;
 
@@ -632,6 +633,8 @@ __attr __fn_native__dict_additem(__attr __args[])
         data->keys[k] = newkeys;
     if (newvalues != values)
         data->values[k] = newvalues;
+
+    data->size = size + 1;
     return __builtins___none_None;
 }
 
@@ -645,7 +648,7 @@ __attr __fn_native__dict_setitem(__attr __args[])
     /* self.__data__ interpreted as dict */
     __mapping *data = __load_via_object(self->value, __pos___data__).mapvalue;
     /* index.__data__ interpreted as int */
-    int k = __load_via_object(index->value, __pos___data__).intvalue % __MAPPING_BUCKETS;
+    int k = __load_via_object(index->value, __pos___data__).intvalue % data->capacity;
     /* element.__data__ interpreted as int */
     int i = __load_via_object(element->value, __pos___data__).intvalue;
 
