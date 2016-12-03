@@ -79,7 +79,21 @@ void __newdata_mapping(__attr args[], unsigned int number)
 
 #endif /* __HAVE___builtins___dict_dict */
 
-/* A helper for raising type errors within common operations. */
+/* Helpers for raising errors within common operations. */
+
+void __raise_memory_error()
+{
+    __attr args[1];
+    __attr exc = __MEMORY_ERROR_INSTANTIATOR(args);
+    __Raise(exc);
+}
+
+void __raise_overflow_error()
+{
+    __attr args[1];
+    __attr exc = __OVERFLOW_ERROR_INSTANTIATOR(args);
+    __Raise(exc);
+}
 
 void __raise_type_error()
 {
@@ -88,12 +102,10 @@ void __raise_type_error()
     __Raise(exc);
 }
 
-/* A helper for raising memory errors within common operations. */
-
-void __raise_memory_error()
+void __raise_zero_division_error()
 {
     __attr args[1];
-    __attr exc = __MEMORY_ERROR_INSTANTIATOR(args);
+    __attr exc = __ZERO_DIVISION_ERROR_INSTANTIATOR(args);
     __Raise(exc);
 }
 

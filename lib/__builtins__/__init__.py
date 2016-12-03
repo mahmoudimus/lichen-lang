@@ -20,7 +20,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.core import function, get_using, module, object, type, \
-                              BaseException, Exception, MemoryError, TypeError, \
+                              BaseException, Exception, MemoryError, \
+                              OverflowError, TypeError, ZeroDivisionError, \
                               UnboundMethodInvocation, Warning
 
 # Exceptions.
@@ -44,7 +45,6 @@ from __builtins__.exception import (
     NameError,
     NotImplementedError,
     OSError,
-    OverflowError,
     PendingDeprecationWarning,
     RuntimeError,
     RuntimeWarning,
@@ -61,8 +61,7 @@ from __builtins__.exception import (
     UnicodeTranslateError,
     UnicodeWarning,
     UserWarning,
-    ValueError,
-    ZeroDivisionError
+    ValueError
     )
 
 

@@ -121,9 +121,11 @@ class BaseException:
 
 class Exception(BaseException): pass
 class MemoryError(Exception): pass
+class OverflowError(Exception): pass
 class TypeError(Exception): pass
 class UnboundMethodInvocation(Exception): pass
-class Warning(object): pass
+class Warning: pass
+class ZeroDivisionError(Exception): pass
 
 def get_using(callable, instance):
 

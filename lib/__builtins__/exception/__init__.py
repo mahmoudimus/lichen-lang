@@ -47,9 +47,7 @@ from __builtins__.exception.naming import (
 
 from __builtins__.exception.numeric import (
     ArithmeticError,
-    FloatingPointError,
-    OverflowError,
-    ZeroDivisionError
+    FloatingPointError
     )
 
 from __builtins__.exception.program import (

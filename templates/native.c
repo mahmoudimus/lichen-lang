@@ -1,8 +1,10 @@
 #include <stdlib.h> /* abs, exit */
 #include <unistd.h> /* read, write */
+#include <limits.h> /* INT_MAX, INT_MIN */
 #include <math.h>   /* ceil, log10, pow */
 #include <string.h> /* strcmp, strncpy, strlen */
 #include <stdio.h>  /* snprintf */
+#include <errno.h>  /* errno */
 #include "types.h"
 #include "exceptions.h"
 #include "ops.h"
@@ -109,8 +111,13 @@ __attr __fn_native__int_add(__attr __args[])
     int i = _data->intvalue;
     int j = other->intvalue;
 
+    /* Test for overflow. */
+    if (((i > 0) && (j > 0) && (i > INT_MAX - j)) ||
+        ((i < 0) && (j < 0) && (i < INT_MIN - j)))
+
+        __raise_overflow_error();
+
     /* Return the new integer. */
-    /* NOTE: No overflow test applied. */
     return __new_int(i + j);
 }
 
@@ -122,8 +129,13 @@ __attr __fn_native__int_sub(__attr __args[])
     int i = _data->intvalue;
     int j = other->intvalue;
 
+    /* Test for overflow. */
+    if (((i < 0) && (j > 0) && (i < INT_MIN + j)) ||
+        ((i > 0) && (j < 0) && (i > INT_MAX + j)))
+
+        __raise_overflow_error();
+
     /* Return the new integer. */
-    /* NOTE: No overflow test applied. */
     return __new_int(i - j);
 }
 
@@ -135,8 +147,15 @@ __attr __fn_native__int_mul(__attr __args[])
     int i = _data->intvalue;
     int j = other->intvalue;
 
+    /* Test for overflow. */
+    if (((i > 0) && (j > 0) && (i > INT_MAX / j)) ||
+        ((i < 0) && (j < 0) && (i > INT_MAX / j)) ||
+        ((i < 0) && (j > 0) && (i < INT_MIN / j)) ||
+        ((i > 0) && (j < 0) && (j < INT_MIN / i)))
+
+        __raise_overflow_error();
+
     /* Return the new integer. */
-    /* NOTE: No overflow test applied. */
     return __new_int(i * j);
 }
 
@@ -148,8 +167,13 @@ __attr __fn_native__int_div(__attr __args[])
     int i = _data->intvalue;
     int j = other->intvalue;
 
+    /* Test for division by zero or overflow. */
+    if (j == 0)
+        __raise_zero_division_error();
+    else if ((j == -1) && (i == INT_MIN))
+        __raise_overflow_error();
+
     /* Return the new integer. */
-    /* NOTE: No overflow test applied. */
     return __new_int(i / j);
 }
 
@@ -161,8 +185,13 @@ __attr __fn_native__int_mod(__attr __args[])
     int i = _data->intvalue;
     int j = other->intvalue;
 
+    /* Test for division by zero or overflow. */
+    if (j == 0)
+        __raise_zero_division_error();
+    else if ((j == -1) && (i == INT_MIN))
+        __raise_overflow_error();
+
     /* Return the new integer. */
-    /* NOTE: No overflow test applied. */
     return __new_int(i % j);
 }
 
@@ -171,6 +200,10 @@ __attr __fn_native__int_neg(__attr __args[])
     __attr * const _data = &__args[1];
     /* _data interpreted as int */
     int i = _data->intvalue;
+
+    /* Test for overflow. */
+    if (i == INT_MIN)
+        __raise_overflow_error();
 
     /* Return the new integer. */
     return __new_int(-i);
@@ -183,10 +216,18 @@ __attr __fn_native__int_pow(__attr __args[])
     /* _data and other interpreted as int */
     int i = _data->intvalue;
     int j = other->intvalue;
+    int k;
+
+    errno = 0;
+    k = (int) pow(i, j);
+
+    /* Test for overflow. */
+
+    if (errno == ERANGE)
+        __raise_overflow_error();
 
     /* Return the new integer. */
-    /* NOTE: No overflow test applied. */
-    return __new_int((int) pow(i, j));
+    return __new_int(k);
 }
 
 __attr __fn_native__int_and(__attr __args[])
