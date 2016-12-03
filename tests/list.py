@@ -1,6 +1,6 @@
 l = [1, 2, 3]
 l.append("four")
-print len(l)            # 3
+print len(l)            # 4
 print l[0]              # 1
 print l[1]              # 2
 print l[2]              # 3

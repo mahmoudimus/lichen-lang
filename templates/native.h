@@ -52,17 +52,6 @@ __attr __fn_native__list_nonempty(__attr __args[]);
 __attr __fn_native__list_element(__attr __args[]);
 __attr __fn_native__list_setelement(__attr __args[]);
 
-__attr __fn_native__dict_init(__attr __args[]);
-__attr __fn_native__dict_items(__attr __args[]);
-__attr __fn_native__dict_buckets(__attr __args[]);
-__attr __fn_native__dict_bucketsize(__attr __args[]);
-__attr __fn_native__dict_keys(__attr __args[]);
-__attr __fn_native__dict_values(__attr __args[]);
-__attr __fn_native__dict_key(__attr __args[]);
-__attr __fn_native__dict_value(__attr __args[]);
-__attr __fn_native__dict_additem(__attr __args[]);
-__attr __fn_native__dict_setitem(__attr __args[]);
-
 __attr __fn_native__buffer_str(__attr __args[]);
 
 __attr __fn_native__get_using(__attr __args[]);

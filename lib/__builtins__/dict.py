@@ -33,7 +33,8 @@ class dict:
 
         "Initialise the dictionary."
 
-        self.__data__ = self._get_data(args is not None and len(args) / 2 or 0)
+        self.size = 0
+        self.buckets = self._get_buckets(args is not None and len(args) / 2 or 0)
 
         if args is not None:
             for key, value in args:
@@ -62,34 +63,41 @@ class dict:
 
     __repr__ = __str__
 
-    def _get_data(self, capacity):
+    def _get_buckets(self, capacity):
 
         """
         Reserve an attribute for a hashtable reference along with some space
         for elements.
         """
 
-        return native._dict_init(_max(capacity, 5))
+        buckets = []
+        capacity = _max(capacity, 5)
+        i = 0
+
+        while i < capacity:
+            buckets.append([])
+            i += 1
+
+        return buckets
 
     def _get_index(self, key):
 
         "Check 'key' and return an index or raise TypeError."
 
         index = key.__hash__()
+
         if not native._isinstance(index, int):
             raise TypeError
 
-        return index
+        return index % len(self.buckets)
 
     def _find_entry(self, key, index):
 
         "Search for 'key', using an 'index' identifying the bucket involved."
 
-        size = native._dict_bucketsize(self.__data__, index)
         i = 0
 
-        while i < size:
-            found = native._dict_key(self.__data__, index, i)
+        for found, value in self.buckets[index]:
             if found == key:
                 return i
             i += 1
@@ -100,16 +108,16 @@ class dict:
 
         "Resize the hashtable to have the given 'capacity'."
 
-        newdata = self._get_data(capacity)
+        buckets = self._get_buckets(capacity)
 
         for key, value in self.items():
-            self._setitem(newdata, key, value)
+            self._setitem(buckets, key, value)
 
-        self.__data__ = newdata
+        self.buckets = buckets
 
-    def _setitem(self, data, key, value):
+    def _setitem(self, buckets, key, value):
 
-        "Set in the 'data' an item having the given 'key' and 'value'."
+        "Set in the 'buckets' an item having the given 'key' and 'value'."
 
         # Find an index identifying the bucket involved.
 
@@ -122,24 +130,24 @@ class dict:
         # With no existing entry, append to the bucket.
 
         if i is None:
-            native._dict_additem(data, index, key, value)
+            buckets[index].append((key, value))
+            self.size += 1
 
         # With an existing entry, replace the item.
 
         else:
-            native._dict_setitem(data, index, i, key, value)
+            buckets[index][i] = key, value
 
     def __setitem__(self, key, value):
 
         "Set a mapping from 'key' to 'value' in the dictionary."
 
-        size = native._dict_items(self.__data__)
-        capacity = native._dict_buckets(self.__data__)
+        capacity = len(self.buckets)
 
-        if size > capacity:
+        if self.size > capacity:
             self._resize(capacity * 2)
 
-        self._setitem(self.__data__, key, value)
+        self._setitem(self.buckets, key, value)
 
     def __delitem__(self, key, value): pass
 
@@ -170,7 +178,7 @@ class dict:
         # With a valid entry index, obtain the corresponding value.
 
         else:
-            return native._dict_value(self.__data__, index, i)
+            return self.buckets[index][i][1]
 
     def clear(self): pass
     def has_key(self): pass
@@ -179,19 +187,28 @@ class dict:
 
         "Return the keys for this dictionary."
 
-        return native._dict_keys(self.__data__)
+        l = []
+        for key, value in self.items():
+            l.append(key)
+        return l
 
     def values(self):
 
         "Return the values in this dictionary."
 
-        return native._dict_values(self.__data__)
+        l = []
+        for key, value in self.items():
+            l.append(value)
+        return l
 
     def items(self):
 
         "Return the items, each being a (key, value) tuple, in this dictionary."
 
-        return zip([self.keys(), self.values()])
+        l = []
+        for bucket in self.buckets:
+            l += bucket
+        return l
 
     def get(self, key): pass
     def setdefault(self, key, value): pass

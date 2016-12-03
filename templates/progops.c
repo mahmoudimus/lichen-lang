@@ -37,32 +37,6 @@ __fragment *__new_fragment(unsigned int n)
     return data;
 }
 
-__mapping *__new_mapping(unsigned int n) 
-{
-    /* Allocate a number of buckets. */
-
-    __mapping *data = (__mapping *) __ALLOCATE(1, __MAPPING_SIZE(n));
-    unsigned int i;
-
-    /* Create arrays for key and value buckets. */
-
-    data->keys = (__fragment **) __ALLOCATE(n, sizeof(__fragment *));
-    data->values = (__fragment **) __ALLOCATE(n, sizeof(__fragment *));
-
-    /* Allocate fragments with an initial size of 2, assuming a mostly uniform
-       distribution of values across the buckets will occur. */
-
-    for (i = 0; i < n; i++)
-    {
-        data->keys[i] = __new_fragment(2);
-        data->values[i] = __new_fragment(2);
-    }
-
-    data->size = 0;
-    data->capacity = n;
-    return data;
-}
-
 void __newdata_sequence(__attr args[], unsigned int number)
 {
     /* Calculate the size of the fragment. */
@@ -87,32 +61,20 @@ void __newdata_sequence(__attr args[], unsigned int number)
 
 void __newdata_mapping(__attr args[], unsigned int number)
 {
-    __mapping *data = __new_mapping(number);
-    __attr attr = {0, .mapvalue=data};
-    __fragment *f;
-    __attr callargs[3];
-    unsigned int i;
+    __attr dict = args[0];
+    __attr callargs[2];
 
-    /* Store a reference to the data in the object's __data__ attribute. */
+    /* Create a temporary list using the arguments. */
 
-    __store_via_object(args[0].value, __pos___data__, attr);
+    __newliteral___builtins___list_list(args, number);
 
-    /* Store the given number of values, starting from the second element. */
+    /* Call __init__ with the dict object and list argument. */
 
-    callargs[0] = args[0];
+    callargs[0] = dict;
+    callargs[1] = args[0];
 
-    for (i = 1; i <= number; i++)
-    {
-        /* Obtain the tuple elements. */
-
-        f = __load_via_object(args[i].value, __pos___data__).seqvalue;
-        callargs[1] = f->attrs[0];
-        callargs[2] = f->attrs[1];
-
-        /* Call __setitem__ with the key and value. */
-
-        __fn___builtins___dict_dict___setitem__(callargs);
-    }
+    __fn___builtins___dict_dict___init__(callargs);
+    args[0] = dict;
 }
 
 #endif /* __HAVE___builtins___dict_dict */

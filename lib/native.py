@@ -74,19 +74,6 @@ def _list_nonempty(self): pass
 def _list_element(self, index): pass
 def _list_setelement(self, index, value): pass
 
-# Dictionary operations.
-
-def _dict_init(size): pass
-def _dict_items(self): pass
-def _dict_buckets(self): pass
-def _dict_bucketsize(self, index): pass
-def _dict_key(self, index, element): pass
-def _dict_value(self, index, element): pass
-def _dict_additem(self, index, key, value): pass
-def _dict_setitem(self, index, element, key, value): pass
-def _dict_keys(self): pass
-def _dict_values(self): pass
-
 # Buffer operations.
 
 def _buffer_str(self): pass
