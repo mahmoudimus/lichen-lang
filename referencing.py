@@ -110,7 +110,7 @@ class Reference:
 
         "Return whether this reference is unresolved."
 
-        return self.has_kind(["<depends>", "<invoke>"])
+        return self.has_kind(["<depends>", "<invoke>", "<var>"])
 
     def static(self):
 
