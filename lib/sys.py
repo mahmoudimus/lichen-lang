@@ -19,12 +19,8 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __builtins__.int import maxint, minint
 import native
-
-# Limits.
-
-maxint = native._get_maxint()
-minint = native._get_minint()
 
 # Standard streams.
 

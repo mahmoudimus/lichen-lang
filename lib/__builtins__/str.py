@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __builtins__.int import maxint, minint
 from __builtins__.operator import _negate
 from __builtins__.sequence import itemaccess
 import native
@@ -27,7 +28,7 @@ class basestring(itemaccess):
 
     "The base class for all strings."
 
-    _p = 0x03ffffff
+    _p = maxint / 32
     _a = 31
 
     def __init__(self):

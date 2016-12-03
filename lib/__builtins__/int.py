@@ -232,4 +232,9 @@ class int(object):
         zero = 0
         return native._int_ne(self.__data__, zero.__data__)
 
+# Limits.
+
+maxint = native._get_maxint()
+minint = native._get_minint()
+
 # vim: tabstop=4 expandtab shiftwidth=4
