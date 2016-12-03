@@ -114,6 +114,12 @@ class int(object):
 
         return self._binary_op(native._int_xor, other)
 
+    def __invert__(self):
+
+        "Return the inversion of this int."
+
+        return native._int_not(self.__data__)
+
     __add__ = __radd__ = __iadd__
     __sub__ = __isub__
 
@@ -191,8 +197,6 @@ class int(object):
         "Return whether this int is not equal to 'other'."
 
         return _negate(self.__eq__(other))
-
-    def __invert__(self): pass
 
     def __neg__(self):
 

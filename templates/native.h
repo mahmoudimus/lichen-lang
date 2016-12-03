@@ -19,6 +19,7 @@ __attr __fn_native__int_pow(__attr __args[]);
 __attr __fn_native__int_sub(__attr __args[]);
 
 __attr __fn_native__int_and(__attr __args[]);
+__attr __fn_native__int_not(__attr __args[]);
 __attr __fn_native__int_or(__attr __args[]);
 __attr __fn_native__int_xor(__attr __args[]);
 

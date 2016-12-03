@@ -243,6 +243,16 @@ __attr __fn_native__int_and(__attr __args[])
     return __new_int(i & j);
 }
 
+__attr __fn_native__int_not(__attr __args[])
+{
+    __attr * const _data = &__args[1];
+    /* _data interpreted as int */
+    int i = _data->intvalue;
+
+    /* Return the new integer. */
+    return __new_int(~i);
+}
+
 __attr __fn_native__int_or(__attr __args[])
 {
     __attr * const _data = &__args[1];

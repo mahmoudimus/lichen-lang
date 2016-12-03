@@ -42,6 +42,7 @@ def _int_pow(self, other): pass
 def _int_sub(self, other): pass
 
 def _int_and(self, other): pass
+def _int_not(self): pass
 def _int_or(self, other): pass
 def _int_xor(self, other): pass
 

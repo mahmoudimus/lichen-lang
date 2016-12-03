@@ -3,7 +3,7 @@
 """
 Operator support.
 
-Copyright (C) 2010, 2013, 2015 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2010, 2013, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -24,9 +24,6 @@ from operator.core import unary_op
 # These functions defer method lookup by wrapping the attribute access in
 # lambda functions. Thus, the appropriate methods are defined locally, but no
 # attempt to obtain them is made until the generic function is called.
-
-# NOTE: The compiler should make it possible for the following functions to call
-# NOTE: the generic operator implementations with no additional call overhead.
 
 # Unary operator functions.
 
