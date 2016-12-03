@@ -103,6 +103,20 @@ __attr __fn_native__is_not(__attr __args[])
     return x->value != y->value ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
+__attr __fn_native__get_maxint(__attr __args[])
+{
+    __attr * const status = &__args[1];
+
+    return __new_int(INT_MAX);
+}
+
+__attr __fn_native__get_minint(__attr __args[])
+{
+    __attr * const status = &__args[1];
+
+    return __new_int(INT_MIN);
+}
+
 __attr __fn_native__int_add(__attr __args[])
 {
     __attr * const _data = &__args[1];
@@ -332,10 +346,11 @@ __attr __fn_native__int_str(__attr __args[])
     __attr * const _data = &__args[1];
     /* _data interpreted as int */
     int i = _data->intvalue;
-    int n = i != 0 ? (int) ceil(log10(abs(i)+1)) + 1 : 2;
+    /* Employ a buffer big enough to fit the largest integer plus an extra
+       character, a minus sign, and the null terminator. */
+    unsigned int n = (int) log10(INT_MAX) + 3;
     char *s = (char *) __ALLOCATE(n, sizeof(char));
 
-    if (i < 0) n++;
     snprintf(s, n, "%d", i);
 
     /* Return a new string. */

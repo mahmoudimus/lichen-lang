@@ -10,6 +10,9 @@ __attr __fn_native__get_path(__attr __args[]);
 __attr __fn_native__is(__attr __args[]);
 __attr __fn_native__is_not(__attr __args[]);
 
+__attr __fn_native__get_maxint(__attr __args[]);
+__attr __fn_native__get_minint(__attr __args[]);
+
 __attr __fn_native__int_add(__attr __args[]);
 __attr __fn_native__int_div(__attr __args[]);
 __attr __fn_native__int_mod(__attr __args[]);

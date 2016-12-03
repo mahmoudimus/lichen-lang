@@ -19,7 +19,12 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import _exit, _get_argv, _get_path
+import native
+
+# Limits.
+
+maxint = native._get_maxint()
+minint = native._get_minint()
 
 # Standard streams.
 
@@ -29,12 +34,12 @@ stderr = sysfile(2)
 
 # NOTE: Environment details to be implemented.
 
-argv = _get_argv()
-path = _get_path()
+argv = native._get_argv()
+path = native._get_path()
 
 # Functions to be implemented natively.
 
 def exit(status=0):
-    _exit(int(status))
+    native._exit(int(status))
 
 # vim: tabstop=4 expandtab shiftwidth=4

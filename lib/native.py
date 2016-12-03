@@ -31,6 +31,11 @@ def _get_path(): pass
 def _is(x, y): pass
 def _is_not(x, y): pass
 
+# Limit definition.
+
+def _get_maxint(): pass
+def _get_minint(): pass
+
 # Integer operations.
 
 def _int_add(self, other): pass

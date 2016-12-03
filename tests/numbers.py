@@ -1,3 +1,10 @@
+import sys
+
+print sys.maxint
+print sys.minint
+
+print sys.maxint + sys.minint
+
 i = 2 ** 30
 print i                                 # 1073741824
 
