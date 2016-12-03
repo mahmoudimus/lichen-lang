@@ -13,6 +13,9 @@ void __newdata_sequence(__attr args[], unsigned int number);
 
 void __newdata_mapping(__attr args[], unsigned int number);
 
+void __raise_type_error();
+void __raise_memory_error();
+
 __attr __invoke(__attr callable, int always_callable,
                 unsigned int nkwargs, __param kwcodes[], __attr kwargs[],
                 unsigned int nargs, __attr args[]);
