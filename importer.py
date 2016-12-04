@@ -474,27 +474,43 @@ class Importer:
         "Produce a module initialisation ordering."
 
         self.check_ordering()
-        return self.order_modules_for_module("__main__", set())
 
-    def order_modules_for_module(self, module_name, visited):
+        module_names = self.modules.keys()
 
-        """
-        Order the modules required by 'module_name', using 'visited' to track
-        visited modules.
-        """
+        # Record the number of modules using or depending on each module.
 
-        if module_name in visited:
-            return []
+        usage = {}
 
-        module = self.modules[module_name]
-        visited.add(module_name)
-        ordered = [module_name]
+        for module_name in module_names:
+            usage[module_name] = 0
 
-        for module_name in module.required:
-            modules = self.order_modules_for_module(module_name, visited)
-            ordered[:0] = modules
-            visited.update(modules)
+        for module_name, depend_names in self.depends.items():
+            if module_name in module_names:
+                for depend_name in depend_names:
+                    if depend_name in module_names:
+                        usage[depend_name] += 1
 
+        # Produce an ordering by obtaining exposed modules (required by modules
+        # already processed) and putting them at the start of the list.
+
+        ordered = []
+
+        while usage:
+            for module_name, n in usage.items():
+                if n == 0:
+                    ordered.insert(0, module_name)
+                    module_names = self.depends.get(module_name)
+
+                    # Reduce usage of the referenced modules.
+
+                    if module_names:
+                        for name in module_names:
+                            usage[name] -= 1
+
+                    del usage[module_name]
+
+        ordered.remove("__main__")
+        ordered.append("__main__")
         return ordered
 
     def check_ordering(self):
