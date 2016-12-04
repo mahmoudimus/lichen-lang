@@ -990,6 +990,7 @@ class TranslatedModule(CommonModule):
         target = None
         function = None
         literal_instantiation = False
+        context_required = True
 
         # Obtain details of the callable.
 
@@ -999,6 +1000,7 @@ class TranslatedModule(CommonModule):
             literal_instantiation = True
             parameters = None
             target = encode_literal_instantiator(objpath)
+            context_required = False
 
         # Identified targets employ function pointers directly.
 
@@ -1010,6 +1012,7 @@ class TranslatedModule(CommonModule):
             if expr.has_kind("<class>"):
                 target = encode_instantiator_pointer(objpath)
                 target_structure = "&%s" % encode_bound_reference("%s.__init__" % objpath)
+                context_required = False
 
             # Only plain functions and bound methods employ function pointers.
 
@@ -1018,13 +1021,20 @@ class TranslatedModule(CommonModule):
 
                 # Test for functions and methods.
 
+                method_class = self.is_method(objpath)
                 accessor_kinds = expr.get_accessor_kinds()
+                instance_accessor = accessor_kinds and \
+                                    len(accessor_kinds) == 1 and \
+                                    first(accessor_kinds) == "<instance>"
 
-                if not self.is_method(objpath) or accessor_kinds and len(accessor_kinds) == 1 and first(accessor_kinds) == "<instance>":
+                if not method_class or instance_accessor:
                     target = encode_function_pointer(objpath)
                     target_structure = self.is_method(objpath) and \
                         encode_bound_reference(objpath) or \
                         "&%s" % encode_path(objpath)
+
+                if not method_class:
+                    context_required = False
 
         # Other targets are retrieved at run-time.
 
@@ -1032,10 +1042,14 @@ class TranslatedModule(CommonModule):
             parameters = None
 
         # Arguments are presented in a temporary frame array with any context
-        # always being the first argument (although it may be set to null for
-        # invocations where it would be unused).
+        # always being the first argument. Where it would be unused, it may be
+        # set to null.
 
-        args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
+        if context_required:
+            args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
+        else:
+            args = ["(__attr) {0, 0}"]
+
         args += [None] * (not parameters and len(n.args) or parameters and len(parameters) or 0)
         kwcodes = []
         kwargs = []
@@ -1067,6 +1081,9 @@ class TranslatedModule(CommonModule):
                     kwcodes.append("{%s, %s}" % (
                         encode_symbol("ppos", arg.name),
                         encode_symbol("pcode", arg.name)))
+
+            # Store non-keyword arguments in the argument list, rejecting
+            # superfluous arguments.
 
             else:
                 try:
@@ -1118,7 +1135,8 @@ class TranslatedModule(CommonModule):
 
         # Without a known specific callable, the expression provides the target.
 
-        stages.append("__tmp_targets[%d] = %s" % (self.function_target, expr))
+        if not target or context_required:
+            stages.append("__tmp_targets[%d] = %s" % (self.function_target, expr))
 
         # Any specific callable is then obtained.
 
