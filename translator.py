@@ -23,6 +23,7 @@ from common import *
 from encoders import *
 from os.path import exists, join
 from os import makedirs
+from referencing import Reference
 import compiler
 import results
 
@@ -451,6 +452,11 @@ class TranslatedModule(CommonModule):
             expr = self.process_structure_node(n.expr)
             self.statement(expr)
 
+        # Module import declarations.
+
+        elif isinstance(n, compiler.ast.From):
+            self.process_from_node(n)
+
         # Nodes using operator module functions.
 
         elif isinstance(n, compiler.ast.Operator):
@@ -784,6 +790,33 @@ class TranslatedModule(CommonModule):
                     encode_path(class_name), encode_symbol("pos", name),
                     encode_path(parent), encode_symbol("pos", attrname)
                     ))
+
+    def process_from_node(self, n):
+
+        "Process the given node 'n', importing from another module."
+
+        path = self.get_namespace_path()
+
+        # Attempt to obtain the referenced objects.
+
+        for name, alias in n.names:
+            if name == "*":
+                raise InspectError("Only explicitly specified names can be imported from modules.", path, n)
+
+            # Obtain the path of the assigned name.
+
+            objpath = self.get_object_path(alias or name)
+
+            # Obtain the identity of the name.
+
+            ref = self.importer.identify(objpath)
+
+            # Where the name is not static, assign the value.
+
+            if ref and not ref.static() and ref.get_name():
+                self.writestmt("%s;" % 
+                    TrResolvedNameRef(alias or name, Reference("<var>", None, objpath),
+                                      expr=TrResolvedNameRef(name, ref)))
 
     def process_function_body_node(self, n):
 
