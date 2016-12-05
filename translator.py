@@ -774,10 +774,21 @@ class TranslatedModule(CommonModule):
 
         "Process the given class node 'n'."
 
+        class_name = self.get_object_path(n.name)
+
+        # Where a class is set conditionally or where the name may refer to
+        # different values, assign the name.
+
+        ref = self.importer.identify(class_name)
+
+        if not ref.static():
+            self.process_assignment_for_object(
+                n.name, make_expression("((__attr) {0, &%s})" %
+                    encode_path(class_name)))
+
         self.enter_namespace(n.name)
 
         if self.have_object():
-            class_name = self.get_namespace_path()
             self.write_comment("Class: %s" % class_name)
 
             self.initialise_inherited_members(class_name)
@@ -798,6 +809,11 @@ class TranslatedModule(CommonModule):
 
             ref = self.importer.identify(target)
             if ref:
+                continue
+
+            # Ignore special type attributes.
+
+            if is_type_attribute(name):
                 continue
 
             # Reference inherited attributes.
@@ -941,11 +957,11 @@ class TranslatedModule(CommonModule):
         ref = self.importer.identify(objpath)
 
         if self.in_conditional or self.in_function:
-            self.process_assignment_for_function(original_name, compiler.ast.Name(name))
+            self.process_assignment_for_object(original_name, compiler.ast.Name(name))
         elif not ref.static():
             context = self.is_method(objpath)
 
-            self.process_assignment_for_function(original_name,
+            self.process_assignment_for_object(original_name,
                 make_expression("((__attr) {%s, &%s})" % (
                     context and "&%s" % encode_path(context) or "0",
                     encode_path(objpath))))

@@ -328,7 +328,7 @@ class CommonModule:
 
         return self.process_structure_node(assignment)
 
-    def process_assignment_for_function(self, original_name, source):
+    def process_assignment_for_object(self, original_name, source):
 
         """
         Return an assignment operation making 'original_name' refer to the given
