@@ -23,7 +23,22 @@ check_type_warnings() {
 
 # Main program.
 
+OPTION=$1
+
+# Make any required results directory.
+
+if [ "$OPTION" = '--build' ]; then
+    if [ ! -e "_results" ]; then
+        mkdir "_results"
+    else
+        rm "_results/"*
+    fi
+fi
+
+# Perform each test.
+
 for FILENAME in tests/* ; do
+    TESTNAME=`basename "$FILENAME" .py`
 
     # Detect tests in their own subdirectories.
 
@@ -67,6 +82,24 @@ for FILENAME in tests/* ; do
 
     echo " (warnings)..." 1>&2
     if ! check_type_warnings ; then exit 1 ; fi
+
+    # Build and run if appropriate.
+
+    if [ "$OPTION" = '--build' ]; then
+        BUILDLOG="_results/$TESTNAME.build"
+        OUTLOG="_results/$TESTNAME.out"
+
+        echo " (build)..." 1>&2
+        if ! make -C _generated clean > "$BUILDLOG" || \
+           ! make -C _generated > "$BUILDLOG" ; then
+            exit 1
+        fi
+
+        echo " (run)..." 1>&2
+        if ! "_generated/main" > "$OUTLOG" ; then
+            exit 1
+        fi
+    fi
 
     echo 1>&2
 done
