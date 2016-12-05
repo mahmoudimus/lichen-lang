@@ -54,4 +54,4 @@ except TypeError:
 
 print g(E)          # (7, 8)
 
-print h(c)          # (4, 5)
+print h(c)          # (4, 2)

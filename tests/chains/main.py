@@ -8,6 +8,6 @@ def t():
     x = c.Class
     return x
 
-print C.attr
-print f.attr
-print t().attr
+print C.attr                    # 457
+print f.attr                    # 457
+print t().attr                  # 457

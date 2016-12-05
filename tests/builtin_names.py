@@ -1,4 +1,4 @@
 def f():
     return StopIteration
 
-print f()
+print f()                   # __builtins__.exception.base.StopIteration
