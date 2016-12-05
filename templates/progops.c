@@ -109,6 +109,25 @@ void __raise_zero_division_error()
     __Raise(exc);
 }
 
+/* Helper for raising exception instances. */
+
+__attr __ensure_instance(__attr arg)
+{
+    /* Reserve space for the instance. */
+
+    __attr args[1];
+
+    /* Return instances as provided. */
+
+    if (__is_instance(arg.value))
+        return arg;
+
+    /* Invoke non-instances to produce instances. */
+
+    else
+        return __invoke(arg, 0, 0, 0, 0, 1, args);
+}
+
 /* Generic invocation operations. */
 
 /* Invoke the given callable, supplying keyword argument details in the given

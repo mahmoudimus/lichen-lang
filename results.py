@@ -108,13 +108,9 @@ class LocalNameRef(NameRef):
     def __repr__(self):
         return "LocalNameRef(%r, %r)" % (self.name, self.number)
 
-class ResolvedNameRef(NameRef):
+class ResolvedRef:
 
-    "A resolved name-based reference."
-
-    def __init__(self, name, ref, expr=None):
-        NameRef.__init__(self, name, expr)
-        self.ref = ref
+    "A resolved reference mix-in."
 
     def reference(self):
         return self.ref
@@ -134,6 +130,14 @@ class ResolvedNameRef(NameRef):
     def has_kind(self, kinds):
         return self.ref and self.ref.has_kind(kinds)
 
+class ResolvedNameRef(ResolvedRef, NameRef):
+
+    "A resolved name-based reference."
+
+    def __init__(self, name, ref, expr=None):
+        NameRef.__init__(self, name, expr)
+        self.ref = ref
+
     def __repr__(self):
         return "ResolvedNameRef(%r, %r, %r)" % (self.name, self.ref, self.expr)
 
@@ -149,7 +153,7 @@ class ConstantValueRef(ResolvedNameRef):
     def __repr__(self):
         return "ConstantValueRef(%r, %r, %r, %r)" % (self.name, self.ref, self.value, self.number)
 
-class InstanceRef(Result):
+class InstanceRef(ResolvedRef, Result):
 
     "An instance reference."
 

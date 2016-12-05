@@ -154,6 +154,26 @@ class TrLiteralSequenceRef(results.LiteralSequenceRef, TranslationResult):
     def __str__(self):
         return str(self.node)
 
+class TrInstanceRef(results.InstanceRef, TranslationResult):
+
+    "A reference representing instantiation of a class."
+
+    def __init__(self, ref, expr):
+
+        """
+        Initialise the reference with 'ref' indicating the nature of the
+        reference and 'expr' being an expression used to create the instance.
+        """
+
+        results.InstanceRef.__init__(self, ref)
+        self.expr = expr
+
+    def __str__(self):
+        return self.expr
+
+    def __repr__(self):
+        return "TrResolvedInstanceRef(%r, %r)" % (self.ref, self.expr)
+
 class AttrResult(Expression, TranslationResult):
 
     "A translation result for an attribute access."
@@ -1022,6 +1042,7 @@ class TranslatedModule(CommonModule):
         objpath = expr.get_origin()
         target = None
         function = None
+        instantiation = False
         literal_instantiation = False
         context_required = True
 
@@ -1030,7 +1051,7 @@ class TranslatedModule(CommonModule):
         # Literals may be instantiated specially.
 
         if expr.is_name() and expr.name.startswith("$L") and objpath:
-            literal_instantiation = True
+            instantiation = literal_instantiation = objpath
             parameters = None
             target = encode_literal_instantiator(objpath)
             context_required = False
@@ -1043,6 +1064,7 @@ class TranslatedModule(CommonModule):
             # Class invocation involves instantiators.
 
             if expr.has_kind("<class>"):
+                instantiation = objpath
                 target = encode_instantiator_pointer(objpath)
                 target_structure = "&%s" % encode_bound_reference("%s.__init__" % objpath)
                 context_required = False
@@ -1195,7 +1217,10 @@ class TranslatedModule(CommonModule):
                 len(kwargs), kwcodestr, kwargstr,
                 len(args), argstr)
 
-        return make_expression(output)
+        if instantiation:
+            return TrInstanceRef(instantiation, output)
+        else:
+            return make_expression(output)
 
     def always_callable(self, refs):
 
@@ -1342,7 +1367,15 @@ class TranslatedModule(CommonModule):
         # NOTE: Determine which raise statement variants should be permitted.
 
         if n.expr1:
-            self.writestmt("__Raise(%s);" % self.process_structure_node(n.expr1))
+            exc = self.process_structure_node(n.expr1)
+
+            # Raise instances, testing the kind at run-time if necessary and
+            # instantiating any non-instance.
+
+            if isinstance(exc, TrInstanceRef):
+                self.writestmt("__Raise(%s);" % exc)
+            else:
+                self.writestmt("__Raise(__ensure_instance(%s));" % exc)
         else:
             self.writestmt("__Complete;")
 

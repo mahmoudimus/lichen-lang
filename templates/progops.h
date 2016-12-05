@@ -13,10 +13,15 @@ void __newdata_sequence(__attr args[], unsigned int number);
 
 void __newdata_mapping(__attr args[], unsigned int number);
 
+/* Exception raising. */
+
 void __raise_memory_error();
 void __raise_overflow_error();
 void __raise_zero_division_error();
 void __raise_type_error();
+__attr __ensure_instance(__attr arg);
+
+/* Generic invocation operations. */
 
 __attr __invoke(__attr callable, int always_callable,
                 unsigned int nkwargs, __param kwcodes[], __attr kwargs[],
