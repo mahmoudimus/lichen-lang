@@ -29,7 +29,8 @@ from encoders import encode_bound_reference, encode_function_pointer, \
                      encode_path, \
                      encode_predefined_reference, encode_size, \
                      encode_symbol, encode_tablename, \
-                     encode_type_attribute
+                     encode_type_attribute, decode_type_attribute, \
+                     is_type_attribute
 from os import listdir
 from os.path import exists, isdir, join, split
 from referencing import Reference
@@ -822,6 +823,12 @@ __obj %s = {
                     constant_number = self.optimiser.constant_numbers[attr_path]
                     constant_value = "__const%d" % constant_number
                     structure.append("%s /* %s */" % (constant_value, attrname))
+                    continue
+
+                # Special class relationship attributes.
+
+                elif is_type_attribute(attrname):
+                    structure.append("{0, &%s}" % encode_path(decode_type_attribute(attrname)))
                     continue
 
                 structure.append(self.encode_member(origin, attrname, attr, kind))

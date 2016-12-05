@@ -389,6 +389,18 @@ def encode_type_attribute(path):
 
     return "#%s" % path
 
+def decode_type_attribute(s):
+
+    "Decode the special type attribute 's'."
+
+    return s[1:]
+
+def is_type_attribute(s):
+
+    "Return whether 's' is a type attribute name."
+
+    return s.startswith("#")
+
 
 
 # A mapping from kinds to structure size reference prefixes.
