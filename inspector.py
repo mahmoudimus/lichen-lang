@@ -670,7 +670,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Where a function is set conditionally, assign the name.
 
         if original_name:
-            self.process_assignment_for_function(original_name, compiler.ast.Name(name))
+            self.process_assignment_for_object(original_name, compiler.ast.Name(name))
 
     def process_global_node(self, n):
 
