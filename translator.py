@@ -1497,13 +1497,17 @@ class TranslatedModule(CommonModule):
         self.writeline("{")
         self.indent += 1
 
-        # Only use the normal return statement if no surrounding try blocks
-        # apply.
+        # Do not return anything at the module level.
 
-        if not self.in_try_finally and not self.in_try_except:
-            self.writeline("if (!__ISNULL(__tmp_exc.arg)) return __tmp_exc.arg;")
-        else:
-            self.writeline("if (!__ISNULL(__tmp_exc.arg)) __Throw(__tmp_exc);")
+        if self.get_namespace_path() != self.name:
+
+            # Only use the normal return statement if no surrounding try blocks
+            # apply.
+
+            if not self.in_try_finally and not self.in_try_except:
+                self.writeline("if (!__ISNULL(__tmp_exc.arg)) return __tmp_exc.arg;")
+            else:
+                self.writeline("if (!__ISNULL(__tmp_exc.arg)) __Throw(__tmp_exc);")
 
         self.indent -= 1
         self.writeline("}")
