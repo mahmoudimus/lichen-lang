@@ -231,7 +231,7 @@ class BasicModule(CommonModule):
 
         # Determine how the object properties will be defined.
 
-        multiple = self.objects.has_key(name) and self.objects[name].get_kind() != ref.get_kind()
+        multiple = self.objects.has_key(name) and self.objects[name] != ref
         self.importer.objects[name] = self.objects[name] = multiple and ref.as_var() or ref
 
     def queue_module(self, name, required=False):
