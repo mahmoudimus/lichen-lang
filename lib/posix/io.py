@@ -71,6 +71,12 @@ class sysstream:
         _check_string(s)
         native._fwrite(self.__data__, s)
 
+# Standard streams.
+
+stdin = sysstream(0)
+stdout = sysstream(1, "w")
+stderr = sysstream(2, "w")
+
 # Input/output functions.
 
 def close(fd): pass
