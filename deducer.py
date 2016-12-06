@@ -1779,6 +1779,7 @@ class Deducer(CommonOutput):
          * any test to apply to the context
          * the method of obtaining the final attribute
          * any static final attribute
+         * the kinds of objects providing the final attribute
         """
 
         const_access = self.const_accesses_rev.get(location)
