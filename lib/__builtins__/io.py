@@ -19,30 +19,6 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from posix.io import fdopen, read, write
-
-class sysfile:
-
-    "A system-level file object."
-
-    def __init__(self, fd):
-
-        "Initialise the file with the given 'fd'."
-
-        self.fd = fd
-
-    def read(self, n):
-
-        "Read 'n' bytes from the file."
-
-        return read(self.fd, n)
-
-    def write(self, s):
-
-        "Write 's' to the file."
-
-        write(self.fd, str(s))
-
 def open(name, mode=None, buffering=None):
 
     """

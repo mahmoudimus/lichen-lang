@@ -21,6 +21,28 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import native
 
+class sysfile:
+
+    "A system-level file object."
+
+    def __init__(self, fd):
+
+        "Initialise the file with the given 'fd'."
+
+        self.fd = fd
+
+    def read(self, n):
+
+        "Read 'n' bytes from the file."
+
+        return read(self.fd, n)
+
+    def write(self, s):
+
+        "Write 's' to the file."
+
+        write(self.fd, str(s))
+
 def close(fd): pass
 def closerange(fd_low, fd_high): pass
 def dup(fd): pass

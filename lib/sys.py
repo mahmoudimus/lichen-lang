@@ -20,6 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.int import maxint, minint
+from posix.io import sysfile
 import native
 
 # Standard streams.
