@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 
 """
-Native library functions. None of these are actually defined here. Instead,
-native implementations are substituted when each program is built.
+Native library functions.
+
+None of these are actually defined here. Instead, native implementations are
+substituted when each program is built. It is, however, important to declare
+non-core exceptions used by the native functions because they need to be
+identified as being needed by the program.
 
 Copyright (C) 2011, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
@@ -99,5 +103,13 @@ def _issubclass(obj, cls): pass
 def _fdopen(fd, mode): IOError
 def _read(fd, n): IOError
 def _write(fd, str): pass
+
+def _fread(fd, n):
+    IOError
+    EOFError
+
+def _fwrite(fd, str):
+    IOError
+    EOFError
 
 # vim: tabstop=4 expandtab shiftwidth=4

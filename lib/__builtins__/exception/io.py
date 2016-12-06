@@ -19,7 +19,11 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class EOFError(Exception): pass
+class EOFError(Exception):
+
+    "An end-of-file error."
+
+    pass
 
 class IOError(Exception):
 

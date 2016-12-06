@@ -21,6 +21,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import native
 
+# Abstractions for system-level files and streams.
+
 class sysfile:
 
     "A system-level file object."
@@ -33,15 +35,43 @@ class sysfile:
 
     def read(self, n):
 
-        "Read 'n' bytes from the file."
+        "Read 'n' bytes from the file, returning a string."
 
+        _check_int(n)
         return read(self.fd, n)
 
     def write(self, s):
 
-        "Write 's' to the file."
+        "Write string 's' to the file."
 
-        write(self.fd, str(s))
+        _check_string(s)
+        write(self.fd, s)
+
+class sysstream:
+
+    "A system-level stream object."
+
+    def __init__(self, fd, mode="r"):
+
+        "Initialise the stream with the given 'fd' and 'mode'."
+
+        self.__data__ = fdopen(fd, mode)
+
+    def read(self, n):
+
+        "Read 'n' bytes from the stream."
+
+        _check_int(n)
+        return native._fread(self.__data__, n)
+
+    def write(self, s):
+
+        "Write string 's' to the stream."
+
+        _check_string(s)
+        native._fwrite(self.__data__, s)
+
+# Input/output functions.
 
 def close(fd): pass
 def closerange(fd_low, fd_high): pass
@@ -104,6 +134,8 @@ def write(fd, s):
     _check_string(s)
     native._write(fd, s)
 
+# Constants.
+
 O_APPEND = 1024
 O_ASYNC = 8192
 O_CREAT = 64
@@ -123,6 +155,8 @@ O_RSYNC = 1052672
 O_SYNC = 1052672
 O_TRUNC = 512
 O_WRONLY = 1
+
+# Type validation functions.
 
 def _check_fd(fd):
 

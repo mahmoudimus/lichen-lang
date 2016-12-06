@@ -675,6 +675,59 @@ __attr __fn_native__fdopen(__attr __args[])
     }
 }
 
+__attr __fn_native__fread(__attr __args[])
+{
+    __attr * const fp = &__args[1];
+    __attr * const size = &__args[2];
+    /* fp interpreted as FILE reference */
+    FILE *f = (FILE *) fp->datavalue;
+    /* size.__data__ interpreted as int */
+    int to_read = __load_via_object(size->value, __pos___data__).intvalue;
+    char buf[to_read];
+    size_t have_read;
+    int error;
+    char *s;
+
+    have_read = fread(buf, sizeof(char), to_read, f);
+
+    if (have_read != to_read)
+    {
+        if (feof(f))
+            __raise_eof_error();
+        else if (error = ferror(f))
+            __raise_io_error(__new_int(error));
+    }
+
+    /* Reserve space for a new string. */
+
+    s = __ALLOCATE(have_read + 1, sizeof(char));
+    strncpy(s, (char *) buf, have_read); /* does not null terminate but final byte should be zero */
+    return __new_str(s);
+}
+
+__attr __fn_native__fwrite(__attr __args[])
+{
+    __attr * const fp = &__args[1];
+    __attr * const str = &__args[2];
+    /* fp interpreted as FILE reference */
+    FILE *f = (FILE *) fp->datavalue;
+    /* str.__data__ interpreted as string */
+    char *s = __load_via_object(str->value, __pos___data__).strvalue;
+    size_t to_write = strlen(s);
+    size_t have_written = fwrite(s, sizeof(char), to_write, f);
+    int error;
+
+    if (have_written != to_write)
+    {
+        if (feof(f))
+            __raise_eof_error();
+        else if (error = ferror(f))
+            __raise_io_error(__new_int(error));
+    }
+
+    return __builtins___none_None;
+}
+
 __attr __fn_native__read(__attr __args[])
 {
     __attr * const fd = &__args[1];
@@ -695,6 +748,7 @@ __attr __fn_native__read(__attr __args[])
     else
     {
         /* Reserve space for a new string. */
+
         s = __ALLOCATE(have_read + 1, 1);
         strncpy(s, (char *) buf, have_read); /* does not null terminate but final byte should be zero */
         return __new_str(s);

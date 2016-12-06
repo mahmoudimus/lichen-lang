@@ -20,14 +20,14 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.int import maxint, minint
-from posix.io import sysfile
+from posix.io import sysstream
 import native
 
 # Standard streams.
 
-stdin = sysfile(0)
-stdout = sysfile(1)
-stderr = sysfile(2)
+stdin = sysstream(0)
+stdout = sysstream(1, "w")
+stderr = sysstream(2, "w")
 
 # NOTE: Environment details to be implemented.
 

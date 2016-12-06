@@ -17,6 +17,10 @@ void __newdata_mapping(__attr args[], unsigned int number);
 
 /* Exception raising. */
 
+#ifdef __HAVE___builtins___exception_io_EOFError
+void __raise_eof_error();
+#endif /* __HAVE___builtins___exception_io_EOFError */
+
 #ifdef __HAVE___builtins___exception_io_IOError
 void __raise_io_error(__attr value);
 #endif /* __HAVE___builtins___exception_io_IOError */
