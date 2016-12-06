@@ -214,7 +214,8 @@ class Importer:
 
         "Return from 'object_type' the details of class attribute 'attrname'."
 
-        attr = self.all_class_attrs[object_type].get(attrname)
+        attrs = self.all_class_attrs.get(object_type)
+        attr = attrs and attrs.get(attrname)
         return attr and self.get_object(attr)
 
     def get_instance_attributes(self, object_type, attrname):
