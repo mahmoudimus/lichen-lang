@@ -56,11 +56,7 @@ class Generator(CommonOutput):
     # NOTE: These must be synchronised with the library.
 
     function_type = "__builtins__.core.function"
-    memory_error_type = "__builtins__.core.MemoryError"
-    overflow_error_type = "__builtins__.core.OverflowError"
-    type_error_type = "__builtins__.core.TypeError"
     type_type = "__builtins__.core.type"
-    zero_division_error_type = "__builtins__.core.ZeroDivisionError"
 
     predefined_constant_members = (
         ("__builtins__.boolean", "False"),
@@ -360,10 +356,6 @@ class Generator(CommonOutput):
 
 #define __FUNCTION_TYPE %s
 #define __FUNCTION_INSTANCE_SIZE %s
-#define __MEMORY_ERROR_INSTANTIATOR %s
-#define __OVERFLOW_ERROR_INSTANTIATOR %s
-#define __TYPE_ERROR_INSTANTIATOR %s
-#define __ZERO_DIVISION_ERROR_INSTANTIATOR %s
 #define __TYPE_CLASS_TYPE %s
 #define __TYPE_CLASS_POS %s
 #define __TYPE_CLASS_CODE %s
@@ -371,10 +363,6 @@ class Generator(CommonOutput):
 #endif /* __PROGTYPES_H__ */""" % (
     encode_path(self.function_type),
     encode_size("<instance>", self.function_type),
-    encode_instantiator_pointer(self.memory_error_type),
-    encode_instantiator_pointer(self.overflow_error_type),
-    encode_instantiator_pointer(self.type_error_type),
-    encode_instantiator_pointer(self.zero_division_error_type),
     encode_path(self.type_type),
     encode_symbol("pos", encode_type_attribute(self.type_type)),
     encode_symbol("code", encode_type_attribute(self.type_type)),

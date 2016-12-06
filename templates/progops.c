@@ -58,7 +58,6 @@ void __newdata_sequence(__attr args[], unsigned int number)
 }
 
 #ifdef __HAVE___builtins___dict_dict
-
 void __newdata_mapping(__attr args[], unsigned int number)
 {
     __attr dict = args[0];
@@ -76,36 +75,44 @@ void __newdata_mapping(__attr args[], unsigned int number)
     __fn___builtins___dict_dict___init__(callargs);
     args[0] = dict;
 }
-
 #endif /* __HAVE___builtins___dict_dict */
 
 /* Helpers for raising errors within common operations. */
 
+#ifdef __HAVE___builtins___exception_io_IOError
+void __raise_io_error()
+{
+    __attr args[1];
+    __attr exc = __new___builtins___exception_io_IOError(args);
+    __Raise(exc);
+}
+#endif /* __HAVE___builtins___exception_io_IOError */
+
 void __raise_memory_error()
 {
     __attr args[1];
-    __attr exc = __MEMORY_ERROR_INSTANTIATOR(args);
+    __attr exc = __new___builtins___core_MemoryError(args);
     __Raise(exc);
 }
 
 void __raise_overflow_error()
 {
     __attr args[1];
-    __attr exc = __OVERFLOW_ERROR_INSTANTIATOR(args);
+    __attr exc = __new___builtins___core_OverflowError(args);
     __Raise(exc);
 }
 
 void __raise_type_error()
 {
     __attr args[1];
-    __attr exc = __TYPE_ERROR_INSTANTIATOR(args);
+    __attr exc = __new___builtins___core_TypeError(args);
     __Raise(exc);
 }
 
 void __raise_zero_division_error()
 {
     __attr args[1];
-    __attr exc = __ZERO_DIVISION_ERROR_INSTANTIATOR(args);
+    __attr exc = __new___builtins___core_ZeroDivisionError(args);
     __Raise(exc);
 }
 

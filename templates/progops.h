@@ -11,9 +11,15 @@ __fragment *__new_fragment(unsigned int n);
 
 void __newdata_sequence(__attr args[], unsigned int number);
 
+#ifdef __HAVE___builtins___dict_dict
 void __newdata_mapping(__attr args[], unsigned int number);
+#endif /* __HAVE___builtins___dict_dict */
 
 /* Exception raising. */
+
+#ifdef __HAVE___builtins___exception_io_IOError
+void __raise_io_error();
+#endif /* __HAVE___builtins___exception_io_IOError */
 
 void __raise_memory_error();
 void __raise_overflow_error();
