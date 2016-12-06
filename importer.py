@@ -445,7 +445,7 @@ class Importer:
 
                         # Record a module ordering dependency.
 
-                        if not found.static():
+                        if not found.static() or self.uses_dynamic_callable(found):
                             init_item(self.depends, module.name, set)
                             self.depends[module.name].add(provider)
 
@@ -469,6 +469,16 @@ class Importer:
                     if self.verbose:
                         print >>sys.stderr, "Requiring", provider
                     self.require_providers(provider)
+
+    def uses_dynamic_callable(self, ref):
+
+        """
+        Return whether 'ref' refers to a callable employing defaults that may
+        need initialising before the callable can be used.
+        """
+
+        return ref.has_kind("<function>") and self.function_defaults.get(ref.get_origin()) or \
+               ref.has_kind("<class>") and self.function_defaults.get("%s.__init__" % ref.get_origin())
 
     def order_modules(self):
 
