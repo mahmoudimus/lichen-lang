@@ -774,18 +774,20 @@ class Importer:
             path_so_far.append(p)
             module_name = ".".join(path_so_far)
 
+            # Return None if the module could not be located.
+
             if not m:
                 if self.verbose:
                     print >>sys.stderr, "Not found (%s)" % name
+                return None
 
-                return None # NOTE: Import error.
-
-            # Get the module itself.
+            # Get the directory and module filename.
 
             d, filename = m
-            module = self.load_from_file(filename, module_name)
 
-        return module
+        # Get the module itself.
+
+        return self.load_from_file(filename, module_name)
 
     def load_from_file(self, filename, module_name=None):
 
