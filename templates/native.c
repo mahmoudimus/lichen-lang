@@ -683,12 +683,12 @@ __attr __fn_native__read(__attr __args[])
     int i = __load_via_object(fd->value, __pos___data__).intvalue;
     /* n.__data__ interpreted as int */
     int to_read = __load_via_object(n->value, __pos___data__).intvalue;
-    void buf[to_read];
+    char buf[to_read];
     ssize_t have_read;
     char *s;
 
     errno = 0;
-    have_read = read(i, buf, to_read);
+    have_read = read(i, buf, to_read * sizeof(char));
 
     if (have_read == -1)
         __raise_io_error(__new_int(errno));
