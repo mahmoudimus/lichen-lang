@@ -663,7 +663,7 @@ __attr __fn_native__fdopen(__attr __args[])
     /* Produce an exception if the operation failed. */
 
     if (f == NULL)
-        __raise_io_error(errno);
+        __raise_io_error(__new_int(errno));
     else
     {
         attr.context = 0;
@@ -682,18 +682,19 @@ __attr __fn_native__read(__attr __args[])
     int to_read = __load_via_object(n->value, __pos___data__).intvalue;
     void *buf[to_read + 1];
     ssize_t have_read;
+    char *s;
 
     errno = 0;
     have_read = read(i, buf, to_read);
 
     if (have_read == -1)
-        __raise_io_error(errno);
+        __raise_io_error(__new_int(errno));
     else
     {
-        /* Zero terminate the string. */
-
-        buf[have_read] = 0;
-        return __new_str((char *) buf);
+        /* Reserve space for a new string. */
+        s = __ALLOCATE(have_read + 1, 1);
+        strncpy(s, (char *) buf, have_read); /* does not null terminate but final byte should be zero */
+        return __new_str(s);
     }
 }
 

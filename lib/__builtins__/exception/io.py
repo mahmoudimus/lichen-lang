@@ -3,7 +3,7 @@
 """
 Input/output exception objects.
 
-Copyright (C) 2015 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -20,7 +20,17 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 class EOFError(Exception): pass
-class IOError(Exception): pass
+
+class IOError(Exception):
+
+    "An input/output error."
+
+    def __init__(self, value):
+
+        "Initialise the exception with the given 'value'."
+
+        self.value = value
+
 class KeyboardInterrupt(Exception): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

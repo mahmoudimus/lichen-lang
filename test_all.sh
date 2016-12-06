@@ -35,6 +35,8 @@ if [ "$OPTION" = '--build' ]; then
     fi
 fi
 
+TESTINPUT="tests/testinput.txt"
+
 # Perform each test.
 
 for FILENAME in tests/* ; do
@@ -48,6 +50,12 @@ for FILENAME in tests/* ; do
         else
             continue
         fi
+    fi
+
+    # Skip non-program files.
+
+    if [ `basename "$FILENAME"` = "$TESTNAME" ]; then
+        continue
     fi
 
     # Run tests without an existing cache.
@@ -96,7 +104,7 @@ for FILENAME in tests/* ; do
         fi
 
         echo " (run)..." 1>&2
-        if ! "_generated/main" > "$OUTLOG" ; then
+        if ! "_generated/main" > "$OUTLOG" < "$TESTINPUT" ; then
             exit 1
         fi
     fi
