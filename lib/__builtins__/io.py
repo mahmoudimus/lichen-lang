@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import _read, _write
+from posix.io import fdopen, read, write
 
 class sysfile:
 
@@ -35,13 +35,13 @@ class sysfile:
 
         "Read 'n' bytes from the file."
 
-        return _read(self.fd, n)
+        return read(self.fd, n)
 
     def write(self, s):
 
         "Write 's' to the file."
 
-        _write(self.fd, str(s))
+        write(self.fd, str(s))
 
 def open(name, mode=None, buffering=None):
 

@@ -14,7 +14,6 @@ def minor(device): pass
 def mkdir(path, mode=0777): pass
 def mkfifo(filename, mode=0666): pass
 def mknod(filename, mode=0600, device=None): pass
-def read(fd, buffersize): pass
 def readlink(path): pass
 def remove(path): pass
 def rename(old, new): pass

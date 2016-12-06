@@ -96,7 +96,8 @@ def _issubclass(obj, cls): pass
 
 # Input/output.
 
-def _read(fd, n): pass
+def _fdopen(fd, mode): IOError
+def _read(fd, n): IOError
 def _write(fd, str): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

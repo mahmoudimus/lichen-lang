@@ -65,6 +65,7 @@ __attr __fn_native__object_getattr(__attr __args[]);
 __attr __fn_native__isinstance(__attr __args[]);
 __attr __fn_native__issubclass(__attr __args[]);
 
+__attr __fn_native__fdopen(__attr __args[]);
 __attr __fn_native__read(__attr __args[]);
 __attr __fn_native__write(__attr __args[]);
 

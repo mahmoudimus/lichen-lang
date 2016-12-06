@@ -54,6 +54,7 @@ typedef struct __attr
         double floatvalue;      /* floating point value */
         char * strvalue;        /* string value */
         __fragment * seqvalue;  /* sequence data */
+        void * datavalue;       /* object-specific data */
     };
 } __attr;
 

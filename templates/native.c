@@ -3,7 +3,7 @@
 #include <limits.h> /* INT_MAX, INT_MIN */
 #include <math.h>   /* ceil, log10, pow */
 #include <string.h> /* strcmp, strncpy, strlen */
-#include <stdio.h>  /* snprintf */
+#include <stdio.h>  /* fdopen, snprintf */
 #include <errno.h>  /* errno */
 #include "types.h"
 #include "exceptions.h"
@@ -644,13 +644,57 @@ __attr __fn_native__issubclass(__attr __args[])
         return __builtins___boolean_False;
 }
 
+/* Input/output. */
+
+__attr __fn_native__fdopen(__attr __args[])
+{
+    __attr * const fd = &__args[1];
+    __attr * const mode = &__args[2];
+    /* fd.__data__ interpreted as int */
+    int i = __load_via_object(fd->value, __pos___data__).intvalue;
+    /* str.__data__ interpreted as string */
+    char *s = __load_via_object(mode->value, __pos___data__).strvalue;
+    FILE *f;
+    __attr attr;
+
+    errno = 0;
+    f = fdopen(i, s);
+
+    /* Produce an exception if the operation failed. */
+
+    if (f == NULL)
+        __raise_io_error(errno);
+    else
+    {
+        attr.context = 0;
+        attr.datavalue = (void *) f;
+        return attr;
+    }
+}
+
 __attr __fn_native__read(__attr __args[])
 {
     __attr * const fd = &__args[1];
     __attr * const n = &__args[2];
+    /* fd.__data__ interpreted as int */
+    int i = __load_via_object(fd->value, __pos___data__).intvalue;
+    /* n.__data__ interpreted as int */
+    int to_read = __load_via_object(n->value, __pos___data__).intvalue;
+    void *buf[to_read + 1];
+    ssize_t have_read;
 
-    /* NOTE: To be written. */
-    return __builtins___none_None;
+    errno = 0;
+    have_read = read(i, buf, to_read);
+
+    if (have_read == -1)
+        __raise_io_error(errno);
+    else
+    {
+        /* Zero terminate the string. */
+
+        buf[have_read] = 0;
+        return __new_str((char *) buf);
+    }
 }
 
 __attr __fn_native__write(__attr __args[])
