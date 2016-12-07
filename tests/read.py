@@ -1,4 +1,4 @@
-from posix.io import read
+from posix import read
 
 try:
     s = read(3, 10)

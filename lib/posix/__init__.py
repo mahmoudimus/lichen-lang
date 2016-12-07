@@ -6,8 +6,8 @@ from posix.core import name, linesep
 from posix.conf import confstr, pathconf, strerror, sysconf
 from posix.filesys import access, chdir, chmod, chown, lchown, link, listdir, \
                           lstat, major, makedev, minor, mkdir, mkfifo, mknod, \
-                          read, readlink, remove, rename, rmdir, symlink, \
-                          unlink, utime
+                          readlink, remove, rename, rmdir, symlink, unlink, \
+                          utime
 from posix.io import close, closerange, dup, dup2, fchdir, fchmod, fchown, \
                      fdatasync, fdopen, fpathconf, fstat, fstatvfs, fsync, \
                      ftruncate, isatty, lseek, open, openpty, pipe, putenv, \
