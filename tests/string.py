@@ -21,4 +21,14 @@ try:
 except ValueError, exc:
     print "ord(s): value is not appropriate", exc.value
 
+l = ["Hello", "world!"]
+s3 = " ".join(l)
+print s3                    # Hello world!
+
+s4 = "".join(l)
+print s4                    # Helloworld!
+
 print hash(s)
+print hash(s2)
+print hash(s3)
+print hash(s4)

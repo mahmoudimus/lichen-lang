@@ -139,7 +139,30 @@ class basestring(itemaccess):
     def endswith(self, s): pass
     def find(self, sub, start=None, end=None): pass
     def index(self, sub, start=None, end=None): pass
-    def join(self, l): pass
+
+    def join(self, l):
+
+        "Join the elements in 'l' with this string."
+
+        # Empty strings just cause the list elements to be concatenated.
+
+        if not self.__bool__():
+            return str(buffer(l))
+
+        # Non-empty strings join the elements together in a buffer.
+
+        b = buffer()
+        first = True
+
+        for s in l:
+            if first:
+                first = False
+            else:
+                b.append(self)
+            b.append(s)
+
+        return str(b)
+
     def lower(self): pass
     def lstrip(self, chars=None): pass
     def replace(self, old, new, count=None): pass
