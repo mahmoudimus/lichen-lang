@@ -344,6 +344,10 @@ def encode_literal_reference(n):
 
     return "__constvalue%d" % n
 
+# Track all encoded paths, detecting and avoiding conflicts.
+
+all_encoded_paths = {}
+
 def encode_path(path):
 
     "Encode 'path' as an output program object, translating special symbols."
@@ -351,7 +355,26 @@ def encode_path(path):
     if path in reserved_words:
         return "__%s" % path
     else:
-        return path.replace("#", "__").replace("$", "__").replace(".", "_")
+        part_encoded = path.replace("#", "__").replace("$", "__")
+        encoded = part_encoded.replace(".", "_")
+
+        # Test for a conflict with the encoding of a different path, re-encoding
+        # if necessary.
+
+        previous = all_encoded_paths.get(encoded)
+        replacement = "_"
+
+        while previous:
+            if path == previous:
+                return encoded
+            replacement += "_"
+            encoded = part_encoded.replace(".", replacement)
+            previous = all_encoded_paths.get(encoded)
+
+        # Store any new or re-encoded path.
+
+        all_encoded_paths[encoded] = path
+        return encoded
 
 def encode_predefined_reference(path):
 
