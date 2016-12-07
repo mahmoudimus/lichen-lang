@@ -692,7 +692,7 @@ __attr __fn_native__fread(__attr __args[])
 
     if (have_read != to_read)
     {
-        if (feof(f))
+        if (feof(f) && (have_read == 0))
             __raise_eof_error();
         else if (error = ferror(f))
             __raise_io_error(__new_int(error));

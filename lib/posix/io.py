@@ -51,18 +51,41 @@ class sysstream:
 
     "A system-level stream object."
 
-    def __init__(self, fd, mode="r"):
+    def __init__(self, fd, mode="r", bufsize=1024):
 
         "Initialise the stream with the given 'fd' and 'mode'."
 
         self.__data__ = fdopen(fd, mode)
+        self.bufsize = bufsize
 
-    def read(self, n):
+    def read(self, n=0):
 
         "Read 'n' bytes from the stream."
 
         _check_int(n)
-        return native._fread(self.__data__, n)
+
+        # Read any indicated number of bytes.
+
+        if n > 0:
+            return native._fread(self.__data__, n)
+
+        # Read all remaining bytes.
+
+        else:
+            l = []
+
+            # Read until end-of-file.
+
+            try:
+                while True:
+                    l.append(native._fread(self.__data__, self.bufsize))
+
+            # Handle end-of-file reads.
+
+            except EOFError:
+                pass
+
+            return "".join(l)
 
     def write(self, s):
 
