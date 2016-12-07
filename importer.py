@@ -477,8 +477,28 @@ class Importer:
         need initialising before the callable can be used.
         """
 
-        return ref.has_kind("<function>") and self.function_defaults.get(ref.get_origin()) or \
-               ref.has_kind("<class>") and self.function_defaults.get("%s.__init__" % ref.get_origin())
+        # Find the function or method associated with the reference.
+
+        if ref.has_kind("<function>"):
+            origin = ref.get_origin()
+        elif ref.has_kind("<class>"):
+            origin = "%s.__init__" % ref.get_origin()
+        else:
+            return False
+
+        # Find any defaults for the function or method.
+
+        defaults = self.function_defaults.get(origin)
+        if not defaults:
+            return False
+
+        # Identify non-constant defaults.
+
+        for name, ref in defaults:
+            if not ref.is_constant_alias():
+                return True
+
+        return False
 
     def order_modules(self):
 

@@ -98,9 +98,9 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
         # Determine whether a qualified name is involved.
 
-        t = (self.get_name() or self.name).rsplit(".", 1)
+        t = (not self.is_constant_alias() and self.get_name() or self.name).rsplit(".", 1)
         parent = len(t) > 1 and t[0] or None
-        attrname = encode_path(t[-1])
+        attrname = t[-1] and encode_path(t[-1])
 
         # Assignments.
 
@@ -1021,7 +1021,10 @@ class TranslatedModule(CommonModule):
             else:
                 continue
 
-            if name_ref:
+            # Generate default initialisers except when constants are employed.
+            # Constants should be used when populating the function structures.
+
+            if name_ref and not isinstance(name_ref, TrConstantValueRef):
                 defaults.append("__SETDEFAULT(%s, %s, %s)" % (instance_name, i, name_ref))
 
         return defaults

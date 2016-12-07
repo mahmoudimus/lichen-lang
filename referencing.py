@@ -125,11 +125,14 @@ class Reference:
         static = self.static()
         return static and static.origin or None
 
-    def instance_of(self):
+    def instance_of(self, alias=None):
 
-        "Return a reference to an instance of the referenced class."
+        """
+        Return a reference to an instance of the referenced class, indicating an
+        'alias' for the instance if specified.
+        """
 
-        return self.has_kind("<class>") and Reference("<instance>", self.origin) or None
+        return self.has_kind("<class>") and Reference("<instance>", self.origin, alias) or None
 
     def as_var(self):
 
@@ -195,6 +198,13 @@ class Reference:
             ancestors.append(".".join(parts[:i]))
 
         return ancestors
+
+    def is_constant_alias(self):
+
+        "Return whether this reference is an alias for a constant."
+
+        name = self.get_name()
+        return name and name.rsplit(".")[-1].startswith("$c")
 
     def get_types(self):
 

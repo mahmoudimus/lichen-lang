@@ -130,6 +130,9 @@ class ResolvedRef:
     def has_kind(self, kinds):
         return self.ref and self.ref.has_kind(kinds)
 
+    def is_constant_alias(self):
+        return self.ref and self.ref.is_constant_alias()
+
 class ResolvedNameRef(ResolvedRef, NameRef):
 
     "A resolved name-based reference."

@@ -833,13 +833,13 @@ __obj %s = {
 
         # References to constant literals.
 
-        if kind == "<instance>":
-            attr_path = "%s.%s" % (path, name)
+        if kind == "<instance>" and ref.is_constant_alias():
+            alias = ref.get_name()
 
             # Obtain a constant value directly assigned to the attribute.
 
-            if self.optimiser.constant_numbers.has_key(attr_path):
-                constant_number = self.optimiser.constant_numbers[attr_path]
+            if self.optimiser.constant_numbers.has_key(alias):
+                constant_number = self.optimiser.constant_numbers[alias]
                 constant_value = "__const%d" % constant_number
                 return "%s /* %s */" % (constant_value, name)
 

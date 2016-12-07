@@ -227,7 +227,7 @@ class CommonModule:
         # Return a reference for the constant.
 
         objpath = self.get_object_path(constant_name)
-        name_ref = ConstantValueRef(constant_name, ref.instance_of(), value)
+        name_ref = ConstantValueRef(constant_name, ref.instance_of(objpath), value)
 
         # Record the value and type for the constant.
 
