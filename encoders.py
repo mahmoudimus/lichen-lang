@@ -225,7 +225,7 @@ def encode_access_instruction(instruction, subs):
         # Convert type name arguments to position and code symbols.
 
         elif op in typename_ops:
-            arg = encode_type_attribute(a[1])
+            arg = encode_type_attribute(args[1])
             a[1] = encode_symbol("pos", arg)
             a.insert(2, encode_symbol("code", arg))
 
