@@ -23,7 +23,7 @@ from common import first, get_assigned_attributes, \
                    get_attrname_from_location, get_attrnames, \
                    get_invoked_attributes, get_name_path, init_item, \
                    sorted_output, CommonOutput
-from encoders import encode_attrnames, encode_access_location, \
+from encoders import encode_access_location, \
                      encode_constrained, encode_location, encode_usage, \
                      get_kinds, test_label_for_kind, test_label_for_type
 from errors import DeduceError
@@ -1315,6 +1315,17 @@ class Deducer(CommonOutput):
         # Constrain "self" references.
 
         if name == "self":
+
+            # Test for the class of the method in the deduced types.
+
+            class_name = self.in_method(unit_path)
+
+            if class_name and class_name not in class_types and class_name not in only_instance_types:
+                raise DeduceError("In %s, usage {%s} is not directly supported by class %s or its instances." %
+                                  (unit_path, encode_usage(usage), class_name))
+
+            # Constrain the types to the class's hierarchy.
+
             t = self.constrain_self_reference(unit_path, class_types, only_instance_types)
             if t:
                 class_types, only_instance_types, module_types, constrained = t
