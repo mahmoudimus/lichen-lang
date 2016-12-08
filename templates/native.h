@@ -100,10 +100,12 @@ __attr __fn_native__issubclass(__attr __args[]);
 
 /* Input/output. */
 
+__attr __fn_native__fclose(__attr __args[]);
 __attr __fn_native__fopen(__attr __args[]);
 __attr __fn_native__fdopen(__attr __args[]);
 __attr __fn_native__fread(__attr __args[]);
 __attr __fn_native__fwrite(__attr __args[]);
+__attr __fn_native__close(__attr __args[]);
 __attr __fn_native__read(__attr __args[]);
 __attr __fn_native__write(__attr __args[]);
 

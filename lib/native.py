@@ -100,16 +100,18 @@ def _issubclass(obj, cls): pass
 
 # Input/output.
 
+def _fclose(fp): IOError
 def _fopen(filename, mode): IOError
 def _fdopen(fd, mode): IOError
+def _close(fd): IOError
 def _read(fd, n): IOError
-def _write(fd, str): pass
+def _write(fd, str): IOError
 
-def _fread(fd, n):
+def _fread(fp, n):
     IOError
     EOFError
 
-def _fwrite(fd, str):
+def _fwrite(fp, str):
     IOError
     EOFError
 

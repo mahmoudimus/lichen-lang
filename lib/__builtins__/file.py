@@ -69,7 +69,11 @@ class filestream:
         check_string(s)
         native._fwrite(self.__data__, s)
 
-    def close(self): pass
+    def close(self):
+
+        "Close the stream."
+
+        native._fclose(self.__data__)
 
 class file(filestream):
 

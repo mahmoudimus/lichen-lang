@@ -47,7 +47,13 @@ class sysfile:
         "Write string 's' to the file."
 
         check_string(s)
-        write(self.fd, s)
+        return write(self.fd, s)
+
+    def close(self):
+
+        "Close the file."
+
+        close(self.fd)
 
 class sysstream(filestream):
 
@@ -68,7 +74,12 @@ stderr = sysstream(2, "w")
 
 # Input/output functions.
 
-def close(fd): pass
+def close(fd):
+
+    "Close the file descriptor 'fd'."
+
+    native._close(fd)
+
 def closerange(fd_low, fd_high): pass
 def dup(fd): pass
 def dup2(old_fd, new_fd): pass
@@ -127,7 +138,7 @@ def write(fd, s):
 
     check_int(fd)
     check_string(s)
-    native._write(fd, s)
+    return native._write(fd, s)
 
 # Constants.
 

@@ -680,6 +680,19 @@ __attr __fn_native__issubclass(__attr __args[])
 
 /* Input/output. */
 
+__attr __fn_native__fclose(__attr __args[])
+{
+    __attr * const fp = &__args[1];
+    /* fp interpreted as FILE reference */
+    FILE *f = (FILE *) fp->datavalue;
+
+    errno = 0;
+    if (fclose(f))
+        __raise_io_error(__new_int(errno));
+
+    return __builtins___none_None;
+}
+
 __attr __fn_native__fopen(__attr __args[])
 {
     __attr * const filename = &__args[1];
@@ -791,6 +804,19 @@ __attr __fn_native__fwrite(__attr __args[])
     return __builtins___none_None;
 }
 
+__attr __fn_native__close(__attr __args[])
+{
+    __attr * const fd = &__args[1];
+    /* fd.__data__ interpreted as int */
+    int i = __load_via_object(fd->value, __pos___data__).intvalue;
+
+    errno = 0;
+    if (close(i) == -1)
+        __raise_io_error(__new_int(errno));
+
+    return __builtins___none_None;
+}
+
 __attr __fn_native__read(__attr __args[])
 {
     __attr * const fd = &__args[1];
@@ -808,14 +834,12 @@ __attr __fn_native__read(__attr __args[])
 
     if (have_read == -1)
         __raise_io_error(__new_int(errno));
-    else
-    {
-        /* Reserve space for a new string. */
 
-        s = __ALLOCATE(have_read + 1, 1);
-        strncpy(s, (char *) buf, have_read); /* does not null terminate but final byte should be zero */
-        return __new_str(s);
-    }
+    /* Reserve space for a new string. */
+
+    s = __ALLOCATE(have_read + 1, 1);
+    strncpy(s, (char *) buf, have_read); /* does not null terminate but final byte should be zero */
+    return __new_str(s);
 }
 
 __attr __fn_native__write(__attr __args[])
@@ -826,9 +850,15 @@ __attr __fn_native__write(__attr __args[])
     int i = __load_via_object(fd->value, __pos___data__).intvalue;
     /* str.__data__ interpreted as string */
     char *s = __load_via_object(str->value, __pos___data__).strvalue;
+    ssize_t have_written;
 
-    write(i, s, sizeof(char) * strlen(s));
-    return __builtins___none_None;
+    errno = 0;
+    have_written = write(i, s, sizeof(char) * strlen(s));
+
+    if (have_written == -1)
+        __raise_io_error(__new_int(errno));
+
+    return __new_int(have_written);
 }
 
 /* Module initialisation. */
