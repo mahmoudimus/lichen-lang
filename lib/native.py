@@ -100,6 +100,7 @@ def _issubclass(obj, cls): pass
 
 # Input/output.
 
+def _fopen(filename, mode): IOError
 def _fdopen(fd, mode): IOError
 def _read(fd, n): IOError
 def _write(fd, str): pass

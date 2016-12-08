@@ -19,14 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-def open(name, mode=None, buffering=None):
-
-    """
-    Open the file with the given 'name', using the given 'mode' and applying the
-    indicated 'buffering'.
-    """
-
-    return file(name, mode, buffering)
+open = file
 
 def raw_input(prompt=None): pass
 

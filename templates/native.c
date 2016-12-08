@@ -680,13 +680,42 @@ __attr __fn_native__issubclass(__attr __args[])
 
 /* Input/output. */
 
+__attr __fn_native__fopen(__attr __args[])
+{
+    __attr * const filename = &__args[1];
+    __attr * const mode = &__args[2];
+    /* filename.__data__ interpreted as string */
+    char *fn = __load_via_object(filename->value, __pos___data__).strvalue;
+    /* mode.__data__ interpreted as string */
+    char *s = __load_via_object(mode->value, __pos___data__).strvalue;
+    FILE *f;
+    __attr attr;
+
+    errno = 0;
+    f = fopen(fn, s);
+
+    /* Produce an exception if the operation failed. */
+
+    if (f == NULL)
+        __raise_io_error(__new_int(errno));
+
+    /* Return the __data__ attribute. */
+
+    else
+    {
+        attr.context = 0;
+        attr.datavalue = (void *) f;
+        return attr;
+    }
+}
+
 __attr __fn_native__fdopen(__attr __args[])
 {
     __attr * const fd = &__args[1];
     __attr * const mode = &__args[2];
     /* fd.__data__ interpreted as int */
     int i = __load_via_object(fd->value, __pos___data__).intvalue;
-    /* str.__data__ interpreted as string */
+    /* mode.__data__ interpreted as string */
     char *s = __load_via_object(mode->value, __pos___data__).strvalue;
     FILE *f;
     __attr attr;

@@ -19,14 +19,65 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class file(object):
+from __builtins__.types import check_int, check_string
+import native
+
+class filestream:
+
+    "Generic file-oriented stream functionality."
+
+    def __init__(self, bufsize=1024):
+        self.bufsize = bufsize
+
+    def read(self, n=0):
+
+        "Read 'n' bytes from the stream."
+
+        check_int(n)
+
+        # Read any indicated number of bytes.
+
+        if n > 0:
+            return native._fread(self.__data__, n)
+
+        # Read all remaining bytes.
+
+        else:
+            l = []
+
+            # Read until end-of-file.
+
+            try:
+                while True:
+                    l.append(native._fread(self.__data__, self.bufsize))
+
+            # Handle end-of-file reads.
+
+            except EOFError:
+                pass
+
+            return "".join(l)
+
+    def write(self, s):
+
+        "Write string 's' to the stream."
+
+        check_string(s)
+        native._fwrite(self.__data__, s)
+
+    def close(self): pass
+
+class file(filestream):
 
     "A file abstraction."
 
-    def __init__(self, name, mode=None, buffering=None): pass
-    def read(self, n=None): pass
-    def write(self, s): pass
-    def close(self): pass
+    def __init__(self, filename, mode="r", bufsize=1024):
+
+        "Open the file with the given 'filename' using the given access 'mode'."
+
+        get_using(filestream.__init__, self)(bufsize)
+        self.__data__ = native._fopen(filename, mode)
+
     def readline(self, size=None): pass
     def readlines(self, size=None): pass
 

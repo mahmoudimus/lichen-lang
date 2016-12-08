@@ -19,6 +19,8 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __builtins__.file import filestream
+from __builtins__.types import check_int, check_string
 import native
 
 # Abstractions for system-level files and streams.
@@ -37,17 +39,17 @@ class sysfile:
 
         "Read 'n' bytes from the file, returning a string."
 
-        _check_int(n)
+        check_int(n)
         return read(self.fd, n)
 
     def write(self, s):
 
         "Write string 's' to the file."
 
-        _check_string(s)
+        check_string(s)
         write(self.fd, s)
 
-class sysstream:
+class sysstream(filestream):
 
     "A system-level stream object."
 
@@ -55,44 +57,8 @@ class sysstream:
 
         "Initialise the stream with the given 'fd' and 'mode'."
 
+        get_using(filestream.__init__, self)(bufsize)
         self.__data__ = fdopen(fd, mode)
-        self.bufsize = bufsize
-
-    def read(self, n=0):
-
-        "Read 'n' bytes from the stream."
-
-        _check_int(n)
-
-        # Read any indicated number of bytes.
-
-        if n > 0:
-            return native._fread(self.__data__, n)
-
-        # Read all remaining bytes.
-
-        else:
-            l = []
-
-            # Read until end-of-file.
-
-            try:
-                while True:
-                    l.append(native._fread(self.__data__, self.bufsize))
-
-            # Handle end-of-file reads.
-
-            except EOFError:
-                pass
-
-            return "".join(l)
-
-    def write(self, s):
-
-        "Write string 's' to the stream."
-
-        _check_string(s)
-        native._fwrite(self.__data__, s)
 
 # Standard streams.
 
@@ -118,8 +84,8 @@ def fdopen(fd, mode="r"):
     'mode'.
     """
 
-    _check_fd(fd)
-    _check_string(mode)
+    check_int(fd)
+    check_string(mode)
     return native._fdopen(fd, mode)
 
 def fpathconf(fd, name): pass
@@ -145,8 +111,8 @@ def read(fd, n):
     Read using the low-level file descriptor 'fd' the given number of bytes 'n'.
     """
 
-    _check_fd(fd)
-    _check_int(n)
+    check_int(fd)
+    check_int(n)
     return native._read(fd, n)
 
 def times(): pass
@@ -159,8 +125,8 @@ def write(fd, s):
 
     "Write using the low-level file descriptor 'fd' the given string 's'."
 
-    _check_fd(fd)
-    _check_string(s)
+    check_int(fd)
+    check_string(s)
     native._write(fd, s)
 
 # Constants.
@@ -184,28 +150,5 @@ O_RSYNC = 1052672
 O_SYNC = 1052672
 O_TRUNC = 512
 O_WRONLY = 1
-
-# Type validation functions.
-
-def _check_fd(fd):
-
-    "Check the given low-level file descriptor 'fd'."
-
-    if not native._isinstance(fd, int):
-        raise ValueError(fd)
-
-def _check_int(i):
-
-    "Check the given int 'i'."
-
-    if not native._isinstance(i, int):
-        raise ValueError(i)
-
-def _check_string(s):
-
-    "Check the given string 's'."
-
-    if not native._isinstance(s, string):
-        raise ValueError(s)
 
 # vim: tabstop=4 expandtab shiftwidth=4
