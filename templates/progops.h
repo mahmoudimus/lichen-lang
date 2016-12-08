@@ -1,11 +1,32 @@
-/* Program type definitions. */
+/* Operations depending on program specifics.
+
+Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+#ifndef __PROGOPS_H__
+#define __PROGOPS_H__
 
 #include <stdlib.h>
 #include "types.h"
 
-/* Common operations. */
+/* Generic instantiation operations, defining common members. */
 
 __attr __new(const __table *table, __ref cls, size_t size);
+
+/* Generic internal data allocation. */
 
 __fragment *__new_fragment(unsigned int n);
 
@@ -15,7 +36,7 @@ void __newdata_sequence(__attr args[], unsigned int number);
 void __newdata_mapping(__attr args[], unsigned int number);
 #endif /* __HAVE___builtins___dict_dict */
 
-/* Exception raising. */
+/* Helpers for raising errors within common operations. */
 
 #ifdef __HAVE___builtins___exception_io_EOFError
 void __raise_eof_error();
@@ -29,6 +50,9 @@ void __raise_memory_error();
 void __raise_overflow_error();
 void __raise_zero_division_error();
 void __raise_type_error();
+
+/* Helper for raising exception instances. */
+
 __attr __ensure_instance(__attr arg);
 
 /* Generic invocation operations. */
@@ -48,3 +72,5 @@ void __SETDEFAULT(__ref obj, int pos, __attr value);
 __attr __GETDEFAULT(__ref obj, int pos);
 
 int __BOOL(__attr attr);
+
+#endif /* __PROGOPS_H__ */
