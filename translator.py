@@ -1396,7 +1396,7 @@ class TranslatedModule(CommonModule):
             else:
                 self.writestmt("__Raise(__ensure_instance(%s));" % exc)
         else:
-            self.writestmt("__Complete;")
+            self.writestmt("__Throw(__tmp_exc);")
 
     def process_return_node(self, n):
 
