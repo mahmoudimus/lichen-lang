@@ -114,6 +114,32 @@ class itemaccess:
 
         return result
 
+    # Methods implemented by subclasses.
+
+    def __setslice__(self, start, end, value):
+
+        "Method to be overridden by subclasses."
+
+        pass
+
+    def __get_single_item__(self, index):
+
+        "Method to be overridden by subclasses."
+
+        return None
+
+    def __set_single_item__(self, index, value):
+
+        "Method to be overridden by subclasses."
+
+        pass
+
+    def __len__(self):
+
+        "Method to be overridden by subclasses."
+
+        return 0
+
 class sequence(itemaccess):
 
     "A common base class for sequence types."
@@ -191,6 +217,12 @@ class sequence(itemaccess):
         "Return whether this sequence is not equal to 'other'."
 
         return not self.__eq__(other)
+
+    def __iter__(self):
+
+        "Method to be overridden by subclasses."
+
+        raise StopIteration()
 
 def _get_absolute_index(index, length):
 

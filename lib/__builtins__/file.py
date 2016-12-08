@@ -27,7 +27,11 @@ class filestream:
     "Generic file-oriented stream functionality."
 
     def __init__(self, bufsize=1024):
+
+        "Initialise the stream with the given 'bufsize'."
+
         self.bufsize = bufsize
+        self.__data__ = None
 
     def read(self, n=0):
 
