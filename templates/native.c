@@ -1,3 +1,21 @@
+/* Native functions.
+
+Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include <stdlib.h> /* abs, exit */
 #include <unistd.h> /* read, write */
 #include <limits.h> /* INT_MAX, INT_MIN */
@@ -61,7 +79,7 @@ static __fragment *__fragment_append(__fragment *data, __attr * const value)
     return newdata;
 }
 
-/* Native functions. */
+/* Environment support. */
 
 __attr __fn_native__exit(__attr __args[])
 {
@@ -87,6 +105,8 @@ __attr __fn_native__get_path(__attr __args[])
     return __builtins___none_None;
 }
 
+/* Identity testing. */
+
 __attr __fn_native__is(__attr __args[])
 {
     __attr * const x = &__args[1];
@@ -103,6 +123,8 @@ __attr __fn_native__is_not(__attr __args[])
     return x->value != y->value ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
+/* Limit definition. */
+
 __attr __fn_native__get_maxint(__attr __args[])
 {
     __attr * const status = &__args[1];
@@ -116,6 +138,8 @@ __attr __fn_native__get_minint(__attr __args[])
 
     return __new_int(INT_MIN);
 }
+
+/* Integer operations. */
 
 __attr __fn_native__int_add(__attr __args[])
 {
@@ -357,6 +381,8 @@ __attr __fn_native__int_str(__attr __args[])
     return __new_str(s);
 }
 
+/* String operations. */
+
 __attr __fn_native__str_add(__attr __args[])
 {
     __attr * const _data = &__args[1];
@@ -455,6 +481,8 @@ __attr __fn_native__str_substr(__attr __args[])
     strncpy(sub, s + i, l); /* does not null terminate but final byte should be zero */
     return __new_str(sub);
 }
+
+/* List operations. */
 
 __attr __fn_native__list_init(__attr __args[])
 {
@@ -569,6 +597,8 @@ __attr __fn_native__list_setelement(__attr __args[])
     return __builtins___none_None;
 }
 
+/* Buffer operations. */
+
 __attr __fn_native__buffer_str(__attr __args[])
 {
     __attr * const _data = &__args[1];
@@ -597,6 +627,8 @@ __attr __fn_native__buffer_str(__attr __args[])
     return __new_str(s);
 }
 
+/* Method binding. */
+
 __attr __fn_native__get_using(__attr __args[])
 {
     __attr * const callable = &__args[1];
@@ -604,6 +636,8 @@ __attr __fn_native__get_using(__attr __args[])
 
     return __replace_context(instance->value, *callable);
 }
+
+/* Introspection. */
 
 __attr __fn_native__object_getattr(__attr __args[])
 {

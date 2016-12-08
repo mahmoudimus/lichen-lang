@@ -1,17 +1,41 @@
+/* Native functions.
+
+Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #ifndef __NATIVE_H__
 #define __NATIVE_H__
 
-/* Native functions. */
+/* Environment support. */
 
 __attr __fn_native__exit(__attr __args[]);
 __attr __fn_native__get_argv(__attr __args[]);
 __attr __fn_native__get_path(__attr __args[]);
 
+/* Identity testing. */
+
 __attr __fn_native__is(__attr __args[]);
 __attr __fn_native__is_not(__attr __args[]);
 
+/* Limit definition. */
+
 __attr __fn_native__get_maxint(__attr __args[]);
 __attr __fn_native__get_minint(__attr __args[]);
+
+/* Integer operations. */
 
 __attr __fn_native__int_add(__attr __args[]);
 __attr __fn_native__int_div(__attr __args[]);
@@ -38,6 +62,8 @@ __attr __fn_native__int_ne(__attr __args[]);
 
 __attr __fn_native__int_str(__attr __args[]);
 
+/* String operations. */
+
 __attr __fn_native__str_add(__attr __args[]);
 __attr __fn_native__str_lt(__attr __args[]);
 __attr __fn_native__str_gt(__attr __args[]);
@@ -46,6 +72,8 @@ __attr __fn_native__str_len(__attr __args[]);
 __attr __fn_native__str_nonempty(__attr __args[]);
 __attr __fn_native__str_ord(__attr __args[]);
 __attr __fn_native__str_substr(__attr __args[]);
+
+/* List operations. */
 
 __attr __fn_native__list_init(__attr __args[]);
 __attr __fn_native__list_setsize(__attr __args[]);
@@ -56,14 +84,21 @@ __attr __fn_native__list_nonempty(__attr __args[]);
 __attr __fn_native__list_element(__attr __args[]);
 __attr __fn_native__list_setelement(__attr __args[]);
 
+/* Buffer operations. */
+
 __attr __fn_native__buffer_str(__attr __args[]);
+
+/* Method binding. */
 
 __attr __fn_native__get_using(__attr __args[]);
 
-__attr __fn_native__object_getattr(__attr __args[]);
+/* Introspection. */
 
+__attr __fn_native__object_getattr(__attr __args[]);
 __attr __fn_native__isinstance(__attr __args[]);
 __attr __fn_native__issubclass(__attr __args[]);
+
+/* Input/output. */
 
 __attr __fn_native__fdopen(__attr __args[]);
 __attr __fn_native__fread(__attr __args[]);
