@@ -495,10 +495,17 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             else:
                 bases.append(base_class)
 
-        # Record bases for the class and retain the class name.
-        # Note that the function class does not inherit from the object class.
+        # Detect conflicting definitions. Such definitions cause conflicts in
+        # the storage of namespace-related information.
 
         class_name = self.get_object_path(n.name)
+        ref = self.get_object(class_name)
+
+        if ref.static():
+            raise InspectError("Multiple definitions for the same name are not permitted.", class_name, n)
+
+        # Record bases for the class and retain the class name.
+        # Note that the function class does not inherit from the object class.
 
         if not bases and class_name != "__builtins__.core.object" and \
                          class_name != "__builtins__.core.function":
@@ -577,9 +584,17 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         else:
             original_name = None
 
-        # Initialise argument and local records.
+        # Detect conflicting definitions. Such definitions cause conflicts in
+        # the storage of namespace-related information.
 
         function_name = self.get_object_path(name)
+        ref = self.get_object(function_name)
+
+        if ref.static():
+            raise InspectError("Multiple definitions for the same name are not permitted.", function_name, n)
+
+        # Initialise argument and local records.
+
         argnames = get_argnames(n.argnames)
         is_method = self.in_class and not self.in_function
 
