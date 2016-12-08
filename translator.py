@@ -1104,7 +1104,7 @@ class TranslatedModule(CommonModule):
                 if not method_class or instance_accessor:
                     target = encode_function_pointer(objpath)
                     target_structure = self.is_method(objpath) and \
-                        encode_bound_reference(objpath) or \
+                        "&%s" % encode_bound_reference(objpath) or \
                         "&%s" % encode_path(objpath)
 
                 if not method_class:
