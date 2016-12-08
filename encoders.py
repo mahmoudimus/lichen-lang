@@ -356,6 +356,10 @@ def encode_path(path):
         return "__%s" % path
     else:
         part_encoded = path.replace("#", "__").replace("$", "__")
+
+        if "." not in path:
+            return part_encoded
+
         encoded = part_encoded.replace(".", "_")
 
         # Test for a conflict with the encoding of a different path, re-encoding
