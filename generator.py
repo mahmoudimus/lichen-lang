@@ -224,9 +224,8 @@ class Generator(CommonOutput):
 
                         # Define special attributes.
 
-                        signature = self.get_signature_for_callable(path)
                         attrs["__fn__"] = path
-                        attrs["__args__"] = encode_size("pmin", signature)
+                        attrs["__args__"] = encode_size("pmin", path)
 
                     self.populate_structure(Reference(kind, path), attrs, kind, structure)
 
@@ -278,9 +277,8 @@ class Generator(CommonOutput):
 
                 # Set a special callable attribute on the instance.
 
-                signature = self.get_signature_for_callable(path)
                 function_instance_attrs["__fn__"] = path
-                function_instance_attrs["__args__"] = encode_size("pmin", signature)
+                function_instance_attrs["__args__"] = encode_size("pmin", path)
 
                 # Produce two structures where a method is involved.
 
@@ -378,19 +376,18 @@ class Generator(CommonOutput):
             min_sizes = {}
             max_sizes = {}
 
-            for path, parameters in self.optimiser.parameters.items():
+            # Determine the minimum number of parameters for each 
+
+            for path in self.optimiser.parameters.keys():
                 argmin, argmax = self.get_argument_limits(path)
+                min_sizes[path] = argmin
 
-                # Use the parameter signature in the constant names.
+            # Use the parameter table details to define the maximum number.
+            # The context is already present in the collection.
 
+            for parameters in parameter_tables:
                 signature = self.get_parameter_signature(parameters)
-                min_sizes[signature] = argmin
-                max_sizes[signature] = argmax
-
-                # Record instantiator limits.
-
-                if path.endswith(".__init__"):
-                    path = path[:-len(".__init__")]
+                max_sizes[signature] = len(parameters)
 
             self.write_size_constants(f_consts, "pmin", min_sizes, 0)
             self.write_size_constants(f_consts, "pmax", max_sizes, 0)
