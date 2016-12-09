@@ -380,11 +380,12 @@ class Importer:
         finalised.
         """
 
+        self.finalise_classes()
+        self.to_cache()
+
         if self.missing:
             return False
 
-        self.finalise_classes()
-        self.to_cache()
         self.set_class_types()
         self.define_instantiators()
         self.collect_constants()
