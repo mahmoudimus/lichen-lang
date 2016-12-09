@@ -22,7 +22,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.int import maxint, minint
 from __builtins__.operator import _negate
 from __builtins__.sequence import itemaccess
-import native
+from native import str_add, str_lt, str_gt, str_eq, str_len, str_nonempty, \
+                   str_substr
 
 class basestring(itemaccess):
 
@@ -68,7 +69,7 @@ class basestring(itemaccess):
 
         "Return a string combining this string with 'other'."
 
-        return self._binary_op(native.str_add, other)
+        return self._binary_op(str_add, other)
 
     __add__ = __radd__ = __iadd__
 
@@ -81,13 +82,13 @@ class basestring(itemaccess):
 
         "Return whether this string is less than 'other'."
 
-        return self._binary_op(native.str_lt, other)
+        return self._binary_op(str_lt, other)
 
     def __gt__(self, other):
 
         "Return whether this string is greater than 'other'."
 
-        return self._binary_op(native.str_gt, other)
+        return self._binary_op(str_gt, other)
 
     def __le__(self, other):
 
@@ -105,7 +106,7 @@ class basestring(itemaccess):
 
         "Return whether this string is equal to 'other'."
 
-        return self._binary_op(native.str_eq, other)
+        return self._binary_op(str_eq, other)
 
     def __ne__(self, other):
 
@@ -117,7 +118,7 @@ class basestring(itemaccess):
 
         "Return the length of this string."
 
-        return native.str_len(self.__data__)
+        return str_len(self.__data__)
 
     def __str__(self):
 
@@ -134,7 +135,7 @@ class basestring(itemaccess):
         return str(b)
 
     def __bool__(self):
-        return native.str_nonempty(self.__data__)
+        return str_nonempty(self.__data__)
 
     def endswith(self, s): pass
     def find(self, sub, start=None, end=None): pass
@@ -182,7 +183,7 @@ class basestring(itemaccess):
         "Return the item at the normalised (positive) 'index'."
 
         self._check_index(index)
-        return native.str_substr(self.__data__, index, 1)
+        return str_substr(self.__data__, index, 1)
 
 class string(basestring):
     pass

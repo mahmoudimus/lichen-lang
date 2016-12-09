@@ -19,20 +19,20 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import native
+from native import isinstance as _isinstance
 
 def check_int(i):
 
     "Check the given int 'i'."
 
-    if not native.isinstance(i, int):
+    if not _isinstance(i, int):
         raise ValueError(i)
 
 def check_string(s):
 
     "Check the given string 's'."
 
-    if not native.isinstance(s, string):
+    if not _isinstance(s, string):
         raise ValueError(s)
 
 # vim: tabstop=4 expandtab shiftwidth=4

@@ -21,16 +21,20 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.int import maxint, minint
 from posix.io import stdin, stdout, stderr
-import native
+from native import (
+    exit as _exit,
+    get_argv as _get_argv,
+    get_path as _get_path
+    )
 
 # NOTE: Environment details to be implemented.
 
-argv = native.get_argv()
-path = native.get_path()
+argv = _get_argv()
+path = _get_path()
 
 # Functions to be implemented natively.
 
 def exit(status=0):
-    native.exit(int(status))
+    _exit(int(status))
 
 # vim: tabstop=4 expandtab shiftwidth=4

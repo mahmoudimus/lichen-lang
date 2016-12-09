@@ -21,7 +21,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.iterator import itemiterator
 from __builtins__.sequence import sequence
-import native
+from native import list_element, list_init, list_len, list_setsize, \
+                   list_setelement
 
 class tuple(sequence):
 
@@ -35,15 +36,15 @@ class tuple(sequence):
         # for elements.
 
         size = args is not None and len(args) or 0
-        self.__data__ = native.list_init(size)
-        native.list_setsize(self.__data__, size)
+        self.__data__ = list_init(size)
+        list_setsize(self.__data__, size)
 
         # Populate the tuple.
 
         if args is not None:
             i = 0
             for arg in args:
-                native.list_setelement(self.__data__, i, arg)
+                list_setelement(self.__data__, i, arg)
                 i += 1
 
     def __getslice__(self, start, end=None):
@@ -56,7 +57,7 @@ class tuple(sequence):
 
         "Return the length of the tuple."
 
-        return native.list_len(self.__data__)
+        return list_len(self.__data__)
 
     def __add__(self, other): pass
 
@@ -87,7 +88,7 @@ class tuple(sequence):
         "Return the item at the normalised (positive) 'index'."
 
         self._check_index(index)
-        return native.list_element(self.__data__, index)
+        return list_element(self.__data__, index)
 
     def __set_single_item__(self, index, value):
 

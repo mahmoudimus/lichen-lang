@@ -21,7 +21,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.iterator import itemiterator
 from __builtins__.sequence import sequence
-import native
+from native import list_append, list_concat, list_element, list_init, \
+                   list_len, list_nonempty, list_setelement
 
 class list(sequence):
 
@@ -34,7 +35,7 @@ class list(sequence):
         # Reserve an attribute for a fragment reference along with some space
         # for elements.
 
-        self.__data__ = native.list_init(args is not None and len(args) or 0)
+        self.__data__ = list_init(args is not None and len(args) or 0)
 
         if args is not None:
             self.extend(args)
@@ -47,7 +48,7 @@ class list(sequence):
 
         "Append 'value' to the list."
 
-        native.list_append(self, value)
+        list_append(self, value)
 
     def insert(self, i, value): pass
 
@@ -66,7 +67,7 @@ class list(sequence):
 
         "Return the length of the list."
 
-        return native.list_len(self.__data__)
+        return list_len(self.__data__)
 
     def __add__(self, other): pass
 
@@ -75,7 +76,7 @@ class list(sequence):
         "Concatenate 'other' to the list."
 
         if isinstance(other, list):
-            native.list_concat(self, other.__data__)
+            list_concat(self, other.__data__)
         else:
             self.extend(other)
         return self
@@ -92,7 +93,7 @@ class list(sequence):
 
         "Lists are true if non-empty."
 
-        return native.list_nonempty(self.__data__)
+        return list_nonempty(self.__data__)
 
     def __iter__(self):
 
@@ -107,13 +108,13 @@ class list(sequence):
         "Return the item at the normalised (positive) 'index'."
 
         self._check_index(index)
-        return native.list_element(self.__data__, index)
+        return list_element(self.__data__, index)
 
     def __set_single_item__(self, index, value):
 
         "Set at the normalised (positive) 'index' the given 'value'."
 
         self._check_index(index)
-        return native.list_setelement(self.__data__, index, value)
+        return list_setelement(self.__data__, index, value)
 
 # vim: tabstop=4 expandtab shiftwidth=4

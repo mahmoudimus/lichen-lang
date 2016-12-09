@@ -21,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.iterator import itemiterator
 from __builtins__.sequence import _max
-import native
+from native import isinstance as _isinstance
 
 class dict:
 
@@ -86,7 +86,7 @@ class dict:
 
         index = key.__hash__()
 
-        if not native.isinstance(index, int):
+        if not _isinstance(index, int):
             raise TypeError
 
         return index % len(self.buckets)

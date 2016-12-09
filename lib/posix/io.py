@@ -21,7 +21,12 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.file import filestream
 from __builtins__.types import check_int, check_string
-import native
+from native import (
+    close as _close,
+    fdopen as _fdopen,
+    read as _read,
+    write as _write
+    )
 
 # Abstractions for system-level files and streams.
 
@@ -78,7 +83,7 @@ def close(fd):
 
     "Close the file descriptor 'fd'."
 
-    native.close(fd)
+    _close(fd)
 
 def closerange(fd_low, fd_high): pass
 def dup(fd): pass
@@ -97,7 +102,7 @@ def fdopen(fd, mode="r"):
 
     check_int(fd)
     check_string(mode)
-    return native.fdopen(fd, mode)
+    return _fdopen(fd, mode)
 
 def fpathconf(fd, name): pass
 def fstat(fd): pass
@@ -124,7 +129,7 @@ def read(fd, n):
 
     check_int(fd)
     check_int(n)
-    return native.read(fd, n)
+    return _read(fd, n)
 
 def times(): pass
 def ttyname(fd): pass
@@ -138,7 +143,7 @@ def write(fd, s):
 
     check_int(fd)
     check_string(s)
-    return native.write(fd, s)
+    return _write(fd, s)
 
 # Constants.
 
