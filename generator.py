@@ -56,6 +56,7 @@ class Generator(CommonOutput):
     # NOTE: These must be synchronised with the library.
 
     function_type = "__builtins__.core.function"
+    string_type = "__builtins__.str.string"
     type_type = "__builtins__.core.type"
 
     predefined_constant_members = (
@@ -491,6 +492,14 @@ class Generator(CommonOutput):
         if data is not None:
             attrs["__data__"] = data
 
+            # Also set a key for dynamic attribute lookup, if a string.
+
+            if cls == self.string_type:
+                if data in self.optimiser.all_attrnames:
+                    attrs["__key__"] = data
+                else:
+                    attrs["__key__"] = None
+
         # Define the structure details. An object is created for the constant,
         # but an attribute is provided, referring to the object, for access to
         # the constant in the program.
@@ -869,6 +878,13 @@ __obj %s = {
                 elif attrname == "__data__":
                     structure.append("{0, .%s=%s}" % (encode_literal_constant_member(attr),
                                                       encode_literal_constant_value(attr)))
+                    continue
+
+                # Special internal key member.
+
+                elif attrname == "__key__":
+                    structure.append("{.code=%s, .pos=%s}" % (attr and encode_symbol("code", attr) or "0",
+                                                              attr and encode_symbol("pos", attr) or "0"))
                     continue
 
                 # Special cases.

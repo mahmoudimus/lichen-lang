@@ -57,6 +57,7 @@ typedef struct __attr
         __obj * context;        /* attribute context */
         unsigned int min;       /* minimum number of parameters */
         __obj * b;              /* bound callable object */
+        unsigned int code;      /* parameter table code for key */
     };
 
     /* One of... */
@@ -64,6 +65,7 @@ typedef struct __attr
     {
         __obj * value;          /* attribute value */
         const __ptable * ptable;/* parameter table */
+        unsigned int pos;       /* parameter table position for key */
         struct __attr (*fn)();  /* callable details */
 
         int intvalue;           /* integer value */

@@ -19,18 +19,10 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __builtins__.types import check_string
 from native import object_getattr
 
 _default=object() # a unique placeholder for a missing value
-
-def _getattr(obj, name, default=_default):
-
-    """
-    Return for 'obj' the attribute having the given 'name', returning the given
-    'default' if the attribute is not defined for 'obj'.
-    """
-
-    return object_getattr(obj, name, default)
 
 def getattr(obj, name, default=_default):
 
@@ -40,13 +32,27 @@ def getattr(obj, name, default=_default):
     'default' is not indicated and the attribute is not defined.
     """
 
-    result = _getattr(obj, name, default)
+    check_string(name)
+
+    # Attempt to obtain the attribute. If the name is not recognised as an
+    # attribute name, the default will be returned. Otherwise, an access
+    # operation will be attempted.
+
+    try:
+        result = object_getattr(obj, name, default)
+
+    # Handle exceptions when the access operation fails.
+
+    except TypeError:
+        result = _default
+
+    # Check the result and, if it is the placeholder value, raise an exception.
 
     if result is _default:
-        if default is _default:
-            raise AttributeError(name)
-        else:
-            return default
+        raise AttributeError(name)
+
+    # Otherwise, return the obtained value or supplied default.
+
     else:
         return result
 
@@ -54,8 +60,15 @@ def hasattr(obj, name):
 
     "Return whether 'obj' has an attribute called 'name'."
 
-    result = _getattr(obj, name)
-    return result is not _default
+    try:
+        getattr(obj, name)
+    except AttributeError:
+        return False
+    else:
+        return True
+
+# NOTE: setattr would probably only be supported on instances due to deductions
+# NOTE: applying to static objects being undermined by dynamic modifications.
 
 def setattr(obj, name, value): pass
 

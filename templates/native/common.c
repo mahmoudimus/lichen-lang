@@ -36,9 +36,10 @@ __attr __new_int(int i)
 
 __attr __new_str(char *s)
 {
-    /* Create a new string and mutate the __data__ attribute. */
+    /* Create a new string and mutate the __data__ and __key__ attributes. */
     __attr attr = __new(&__InstanceTable___builtins___str_string, &__builtins___str_string, sizeof(__obj___builtins___str_string));
     attr.value->attrs[__pos___data__].strvalue = s;
+    attr.value->attrs[__pos___key__] = (__attr) {0, 0};
     return attr;
 }
 

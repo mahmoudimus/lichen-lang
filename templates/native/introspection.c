@@ -31,9 +31,13 @@ __attr __fn_native_introspection_object_getattr(__attr __args[])
     __attr * const obj = &__args[1];
     __attr * const name = &__args[2];
     __attr * const _default = &__args[3];
+    /* name.__data__ interpreted as string */
+    __attr key = __load_via_object(name->value, __pos___key__);
 
-    /* NOTE: To be written. */
-    return __builtins___none_None;
+    if ((key.code == 0) && (key.pos == 0))
+        return *_default;
+    else
+        return __check_and_load_via_any(obj->value, key.pos, key.code);
 }
 
 static int __issubclass(__ref obj, __attr cls)

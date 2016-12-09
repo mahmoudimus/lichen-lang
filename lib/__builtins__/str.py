@@ -42,6 +42,12 @@ class basestring(itemaccess):
 
         self.__data__ = None
 
+        # Note the __key__ member. This is also initialised statically. Where
+        # a string is the same as an attribute name, the __key__ member contains
+        # attribute position and code details.
+
+        self.__key__ = None
+
     def __hash__(self):
 
         "Return a value for hashing purposes."
