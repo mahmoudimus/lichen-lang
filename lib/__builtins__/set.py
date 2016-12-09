@@ -19,10 +19,10 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class frozenset(object):
+class frozenset:
     def __init__(self, iterable): pass
 
-class set(object):
+class set:
     def __init__(self, iterable): pass
     def add(self, item): pass
     def clear(self): pass

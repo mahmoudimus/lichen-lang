@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class long(object):
+class long:
     def __init__(self, number_or_string=None): pass
     def __iadd__(self, other): pass
     def __isub__(self, other): pass

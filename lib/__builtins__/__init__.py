@@ -89,7 +89,7 @@ from __builtins__.tuple import tuple
 from __builtins__.attribute import getattr, hasattr, setattr
 from __builtins__.character import chr, hex, oct, ord, unichr
 from __builtins__.comparable import cmp, hash
-from __builtins__.identity import callable, help, id, isinstance, issubclass, repr
+from __builtins__.identity import callable, id, isinstance, issubclass, repr
 from __builtins__.io import open, raw_input, print_
 from __builtins__.iterable import all, any, enumerate, filter, iter, len, map, max, min, reduce, reversed, sorted, sum, zip
 from __builtins__.namespace import dir, globals, locals, vars

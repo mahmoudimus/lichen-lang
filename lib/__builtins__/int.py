@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.operator import _negate
 import native
 
-class int(object):
+class int:
 
     "An integer abstraction."
 

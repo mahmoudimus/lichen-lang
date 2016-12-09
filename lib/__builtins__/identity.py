@@ -30,12 +30,6 @@ def callable(obj):
 
     pass
 
-def help(*args):
-
-    # NOTE: This should show any docstring, but it is currently unsupported.
-
-    pass
-
 def id(obj):
 
     # NOTE: This should show an object's address, but it is currently
