@@ -543,7 +543,7 @@ class CommonModule:
             compiler.ast.Name("$print"),
             [n.dest or compiler.ast.Name("None"),
              compiler.ast.List(list(n.nodes)),
-             nl and compiler.ast.Name("True") or compiler.ast.Name("false")]
+             nl and compiler.ast.Name("True") or compiler.ast.Name("False")]
             )
         return self.process_structure_node(invocation)
 
