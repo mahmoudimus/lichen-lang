@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import _isinstance, _issubclass
+import native
 
 def callable(obj):
 
@@ -56,13 +56,13 @@ def isinstance(obj, cls_or_tuple):
     either a class or a sequence of classes.
     """
 
-    if _isinstance(cls_or_tuple, tuple):
+    if native.isinstance(cls_or_tuple, tuple):
         for cls in cls_or_tuple:
-            if obj.__class__ is cls or isclass(cls) and _isinstance(obj, cls):
+            if obj.__class__ is cls or isclass(cls) and native.isinstance(obj, cls):
                 return True
         return False
     else:
-        return obj.__class__ is cls_or_tuple or isclass(cls_or_tuple) and _isinstance(obj, cls_or_tuple)
+        return obj.__class__ is cls_or_tuple or isclass(cls_or_tuple) and native.isinstance(obj, cls_or_tuple)
 
 def issubclass(obj, cls_or_tuple):
 
@@ -74,13 +74,13 @@ def issubclass(obj, cls_or_tuple):
 
     if not isclass(obj):
         return False
-    elif _isinstance(cls_or_tuple, tuple):
+    elif native.isinstance(cls_or_tuple, tuple):
         for cls in cls_or_tuple:
-            if obj is cls or isclass(cls) and _issubclass(obj, cls):
+            if obj is cls or isclass(cls) and native.issubclass(obj, cls):
                 return True
         return False
     else:
-        return obj is cls_or_tuple or isclass(cls_or_tuple) and _issubclass(obj, cls_or_tuple)
+        return obj is cls_or_tuple or isclass(cls_or_tuple) and native.issubclass(obj, cls_or_tuple)
 
 def repr(obj):
 

@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import _get_using
+from native import get_using
 
 class object:
 
@@ -126,11 +126,5 @@ class TypeError(Exception): pass
 class UnboundMethodInvocation(Exception): pass
 class Warning: pass
 class ZeroDivisionError(Exception): pass
-
-def get_using(callable, instance):
-
-    "Return 'callable' bound to 'instance'."
-
-    return _get_using(callable, instance)
 
 # vim: tabstop=4 expandtab shiftwidth=4

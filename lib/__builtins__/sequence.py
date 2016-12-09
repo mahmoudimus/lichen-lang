@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import _isinstance
+import native
 
 class itemaccess:
 
@@ -42,13 +42,13 @@ class itemaccess:
         # Normalise any integer indexes, converting negative indexes to positive
         # ones.
 
-        if _isinstance(index, int):
+        if native.isinstance(index, int):
             index = _get_absolute_index(index, self.__len__())
             return self.__get_single_item__(index)
 
         # Handle slices separately.
 
-        elif _isinstance(index, slice):
+        elif native.isinstance(index, slice):
             return self.__getslice__(index.start, index.end, index.step)
 
         # No other kinds of objects are supported as indexes.
@@ -63,13 +63,13 @@ class itemaccess:
         # Normalise any integer indexes, converting negative indexes to positive
         # ones.
 
-        if _isinstance(index, int):
+        if native.isinstance(index, int):
             index = _get_absolute_index(index, self.__len__())
             return self.__set_single_item__(index, value)
 
         # Handle slices separately.
 
-        elif _isinstance(index, slice):
+        elif native.isinstance(index, slice):
             return self.__setslice__(index.start, index.end, value)
 
         # No other kinds of objects are supported as indexes.

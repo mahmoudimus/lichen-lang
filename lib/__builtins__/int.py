@@ -30,7 +30,7 @@ class int(object):
 
         "Initialise the integer with the given 'number_or_string'."
 
-        if native._isinstance(number_or_string, int):
+        if native.isinstance(number_or_string, int):
             self.__data__ = number_or_string.__data__
         else:
             # NOTE: To be implemented.
@@ -46,7 +46,7 @@ class int(object):
 
         "Perform 'op' on this int and 'other' if appropriate."
 
-        if native._isinstance(other, int):
+        if native.isinstance(other, int):
             return op(self.__data__, other.__data__)
         else:
             return NotImplemented
@@ -55,7 +55,7 @@ class int(object):
 
         "Perform 'op' on 'other' and this int if appropriate."
 
-        if native._isinstance(other, int):
+        if native.isinstance(other, int):
             return op(other.__data__, self.__data__)
         else:
             return NotImplemented
@@ -64,61 +64,61 @@ class int(object):
 
         "Return a new int for the addition of this int and 'other'."
 
-        return self._binary_op(native._int_add, other)
+        return self._binary_op(native.int_add, other)
 
     def __isub__(self, other):
 
         "Return a new int for the subtraction of this int and 'other'."
 
-        return self._binary_op(native._int_sub, other)
+        return self._binary_op(native.int_sub, other)
 
     def __imul__(self, other):
 
         "Return a new int for the multiplication of this int and 'other'."
 
-        return self._binary_op(native._int_mul, other)
+        return self._binary_op(native.int_mul, other)
 
     def __idiv__(self, other):
 
         "Return a new int for the division of this int and 'other'."
 
-        return self._binary_op(native._int_div, other)
+        return self._binary_op(native.int_div, other)
 
     def __imod__(self, other):
 
         "Return a new int for the modulo of this int by 'other'."
 
-        return self._binary_op(native._int_mod, other)
+        return self._binary_op(native.int_mod, other)
 
     def __ipow__(self, other):
 
         "Return a new int for the exponentiation of this int by 'other'."
 
-        return self._binary_op(native._int_pow, other)
+        return self._binary_op(native.int_pow, other)
 
     def __iand__(self, other):
 
         "Return a new int for the binary-and of this int and 'other'."
 
-        return self._binary_op(native._int_and, other)
+        return self._binary_op(native.int_and, other)
 
     def __ior__(self, other):
 
         "Return a new int for the binary-or of this int and 'other'."
 
-        return self._binary_op(native._int_or, other)
+        return self._binary_op(native.int_or, other)
 
     def __ixor__(self, other):
 
         "Return a new int for the exclusive-or of this int and 'other'."
 
-        return self._binary_op(native._int_xor, other)
+        return self._binary_op(native.int_xor, other)
 
     def __invert__(self):
 
         "Return the inversion of this int."
 
-        return native._int_not(self.__data__)
+        return native.int_not(self.__data__)
 
     __add__ = __radd__ = __iadd__
     __sub__ = __isub__
@@ -127,7 +127,7 @@ class int(object):
 
         "Return a new int for the subtraction of this int from 'other'."
 
-        return self._binary_op_rev(native._int_sub, other)
+        return self._binary_op_rev(native.int_sub, other)
 
     __mul__ = __rmul__ = __imul__
     __div__ = __idiv__
@@ -136,7 +136,7 @@ class int(object):
 
         "Return a new int for the division of this int into 'other'."
 
-        return self._binary_op_rev(native._int_div, other)
+        return self._binary_op_rev(native.int_div, other)
 
     def __floordiv__(self, other): pass
     def __rfloordiv__(self, other): pass
@@ -148,7 +148,7 @@ class int(object):
 
         "Return a new int for the modulo of 'other' by this int."
 
-        return self._binary_op_rev(native._int_mod, other)
+        return self._binary_op_rev(native.int_mod, other)
 
     __pow__ = __ipow__
 
@@ -156,7 +156,7 @@ class int(object):
 
         "Return a new int for the exponentiation of 'other' by this int."
 
-        return self._binary_op_rev(native._int_pow, other)
+        return self._binary_op_rev(native.int_pow, other)
 
     __and__ = __rand__ = __iand__
     __or__ = __ror__ = __ior__
@@ -166,13 +166,13 @@ class int(object):
 
         "Return whether this int is less than 'other'."
 
-        return self._binary_op(native._int_lt, other)
+        return self._binary_op(native.int_lt, other)
 
     def __gt__(self, other):
 
         "Return whether this int is greater than 'other'."
 
-        return self._binary_op(native._int_gt, other)
+        return self._binary_op(native.int_gt, other)
 
     def __le__(self, other):
 
@@ -190,7 +190,7 @@ class int(object):
 
         "Return whether this int is equal to 'other'."
 
-        return self._binary_op(native._int_eq, other)
+        return self._binary_op(native.int_eq, other)
 
     def __ne__(self, other):
 
@@ -202,7 +202,7 @@ class int(object):
 
         "Apply the unary negation operator."
 
-        return native._int_neg(self.__data__)
+        return native.int_neg(self.__data__)
 
     def __pos__(self):
 
@@ -214,7 +214,7 @@ class int(object):
 
         "Return a string representation."
 
-        return native._int_str(self.__data__)
+        return native.int_str(self.__data__)
 
     __repr__ = __str__
 
@@ -230,11 +230,11 @@ class int(object):
         "Return whether this int is non-zero."
 
         zero = 0
-        return native._int_ne(self.__data__, zero.__data__)
+        return native.int_ne(self.__data__, zero.__data__)
 
 # Limits.
 
-maxint = native._get_maxint()
-minint = native._get_minint()
+maxint = native.get_maxint()
+minint = native.get_minint()
 
 # vim: tabstop=4 expandtab shiftwidth=4

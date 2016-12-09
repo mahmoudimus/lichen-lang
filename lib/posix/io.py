@@ -78,7 +78,7 @@ def close(fd):
 
     "Close the file descriptor 'fd'."
 
-    native._close(fd)
+    native.close(fd)
 
 def closerange(fd_low, fd_high): pass
 def dup(fd): pass
@@ -97,7 +97,7 @@ def fdopen(fd, mode="r"):
 
     check_int(fd)
     check_string(mode)
-    return native._fdopen(fd, mode)
+    return native.fdopen(fd, mode)
 
 def fpathconf(fd, name): pass
 def fstat(fd): pass
@@ -124,7 +124,7 @@ def read(fd, n):
 
     check_int(fd)
     check_int(n)
-    return native._read(fd, n)
+    return native.read(fd, n)
 
 def times(): pass
 def ttyname(fd): pass
@@ -138,7 +138,7 @@ def write(fd, s):
 
     check_int(fd)
     check_string(s)
-    return native._write(fd, s)
+    return native.write(fd, s)
 
 # Constants.
 

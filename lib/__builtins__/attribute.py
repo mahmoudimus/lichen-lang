@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import _object_getattr
+from native import object_getattr
 
 _default=object() # a unique placeholder for a missing value
 
@@ -30,7 +30,7 @@ def _getattr(obj, name, default=_default):
     'default' if the attribute is not defined for 'obj'.
     """
 
-    return _object_getattr(obj, name, default)
+    return object_getattr(obj, name, default)
 
 def getattr(obj, name, default=_default):
 

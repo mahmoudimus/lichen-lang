@@ -1,9 +1,6 @@
-#!/usr/bin/env python
+/* Native functions for introspection.
 
-"""
-Character-related functions.
-
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -17,23 +14,21 @@ details.
 
 You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
+*/
 
-from native import str_ord
+#ifndef __NATIVE_INTROSPECTION_H__
+#define __NATIVE_INTROSPECTION_H__
 
-def chr(i): pass
-def hex(number): pass
-def oct(number): pass
+#include "types.h"
 
-def ord(c):
+/* Introspection. */
 
-    "Return the value of the given character 'c'."
+__attr __fn_native_introspection_object_getattr(__attr __args[]);
+__attr __fn_native_introspection_isinstance(__attr __args[]);
+__attr __fn_native_introspection_issubclass(__attr __args[]);
 
-    if isinstance(c, string) and len(c) == 1:
-        return str_ord(c.__data__)
-    else:
-        raise ValueError(c)
+/* Module initialisation. */
 
-def unichr(i): pass
+void __main_native_introspection();
 
-# vim: tabstop=4 expandtab shiftwidth=4
+#endif /* __NATIVE_INTROSPECTION_H__ */

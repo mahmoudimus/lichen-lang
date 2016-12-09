@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-
-"""
-Common type validation functions.
+/* Native functions for string operations.
 
 Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
 
@@ -17,22 +14,24 @@ details.
 
 You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
+*/
 
-import native
+#ifndef __NATIVE_STR_H__
+#define __NATIVE_STR_H__
 
-def check_int(i):
+/* String operations. */
 
-    "Check the given int 'i'."
+__attr __fn_native_str_str_add(__attr __args[]);
+__attr __fn_native_str_str_lt(__attr __args[]);
+__attr __fn_native_str_str_gt(__attr __args[]);
+__attr __fn_native_str_str_eq(__attr __args[]);
+__attr __fn_native_str_str_len(__attr __args[]);
+__attr __fn_native_str_str_nonempty(__attr __args[]);
+__attr __fn_native_str_str_ord(__attr __args[]);
+__attr __fn_native_str_str_substr(__attr __args[]);
 
-    if not native.isinstance(i, int):
-        raise ValueError(i)
+/* Module initialisation. */
 
-def check_string(s):
+void __main_native_str();
 
-    "Check the given string 's'."
-
-    if not native.isinstance(s, string):
-        raise ValueError(s)
-
-# vim: tabstop=4 expandtab shiftwidth=4
+#endif /* __NATIVE_STR_H__ */

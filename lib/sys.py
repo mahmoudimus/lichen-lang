@@ -25,12 +25,12 @@ import native
 
 # NOTE: Environment details to be implemented.
 
-argv = native._get_argv()
-path = native._get_path()
+argv = native.get_argv()
+path = native.get_path()
 
 # Functions to be implemented natively.
 
 def exit(status=0):
-    native._exit(int(status))
+    native.exit(int(status))
 
 # vim: tabstop=4 expandtab shiftwidth=4

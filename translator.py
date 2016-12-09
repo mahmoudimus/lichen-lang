@@ -46,7 +46,8 @@ class Translator(CommonOutput):
         self.check_output()
 
         for module in self.importer.modules.values():
-            if module.name != "native":
+            parts = module.name.split(".")
+            if parts[0] != "native":
                 tm = TranslatedModule(module.name, self.importer, self.deducer, self.optimiser)
                 tm.translate(module.filename, join(output, "%s.c" % module.name))
 
@@ -1479,7 +1480,7 @@ class TranslatedModule(CommonModule):
 
             if name is not None:
                 name_ref = self.process_structure_node(name)
-                self.writeline("else if (__BOOL(__fn_native__isinstance((__attr[]) {{0, 0}, __tmp_exc.arg, %s})))" % name_ref)
+                self.writeline("else if (__BOOL(__fn_native_introspection_isinstance((__attr[]) {{0, 0}, __tmp_exc.arg, %s})))" % name_ref)
             else:
                 self.writeline("else if (1)")
 

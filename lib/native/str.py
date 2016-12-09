@@ -1,9 +1,14 @@
 #!/usr/bin/env python
 
 """
-Character-related functions.
+Native library functions for strings.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+None of these are actually defined here. Instead, native implementations are
+substituted when each program is built. It is, however, important to declare
+non-core exceptions used by the native functions because they need to be
+identified as being needed by the program.
+
+Copyright (C) 2011, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,21 +24,15 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import str_ord
+# String operations.
 
-def chr(i): pass
-def hex(number): pass
-def oct(number): pass
-
-def ord(c):
-
-    "Return the value of the given character 'c'."
-
-    if isinstance(c, string) and len(c) == 1:
-        return str_ord(c.__data__)
-    else:
-        raise ValueError(c)
-
-def unichr(i): pass
+def str_add(self, other): pass
+def str_eq(self, other): pass
+def str_gt(self, other): pass
+def str_lt(self, other): pass
+def str_len(self): pass
+def str_nonempty(self): pass
+def str_ord(self): pass
+def str_substr(self, start, size): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

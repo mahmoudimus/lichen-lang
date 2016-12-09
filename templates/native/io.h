@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-
-"""
-Common type validation functions.
+/* Native functions for input/output.
 
 Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
 
@@ -17,22 +14,26 @@ details.
 
 You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
+*/
 
-import native
+#ifndef __NATIVE_IO_H__
+#define __NATIVE_IO_H__
 
-def check_int(i):
+#include "types.h"
 
-    "Check the given int 'i'."
+/* Input/output. */
 
-    if not native.isinstance(i, int):
-        raise ValueError(i)
+__attr __fn_native_io_fclose(__attr __args[]);
+__attr __fn_native_io_fopen(__attr __args[]);
+__attr __fn_native_io_fdopen(__attr __args[]);
+__attr __fn_native_io_fread(__attr __args[]);
+__attr __fn_native_io_fwrite(__attr __args[]);
+__attr __fn_native_io_close(__attr __args[]);
+__attr __fn_native_io_read(__attr __args[]);
+__attr __fn_native_io_write(__attr __args[]);
 
-def check_string(s):
+/* Module initialisation. */
 
-    "Check the given string 's'."
+void __main_native_io();
 
-    if not native.isinstance(s, string):
-        raise ValueError(s)
-
-# vim: tabstop=4 expandtab shiftwidth=4
+#endif /* __NATIVE_IO_H__ */

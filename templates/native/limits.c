@@ -1,7 +1,4 @@
-#!/usr/bin/env python
-
-"""
-Common type validation functions.
+/* Native functions for limit definition.
 
 Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
 
@@ -17,22 +14,36 @@ details.
 
 You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
+*/
 
-import native
+#include <limits.h> /* INT_MAX, INT_MIN */
+#include "native/common.h"
+#include "types.h"
+#include "exceptions.h"
+#include "ops.h"
+#include "progconsts.h"
+#include "progops.h"
+#include "progtypes.h"
+#include "main.h"
 
-def check_int(i):
+/* Limit definition. */
 
-    "Check the given int 'i'."
+__attr __fn_native_limits_get_maxint(__attr __args[])
+{
+    __attr * const status = &__args[1];
 
-    if not native.isinstance(i, int):
-        raise ValueError(i)
+    return __new_int(INT_MAX);
+}
 
-def check_string(s):
+__attr __fn_native_limits_get_minint(__attr __args[])
+{
+    __attr * const status = &__args[1];
 
-    "Check the given string 's'."
+    return __new_int(INT_MIN);
+}
 
-    if not native.isinstance(s, string):
-        raise ValueError(s)
+/* Module initialisation. */
 
-# vim: tabstop=4 expandtab shiftwidth=4
+void __main_native_limits()
+{
+}

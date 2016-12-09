@@ -42,7 +42,7 @@ class filestream:
         # Read any indicated number of bytes.
 
         if n > 0:
-            return native._fread(self.__data__, n)
+            return native.fread(self.__data__, n)
 
         # Read all remaining bytes.
 
@@ -53,7 +53,7 @@ class filestream:
 
             try:
                 while True:
-                    l.append(native._fread(self.__data__, self.bufsize))
+                    l.append(native.fread(self.__data__, self.bufsize))
 
             # Handle end-of-file reads.
 
@@ -67,13 +67,13 @@ class filestream:
         "Write string 's' to the stream."
 
         check_string(s)
-        native._fwrite(self.__data__, s)
+        native.fwrite(self.__data__, s)
 
     def close(self):
 
         "Close the stream."
 
-        native._fclose(self.__data__)
+        native.fclose(self.__data__)
 
 class file(filestream):
 
@@ -84,7 +84,7 @@ class file(filestream):
         "Open the file with the given 'filename' using the given access 'mode'."
 
         get_using(filestream.__init__, self)(bufsize)
-        self.__data__ = native._fopen(filename, mode)
+        self.__data__ = native.fopen(filename, mode)
 
     def readline(self, size=None): pass
     def readlines(self, size=None): pass

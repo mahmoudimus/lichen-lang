@@ -86,7 +86,7 @@ class dict:
 
         index = key.__hash__()
 
-        if not native._isinstance(index, int):
+        if not native.isinstance(index, int):
             raise TypeError
 
         return index % len(self.buckets)

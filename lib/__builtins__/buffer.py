@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import _list_init, _list_append, _list_concat, _buffer_str
+from native import list_init, list_append, list_concat, buffer_str
 
 class buffer:
 
@@ -36,7 +36,7 @@ class buffer:
         else:
             raise TypeError(size)
 
-        self.__data__ = _list_init(n)
+        self.__data__ = list_init(n)
 
         # Append all arguments to the buffer.
 
@@ -52,17 +52,17 @@ class buffer:
         """
 
         if isinstance(s, buffer):
-            _list_concat(self, s.__data__)
+            list_concat(self, s.__data__)
         elif isinstance(s, string):
-            _list_append(self, s)
+            list_append(self, s)
         else:
-            _list_append(self, str(s))
+            list_append(self, str(s))
 
     def __str__(self):
 
         "Return a string representation."
 
-        return _buffer_str(self.__data__)
+        return buffer_str(self.__data__)
 
     def __repr__(self):
 

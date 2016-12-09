@@ -31,7 +31,7 @@ from encoders import encode_bound_reference, encode_function_pointer, \
                      encode_symbol, encode_tablename, \
                      encode_type_attribute, decode_type_attribute, \
                      is_type_attribute
-from os import listdir
+from os import listdir, mkdir
 from os.path import exists, isdir, join, split
 from referencing import Reference
 
@@ -111,7 +111,23 @@ class Generator(CommonOutput):
             if debug and exists(join(templates, "%s-debug" % filename)):
                 continue
 
-            copy(join(templates, filename), target)
+            pathname = join(templates, filename)
+
+            # Copy files into the target directory.
+
+            if not isdir(pathname):
+                copy(pathname, target)
+
+            # Copy directories (such as the native code directory).
+
+            else:
+                target = join(self.output, filename)
+
+                if not exists(target):
+                    mkdir(target)
+
+                for filename in listdir(pathname):
+                    copy(join(pathname, filename), target)
 
     def write_structures(self):
 
@@ -964,9 +980,11 @@ int main(int argc, char *argv[])
             function_name = "__main_%s" % encode_path(name)
             print >>f_signatures, "void %s();" % function_name
 
-            # Omit the native module.
+            # Omit the native modules.
 
-            if name != "native":
+            parts = name.split(".")
+
+            if parts[0] != "native":
                 print >>f_code, """\
         %s();""" % function_name
 

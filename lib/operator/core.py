@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 # Define "is" and "is not" in terms of native operations. They are imported by
 # the operator.binary module.
 
-from native import _is as is_, _is_not as is_not
+from native import is_, is_not
 
 def binary_op(a, b, left_accessor, right_accessor, default=None):
 
