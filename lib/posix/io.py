@@ -44,14 +44,12 @@ class sysfile:
 
         "Read 'n' bytes from the file, returning a string."
 
-        check_int(n)
         return read(self.fd, n)
 
     def write(self, s):
 
         "Write string 's' to the file."
 
-        check_string(s)
         return write(self.fd, s)
 
     def close(self):
