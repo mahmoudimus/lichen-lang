@@ -542,7 +542,7 @@ class Generator(CommonOutput):
                 l.append("")
             else:
                 name, pos = parameter
-                l.append(name)
+                l.append("%s_%s" % (name, pos))
         return l and "__".join(l) or "__void"
 
     def get_signature_for_callable(self, path):
