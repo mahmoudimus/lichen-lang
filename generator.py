@@ -77,6 +77,12 @@ class Generator(CommonOutput):
     literal_instantiator_types = literal_mapping_types + literal_sequence_types
 
     def __init__(self, importer, optimiser, output):
+
+        """
+        Initialise the generator with the given 'importer', 'optimiser' and
+        'output' directory.
+        """
+
         self.importer = importer
         self.optimiser = optimiser
         self.output = output
@@ -182,6 +188,8 @@ class Generator(CommonOutput):
             objects = self.optimiser.attr_table.items()
             objects.sort()
 
+            self.callables = {}
+
             for ref, indexes in objects:
                 attrnames = self.get_attribute_names(indexes)
 
@@ -199,8 +207,6 @@ class Generator(CommonOutput):
                     # Set a special instantiator on the class.
 
                     if kind == "<class>":
-                        attrs["__fn__"] = path
-                        attrs["__args__"] = encode_size("pmin", path)
 
                         # Write instantiator declarations based on the
                         # applicable initialiser.
@@ -211,9 +217,15 @@ class Generator(CommonOutput):
 
                         self.write_instantiator(f_code, f_signatures, path, init_ref)
 
-                        # Write parameter table.
+                        # Record the callable for parameter table generation.
 
-                        self.make_parameter_table(f_decls, f_defs, path, init_ref.get_origin())
+                        self.callables[path] = init_ref.get_origin()
+
+                        # Define special attributes.
+
+                        signature = self.get_signature_for_callable(path)
+                        attrs["__fn__"] = path
+                        attrs["__args__"] = encode_size("pmin", signature)
 
                     self.populate_structure(Reference(kind, path), attrs, kind, structure)
 
@@ -229,6 +241,10 @@ class Generator(CommonOutput):
                     attrs = self.get_instance_attributes(path, attrnames)
                     if path == self.function_type:
                         function_instance_attrs = attrs
+
+                        # Record the callable for parameter table generation.
+
+                        self.callables[path] = path
 
                 # Write a table for all objects.
 
@@ -249,14 +265,21 @@ class Generator(CommonOutput):
                 if self.importer.classes.has_key(path) or not self.importer.get_object(path):
                     continue
 
+                # Record the callable for parameter table generation.
+
+                self.callables[path] = path
+
+                # Define the structure details.
+
                 cls = self.function_type
                 table_name = encode_tablename("<instance>", cls)
                 structure_size = encode_size("<instance>", path)
 
                 # Set a special callable attribute on the instance.
 
+                signature = self.get_signature_for_callable(path)
                 function_instance_attrs["__fn__"] = path
-                function_instance_attrs["__args__"] = encode_size("pmin", path)
+                function_instance_attrs["__args__"] = encode_size("pmin", signature)
 
                 # Produce two structures where a method is involved.
 
@@ -295,9 +318,22 @@ class Generator(CommonOutput):
 
                 print >>f_signatures, "__attr %s(__attr args[]);" % encode_function_pointer(path)
 
-                # Write parameter table.
+            # Consolidate parameter tables for instantiators and functions.
 
-                self.make_parameter_table(f_decls, f_defs, path, path)
+            parameter_tables = set()
+
+            for path, function_path in self.callables.items():
+                parameters = self.optimiser.parameters[function_path]
+                if not parameters:
+                    parameters = ()
+                else:
+                    parameters = tuple(parameters)
+                parameter_tables.add(parameters)
+
+            # Generate parameter tables for distinct function signatures.
+
+            for parameters in parameter_tables:
+                self.make_parameter_table(f_decls, f_defs, parameters)
 
             # Generate predefined constants.
 
@@ -343,8 +379,12 @@ class Generator(CommonOutput):
 
             for path, parameters in self.optimiser.parameters.items():
                 argmin, argmax = self.get_argument_limits(path)
-                min_sizes[path] = argmin
-                max_sizes[path] = argmax
+
+                # Use the parameter signature in the constant names.
+
+                signature = self.get_parameter_signature(parameters)
+                min_sizes[signature] = argmin
+                max_sizes[signature] = argmax
 
                 # Record instantiator limits.
 
@@ -465,21 +505,44 @@ class Generator(CommonOutput):
         attr_name = encode_path(const_path)
         print >>f_decls, "#define %s ((__attr) {&%s, &%s})" % (attr_name, structure_name, structure_name)
 
-    def make_parameter_table(self, f_decls, f_defs, path, function_path):
+    def make_parameter_table(self, f_decls, f_defs, parameters):
 
         """
         Write parameter table details to 'f_decls' (to declare a table) and to
-        'f_defs' (to define the contents) for the function with the given
-        'path', using 'function_path' to obtain the parameter details. The
-        latter two arguments may differ when describing an instantiator using
-        the details of an initialiser.
+        'f_defs' (to define the contents) for the given 'parameters'.
         """
 
+        # Use a signature for the table name instead of a separate name for each
+        # function.
+
+        signature = self.get_parameter_signature(parameters)
+        table_name = encode_tablename("<function>", signature)
+        structure_size = encode_size("pmax", signature)
+
         table = []
-        table_name = encode_tablename("<function>", path)
-        structure_size = encode_size("pmax", path)
-        self.populate_parameter_table(function_path, table)
+        self.populate_parameter_table(parameters, table)
         self.write_parameter_table(f_decls, f_defs, table_name, structure_size, table)
+
+    def get_parameter_signature(self, parameters):
+
+        "Return a signature for the given 'parameters'."
+
+        l = []
+        for parameter in parameters:
+            if parameter is None:
+                l.append("")
+            else:
+                name, pos = parameter
+                l.append(name)
+        return l and "__".join(l) or "__void"
+
+    def get_signature_for_callable(self, path):
+
+        "Return the signature for the callable with the given 'path'."
+
+        function_path = self.callables[path]
+        parameters = self.optimiser.parameters[function_path]
+        return self.get_parameter_signature(parameters)
 
     def write_size_constants(self, f_consts, size_prefix, sizes, padding):
 
@@ -678,14 +741,14 @@ __obj %s = {
             attrs[attrname] = const or Reference("<var>", "%s.%s" % (name, attrname))
         return attrs
 
-    def populate_table(self, key, table):
+    def populate_table(self, path, table):
 
         """
         Traverse the attributes in the determined order for the structure having
-        the given 'key', adding entries to the attribute 'table'.
+        the given 'path', adding entries to the attribute 'table'.
         """
 
-        for attrname in self.optimiser.structures[key]:
+        for attrname in self.optimiser.structures[path]:
 
             # Handle gaps in the structure.
 
@@ -694,14 +757,14 @@ __obj %s = {
             else:
                 table.append(encode_symbol("code", attrname))
 
-    def populate_parameter_table(self, key, table):
+    def populate_parameter_table(self, parameters, table):
 
         """
-        Traverse the parameters in the determined order for the structure having
-        the given 'key', adding entries to the attribute 'table'.
+        Traverse the 'parameters' in the determined order, adding entries to the
+        attribute 'table'.
         """
 
-        for value in self.optimiser.parameters[key]:
+        for value in parameters:
 
             # Handle gaps in the structure.
 
@@ -751,11 +814,6 @@ __obj %s = {
             origin = ref.get_origin()
             structure_ref = ref
 
-        # Refer to instantiator function tables for classes, specific function
-        # tables for individual functions.
-
-        ptable = encode_tablename("<function>", ref.get_origin())
-
         for attrname in self.optimiser.structures[structure_ref]:
 
             # Handle gaps in the structure.
@@ -800,6 +858,9 @@ __obj %s = {
                 # Special argument specification member.
 
                 elif attrname == "__args__":
+                    signature = self.get_signature_for_callable(ref.get_origin())
+                    ptable = encode_tablename("<function>", signature)
+
                     structure.append("{.min=%s, .ptable=&%s}" % (attr, ptable))
                     continue
 
