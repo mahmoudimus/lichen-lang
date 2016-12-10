@@ -73,6 +73,7 @@ __attr __update_context(__ref context, __attr attr);
 
 #define __set_context(__ATTR) (__tmp_context = (__ATTR).value)
 #define __set_accessor(__ATTR) (__tmp_value = (__ATTR).value)
+#define __set_target_accessor(__ATTR) (__tmp_target_value = (__ATTR).value)
 
 /* Basic structure tests. */
 

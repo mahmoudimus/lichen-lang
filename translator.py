@@ -647,20 +647,7 @@ class TranslatedModule(CommonModule):
 
     def process_attribute_access(self, n):
 
-        """
-        Process the given attribute access node 'n'.
-
-        Where a name is provided, a single access should be recorded
-        involving potentially many attributes, thus providing a path to an
-        object. The remaining attributes are then accessed dynamically.
-        The remaining accesses could be deduced and computed, but they would
-        also need to be tested.
-
-        Where no name is provided, potentially many accesses should be
-        recorded, one per attribute name. These could be used to provide
-        computed accesses, but the accessors would need to be tested in each
-        case.
-        """
+        "Process the given attribute access node 'n'."
 
         # Obtain any completed chain and return the reference to it.
 
@@ -684,6 +671,7 @@ class TranslatedModule(CommonModule):
             "<assexpr>" : str(self.in_assignment),
             "<context>" : "__tmp_context",
             "<accessor>" : "__tmp_value",
+            "<target_accessor>" : "__tmp_target_value",
             }
 
         output = []
@@ -1687,7 +1675,7 @@ class TranslatedModule(CommonModule):
 
         targets = targets is not None and "__tmp_targets[%d], " % targets or ""
 
-        self.writeline("__ref __tmp_context, __tmp_value;")
+        self.writeline("__ref __tmp_context, __tmp_value, __tmp_target_value;")
         self.writeline("__attr %s__tmp_result;" % targets)
         self.writeline("__exc __tmp_exc;")
 

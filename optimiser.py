@@ -375,6 +375,8 @@ class Optimiser:
             # Determine whether the first access involves assignment.
 
             assigning = not traversed and not attrnames and final_method == "assign"
+            set_accessor = assigning and "__set_target_accessor" or "__set_accessor"
+            stored_accessor = assigning and "<target_accessor>" or "<accessor>"
 
             # Set the context if already available.
 
@@ -385,8 +387,8 @@ class Optimiser:
                 # Prevent re-evaluation of any dynamic expression by storing it.
 
                 if original_accessor == "<expr>":
-                    emit(("__set_accessor", original_accessor))
-                    accessor = context_var = ("<accessor>",)
+                    emit((set_accessor, original_accessor))
+                    accessor = context_var = (stored_accessor,)
                 else:
                     accessor = context_var = (original_accessor,)
 
@@ -397,8 +399,8 @@ class Optimiser:
                 # Prevent re-evaluation of any dynamic expression by storing it.
 
                 if original_accessor == "<expr>":
-                    emit(("__set_accessor", original_accessor))
-                    accessor = ("<accessor>",)
+                    emit((set_accessor, original_accessor))
+                    accessor = (stored_accessor,)
                 else:
                     accessor = (original_accessor,)
 
