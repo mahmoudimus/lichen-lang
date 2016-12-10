@@ -38,11 +38,7 @@ from __builtins__.exception.io import (
     )
 
 from __builtins__.exception.naming import (
-    AttributeError,
-    ImportError,
-    ImportWarning,
-    NameError,
-    UnboundLocalError
+    AttributeError
     )
 
 from __builtins__.exception.numeric import (
