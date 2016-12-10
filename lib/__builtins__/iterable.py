@@ -98,7 +98,32 @@ def min(args):
             lowest = arg
     return lowest
 
-def reduce(function, sequence, initial=None): pass
+_reduce_default = object()
+
+def reduce(function, sequence, initial=_reduce_default):
+
+    """
+    Using 'function', reduce the given 'sequence' to a single result.
+
+    With no 'initial' value specified, the first two elements in the 'sequence'
+    are used with the function to produce an initial result. With an initial
+    result available, a subsequent result is computed by using the initial
+    result and the next element in the sequence with the function.
+
+    All subsequent results are computed using the current result and the next
+    available element with the function. This continues for all remaining
+    elements until the end of the sequence is reached.
+    """
+
+    result = initial
+
+    for i in sequence:
+        if result is _reduce_default:
+            result = i
+        else:
+            result = function(result, i)
+
+    return result
 
 def reversed(sequence):
 
