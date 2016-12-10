@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import init_item, remove_items, CommonModule
+from common import get_builtin_module, init_item, remove_items, CommonModule
 from encoders import decode_modifier_term, decode_usage, encode_modifiers, encode_usage
 from referencing import decode_reference, Reference
 from results import ResolvedNameRef
@@ -299,11 +299,12 @@ class InspectionNaming:
 
         # NOTE: This makes assumptions about the __builtins__ structure.
 
-        modname = name == "string" and "str" or name
-
+        modname = get_builtin_module(name)
         module_name = "__builtins__.%s" % modname
+
         if self.name != module_name:
             self.queue_module(module_name, True)
+
         return Reference("<class>", "__builtins__.%s.%s" % (modname, name))
 
     def get_object(self, path, defer=True):

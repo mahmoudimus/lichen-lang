@@ -321,7 +321,8 @@ class TranslatedModule(CommonModule):
 
         # NOTE: This makes assumptions about the __builtins__ structure.
 
-        return self.importer.get_object("__builtins__.%s.%s" % (name, name))
+        modname = get_builtin_module(name)
+        return self.importer.get_object("__builtins__.%s.%s" % (modname, name))
 
     def is_method(self, path):
 
@@ -409,6 +410,11 @@ class TranslatedModule(CommonModule):
         """
         For node 'n', return a reference for the type of the given 'name'.
         """
+
+        # Handle stray None constants (Sliceobj seems to produce them).
+
+        if name == "NoneType":
+            return self.process_name_node(compiler.ast.Name("None"))
 
         ref = self.get_builtin_class(name)
 

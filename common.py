@@ -915,6 +915,22 @@ def get_assigned_attributes(usage):
                 assigned.append(attrname)
     return assigned
 
+# Type and module functions.
+
+def get_builtin_module(name):
+
+    "Return the module name containing the given type 'name'."
+
+    # NOTE: This makes assumptions about the __builtins__ structure.
+
+    return name == "string" and "str" or name == "NoneType" and "none" or name
+
+def get_builtin_type(name):
+
+    "Return the type name provided by the given Python value 'name'."
+
+    return name == "str" and "string" or name
+
 # Useful data.
 
 predefined_constants = "False", "None", "NotImplemented", "True"

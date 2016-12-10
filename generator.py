@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import CommonOutput
+from common import CommonOutput, get_builtin_module, get_builtin_type
 from encoders import encode_bound_reference, encode_function_pointer, \
                      encode_instantiator_pointer, \
                      encode_literal_constant, encode_literal_constant_member, \
@@ -446,8 +446,8 @@ class Generator(CommonOutput):
 
         # NOTE: This makes assumptions about the __builtins__ structure.
 
-        modname = value.__class__.__name__
-        typename = modname == "str" and "string" or modname
+        typename = get_builtin_type(value.__class__.__name__)
+        modname = get_builtin_module(typename)
         ref = Reference("<instance>", "__builtins__.%s.%s" % (modname, typename))
 
         self.make_constant(f_decls, f_defs, ref, const_path, structure_name, value)

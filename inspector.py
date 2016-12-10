@@ -21,7 +21,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from branching import BranchTracker
-from common import CommonModule, get_argnames, init_item, predefined_constants
+from common import CommonModule, get_argnames, get_builtin_type, init_item, \
+                   predefined_constants
 from modules import BasicModule, CacheWritingModule, InspectionNaming
 from errors import InspectError
 from referencing import Reference
@@ -294,7 +295,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         elif isinstance(n, compiler.ast.Const):
             typename = n.value.__class__.__name__
-            return self.get_literal_instance(n, typename == "str" and "string" or typename)
+            return self.get_literal_instance(n, get_builtin_type(typename))
 
         elif isinstance(n, compiler.ast.Dict):
             return self.get_literal_instance(n, "dict")
@@ -1385,6 +1386,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
     def get_literal_instance(self, n, name):
 
         "For node 'n', return a reference to an instance of 'name'."
+
+        # Handle stray None constants (Sliceobj seems to produce them).
+
+        if name == "NoneType":
+            return self.process_name_node(compiler.ast.Name("None"))
 
         # Get a reference to the built-in class.
 
