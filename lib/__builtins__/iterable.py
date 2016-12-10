@@ -19,8 +19,25 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-def all(iterable): pass
-def any(iterable): pass
+def all(iterable):
+
+    "Return whether all of the elements provided by 'iterable' are true."
+
+    for i in iterable:
+        if not i:
+            return False
+
+    return True
+
+def any(iterable):
+
+    "Return whether any of the elements provided by 'iterable' are true."
+
+    for i in iterable:
+        if i:
+            return True
+
+    return False
 
 def enumerate(iterable, start=0):
 
