@@ -21,15 +21,15 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.sequence import _max, _min
 
-class xrange:
+class slice:
 
-    "Implementation of xrange."
+    "Implementation of slice."
 
     NO_END = object()
 
-    def __init__(self, start_or_end, end=NO_END, step=1):
+    def __init__(self, start_or_end=None, end=NO_END, step=1):
 
-        "Initialise the xrange with the given 'start_or_end', 'end' and 'step'."
+        "Initialise the slice with the given 'start_or_end', 'end' and 'step'."
 
         if end is xrange.NO_END:
             self.start = 0
@@ -38,7 +38,29 @@ class xrange:
             self.start = start_or_end
             self.end = end
 
+        if step == 0:
+            raise ValueError(self.step)
+
         self.step = step
+
+    def __str__(self):
+
+        "Return a string representation."
+
+        b = buffer([self.__name__, "(", self.start, ", ", self.end, ", ", self.step, ")"])
+        return str(b)
+
+    __repr__ = __str__
+
+class xrange(slice):
+
+    "Implementation of xrange."
+
+    def __init__(self, start_or_end, end=slice.NO_END, step=1):
+
+        "Initialise the xrange with the given 'start_or_end', 'end' and 'step'."
+
+        get_using(slice.__init__, self)(start_or_end, end, step)
 
         # Constrain the end according to the start and step.
 
@@ -50,15 +72,6 @@ class xrange:
             raise ValueError(self.step)
 
         self.current = self.start
-
-    def __str__(self):
-
-        "Return a string representation."
-
-        b = buffer([self.__name__, "(", self.start, ", ", self.end, ", ", self.step, ")"])
-        return str(b)
-
-    __repr__ = __str__
 
     def __len__(self):
 
@@ -82,16 +95,6 @@ class xrange:
         current = self.current
         self.current += self.step
         return current
-
-class slice(xrange):
-
-    "Implementation of slice."
-
-    def __init__(self, start_or_end=None, end=xrange.NO_END, step=1):
-
-        "Initialise the slice with the given 'start_or_end', 'end' and 'step'."
-
-        get_using(xrange.__init__, self)(start_or_end, end, step)
 
 def range(start_or_end, end=None, step=1):
 

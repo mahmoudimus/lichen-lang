@@ -94,7 +94,10 @@ class itemaccess:
         # start index.
 
         if start is None:
-            start = 0
+            if step > 0:
+                start = 0
+            else:
+                start = length - 1
         else:
             start = _get_absolute_index(start, length)
 
@@ -102,7 +105,10 @@ class itemaccess:
         # otherwise normalising any end index.
 
         if end is None:
-            end = length
+            if step > 0:
+                end = length
+            else:
+                end = -1
         else:
             end = _get_absolute_index(end, length)
 
