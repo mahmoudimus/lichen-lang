@@ -37,7 +37,7 @@ def binary_op(a, b, left_accessor, right_accessor, default=None):
 
     try:
         fn = left_accessor(a)
-    except AttributeError:
+    except TypeError:
         pass
     else:
         result = fn(b)
@@ -49,7 +49,7 @@ def binary_op(a, b, left_accessor, right_accessor, default=None):
 
     try:
         fn = right_accessor(b)
-    except AttributeError:
+    except TypeError:
         pass
     else:
         result = fn(a)
@@ -76,7 +76,7 @@ def unary_op(a, accessor, default=None):
 
     try:
         fn = accessor(a)
-    except AttributeError:
+    except TypeError:
         pass
     else:
         result = fn()
@@ -106,7 +106,7 @@ def augassign(a, b, augmented_accessor, left_accessor, right_accessor):
 
     try:
         fn = augmented_accessor(a)
-    except AttributeError:
+    except TypeError:
         pass
     else:
         result = fn(b)
