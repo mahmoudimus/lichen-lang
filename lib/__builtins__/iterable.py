@@ -21,8 +21,39 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 def all(iterable): pass
 def any(iterable): pass
-def enumerate(iterable): pass
-def filter(function, sequence): pass
+
+def enumerate(iterable, start=0):
+
+    """
+    Iterate over 'iterable', obtaining items and combining them with position
+    information, producing a sequence containing tuples of the form
+    (position, item). The first position is indicated by 'start' (which is zero
+    by default) and each subsequent positions is incremented from the one
+    preceding it.
+    """
+
+    l = []
+    pos = start
+
+    for i in iterable:
+        l.append((pos, i))
+        pos += 1
+
+    return l
+
+def filter(function, sequence):
+
+    """
+    Apply 'function' to each element in 'sequence', returning a sequence of all
+    elements for which the result of the function evaluated to a true value.
+    """
+
+    l = []
+    for i in sequence:
+        if function(i):
+            l.append(i)
+    return l
+
 def iter(collection):
 
     "Implementation of iter without callable plus sentinel support."
@@ -35,32 +66,56 @@ def len(obj):
 
     return obj.__len__()
 
-def map(function, *args): pass
+def map(function, sequence):
 
-def max(*args):
+    """
+    Apply 'function' to each element of 'sequence' in turn, appending the result
+    to a new sequence containing all results.
+    """
+
+    l = []
+    for i in sequence:
+        l.append(function(i))
+    return l
+
+def max(args):
 
     "Implementation of max."
 
-    highest = args[0]
-    for arg in args[1:]:
-        if arg > highest:
+    highest = None
+    for arg in args:
+        if highest is None or arg > highest:
             highest = arg
     return highest
 
-def min(*args):
+def min(args):
 
     "Implementation of min."
 
-    lowest = args[0]
-    for arg in args[1:]:
-        if arg > lowest:
+    lowest = None
+    for arg in args:
+        if lowest is None or arg < lowest:
             lowest = arg
     return lowest
 
 def reduce(function, sequence, initial=None): pass
-def reversed(sequence): pass
+
+def reversed(sequence):
+
+    "Return a reversed version of the given 'sequence'."
+
+    return sequence[::-1]
+
 def sorted(iterable, cmp=None, key=None, reverse=False): pass
-def sum(sequence, start=0): pass
+
+def sum(sequence, start=0):
+
+    "Sum the elements in 'sequence', adding to any indicated 'start' value."
+
+    total = start
+    for i in sequence:
+        total += i
+    return total
 
 def zip(args):
 
