@@ -71,8 +71,6 @@ class xrange(slice):
         else:
             raise ValueError(self.step)
 
-        self.current = self.start
-
     def __len__(self):
 
         "Return the length of the range."
@@ -83,14 +81,27 @@ class xrange(slice):
 
         "Return an iterator, currently self."
 
-        return self
+        return xrangeiterator(self)
+
+class xrangeiterator:
+
+    "An iterator over an xrange."
+
+    def __init__(self, obj):
+
+        "Initialise the iterator with the given 'obj'."
+
+        self.start = obj.start
+        self.end = obj.end
+        self.step = obj.step
+        self.current = obj.start
 
     def next(self):
 
         "Return the next item or raise a StopIteration exception."
 
         if self.step < 0 and self.current <= self.end or self.step > 0 and self.current >= self.end:
-            raise StopIteration()
+            raise StopIteration
 
         current = self.current
         self.current += self.step
