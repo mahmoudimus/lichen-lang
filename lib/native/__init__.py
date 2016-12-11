@@ -36,6 +36,8 @@ from native.limits import get_maxint, get_minint
 from native.list import list_init, list_setsize, list_append, list_concat, \
                         list_len, list_nonempty, list_element, list_setelement
 
+from native.locale import getlocale, setlocale
+
 from native.program import get_using
 
 from native.str import str_add, str_eq, str_gt, str_lt, str_len, str_nonempty, \
