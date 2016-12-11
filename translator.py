@@ -1140,7 +1140,11 @@ class TranslatedModule(CommonModule):
                 # argument directly.
 
                 if parameters:
-                    argnum = parameters.index(arg.name)
+                    try:
+                        argnum = parameters.index(arg.name)
+                    except ValueError:
+                        raise TranslateError("Argument %s is not recognised." % arg.name,
+                                             self.get_namespace_path(), n)
                     args[argnum+1] = str(argexpr)
 
                 # Otherwise, store the details in a separate collection.
