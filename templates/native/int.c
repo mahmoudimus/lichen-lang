@@ -268,7 +268,7 @@ __attr __fn_native_int_int_str(__attr __args[])
     snprintf(s, n, "%d", i);
 
     /* Return a new string. */
-    return __new_str(s);
+    return __new_str(s, n);
 }
 
 /* Module initialisation. */

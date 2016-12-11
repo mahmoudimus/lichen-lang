@@ -19,6 +19,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
+#include <stddef.h> /* size_t */
+
 /* Attribute tables are lists of codes confirming the presence of attributes. */
 
 typedef struct __table
@@ -55,9 +57,11 @@ typedef struct __attr
     union
     {
         __obj * context;        /* attribute context */
-        unsigned int min;       /* minimum number of parameters */
         __obj * b;              /* bound callable object */
+        unsigned int min;       /* minimum number of parameters */
         unsigned int code;      /* parameter table code for key */
+
+        size_t size;            /* size of value */
     };
 
     /* One of... */

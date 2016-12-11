@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <string.h> /* strcmp, strncpy, strlen */
+#include <string.h> /* strcmp, memcpy */
 #include "native/common.h"
 #include "types.h"
 #include "exceptions.h"
@@ -35,14 +35,14 @@ __attr __fn_native_str_str_add(__attr __args[])
     /* _data, other interpreted as string */
     char *s = _data->strvalue;
     char *o = other->strvalue;
-    int n = strlen(s) + strlen(o) + 1;
-    char *r = (char *) __ALLOCATE(n, sizeof(char));
+    int n = _data->size + other->size;
+    char *r = (char *) __ALLOCATE(n + 1, sizeof(char));
 
-    strncpy(r, s, n);
-    strncpy(r + strlen(s), o, n - strlen(s)); /* should null terminate */
+    memcpy(r, s, _data->size);
+    memcpy(r + _data->size, o, other->size);
 
     /* Return a new string. */
-    return __new_str(r);
+    return __new_str(r, n);
 }
 
 __attr __fn_native_str_str_lt(__attr __args[])
@@ -88,7 +88,7 @@ __attr __fn_native_str_str_len(__attr __args[])
     char *s = _data->strvalue;
 
     /* Return the new integer. */
-    return __new_int(strlen(s));
+    return __new_int(_data->size);
 }
 
 __attr __fn_native_str_str_nonempty(__attr __args[])
@@ -97,7 +97,7 @@ __attr __fn_native_str_str_nonempty(__attr __args[])
     /* _data interpreted as string */
     char *s = _data->strvalue;
 
-    return strlen(s) ? __builtins___boolean_True : __builtins___boolean_False;
+    return _data->size ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
 __attr __fn_native_str_str_ord(__attr __args[])
@@ -123,8 +123,8 @@ __attr __fn_native_str_str_substr(__attr __args[])
 
     /* Reserve space for a new string. */
     sub = (char *) __ALLOCATE(l + 1, sizeof(char));
-    strncpy(sub, s + i, l); /* does not null terminate but final byte should be zero */
-    return __new_str(sub);
+    memcpy(sub, s + i, l); /* does not null terminate but final byte should be zero */
+    return __new_str(sub, l);
 }
 
 /* Module initialisation. */

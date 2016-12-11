@@ -306,6 +306,15 @@ def encode_literal_constant(n):
 
     return "__const%d" % n
 
+def encode_literal_constant_size(value):
+
+    "Encode a size for the literal constant with the given 'value'."
+
+    if isinstance(value, basestring):
+        return len(value)
+    else:
+        return 0
+
 def encode_literal_constant_member(value):
 
     "Encode the member name for the 'value' in the final program."

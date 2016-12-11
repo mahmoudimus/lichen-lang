@@ -46,7 +46,7 @@ __attr __fn_native_locale_getlocale(__attr __args[])
     out = __ALLOCATE(length + 1, sizeof(char));
     strncpy(out, result, length);
 
-    return __new_str(result);
+    return __new_str(result, length);
 }
 
 __attr __fn_native_locale_setlocale(__attr __args[])
@@ -69,7 +69,7 @@ __attr __fn_native_locale_setlocale(__attr __args[])
     out = __ALLOCATE(length + 1, sizeof(char));
     strncpy(out, result, length);
 
-    return __new_str(result);
+    return __new_str(result, length);
 }
 
 /* Module initialisation. */

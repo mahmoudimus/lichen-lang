@@ -23,7 +23,7 @@ from common import CommonOutput, get_builtin_module, get_builtin_type
 from encoders import encode_bound_reference, encode_function_pointer, \
                      encode_instantiator_pointer, \
                      encode_literal_constant, encode_literal_constant_member, \
-                     encode_literal_constant_value, \
+                     encode_literal_constant_size, encode_literal_constant_value, \
                      encode_literal_data_initialiser, \
                      encode_literal_instantiator, encode_literal_reference, \
                      encode_path, \
@@ -873,8 +873,10 @@ __obj %s = {
                 # Special internal data member.
 
                 elif attrname == "__data__":
-                    structure.append("{0, .%s=%s}" % (encode_literal_constant_member(attr),
-                                                      encode_literal_constant_value(attr)))
+                    structure.append("{.size=%d, .%s=%s}" % (
+                                     encode_literal_constant_size(attr),
+                                     encode_literal_constant_member(attr),
+                                     encode_literal_constant_value(attr)))
                     continue
 
                 # Special internal key member.
