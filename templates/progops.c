@@ -119,6 +119,15 @@ void __raise_memory_error()
     __Raise(exc);
 }
 
+void __raise_os_error(__attr value, __attr arg)
+{
+#ifdef __HAVE___builtins___exception_system_OSError
+    __attr args[3] = {{0, 0}, value, arg};
+    __attr exc = __new___builtins___exception_system_OSError(args);
+    __Raise(exc);
+#endif /* __HAVE___builtins___exception_system_OSError */
+}
+
 void __raise_overflow_error()
 {
     __attr args[1];
