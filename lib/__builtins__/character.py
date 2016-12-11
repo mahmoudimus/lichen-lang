@@ -22,8 +22,51 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from native import str_ord
 
 def chr(i): pass
-def hex(number): pass
-def oct(number): pass
+
+_hexdigits = "0123456789abcdef"
+
+def _base(number, base, prefix=""):
+
+    """
+    Return 'number' encoded in the given 'base', prefixed with 'prefix'.
+    """
+
+    if number < 0:
+        number = -number
+        sign = "-"
+    else:
+        sign = ""
+
+    digits = []
+
+    while number:
+        digits.append(_hexdigits[number % base])
+        number = number / base
+
+    digits.append(prefix)
+
+    if sign:
+        digits.append(sign)
+
+    return "".join(reversed(digits))
+
+def hex(number, prefix="0x"):
+
+    """
+    Return 'number' encoded as a hexadecimal (base 16) value, prefixed with
+    'prefix' ("0x" by default).
+    """
+
+    return _base(number, 16, prefix)
+
+def oct(number, prefix="0"):
+
+    """
+    Return 'number' encoded as an octal (base 8) value, prefixed with 'prefix'
+    ("0" by default).
+    """
+
+    return _base(number, 8, prefix)
 
 def ord(c):
 
