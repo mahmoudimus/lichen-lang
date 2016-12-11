@@ -17,6 +17,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <locale.h> /* setlocale */
+#include <string.h> /* strlen */
 #include "native/common.h"
 #include "types.h"
 #include "exceptions.h"
@@ -31,33 +32,44 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __fn_native_locale_getlocale(__attr __args[])
 {
     __attr * const category = &__args[1];
-    /* category interpreted as int */
+    /* category.__data__ interpreted as int */
     int cat = __load_via_object(category->value, __pos___data__).intvalue;
-    char *result;
+    char *result, *out;
+    size_t length;
 
     result = setlocale(cat, NULL);
 
     if (result == NULL)
         return __builtins___none_None;
-    else
-        return __new_str(result);
+
+    length = strlen(result);
+    out = __ALLOCATE(length + 1, sizeof(char));
+    strncpy(out, result, length);
+
+    return __new_str(result);
 }
 
 __attr __fn_native_locale_setlocale(__attr __args[])
 {
     __attr * const category = &__args[1];
     __attr * const value = &__args[2];
-    /* category interpreted as int */
+    /* category.__data__ interpreted as int */
     int cat = __load_via_object(category->value, __pos___data__).intvalue;
-    /* value interpreted as string */
-    char *s = __load_via_object(value->value, __pos___data__).strvalue, *result;
+    /* value.__data__ interpreted as string */
+    char *s = __load_via_object(value->value, __pos___data__).strvalue;
+    char *result, *out;
+    size_t length;
 
     result = setlocale(cat, s);
 
     if (result == NULL)
         return __builtins___none_None;
-    else
-        return __new_str(result);
+
+    length = strlen(result);
+    out = __ALLOCATE(length + 1, sizeof(char));
+    strncpy(out, result, length);
+
+    return __new_str(result);
 }
 
 /* Module initialisation. */
