@@ -20,7 +20,18 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 class EnvironmentError(Exception): pass
-class OSError(Exception): pass
+
+class OSError(Exception):
+
+    "A general operating system error."
+
+    def __init__(self, value, arg):
+
+        "Initialise the exception with the given error 'value' and 'arg'."
+
+        self.value = value
+        self.arg = arg
+
 class RuntimeError(Exception): pass
 class RuntimeWarning(Warning): pass
 class SystemError(Exception): pass
