@@ -1,0 +1,20 @@
+# -*- coding: ISO-8859-1 -*-
+
+import sys
+
+# Print bytes.
+
+s = "זרו"
+print s                             # זרו
+
+# Obtain text and print it.
+
+u = unicode(s, "ISO-8859-1")
+print u                             # ֳ¦ֳ¸ֳ¥
+print u.encode("ISO-8859-1")        # זרו
+
+# Inspect and update the encoding of stdout.
+
+print sys.stdout.encoding           # None
+sys.stdout.encoding = "ISO-8859-1"
+print u                             # זרו

@@ -31,9 +31,11 @@ class utf8string(basestring):
         "Encode the string to the given 'encoding'."
 
         from_utf8 = Converter("UTF-8", encoding)
+
         try:
             from_utf8.feed(self)
             return str(from_utf8)
+
         finally:
             from_utf8.close()
 
@@ -51,9 +53,11 @@ def unicode(s, encoding):
     # Convert the string to UTF-8.
 
     to_utf8 = Converter(encoding, "UTF-8")
+
     try:
         to_utf8.feed(s)
         return utf8string(str(to_utf8))
+
     finally:
         to_utf8.close()
 

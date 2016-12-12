@@ -20,16 +20,17 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.types import check_int, check_string
-from native import fclose, fopen, fread, fwrite
+from native import isinstance as _isinstance, fclose, fopen, fread, fwrite
 
 class filestream:
 
     "Generic file-oriented stream functionality."
 
-    def __init__(self, bufsize=1024):
+    def __init__(self, encoding=None, bufsize=1024):
 
-        "Initialise the stream with the given 'bufsize'."
+        "Initialise the stream with the given 'encoding' and 'bufsize'."
 
+        self.encoding = encoding
         self.bufsize = bufsize
         self.__data__ = None
 
@@ -42,7 +43,7 @@ class filestream:
         # Read any indicated number of bytes.
 
         if n > 0:
-            return fread(self.__data__, n)
+            s = fread(self.__data__, n)
 
         # Read all remaining bytes.
 
@@ -60,13 +61,26 @@ class filestream:
             except EOFError:
                 pass
 
-            return "".join(l)
+            s = "".join(l)
+
+        # Convert bytes to text if necessary.
+
+        if self.encoding:
+            return unicode(s, self.encoding)
+        else:
+            return s
 
     def write(self, s):
 
         "Write string 's' to the stream."
 
         check_string(s)
+
+        # Encode text as bytes if necessary.
+
+        if self.encoding and _isinstance(s, utf8string):
+            s = s.encode(self.encoding)
+
         fwrite(self.__data__, s)
 
     def close(self):
@@ -79,11 +93,14 @@ class file(filestream):
 
     "A file abstraction."
 
-    def __init__(self, filename, mode="r", bufsize=1024):
+    def __init__(self, filename, mode="r", encoding=None, bufsize=1024):
 
-        "Open the file with the given 'filename' using the given access 'mode'."
+        """
+        Open the file with the given 'filename' using the given access 'mode',
+        any specified 'encoding', and the given 'bufsize'.
+        """
 
-        get_using(filestream.__init__, self)(bufsize)
+        get_using(filestream.__init__, self)(encoding, bufsize)
         self.__data__ = fopen(filename, mode)
 
     def readline(self, size=None): pass

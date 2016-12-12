@@ -62,11 +62,14 @@ class sysstream(filestream):
 
     "A system-level stream object."
 
-    def __init__(self, fd, mode="r", bufsize=1024):
+    def __init__(self, fd, mode="r", encoding=None, bufsize=1024):
 
-        "Initialise the stream with the given 'fd' and 'mode'."
+        """
+        Initialise the stream with the given 'fd', 'mode', 'encoding' and
+        'bufsize'.
+        """
 
-        get_using(filestream.__init__, self)(bufsize)
+        get_using(filestream.__init__, self)(encoding, bufsize)
         self.__data__ = fdopen(fd, mode)
 
 # Standard streams.
