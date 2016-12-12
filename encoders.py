@@ -174,6 +174,10 @@ typename_ops = (
     "__test_common_instance", "__test_common_object", "__test_common_type",
     )
 
+type_ops = (
+    "__test_specific_instance", "__test_specific_object", "__test_specific_type",
+    )
+
 static_ops = (
     "__load_static",
     )
@@ -228,6 +232,11 @@ def encode_access_instruction(instruction, subs):
             arg = encode_type_attribute(args[1])
             a[1] = encode_symbol("pos", arg)
             a.insert(2, encode_symbol("code", arg))
+
+        # Obtain addresses of type arguments.
+
+        elif op in type_ops:
+            a[1] = "&%s" % a[1]
 
         # Obtain addresses of static objects.
 

@@ -617,7 +617,7 @@ class Deducer(CommonOutput):
                 if provider != '__builtins__.object':
                     all_accessor_kinds = set(get_kinds(all_accessor_types))
                     if len(all_accessor_kinds) == 1:
-                        test_type = ("test", "specific", first(all_accessor_kinds))
+                        test_type = ("test", "specific", test_label_for_kind(first(all_accessor_kinds)))
                     else:
                         test_type = ("test", "specific", "object")
                     self.reference_test_types[location] = test_type
@@ -628,7 +628,7 @@ class Deducer(CommonOutput):
                 if provider != '__builtins__.object':
                     all_accessor_kinds = set(get_kinds(all_accessor_general_types))
                     if len(all_accessor_kinds) == 1:
-                        test_type = ("test", "common", first(all_accessor_kinds))
+                        test_type = ("test", "common", test_label_for_kind(first(all_accessor_kinds)))
                     else:
                         test_type = ("test", "common", "object")
                     self.reference_test_types[location] = test_type
