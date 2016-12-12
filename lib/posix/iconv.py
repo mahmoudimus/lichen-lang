@@ -20,17 +20,18 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.types import check_int, check_string
-from native import iconv_close, iconv_open, iconv
+from native import iconv, iconv_close, iconv_open, iconv_reset
+
+# Errors produced by iconv.
+
+EINVAL = 22
+EILSEQ = 84
 
 class ConverterError(Exception):
 
     "An error indicating a failure involving a character set converter."
 
     pass
-
-E2BIG = 7
-EINVAL = 22
-EILSEQ = 84
 
 class Converter:
 
@@ -43,6 +44,15 @@ class Converter:
         check_string(from_encoding)
         check_string(to_encoding)
         self.__data__ = iconv_open(to_encoding, from_encoding)
+        self.reset()
+
+    def reset(self):
+
+        "Reset the state of the converter."
+
+        self.state = ["", 0, 0]
+        self.result = []
+        iconv_reset(self.__data__)
 
     def close(self):
 
@@ -51,29 +61,53 @@ class Converter:
         iconv_close(self.__data__)
         self.__data__ = None
 
-    def convert(self, s):
+    def feed(self, s):
 
-        "Convert 's' between the converter's encodings."
+        "Feed 's' to the converter."
 
         if self.__data__ is None:
             raise ConverterError
 
         check_string(s)
 
-        result = []
-        state = [0, len(s)]
+        _s, start, remaining = self.state
+
+        if _s:
+            self.state = [_s + s, start, remaining + len(s)]
+        else:
+            self.state = [s, 0, len(s)]
 
         while True:
 
             # Obtain converted text and update the state.
 
-            out = iconv(self.__data__, s, state)
-            result.append(out)
+            try:
+                out = iconv(self.__data__, self.state)
+
+            # Incomplete input does not cause an exception.
+
+            except OSError, exc:
+                if exc.value == EINVAL:
+                    self.result.append(exc.arg)
+                    return
+                else:
+                    raise
+
+            # Add any returned text to the result.
+
+            self.result.append(out)
 
             # Test for the end of the conversion.
 
-            start, remaining = state
+            _s, start, remaining = self.state
+
             if not remaining:
-                return "".join(result)
+                return
+
+    def __str__(self):
+
+        "Return the value of the converted string."
+
+        return "".join(self.result)
 
 # vim: tabstop=4 expandtab shiftwidth=4

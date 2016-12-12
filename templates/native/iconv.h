@@ -26,6 +26,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __fn_native_iconv_iconv(__attr __args[]);
 __attr __fn_native_iconv_iconv_close(__attr __args[]);
 __attr __fn_native_iconv_iconv_open(__attr __args[]);
+__attr __fn_native_iconv_iconv_reset(__attr __args[]);
 
 /* Module initialisation. */
 

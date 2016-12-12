@@ -29,7 +29,7 @@ from native.int import int_add, int_div, int_mod, int_mul, int_neg, int_pow, \
 
 from native.introspection import object_getattr, isinstance, issubclass
 
-from native.iconv import iconv, iconv_close, iconv_open
+from native.iconv import iconv, iconv_close, iconv_open, iconv_reset
 
 from native.io import fclose, fopen, fdopen, close, read, write, fread, fwrite
 

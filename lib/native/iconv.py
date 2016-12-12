@@ -24,13 +24,15 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-def iconv_open(tocode, fromcode):
+def iconv(cd, state):
     OSError
 
 def iconv_close(cd):
     OSError
 
-def iconv(cd, instr, state):
+def iconv_open(tocode, fromcode):
     OSError
+
+def iconv_reset(cd): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

@@ -35,19 +35,17 @@ static const size_t OUTBUFSIZE_MIN = 16;
 __attr __fn_native_iconv_iconv(__attr __args[])
 {
     __attr * const cd = &__args[1];
-    __attr * const instr = &__args[2];
-    __attr * const state = &__args[3];
+    __attr * const state = &__args[2];
     /* cd interpreted as iconv_t */
     iconv_t c = (iconv_t) cd->datavalue;
-    /* instr.__data__ interpreted as string */
-    char *inbuf = __load_via_object(instr->value, __pos___data__).strvalue;
     /* state.__data__ interpreted as list */
     __fragment *f = __load_via_object(state->value, __pos___data__).seqvalue;
 
-    /* Obtain the start position from the state. */
+    /* Obtain the string, start position, and remaining bytes from the state. */
 
-    int start = __load_via_object(f->attrs[0].value, __pos___data__).intvalue;
-    int remaining = __load_via_object(f->attrs[1].value, __pos___data__).intvalue;
+    char *inbuf = __load_via_object(f->attrs[0].value, __pos___data__).strvalue;
+    int start = __load_via_object(f->attrs[1].value, __pos___data__).intvalue;
+    int remaining = __load_via_object(f->attrs[2].value, __pos___data__).intvalue;
 
     /* Allocate a string for the output buffer using the remaining input size
        as a guide. */
@@ -69,7 +67,7 @@ __attr __fn_native_iconv_iconv(__attr __args[])
 
     /* Return any string. */
 
-    if ((result != -1) || (errno == E2BIG))
+    if ((result != -1) || (errno == E2BIG) || (errno == EINVAL))
     {
         outbytestotal = outbufsize - outbytesleft;
         resultbuf = __ALLOCATE(outbytestotal + 1, sizeof(char));
@@ -77,23 +75,20 @@ __attr __fn_native_iconv_iconv(__attr __args[])
 
         /* Mutate the state to indicate the next input buffer position. */
 
-        f->attrs[0] = __new_int(start + remaining - inbytesleft);
-        f->attrs[1] = __new_int(inbytesleft);
+        f->attrs[1] = __new_int(start + remaining - inbytesleft);
+        f->attrs[2] = __new_int(inbytesleft);
+
+        /* Incomplete sequence: raise the string in an OSError instead. */
+
+        if (errno == EINVAL)
+            __raise_os_error(__new_int(errno), __new_str(resultbuf, outbytestotal));
+
         return __new_str(resultbuf, outbytestotal);
     }
 
     /* Invalid sequence. */
 
     if (errno == EILSEQ)
-    {
-        resultbuf = __ALLOCATE(inbytesleft + 1, sizeof(char));
-        memcpy(resultbuf, inbuf, inbytesleft);
-        __raise_os_error(__new_int(errno), __new_str(resultbuf, inbytesleft));
-    }
-
-    /* Incomplete sequence. */
-
-    else if (errno == EINVAL)
     {
         resultbuf = __ALLOCATE(inbytesleft + 1, sizeof(char));
         memcpy(resultbuf, inbuf, inbytesleft);
@@ -142,6 +137,16 @@ __attr __fn_native_iconv_iconv_open(__attr __args[])
     attr.context = 0;
     attr.datavalue = (void *) result;
     return attr;
+}
+
+__attr __fn_native_iconv_iconv_reset(__attr __args[])
+{
+    __attr * const cd = &__args[1];
+    /* cd interpreted as iconv_t */
+    iconv_t c = (iconv_t) cd->datavalue;
+
+    iconv(c, NULL, NULL, NULL, NULL);
+    return __builtins___none_None;
 }
 
 /* Module initialisation. */
