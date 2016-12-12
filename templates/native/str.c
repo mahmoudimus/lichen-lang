@@ -125,7 +125,7 @@ __attr __fn_native_str_str_substr(__attr __args[])
     int istep = __load_via_object(step->value, __pos___data__).intvalue;
 
     /* Calculate the size of the substring. */
-    size_t resultsize = ((iend - istart - 1) / istep) + 1;
+    size_t resultsize = ((iend - istart - (istep > 0 ? 1 : -1)) / istep) + 1;
     int to, from;
 
     /* Reserve space for a new string. */
