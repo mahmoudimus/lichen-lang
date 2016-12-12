@@ -8,14 +8,14 @@ from_utf8 = Converter("UTF-8", "ISO-8859-1")
 from_utf16 = Converter("UTF-16", "ISO-8859-1")
 
 try:
-    iso = "זרו"
-    print iso                           # זרו
-    utf = to_utf8.convert(iso)
-    print utf                           # ֳ¦ֳ¸ֳ¥
-    print from_utf8.convert(utf)        # זרו
-    utf = to_utf16.convert(iso)
-    print utf                           # ...
     try:
+        iso = "זרו"
+        print iso                           # זרו
+        utf = to_utf8.convert(iso)
+        print utf                           # ֳ¦ֳ¸ֳ¥
+        print from_utf8.convert(utf)        # זרו
+        utf = to_utf16.convert(iso)
+        print utf                           # ...
         print from_utf16.convert(utf)       # זרו
     except OSError, exc:
         if exc.value == EINVAL:
