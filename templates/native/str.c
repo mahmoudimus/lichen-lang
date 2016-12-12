@@ -113,18 +113,33 @@ __attr __fn_native_str_str_substr(__attr __args[])
 {
     __attr * const _data = &__args[1];
     __attr * const start = &__args[2];
-    __attr * const size = &__args[3];
+    __attr * const end = &__args[3];
+    __attr * const step = &__args[4];
     /* _data interpreted as string */
     char *s = _data->strvalue, *sub;
     /* start.__data__ interpreted as int */
-    int i = __load_via_object(start->value, __pos___data__).intvalue;
-    /* size.__data__ interpreted as int */
-    int l = __load_via_object(size->value, __pos___data__).intvalue;
+    int istart = __load_via_object(start->value, __pos___data__).intvalue;
+    /* end.__data__ interpreted as int */
+    int iend = __load_via_object(end->value, __pos___data__).intvalue;
+    /* step.__data__ interpreted as int */
+    int istep = __load_via_object(step->value, __pos___data__).intvalue;
+
+    /* Calculate the size of the substring. */
+    size_t resultsize = ((iend - istart - 1) / istep) + 1;
+    int to, from;
 
     /* Reserve space for a new string. */
-    sub = (char *) __ALLOCATE(l + 1, sizeof(char));
-    memcpy(sub, s + i, l); /* does not null terminate but final byte should be zero */
-    return __new_str(sub, l);
+    sub = (char *) __ALLOCATE(resultsize + 1, sizeof(char));
+
+    /* Does not null terminate but final byte should be zero. */
+    if (istep > 0)
+        for (from = istart, to = 0; from < iend; from += istep, to++)
+            sub[to] = s[from];
+    else if (istep < 0)
+        for (from = istart, to = 0; from > iend; from += istep, to++)
+            sub[to] = s[from];
+
+    return __new_str(sub, resultsize);
 }
 
 /* Module initialisation. */

@@ -35,6 +35,16 @@ class itemaccess:
         if index < 0 or index >= len(self):
             raise IndexError(index)
 
+    def _check_end_index(self, index):
+
+        """
+        Check the given absolute end 'index', raising an IndexError if out of
+        bounds.
+        """
+
+        if index < -1 or index > len(self):
+            raise IndexError(index)
+
     def __getitem__(self, index):
 
         "Return the item or slice specified by 'index'."
@@ -112,13 +122,7 @@ class itemaccess:
         else:
             end = _get_absolute_index(end, length)
 
-        result = []
-
-        while step > 0 and start < end or step < 0 and start > end:
-            result.append(self.__get_single_item__(start))
-            start += step
-
-        return result
+        return self.__get_multiple_items__(start, end, step)
 
     # Methods implemented by subclasses.
 
@@ -139,6 +143,12 @@ class itemaccess:
         "Method to be overridden by subclasses."
 
         pass
+
+    def __get_multiple_items__(self, start, end, step):
+
+        "Method to be overridden by subclasses."
+
+        return None
 
     def __len__(self):
 
@@ -229,6 +239,21 @@ class sequence(itemaccess):
         "Method to be overridden by subclasses."
 
         raise StopIteration()
+
+    def __get_multiple_items__(self, start, end, step):
+
+        """
+        Return items from 'start' until (but excluding) 'end', at 'step'
+        intervals.
+        """
+
+        result = []
+
+        while step > 0 and start < end or step < 0 and start > end:
+            result.append(self.__get_single_item__(start))
+            start += step
+
+        return result
 
 def _get_absolute_index(index, length):
 

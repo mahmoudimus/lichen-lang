@@ -2,6 +2,10 @@ s = "Hello"
 s += " world!"
 print s                     # Hello world!
 print len(s)                # 12
+print s[:5]                 # Hello
+print s[5:]                 #  world!
+print s[1:10:2]             # el ol
+print s[10:1:-2]            # drwol
 
 s2 = "Hello worlds!"
 print s2                    # Hello worlds!

@@ -22,6 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.int import maxint, minint
 from __builtins__.operator import _negate
 from __builtins__.sequence import itemaccess
+from __builtins__.types import check_int
 from native import str_add, str_lt, str_gt, str_eq, str_len, str_nonempty, \
                    str_substr
 
@@ -189,7 +190,26 @@ class basestring(itemaccess):
         "Return the item at the normalised (positive) 'index'."
 
         self._check_index(index)
-        return str_substr(self.__data__, index, 1)
+        return str_substr(self.__data__, index, index + 1, 1)
+
+    def __get_multiple_items__(self, start, end, step):
+
+        """
+        Return items from 'start' until (but excluding) 'end', at 'step'
+        intervals.
+        """
+
+        self._check_index(start)
+        self._check_end_index(end)
+        check_int(step)
+
+        if step == 0:
+            raise ValueError(step)
+
+        if start == end:
+            return ""
+
+        return str_substr(self.__data__, start, end, step)
 
 class string(basestring):
     pass

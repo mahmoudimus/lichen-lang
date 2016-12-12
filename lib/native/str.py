@@ -26,13 +26,13 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # String operations.
 
-def str_add(self, other): pass
-def str_eq(self, other): pass
-def str_gt(self, other): pass
-def str_lt(self, other): pass
-def str_len(self): pass
-def str_nonempty(self): pass
-def str_ord(self): pass
-def str_substr(self, start, size): pass
+def str_add(data, other_data): pass
+def str_eq(data, other_data): pass
+def str_gt(data, other_data): pass
+def str_lt(data, other_data): pass
+def str_len(data): pass
+def str_nonempty(data): pass
+def str_ord(data): pass
+def str_substr(data, start, end, step): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4
