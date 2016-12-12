@@ -94,23 +94,23 @@ void __newdata_mapping(__attr args[], unsigned int number)
 
 /* Helpers for raising errors within common operations. */
 
-#ifdef __HAVE___builtins___exception_io_EOFError
 void __raise_eof_error()
 {
+#ifdef __HAVE___builtins___exception_io_EOFError
     __attr args[1];
     __attr exc = __new___builtins___exception_io_EOFError(args);
     __Raise(exc);
-}
 #endif /* __HAVE___builtins___exception_io_EOFError */
+}
 
-#ifdef __HAVE___builtins___exception_io_IOError
 void __raise_io_error(__attr value)
 {
+#ifdef __HAVE___builtins___exception_io_IOError
     __attr args[2] = {{0, 0}, value};
     __attr exc = __new___builtins___exception_io_IOError(args);
     __Raise(exc);
-}
 #endif /* __HAVE___builtins___exception_io_IOError */
+}
 
 void __raise_memory_error()
 {
