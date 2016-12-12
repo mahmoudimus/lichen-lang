@@ -32,7 +32,7 @@ def check_string(s):
 
     "Check the given string 's'."
 
-    if not _isinstance(s, string):
+    if not _isinstance(s, basestring):
         raise ValueError(s)
 
 # vim: tabstop=4 expandtab shiftwidth=4

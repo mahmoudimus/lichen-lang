@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.int import maxint, minint
+from __builtins__.int import maxint
 from __builtins__.operator import _negate
 from __builtins__.sequence import itemaccess
 from __builtins__.types import check_int
@@ -33,21 +33,30 @@ class basestring(itemaccess):
     _p = maxint / 32
     _a = 31
 
-    def __init__(self):
+    def __init__(self, other=None):
 
-        "Initialise the string."
+        "Initialise the string, perhaps from 'other'."
 
         # Note the __data__ member. Since strings are either initialised from
         # literals or converted using routines defined for other types, no form
         # of actual initialisation is performed here.
 
-        self.__data__ = None
+        # NOTE: Cannot perform "other and other.__data__ or None" since the
+        # NOTE: __data__ attribute is not a normal attribute.
+
+        if other:
+            self.__data__ = other.__data__
+        else:
+            self.__data__ = None
 
         # Note the __key__ member. This is also initialised statically. Where
         # a string is the same as an attribute name, the __key__ member contains
         # attribute position and code details.
 
-        self.__key__ = None
+        if other:
+            self.__key__ = other.__key__
+        else:
+            self.__key__ = None
 
     def __hash__(self):
 
@@ -212,10 +221,10 @@ class basestring(itemaccess):
         return str_substr(self.__data__, start, end, step)
 
 class string(basestring):
-    pass
 
-class unicode(basestring):
-    def encode(self, encoding): pass
+    "A plain string of bytes."
+
+    pass
 
 def str(obj):
 
