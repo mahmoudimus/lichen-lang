@@ -143,6 +143,12 @@ class Reference:
 
         return Reference("<var>", None, self.name)
 
+    def copy(self):
+
+        "Copy this reference."
+
+        return Reference(self.get_kind(), self.get_origin(), self.get_name())
+
     def alias(self, name):
 
         "Alias this reference employing 'name'."

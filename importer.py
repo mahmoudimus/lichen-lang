@@ -405,7 +405,16 @@ class Importer:
 
             # Resolve all deferred references in each module.
 
+            original_deferred = []
+
             for ref in module.deferred:
+
+                # Retain original references for caching.
+
+                original_deferred.append(ref.copy())
+
+                # Update references throughout the program.
+
                 found = self.find_dependency(ref)
                 if not found:
                     self.missing.add((module.name, ref.get_origin()))
@@ -449,6 +458,8 @@ class Importer:
                         if not found.static() or self.uses_dynamic_callable(found):
                             init_item(self.depends, module.name, set)
                             self.depends[module.name].add(provider)
+
+            module.deferred = original_deferred
 
         # Check modules again to see if they are now required and should now
         # cause the inclusion of other modules providing objects to the program.

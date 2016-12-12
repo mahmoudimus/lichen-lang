@@ -378,6 +378,7 @@ class CachedModule(BasicModule):
             f.readline() # (empty line)
 
             self._get_imports(f)
+            self._get_deferred(f)
             self._get_special(f)
             self._get_members(f)
             self._get_class_relationships(f)
@@ -419,6 +420,12 @@ class CachedModule(BasicModule):
             self.queue_module(name, True)
         for name in self.imports:
             self.queue_module(name)
+
+    def _get_deferred(self, f):
+        f.readline() # "deferred:"
+        line = f.readline().rstrip()
+        self.deferred = map(decode_reference, line.split(" "))
+        f.readline()
 
     def _get_special(self, f):
         f.readline() # "special:"
@@ -684,6 +691,8 @@ class CacheWritingModule:
         "imports:"
         required module names
         possibly required module names
+        "deferred:"
+        deferred references
         "special:"
         zero or more: special name " " reference
         (empty line)
@@ -787,6 +796,10 @@ class CacheWritingModule:
             imports = list(self.imports)
             imports.sort()
             print >>f, imports and ", ".join(imports) or "{}"
+
+            print >>f
+            print >>f, "deferred:"
+            print >>f, " ".join(map(str, self.deferred))
 
             print >>f
             print >>f, "special:"
