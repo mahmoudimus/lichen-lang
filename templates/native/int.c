@@ -18,7 +18,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <limits.h> /* INT_MAX, INT_MIN */
 #include <math.h>   /* ceil, log10, pow */
-#include <stdio.h>  /* fdopen, snprintf */
+#include <stdio.h>  /* fdopen, snprintf, strlen */
 #include <errno.h>  /* errno */
 #include "native/common.h"
 #include "types.h"
@@ -268,7 +268,7 @@ __attr __fn_native_int_int_str(__attr __args[])
     snprintf(s, n, "%d", i);
 
     /* Return a new string. */
-    return __new_str(s, n);
+    return __new_str(s, strlen(s));
 }
 
 /* Module initialisation. */
