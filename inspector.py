@@ -354,7 +354,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
                 expr = self.process_structure_node(expr)
 
             in_assignment = self.in_assignment
-            self.in_assignment = expr
+            self.in_assignment = True
             self.process_attribute_access(n)
             self.in_assignment = in_assignment
 
