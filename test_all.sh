@@ -73,10 +73,13 @@ for FILENAME in tests/* ; do
     # Check for unresolved names in the cache.
 
     echo " (depends)..." 1>&2
-    if grep '<depends>' -r "_cache" ; then
-       echo "Unresolved names in the cache." 1>&2
-       exit 1
-    fi
+    for CACHEFILE in "_cache/"* ; do
+        STARTLINE=`grep -n '^deferred:' "$CACHEFILE" | cut -d: -f 1`
+        if tail -n +$(($STARTLINE + 2)) "$CACHEFILE" | grep -q '<depends>' ; then
+           echo "Unresolved names in the cache." 1>&2
+           exit 1
+        fi
+    done
 
     # Check for type warnings in deduction output.
 
