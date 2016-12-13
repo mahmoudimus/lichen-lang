@@ -21,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.str import basestring
 from posix.iconv import Converter
-from native import str_add, isinstance as _isinstance
+from native import str_add, unicode_len, isinstance as _isinstance
 
 class utf8string(basestring):
 
@@ -36,6 +36,7 @@ class utf8string(basestring):
 
         get_using(basestring.__init__, self)(other)
         self.encoding = encoding
+        self.length = None
 
     def _binary_op(self, op, other):
 
@@ -99,6 +100,15 @@ class utf8string(basestring):
         "Return a string combining this string with 'other'."
 
         return self._convert(self._binary_op_rev(str_add, other), other)
+
+    def __len__(self):
+
+        "Return the length of this string in characters."
+
+        if self.length is None:
+            self.length = unicode_len(self.__data__)
+
+        return self.length
 
     def encode(self, encoding=None):
 

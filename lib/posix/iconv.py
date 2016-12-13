@@ -73,9 +73,9 @@ class Converter:
         _s, start, remaining = self.state
 
         if _s:
-            self.state = [_s + s, start, remaining + len(s)]
+            self.state = [_s + s, start, remaining + s.bytelength()]
         else:
-            self.state = [s, 0, len(s)]
+            self.state = [s, 0, s.bytelength()]
 
         while True:
 

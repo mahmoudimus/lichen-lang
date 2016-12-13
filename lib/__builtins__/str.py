@@ -155,11 +155,13 @@ class basestring(itemaccess):
 
         return _negate(self.__eq__(other))
 
-    def __len__(self):
+    def bytelength(self):
 
-        "Return the length of this string."
+        "Return the number of bytes in this string."
 
         return str_len(self.__data__)
+
+    __len__ = bytelength
 
     def __str__(self):
 
