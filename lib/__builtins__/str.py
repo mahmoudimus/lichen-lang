@@ -74,12 +74,31 @@ class basestring(itemaccess):
 
     def _binary_op(self, op, other):
 
-        "Perform 'op' on this int and 'other' if appropriate."
+        "Perform 'op' on this object and 'other' if appropriate."
 
-        if isinstance(other, basestring):
-            return op(self.__data__, other.__data__)
-        else:
+        # Refuse to operate on specialisations of this class.
+
+        if self.__class__ is not other.__class__:
             return NotImplemented
+
+        # Otherwise, perform the operation on the operands' data.
+
+        else:
+            return op(self.__data__, other.__data__)
+
+    def _binary_op_rev(self, op, other):
+
+        "Perform 'op' on 'other' and this object if appropriate."
+
+        # Refuse to operate on specialisations of this class.
+
+        if self.__class__ is not other.__class__:
+            return NotImplemented
+
+        # Otherwise, perform the operation on the operands' data.
+
+        else:
+            return op(other.__data__, self.__data__)
 
     def __iadd__(self, other):
 
@@ -87,7 +106,13 @@ class basestring(itemaccess):
 
         return self._binary_op(str_add, other)
 
-    __add__ = __radd__ = __iadd__
+    __add__ = __iadd__
+
+    def __radd__(self, other):
+
+        "Return a string combining this string with 'other'."
+
+        return self._binary_op_rev(str_add, other)
 
     def __mul__(self, other): pass
     def __rmul__(self, other): pass

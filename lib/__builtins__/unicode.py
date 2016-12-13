@@ -21,14 +21,72 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.str import basestring
 from posix.iconv import Converter
+from native import str_add, isinstance as _isinstance
 
 class utf8string(basestring):
 
     "A character string representation based on UTF-8."
 
-    def encode(self, encoding):
+    def __init__(self, other=None, encoding=None):
 
-        "Encode the string to the given 'encoding'."
+        """
+        Initialise the string, perhaps from 'other', with any original
+        'encoding' indicated.
+        """
+
+        get_using(basestring.__init__, self)(other)
+        self.encoding = encoding
+
+    def _binary_op(self, op, other):
+
+        "Perform 'op' on this object and 'other' if appropriate."
+
+        # Reject non-strings.
+
+        if not _isinstance(other, basestring):
+            return NotImplemented
+
+        # Combining text with bytes.
+
+        elif not _isinstance(other, utf8string):
+            s = self.encode()
+            return op(s.__data__, other.__data__)
+
+        # Otherwise, perform the operation on the operands' data.
+
+        else:
+            return op(self.__data__, other.__data__)
+
+    def _binary_op_rev(self, op, other):
+
+        "Perform 'op' on 'other' and this object if appropriate."
+
+        # Reject non-strings.
+
+        if not _isinstance(other, basestring):
+            return NotImplemented
+
+        # Combining text with bytes.
+
+        elif not _isinstance(other, utf8string):
+            s = self.encode()
+            return op(other.__data__, s.__data__)
+
+        # Otherwise, perform the operation on the operands' data.
+
+        else:
+            return op(other.__data__, self.__data__)
+
+    def encode(self, encoding=None):
+
+        """
+        Encode the string to the given 'encoding' or any original encoding if
+        omitted.
+        """
+
+        encoding = encoding or self.encoding
+        if not encoding:
+            return self
 
         from_utf8 = Converter("UTF-8", encoding)
 
@@ -56,7 +114,7 @@ def unicode(s, encoding):
 
     try:
         to_utf8.feed(s)
-        return utf8string(str(to_utf8))
+        return utf8string(str(to_utf8), encoding)
 
     finally:
         to_utf8.close()
