@@ -76,9 +76,10 @@ class filestream:
 
         check_string(s)
 
-        # Encode text as bytes if necessary.
+        # Encode text as bytes if necessary. When the encoding is not set, any
+        # original encoding of the text will be applied.
 
-        if self.encoding and _isinstance(s, utf8string):
+        if _isinstance(s, utf8string):
             s = s.encode(self.encoding)
 
         fwrite(self.__data__, s)
