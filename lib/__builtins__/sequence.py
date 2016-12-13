@@ -32,7 +32,7 @@ class itemaccess:
         bounds.
         """
 
-        if index < 0 or index >= len(self):
+        if index < 0 or index >= self.__len__():
             raise IndexError(index)
 
     def _check_end_index(self, index):
@@ -42,7 +42,7 @@ class itemaccess:
         bounds.
         """
 
-        if index < -1 or index > len(self):
+        if index < -1 or index > self.__len__():
             raise IndexError(index)
 
     def __getitem__(self, index):
@@ -202,7 +202,7 @@ class sequence(itemaccess):
         "Return the index of 'value' or raise ValueError."
 
         i = 0
-        l = len(self)
+        l = self.__len__()
         while i < l:
             if self[i] == value:
                 return i
@@ -217,7 +217,7 @@ class sequence(itemaccess):
         # Sequences must have equal lengths to be equal.
 
         n = self.__len__()
-        if len(other) != n:
+        if other.__len__() != n:
             return False
 
         i = 0
