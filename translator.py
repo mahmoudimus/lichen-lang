@@ -322,7 +322,8 @@ class TranslatedModule(CommonModule):
         # NOTE: This makes assumptions about the __builtins__ structure.
 
         modname = get_builtin_module(name)
-        return self.importer.get_object("__builtins__.%s.%s" % (modname, name))
+        typename = get_builtin_type(name)
+        return self.importer.get_object("__builtins__.%s.%s" % (modname, typename))
 
     def is_method(self, path):
 
@@ -422,8 +423,10 @@ class TranslatedModule(CommonModule):
             return self.process_literal_sequence_node(n, name, ref, TrLiteralSequenceRef)
         else:
             value = self.get_constant_value(n.value)
+            value_type = ref.get_origin()
+
             path = self.get_namespace_path()
-            local_number = self.importer.all_constants[path][value]
+            local_number = self.importer.all_constants[path][(value, value_type)]
             constant_name = "$c%d" % local_number
             objpath = self.get_object_path(constant_name)
             number = self.optimiser.constant_numbers[objpath]

@@ -341,8 +341,8 @@ class Generator(CommonOutput):
 
             # Generate literal constants.
 
-            for value, n in self.optimiser.constants.items():
-                self.make_literal_constant(f_decls, f_defs, n, value)
+            for constant, n in self.optimiser.constants.items():
+                self.make_literal_constant(f_decls, f_defs, n, constant)
 
             # Finish the main source file.
 
@@ -433,23 +433,20 @@ class Generator(CommonOutput):
             f_signatures.close()
             f_code.close()
 
-    def make_literal_constant(self, f_decls, f_defs, n, value):
+    def make_literal_constant(self, f_decls, f_defs, n, constant):
 
         """
         Write literal constant details to 'f_decls' (to declare a structure) and
         to 'f_defs' (to define the contents) for the constant with the number
-        'n' with the given literal 'value'.
+        'n' with the given 'constant'.
         """
+
+        value, value_type = constant
 
         const_path = encode_literal_constant(n)
         structure_name = encode_literal_reference(n)
 
-        # NOTE: This makes assumptions about the __builtins__ structure.
-
-        typename = get_builtin_type(value.__class__.__name__)
-        modname = get_builtin_module(typename)
-        ref = Reference("<instance>", "__builtins__.%s.%s" % (modname, typename))
-
+        ref = Reference("<instance>", value_type)
         self.make_constant(f_decls, f_defs, ref, const_path, structure_name, value)
 
     def make_predefined_constant(self, f_decls, f_defs, path, name):
@@ -491,7 +488,7 @@ class Generator(CommonOutput):
 
             # Also set a key for dynamic attribute lookup, if a string.
 
-            if cls == self.string_type:
+            if attrs.has_key("__key__"):
                 if data in self.optimiser.all_attrnames:
                     attrs["__key__"] = data
                 else:
@@ -890,6 +887,7 @@ __obj %s = {
 
                 elif attrname in ("__file__", "__fname__",  "__mname__", "__name__"):
                     path = ref.get_origin()
+                    value_type = self.string_type
 
                     if attrname == "__file__":
                         module = self.importer.get_module(path)
@@ -897,7 +895,7 @@ __obj %s = {
                     else:
                         value = path
 
-                    local_number = self.importer.all_constants[path][value]
+                    local_number = self.importer.all_constants[path][(value, value_type)]
                     constant_name = "$c%d" % local_number
                     attr_path = "%s.%s" % (path, constant_name)
                     constant_number = self.optimiser.constant_numbers[attr_path]

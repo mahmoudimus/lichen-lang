@@ -274,10 +274,12 @@ class Optimiser:
 
         f = open(join(self.output, "constants"), "w")
         try:
-            constants = [(n, value) for (value, n) in self.constants.items()]
+            constants = []
+            for (value, value_type), n in self.constants.items():
+                constants.append((n, value_type, value))
             constants.sort()
-            for n, value in constants:
-                print >>f, repr(value)
+            for n, value_type, value in constants:
+                print >>f, value_type, repr(value)
 
         finally:
             f.close()
@@ -644,16 +646,17 @@ class Optimiser:
         self.constants = {}
 
         for path, constants in self.importer.all_constants.items():
+
+            # Record constants and obtain a number for them.
+            # Each constant is actually (value, value_type).
+
             for constant, n in constants.items():
-
-                # Record constants and obtain a number for them.
-
                 add_counter_item(self.constants, constant)
 
         self.constant_numbers = {}
 
-        for name, (value, value_type) in self.importer.all_constant_values.items():
-            self.constant_numbers[name] = self.constants[value]
+        for name, constant in self.importer.all_constant_values.items():
+            self.constant_numbers[name] = self.constants[constant]
 
 def combine_rows(a, b):
     c = []

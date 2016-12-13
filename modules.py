@@ -611,14 +611,15 @@ class CachedModule(BasicModule):
         last_path = None
         n = None
         while line:
-            path, constant = self._get_fields(line)
+            path, value_type, value = self._get_fields(line, 3)
             if path != last_path:
                 n = 0
                 last_path = path
             else:
                 n += 1
             init_item(self.constants, path, dict)
-            self.constants[path][eval(constant)] = n
+            value = eval(value)
+            self.constants[path][(value, value_type)] = n
             line = f.readline().rstrip()
 
     def _get_constant_values(self, f):
@@ -756,7 +757,7 @@ class CacheWritingModule:
         "attribute access modifiers:"
         zero or more: qualified function name " " local/global variable name " " attribute name " " access modifiers
         "constant literals:"
-        zero or more: qualified scope name " " constant literal
+        zero or more: qualified scope name " " value type " " constant literal
         "constant values:"
         zero or more: qualified name " " value type " " constant literal
 
@@ -973,10 +974,12 @@ class CacheWritingModule:
             paths = self.constants.keys()
             paths.sort()
             for path in paths:
-                constants = [(v, k) for (k, v) in self.constants[path].items()]
+                constants = []
+                for (value, value_type), n in self.constants[path].items():
+                    constants.append((n, value_type, value))
                 constants.sort()
-                for n, constant in constants:
-                    print >>f, path, repr(constant)
+                for n, value_type, value in constants:
+                    print >>f, path, value_type, repr(value)
 
             print >>f
             print >>f, "constant values:"

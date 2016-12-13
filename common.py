@@ -160,13 +160,16 @@ class CommonModule:
 
     # Constant reference naming.
 
-    def get_constant_name(self, value):
+    def get_constant_name(self, value, value_type):
 
-        "Add a new constant to the current namespace for 'value'."
+        """
+        Add a new constant to the current namespace for 'value' with
+        'value_type'.
+        """
 
         path = self.get_namespace_path()
         init_item(self.constants, path, dict)
-        return "$c%d" % add_counter_item(self.constants[path], value)
+        return "$c%d" % add_counter_item(self.constants[path], (value, value_type))
 
     # Literal reference naming.
 
@@ -230,7 +233,7 @@ class CommonModule:
 
         "Return a constant reference for the given 'ref' type and 'value'."
 
-        constant_name = self.get_constant_name(value)
+        constant_name = self.get_constant_name(value, ref.get_origin())
 
         # Return a reference for the constant.
 
@@ -249,7 +252,7 @@ class CommonModule:
         type with the given 'origin'.
         """
 
-        constant_name = self.get_constant_name(value)
+        constant_name = self.get_constant_name(value, origin)
         objpath = self.get_object_path(constant_name)
         self._reserve_constant(objpath, value, origin)
 
