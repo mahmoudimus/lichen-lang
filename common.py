@@ -218,6 +218,14 @@ class CommonModule:
 
     # Constant and literal recording.
 
+    def get_constant_value(self, value):
+
+        "Encode the 'value' if appropriate."
+
+        if isinstance(value, unicode):
+            value = value.encode("utf-8")
+        return value
+
     def get_constant_reference(self, ref, value):
 
         "Return a constant reference for the given 'ref' type and 'value'."
@@ -923,13 +931,25 @@ def get_builtin_module(name):
 
     # NOTE: This makes assumptions about the __builtins__ structure.
 
-    return name == "string" and "str" or name == "NoneType" and "none" or name
+    if name == "string":
+        return "str"
+    elif name == "utf8string":
+        return "unicode"
+    elif name == "NoneType":
+        return "none"
+    else:
+        return name
 
 def get_builtin_type(name):
 
     "Return the type name provided by the given Python value 'name'."
 
-    return name == "str" and "string" or name
+    if name == "str":
+        return "string"
+    elif name == "unicode":
+        return "utf8string"
+    else:
+        return name
 
 # Useful data.
 

@@ -421,12 +421,13 @@ class TranslatedModule(CommonModule):
         if name in ("dict", "list", "tuple"):
             return self.process_literal_sequence_node(n, name, ref, TrLiteralSequenceRef)
         else:
+            value = self.get_constant_value(n.value)
             path = self.get_namespace_path()
-            local_number = self.importer.all_constants[path][n.value]
+            local_number = self.importer.all_constants[path][value]
             constant_name = "$c%d" % local_number
             objpath = self.get_object_path(constant_name)
             number = self.optimiser.constant_numbers[objpath]
-            return TrConstantValueRef(constant_name, ref.instance_of(), n.value, number)
+            return TrConstantValueRef(constant_name, ref.instance_of(), value, number)
 
     # Namespace translation.
 

@@ -1406,7 +1406,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Constant values are independently recorded.
 
         else:
-            return self.get_constant_reference(ref, n.value)
+            value = self.get_constant_value(n.value)
+            return self.get_constant_reference(ref, value)
 
     # Special names.
 

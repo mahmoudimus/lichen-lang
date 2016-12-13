@@ -4,14 +4,28 @@ import sys
 
 # Print bytes.
 
-s = "זרו"
+s = b"זרו"
 print s                             # זרו
 
 # Obtain text and print it.
 
+# Explicitly from bytes.
+
 u = unicode(s, "ISO-8859-1")
 print u                             # ֳ¦ֳ¸ֳ¥
 print u.encode("ISO-8859-1")        # זרו
+
+# Explicitly from Unicode literals.
+
+u2 = u"זרו"
+print u2                            # ֳ¦ֳ¸ֳ¥
+print u2.encode("ISO-8859-1")       # זרו
+
+# Implicitly from string literals.
+
+#u3 = "זרו"
+#print u3                            # ֳ¦ֳ¸ֳ¥
+#print u3.encode("ISO-8859-1")       # זרו
 
 # Inspect and update the encoding of stdout.
 
