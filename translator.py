@@ -205,10 +205,19 @@ class PredefinedConstantRef(AttrResult):
 
     "A predefined constant reference."
 
-    def __init__(self, value):
+    def __init__(self, value, expr=None):
         self.value = value
+        self.expr = expr
 
     def __str__(self):
+
+        # Eliminate predefined constant assignments.
+
+        if self.expr:
+            return ""
+
+        # Generate the specific constants.
+
         if self.value in ("False", "True"):
             return encode_path("__builtins__.boolean.%s" % self.value)
         elif self.value == "None":
@@ -1327,7 +1336,7 @@ class TranslatedModule(CommonModule):
         # Determine whether the name refers to a static external entity.
 
         if n.name in predefined_constants:
-            return PredefinedConstantRef(n.name)
+            return PredefinedConstantRef(n.name, expr)
 
         # Convert literal references, operator function names, and print
         # function names to references.
