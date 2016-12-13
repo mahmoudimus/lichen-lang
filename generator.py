@@ -56,8 +56,12 @@ class Generator(CommonOutput):
     # NOTE: These must be synchronised with the library.
 
     function_type = "__builtins__.core.function"
+    none_type = "__builtins__.none.NoneType"
     string_type = "__builtins__.str.string"
     type_type = "__builtins__.core.type"
+    unicode_type = "__builtins__.unicode.utf8string"
+
+    none_value = "__builtins__.none.None"
 
     predefined_constant_members = (
         ("__builtins__.boolean", "False"),
@@ -493,6 +497,11 @@ class Generator(CommonOutput):
                     attrs["__key__"] = data
                 else:
                     attrs["__key__"] = None
+
+        # Define Unicode constant encoding details.
+
+        if cls == self.unicode_type:
+            attrs["encoding"] = Reference("<instance>", self.none_type)
 
         # Define the structure details. An object is created for the constant,
         # but an attribute is provided, referring to the object, for access to
@@ -933,7 +942,13 @@ __obj %s = {
                 constant_value = "__const%d" % constant_number
                 return "%s /* %s */" % (constant_value, name)
 
-        # Predefined constant references.
+        # Usage of predefined constants, currently only None supported.
+
+        if kind == "<instance>" and origin == self.none_type:
+            attr_path = encode_predefined_reference(self.none_value)
+            return "{&%s, &%s} /* %s */" % (attr_path, attr_path, name)
+
+        # Predefined constant members.
 
         if (path, name) in self.predefined_constant_members:
             attr_path = encode_predefined_reference("%s.%s" % (path, name))
