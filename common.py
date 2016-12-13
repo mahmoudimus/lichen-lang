@@ -395,7 +395,7 @@ class CommonModule:
         for i, node in enumerate(n.nodes):
             assignments.append(
                 compiler.ast.Assign([node], compiler.ast.Subscript(
-                    compiler.ast.Name(temp), "OP_APPLY", [compiler.ast.Const(i)]))
+                    compiler.ast.Name(temp), "OP_APPLY", [compiler.ast.Const(i, str(i))]))
                 )
 
         return self.process_structure_node(compiler.ast.Stmt(assignments))

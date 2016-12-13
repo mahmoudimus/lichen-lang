@@ -742,7 +742,7 @@ class Transformer:
     def atom_number(self, nodelist):
         ### need to verify this matches compile.c
         k = eval(nodelist[0][1])
-        return Const(k, lineno=nodelist[0][2])
+        return Const(k, nodelist[0][1], lineno=nodelist[0][2])
 
     def decode_literal(self, lit):
         if self.encoding:
@@ -759,7 +759,7 @@ class Transformer:
         k = ''
         for node in nodelist:
             k += self.decode_literal(node[1])
-        return Const(k, lineno=nodelist[0][2])
+        return Const(k, node[1], lineno=nodelist[0][2])
 
     def atom_name(self, nodelist):
         return Name(nodelist[0][1], lineno=nodelist[0][2])

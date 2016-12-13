@@ -502,8 +502,9 @@ class Compare(Node, OperatorUser):
         return "%s %s" % (self.expr, " ".join([("%s %s" % op) for op in self.ops]))
 
 class Const(Node):
-    def __init__(self, value, lineno=None):
+    def __init__(self, value, literal=None, lineno=None):
         self.value = value
+        self.literal = literal
         self.lineno = lineno
 
     def getChildren(self):
@@ -513,7 +514,7 @@ class Const(Node):
         return ()
 
     def __repr__(self):
-        return "Const(%r)" % (self.value,)
+        return "Const(%r, %r)" % (self.value, self.literal)
 
     def __str__(self):
         return repr(self.value)
