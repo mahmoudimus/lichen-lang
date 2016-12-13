@@ -77,6 +77,29 @@ class utf8string(basestring):
         else:
             return op(other.__data__, self.__data__)
 
+    def _convert(self, result, other):
+
+        "Convert 'result' to a Unicode object if 'other' already is."
+
+        if _isinstance(other, utf8string):
+            return utf8string(result, self.encoding)
+        else:
+            return result
+
+    def __iadd__(self, other):
+
+        "Return a string combining this string with 'other'."
+
+        return self._convert(self._binary_op(str_add, other), other)
+
+    __add__ = __iadd__
+
+    def __radd__(self, other):
+
+        "Return a string combining this string with 'other'."
+
+        return self._convert(self._binary_op_rev(str_add, other), other)
+
     def encode(self, encoding=None):
 
         """
