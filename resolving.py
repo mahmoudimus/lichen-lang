@@ -350,7 +350,7 @@ class NameResolving:
         for path, constants in self.constants.items():
             for constant, n in constants.items():
                 objpath = "%s.$c%d" % (path, n)
-                _constant, value_type = self.constant_values[objpath]
+                _constant, value_type, encoding = self.constant_values[objpath]
                 self.initialised_names[objpath] = {0 : Reference("<instance>", value_type)}
 
         # Get the literals defined in each namespace.

@@ -172,7 +172,7 @@ class CommonModule:
 
     # Constant reference naming.
 
-    def get_constant_name(self, value, value_type):
+    def get_constant_name(self, value, value_type, encoding=None):
 
         """
         Add a new constant to the current namespace for 'value' with
@@ -181,7 +181,7 @@ class CommonModule:
 
         path = self.get_namespace_path()
         init_item(self.constants, path, dict)
-        return "$c%d" % add_counter_item(self.constants[path], (value, value_type))
+        return "$c%d" % add_counter_item(self.constants[path], (value, value_type, encoding))
 
     # Literal reference naming.
 
@@ -235,27 +235,33 @@ class CommonModule:
 
     def get_constant_value(self, value, literal=None):
 
-        "Encode the 'value' if appropriate, returning a value and typename."
+        """
+        Encode the 'value' if appropriate, returning a value, a typename and any
+        encoding.
+        """
 
         if isinstance(value, unicode):
-            return value.encode("utf-8"), "unicode"
+            return value.encode("utf-8"), "unicode", self.encoding
 
         # Attempt to convert plain strings to text.
 
         elif isinstance(value, str) and self.encoding:
             if not literal.startswith("b"):
                 try:
-                    return unicode(value, self.encoding).encode("utf-8"), "unicode"
+                    return unicode(value, self.encoding).encode("utf-8"), "unicode", self.encoding
                 except UnicodeDecodeError:
                     pass
 
-        return value, value.__class__.__name__
+        return value, value.__class__.__name__, None
 
-    def get_constant_reference(self, ref, value):
+    def get_constant_reference(self, ref, value, encoding=None):
 
-        "Return a constant reference for the given 'ref' type and 'value'."
+        """
+        Return a constant reference for the given 'ref' type and 'value', with
+        the optional 'encoding' applying to text values.
+        """
 
-        constant_name = self.get_constant_name(value, ref.get_origin())
+        constant_name = self.get_constant_name(value, ref.get_origin(), encoding)
 
         # Return a reference for the constant.
 
@@ -264,25 +270,29 @@ class CommonModule:
 
         # Record the value and type for the constant.
 
-        self._reserve_constant(objpath, name_ref.value, name_ref.get_origin())
+        self._reserve_constant(objpath, name_ref.value, name_ref.get_origin(), encoding)
         return name_ref
 
-    def reserve_constant(self, objpath, value, origin):
+    def reserve_constant(self, objpath, value, origin, encoding=None):
 
         """
         Reserve a constant within 'objpath' with the given 'value' and having a
-        type with the given 'origin'.
+        type with the given 'origin', with the optional 'encoding' applying to
+        text values.
         """
 
         constant_name = self.get_constant_name(value, origin)
         objpath = self.get_object_path(constant_name)
-        self._reserve_constant(objpath, value, origin)
+        self._reserve_constant(objpath, value, origin, encoding)
 
-    def _reserve_constant(self, objpath, value, origin):
+    def _reserve_constant(self, objpath, value, origin, encoding):
 
-        "Store a constant for 'objpath' with the given 'value' and 'origin'."
+        """
+        Store a constant for 'objpath' with the given 'value' and 'origin', with
+        the optional 'encoding' applying to text values.
+        """
 
-        self.constant_values[objpath] = value, origin
+        self.constant_values[objpath] = value, origin, encoding
 
     def get_literal_reference(self, name, ref, items, cls):
 

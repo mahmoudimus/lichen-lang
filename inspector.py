@@ -80,6 +80,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         self.set_name("__mname__", self.get_constant("string", self.name).reference())
         self.set_name("__file__", self.get_constant("string", filename).reference())
 
+        # Reserve a constant for the encoding.
+
+        if self.encoding:
+            self.get_constant("string", self.encoding)
+
         # Get module-level attribute usage details.
 
         self.stop_tracking_in_module()
@@ -1405,10 +1410,10 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Constant values are independently recorded.
 
         else:
-            value, typename = self.get_constant_value(n.value, n.literal)
+            value, typename, encoding = self.get_constant_value(n.value, n.literal)
             name = get_builtin_type(typename)
             ref = self.get_builtin_class(name)
-            return self.get_constant_reference(ref, value)
+            return self.get_constant_reference(ref, value, encoding)
 
     # Special names.
 

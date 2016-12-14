@@ -611,7 +611,7 @@ class CachedModule(BasicModule):
         last_path = None
         n = None
         while line:
-            path, value_type, value = self._get_fields(line, 3)
+            path, value_type, encoding, value = self._get_fields(line, 4)
             if path != last_path:
                 n = 0
                 last_path = path
@@ -619,15 +619,18 @@ class CachedModule(BasicModule):
                 n += 1
             init_item(self.constants, path, dict)
             value = eval(value)
-            self.constants[path][(value, value_type)] = n
+            encoding = encoding != "{}" and encoding or None
+            self.constants[path][(value, value_type, encoding)] = n
             line = f.readline().rstrip()
 
     def _get_constant_values(self, f):
         f.readline() # "constant values:"
         line = f.readline().rstrip()
         while line:
-            name, value_type, value = self._get_fields(line, 3)
-            self.constant_values[name] = eval(value), value_type
+            name, value_type, encoding, value = self._get_fields(line, 4)
+            value = eval(value)
+            encoding = encoding != "{}" and encoding or None
+            self.constant_values[name] = value, value_type, encoding
             line = f.readline().rstrip()
 
     # Generic parsing methods.
@@ -975,19 +978,19 @@ class CacheWritingModule:
             paths.sort()
             for path in paths:
                 constants = []
-                for (value, value_type), n in self.constants[path].items():
-                    constants.append((n, value_type, value))
+                for (value, value_type, encoding), n in self.constants[path].items():
+                    constants.append((n, value_type, encoding, value))
                 constants.sort()
-                for n, value_type, value in constants:
-                    print >>f, path, value_type, repr(value)
+                for n, value_type, encoding, value in constants:
+                    print >>f, path, value_type, encoding or "{}", repr(value)
 
             print >>f
             print >>f, "constant values:"
             names = self.constant_values.keys()
             names.sort()
             for name in names:
-                value, value_type = self.constant_values[name]
-                print >>f, name, value_type, repr(value)
+                value, value_type, encoding = self.constant_values[name]
+                print >>f, name, value_type, encoding or "{}", repr(value)
 
         finally:
             f.close()

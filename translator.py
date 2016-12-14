@@ -431,15 +431,22 @@ class TranslatedModule(CommonModule):
             ref = self.get_builtin_class(name)
             return self.process_literal_sequence_node(n, name, ref, TrLiteralSequenceRef)
         else:
-            value, typename = self.get_constant_value(n.value, n.literal)
+            value, typename, encoding = self.get_constant_value(n.value, n.literal)
             name = get_builtin_type(typename)
             ref = self.get_builtin_class(name)
             value_type = ref.get_origin()
 
             path = self.get_namespace_path()
-            local_number = self.importer.all_constants[path][(value, value_type)]
+
+            # Obtain the local numbering of the constant and thus the
+            # locally-qualified name.
+
+            local_number = self.importer.all_constants[path][(value, value_type, encoding)]
             constant_name = "$c%d" % local_number
             objpath = self.get_object_path(constant_name)
+
+            # Obtain the unique identifier for the constant.
+
             number = self.optimiser.constant_numbers[objpath]
             return TrConstantValueRef(constant_name, ref.instance_of(), value, number)
 

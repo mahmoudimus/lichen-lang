@@ -275,11 +275,11 @@ class Optimiser:
         f = open(join(self.output, "constants"), "w")
         try:
             constants = []
-            for (value, value_type), n in self.constants.items():
-                constants.append((n, value_type, value))
+            for (value, value_type, encoding), n in self.constants.items():
+                constants.append((n, value_type, encoding, value))
             constants.sort()
-            for n, value_type, value in constants:
-                print >>f, value_type, repr(value)
+            for n, value_type, encoding, value in constants:
+                print >>f, value_type, encoding or "{}", repr(value)
 
         finally:
             f.close()
@@ -648,7 +648,7 @@ class Optimiser:
         for path, constants in self.importer.all_constants.items():
 
             # Record constants and obtain a number for them.
-            # Each constant is actually (value, value_type).
+            # Each constant is actually (value, value_type, encoding).
 
             for constant, n in constants.items():
                 add_counter_item(self.constants, constant)

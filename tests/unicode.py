@@ -13,7 +13,7 @@ print len(s)                        # 3
 # Explicitly from bytes.
 
 u = unicode("æøå", "ISO-8859-1")
-print u                             # Ã¦Ã¸Ã¥
+print u                             # æøå
 print u.__class__                   # __builtins__.unicode.utf8string
 print u.encode("ISO-8859-1")        # æøå
 print u.encoding                    # ISO-8859-1
@@ -22,7 +22,7 @@ print len(u)                        # 3
 # Explicitly from Unicode literals.
 
 u2 = u"æøå"
-print u2                            # Ã¦Ã¸Ã¥
+print u2                            # æøå
 print u2.__class__                  # __builtins__.unicode.utf8string
 print u2.encode("ISO-8859-1")       # æøå
 print u2.encoding                   # ISO-8859-1
@@ -31,7 +31,7 @@ print len(u2)                       # 3
 # Implicitly from string literals.
 
 u3 = "æøå"
-print u3                            # Ã¦Ã¸Ã¥
+print u3                            # æøå
 print u3.__class__                  # __builtins__.unicode.utf8string
 print u3.encode("ISO-8859-1")       # æøå
 print u3.encoding                   # ISO-8859-1
@@ -56,7 +56,7 @@ print len(us)                       # 6
 # Combine text and text.
 
 uu2 = u + u2
-print uu2                           # Ã¦Ã¸Ã¥
+print uu2                           # æøåæøå
 print uu2.__class__                 # __builtins__.unicode.utf8string
 print uu2.encoding                  # ISO-8859-1
 print len(uu2)                      # 6

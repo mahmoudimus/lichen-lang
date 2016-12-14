@@ -445,13 +445,13 @@ class Generator(CommonOutput):
         'n' with the given 'constant'.
         """
 
-        value, value_type = constant
+        value, value_type, encoding = constant
 
         const_path = encode_literal_constant(n)
         structure_name = encode_literal_reference(n)
 
         ref = Reference("<instance>", value_type)
-        self.make_constant(f_decls, f_defs, ref, const_path, structure_name, value)
+        self.make_constant(f_decls, f_defs, ref, const_path, structure_name, value, encoding)
 
     def make_predefined_constant(self, f_decls, f_defs, path, name):
 
@@ -469,13 +469,16 @@ class Generator(CommonOutput):
 
         self.make_constant(f_decls, f_defs, ref, attr_path, structure_name)
 
-    def make_constant(self, f_decls, f_defs, ref, const_path, structure_name, data=None):
+    def make_constant(self, f_decls, f_defs, ref, const_path, structure_name, data=None, encoding=None):
 
         """
         Write constant details to 'f_decls' (to declare a structure) and to
         'f_defs' (to define the contents) for the constant described by 'ref'
         having the given 'path' and 'structure_name' (for the constant structure
         itself).
+
+        The additional 'data' and 'encoding' are used to describe specific
+        values.
         """
 
         # Obtain the attributes.
@@ -501,7 +504,23 @@ class Generator(CommonOutput):
         # Define Unicode constant encoding details.
 
         if cls == self.unicode_type:
-            attrs["encoding"] = Reference("<instance>", self.none_type)
+
+            # Reference the encoding's own constant value.
+
+            if encoding:
+                n = self.optimiser.constants[(encoding, self.string_type, None)]
+
+                # Employ a special alias that will be tested specifically in
+                # encode_member.
+
+                encoding_ref = Reference("<instance>", self.string_type, "$c%d" % n)
+
+            # Use None where no encoding was indicated.
+
+            else:
+                encoding_ref = Reference("<instance>", self.none_type)
+
+            attrs["encoding"] = encoding_ref
 
         # Define the structure details. An object is created for the constant,
         # but an attribute is provided, referring to the object, for access to
@@ -904,7 +923,9 @@ __obj %s = {
                     else:
                         value = path
 
-                    local_number = self.importer.all_constants[path][(value, value_type)]
+                    encoding = None
+
+                    local_number = self.importer.all_constants[path][(value, value_type, encoding)]
                     constant_name = "$c%d" % local_number
                     attr_path = "%s.%s" % (path, constant_name)
                     constant_number = self.optimiser.constant_numbers[attr_path]
@@ -917,6 +938,8 @@ __obj %s = {
                 elif is_type_attribute(attrname):
                     structure.append("{0, &%s}" % encode_path(decode_type_attribute(attrname)))
                     continue
+
+                # All other kinds of members.
 
                 structure.append(self.encode_member(origin, attrname, attr, kind))
 
@@ -935,11 +958,17 @@ __obj %s = {
         if kind == "<instance>" and ref.is_constant_alias():
             alias = ref.get_name()
 
+            # Use the alias directly if appropriate.
+
+            if alias.startswith("$c"):
+                constant_value = encode_literal_constant(int(alias[2:]))
+                return "%s /* %s */" % (constant_value, name)
+
             # Obtain a constant value directly assigned to the attribute.
 
             if self.optimiser.constant_numbers.has_key(alias):
                 constant_number = self.optimiser.constant_numbers[alias]
-                constant_value = "__const%d" % constant_number
+                constant_value = encode_literal_constant(constant_number)
                 return "%s /* %s */" % (constant_value, name)
 
         # Usage of predefined constants, currently only None supported.
