@@ -30,12 +30,12 @@ print len(u2)                       # 3
 
 # Implicitly from string literals.
 
-#u3 = "æøå"
-#print u3                            # Ã¦Ã¸Ã¥
-#print u3.__class__                  # __builtins__.unicode.utf8string
-#print u3.encode("ISO-8859-1")       # æøå
-#print u3.encoding                   # ISO-8859-1
-#print len(u3)                       # 3
+u3 = "æøå"
+print u3                            # Ã¦Ã¸Ã¥
+print u3.__class__                  # __builtins__.unicode.utf8string
+print u3.encode("ISO-8859-1")       # æøå
+print u3.encoding                   # ISO-8859-1
+print len(u3)                       # 3
 
 # Combine bytes and text.
 # The text should be decoded.

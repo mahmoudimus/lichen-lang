@@ -294,8 +294,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Constant usage.
 
         elif isinstance(n, compiler.ast.Const):
-            typename = n.value.__class__.__name__
-            return self.get_literal_instance(n, get_builtin_type(typename))
+            return self.get_literal_instance(n)
 
         elif isinstance(n, compiler.ast.Dict):
             return self.get_literal_instance(n, "dict")
@@ -1383,30 +1382,32 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         ref = self.get_builtin_class(name)
         return self.get_constant_reference(ref, value)
 
-    def get_literal_instance(self, n, name):
+    def get_literal_instance(self, n, name=None):
 
-        "For node 'n', return a reference to an instance of 'name'."
+        """
+        For node 'n', return a reference to an instance of 'name', or if 'name'
+        is not specified, deduce the type from the value.
+        """
 
         # Handle stray None constants (Sliceobj seems to produce them).
 
         if name == "NoneType":
             return self.process_name_node(compiler.ast.Name("None"))
 
-        # Get a reference to the built-in class.
-
-        ref = self.get_builtin_class(name)
-
         # Obtain the details of the literal itself.
         # An alias to the type is generated for sequences.
 
         if name in ("dict", "list", "tuple"):
+            ref = self.get_builtin_class(name)
             self.set_special_literal(name, ref)
             return self.process_literal_sequence_node(n, name, ref, LiteralSequenceRef)
 
         # Constant values are independently recorded.
 
         else:
-            value = self.get_constant_value(n.value)
+            value, typename = self.get_constant_value(n.value, n.literal)
+            name = get_builtin_type(typename)
+            ref = self.get_builtin_class(name)
             return self.get_constant_reference(ref, value)
 
     # Special names.

@@ -24,7 +24,8 @@ from errors import *
 from os import listdir, makedirs, remove
 from os.path import exists, isdir, join, split
 from results import ConstantValueRef, LiteralSequenceRef, NameRef
-import compiler
+from compiler.transformer import Transformer
+import compiler.ast
 
 class CommonOutput:
 
@@ -93,6 +94,7 @@ class CommonModule:
         # Inspection-related attributes.
 
         self.astnode = None
+        self.encoding = None
         self.iterators = {}
         self.temp = {}
         self.lambdas = {}
@@ -128,7 +130,17 @@ class CommonModule:
         "Parse the file with the given 'filename', initialising attributes."
 
         self.filename = filename
-        self.astnode = compiler.parseFile(filename)
+
+        # Use the Transformer directly to obtain encoding information.
+
+        t = Transformer()
+        f = open(filename)
+
+        try:
+            self.astnode = t.parsesuite(f.read() + "\n")
+            self.encoding = t.encoding
+        finally:
+            f.close()
 
     # Module-relative naming.
 
@@ -221,13 +233,23 @@ class CommonModule:
 
     # Constant and literal recording.
 
-    def get_constant_value(self, value):
+    def get_constant_value(self, value, literal=None):
 
-        "Encode the 'value' if appropriate."
+        "Encode the 'value' if appropriate, returning a value and typename."
 
         if isinstance(value, unicode):
-            value = value.encode("utf-8")
-        return value
+            return value.encode("utf-8"), "unicode"
+
+        # Attempt to convert plain strings to text.
+
+        elif isinstance(value, str) and self.encoding:
+            if not literal.startswith("b"):
+                try:
+                    return unicode(value, self.encoding).encode("utf-8"), "unicode"
+                except UnicodeDecodeError:
+                    pass
+
+        return value, value.__class__.__name__
 
     def get_constant_reference(self, ref, value):
 

@@ -415,23 +415,25 @@ class TranslatedModule(CommonModule):
 
     # Constant referencing.
 
-    def get_literal_instance(self, n, name):
+    def get_literal_instance(self, n, name=None):
 
         """
-        For node 'n', return a reference for the type of the given 'name'.
+        For node 'n', return a reference for the type of the given 'name', or if
+        'name' is not specified, deduce the type from the value.
         """
 
         # Handle stray None constants (Sliceobj seems to produce them).
 
-        if name == "NoneType":
+        if name is None and n.value is None:
             return self.process_name_node(compiler.ast.Name("None"))
 
-        ref = self.get_builtin_class(name)
-
         if name in ("dict", "list", "tuple"):
+            ref = self.get_builtin_class(name)
             return self.process_literal_sequence_node(n, name, ref, TrLiteralSequenceRef)
         else:
-            value = self.get_constant_value(n.value)
+            value, typename = self.get_constant_value(n.value, n.literal)
+            name = get_builtin_type(typename)
+            ref = self.get_builtin_class(name)
             value_type = ref.get_origin()
 
             path = self.get_namespace_path()
@@ -607,7 +609,7 @@ class TranslatedModule(CommonModule):
         # Constant usage.
 
         elif isinstance(n, compiler.ast.Const):
-            return self.get_literal_instance(n, n.value.__class__.__name__)
+            return self.get_literal_instance(n)
 
         elif isinstance(n, compiler.ast.Dict):
             return self.get_literal_instance(n, "dict")
