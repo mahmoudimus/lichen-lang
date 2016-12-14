@@ -957,7 +957,8 @@ __obj %s = {
         # General undetermined members.
 
         if kind in ("<var>", "<instance>"):
-            return "{0, 0} /* %s */" % name
+            attr_path = encode_predefined_reference(self.none_value)
+            return "{&%s, &%s} /* %s */" % (attr_path, attr_path, name)
 
         # Set the context depending on the kind of attribute.
         # For methods:          {&<parent>, &<attr>}
