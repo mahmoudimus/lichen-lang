@@ -180,9 +180,46 @@ class basestring(itemaccess):
     def __bool__(self):
         return str_nonempty(self.__data__)
 
-    def endswith(self, s): pass
-    def find(self, sub, start=None, end=None): pass
-    def index(self, sub, start=None, end=None): pass
+    def endswith(self, s):
+
+        "Return whether this string ends with 's'."
+
+        return self[-s.__len__():] == s
+
+    def find(self, sub, start=None, end=None):
+
+        """
+        Find 'sub' in the string, starting at 'start' (or 0, if omitted), ending
+        at 'end' (or the end of the string, if omitted), returning -1 if 'sub'
+        is not present.
+        """
+
+        sublen = sub.__len__()
+
+        i = start or 0
+        end = end or self.__len__()
+
+        while i < end - sublen:
+            if sub == self[i:i+sublen]:
+                return i
+            i += 1
+
+        return -1
+
+    def index(self, sub, start=None, end=None):
+
+        """
+        Find 'sub' in the string, starting at 'start' (or 0, if omitted), ending
+        at 'end' (or the end of the string, if omitted), raising ValueError if
+        'sub' is not present.
+        """
+
+        i = self.find(sub, start, end)
+
+        if i == -1:
+            raise ValueError(sub)
+        else:
+            return i
 
     def join(self, l):
 
@@ -215,7 +252,13 @@ class basestring(itemaccess):
     def rstrip(self, chars=None): pass
     def split(self, sep=None, maxsplit=None): pass
     def splitlines(self, keepends=False): pass
-    def startswith(self, s): pass
+
+    def startswith(self, s):
+
+        "Return whether this string starts with 's'."
+
+        return self[:s.__len__()] == s
+
     def strip(self, chars=None): pass
     def upper(self): pass
 
