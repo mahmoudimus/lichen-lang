@@ -456,8 +456,7 @@ class Importer:
                         # Record a module ordering dependency.
 
                         if not found.static() or self.uses_dynamic_callable(found):
-                            init_item(self.depends, module.name, set)
-                            self.depends[module.name].add(provider)
+                            self.add_provider(module.name, provider)
 
             module.deferred = original_deferred
 
@@ -466,6 +465,13 @@ class Importer:
 
         for module_name in self.waiting.keys():
             self.require_providers(module_name)
+
+    def add_provider(self, module_name, provider):
+
+        "Add a dependency for 'module_name' of 'provider'."
+
+        init_item(self.depends, module_name, set)
+        self.depends[module_name].add(provider)
 
     def require_providers(self, module_name):
 

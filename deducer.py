@@ -137,6 +137,7 @@ class Deducer(CommonOutput):
         self.classify_accessors()
         self.classify_accesses()
         self.initialise_access_plans()
+        self.identify_dependencies()
 
     def to_output(self):
 
@@ -646,6 +647,36 @@ class Deducer(CommonOutput):
         for location in self.referenced_attrs.keys():
             original_location = self.const_accesses_rev.get(location)
             self.access_plans[original_location or location] = self.get_access_plan(location)
+
+    def identify_dependencies(self):
+
+        "Introduce more module dependencies to the importer."
+
+        for location, referenced_attrs in self.referenced_attrs.items():
+            path, name, attrnames, version = location
+
+            # Identify module-level paths.
+
+            if self.importer.modules.has_key(path):
+                module_name = path
+
+            # Identify the module containing other paths.
+
+            else:
+                ref = self.importer.identify(path)
+                for objpath in ref.ancestors():
+                    if self.importer.modules.has_key(objpath):
+                        module_name = objpath
+                        break
+                else:
+                    raise DeduceError("Cannot find module for path %s." % path)
+
+            # Identify usage of callables employing dynamic defaults.
+
+            for attrtype, objtype, attr in referenced_attrs:
+                if self.importer.uses_dynamic_callable(attr):
+                    provider = self.importer.get_module_provider(attr)
+                    self.importer.add_provider(path, provider)
 
     def get_referenced_attrs(self, location):
 
