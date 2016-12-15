@@ -20,7 +20,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.int import maxint, minint
-from posix.io import stdin, stdout, stderr
+from posix.io import lstdin, stdin, stdout, stderr
+
 from native import (
     exit as _exit,
     get_argv as _get_argv,

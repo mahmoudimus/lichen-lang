@@ -21,12 +21,15 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.file import filestream
 from __builtins__.types import check_int, check_string
+
 from native import (
     close as _close,
     fdopen as _fdopen,
     read as _read,
     write as _write
     )
+
+import locale
 
 # Abstractions for system-level files and streams.
 
@@ -77,6 +80,13 @@ class sysstream(filestream):
 stdin = sysstream(0)
 stdout = sysstream(1, "w")
 stderr = sysstream(2, "w")
+
+# Localised streams.
+# Perform locale initialisation explicitly to ensure that the locale module
+# and various function defaults have been initialised.
+
+locale.initlocale()
+lstdin = sysstream(0, "r", locale.getpreferredencoding())
 
 # Input/output functions.
 
