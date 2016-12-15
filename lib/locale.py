@@ -30,14 +30,6 @@ LC_MONETARY = 4
 LC_MESSAGES = 5
 LC_ALL = 6
 
-def setlocale(category, value):
-
-    "Set the locale for 'category' to 'value'."
-
-    check_int(category)
-    check_string(value)
-    return _setlocale(category, value)
-
 def getlocale(category=LC_CTYPE):
 
     "Return the locale value for 'category'."
@@ -45,11 +37,31 @@ def getlocale(category=LC_CTYPE):
     check_int(category)
     return _getlocale(category)
 
+def getpreferredencoding():
+
+    "Return the encoding from the environment's locale."
+
+    s = getlocale()
+
+    try:
+        dot = s.index(".")
+        return s[dot+1:]
+    except ValueError:
+        return None
+
 def initlocale(category=LC_CTYPE):
 
     "Initialise the locale for 'category' from the environment."
 
     check_int(category)
     return _setlocale(category, "")
+
+def setlocale(category, value):
+
+    "Set the locale for 'category' to 'value'."
+
+    check_int(category)
+    check_string(value)
+    return _setlocale(category, value)
 
 # vim: tabstop=4 expandtab shiftwidth=4
