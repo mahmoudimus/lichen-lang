@@ -8,7 +8,7 @@ from_utf8 = Converter("UTF-8", "ISO-8859-1")
 from_utf16 = Converter("UTF-16", "ISO-8859-1")
 
 try:
-    iso = "זרו"
+    iso = b"זרו"
     print iso                           # זרו
     to_utf8.feed(iso)
     utf8 = str(to_utf8)
