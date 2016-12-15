@@ -199,7 +199,7 @@ class AttrResult(Expression, TranslationResult):
         return self.accessor_kinds
 
     def __repr__(self):
-        return "AttrResult(%r, %r)" % (self.s, self.get_origin())
+        return "AttrResult(%r, %r, %r)" % (self.s, self.refs, self.accessor_kinds)
 
 class PredefinedConstantRef(AttrResult):
 
@@ -1077,6 +1077,7 @@ class TranslatedModule(CommonModule):
         expr = self.process_structure_node(n.node)
         objpath = expr.get_origin()
         target = None
+        target_structure = None
         function = None
         instantiation = False
         literal_instantiation = False
@@ -1112,20 +1113,23 @@ class TranslatedModule(CommonModule):
 
                 # Test for functions and methods.
 
-                method_class = self.is_method(objpath)
+                context_required = self.is_method(objpath)
                 accessor_kinds = expr.get_accessor_kinds()
                 instance_accessor = accessor_kinds and \
                                     len(accessor_kinds) == 1 and \
                                     first(accessor_kinds) == "<instance>"
 
-                if not method_class or instance_accessor:
-                    target = encode_function_pointer(objpath)
-                    target_structure = self.is_method(objpath) and \
-                        "&%s" % encode_bound_reference(objpath) or \
-                        "&%s" % encode_path(objpath)
+                # Only identify certain bound methods or functions.
 
-                if not method_class:
-                    context_required = False
+                if not context_required or instance_accessor:
+                    target = encode_function_pointer(objpath)
+
+                # Access bound method defaults even if it is not clear whether
+                # the accessor is appropriate.
+
+                target_structure = self.is_method(objpath) and \
+                    "&%s" % encode_bound_reference(objpath) or \
+                    "&%s" % encode_path(objpath)
 
         # Other targets are retrieved at run-time.
 
