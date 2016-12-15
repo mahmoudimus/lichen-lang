@@ -6,6 +6,20 @@ print s[:5]                 # Hello
 print s[5:]                 #  world!
 print s[1:10:2]             # el ol
 print s[10:1:-2]            # drwol
+print s.find("w")           # 6
+print s.find("w", 7)        # -1
+print s.find("w", 0, 6)     # -1
+print s.index("o")          # 4
+
+try:
+    print s.index("p")      # should raise an exception
+except ValueError, exc:
+    print 's.index("p"): value is not appropriate', exc.value
+
+print s.startswith("Hello") # True
+print s.startswith("world") # False
+print s.endswith("world!")  # True
+print s.endswith("Hello")   # False
 
 s2 = "Hello worlds!"
 print s2                    # Hello worlds!
