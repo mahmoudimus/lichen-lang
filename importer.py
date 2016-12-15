@@ -400,6 +400,7 @@ class Importer:
 
         self.waiting = {}
         self.depends = {}
+        self.depend_refs = {}
 
         for module in self.modules.values():
 
@@ -476,6 +477,7 @@ class Importer:
 
         if not ref.static() or self.uses_dynamic_callable(ref):
             self.add_provider(module_name, provider)
+            self.add_dependency(module_name, provider, ref)
 
     def add_provider(self, module_name, provider):
 
@@ -483,6 +485,13 @@ class Importer:
 
         init_item(self.depends, module_name, set)
         self.depends[module_name].add(provider)
+
+    def add_dependency(self, module_name, provider, ref):
+
+        "Add dependency details for 'module_name' and 'provider' involving 'ref'."
+
+        init_item(self.depend_refs, (module_name, provider), set)
+        self.depend_refs[(module_name, provider)].add(ref)
 
     def require_providers(self, module_name):
 
@@ -555,11 +564,11 @@ class Importer:
         for module_name in module_names:
             usage[module_name] = 0
 
-        for module_name, depend_names in self.depends.items():
+        for module_name, depends in self.depends.items():
             if module_name in module_names:
-                for depend_name in depend_names:
-                    if depend_name in module_names:
-                        usage[depend_name] += 1
+                for provider in depends:
+                    if provider in module_names:
+                        usage[provider] += 1
 
         # Produce an ordering by obtaining exposed modules (required by modules
         # already processed) and putting them at the start of the list.
@@ -614,7 +623,11 @@ class Importer:
         l = []
 
         for module_name, provider in mutual:
-            l.append("(%s <-> %s)" % (module_name, provider))
+            refs = self.depend_refs.get((module_name, provider)) or set()
+            refs.update(self.depend_refs.get((provider, module_name)) or set())
+            refs = list(refs)
+            refs.sort()
+            l.append("%s <-> %s\n  %s" % (module_name, provider, "\n  ".join(map(str, refs))))
 
         raise ProgramError, "Modules may not depend on each other for non-static objects:\n%s" % "\n".join(l)
 
