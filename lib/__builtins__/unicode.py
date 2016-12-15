@@ -130,6 +130,37 @@ class utf8string(basestring):
         finally:
             from_utf8.close()
 
+    def join(self, l):
+
+        "Join the elements in 'l' with this string."
+
+        # Empty strings just cause the list elements to be concatenated.
+
+        nonempty = self.__bool__()
+
+        # Non-empty strings join the elements together in a buffer.
+
+        b = buffer()
+        first = True
+        encoding = self.encoding
+
+        for s in l:
+            if first:
+                first = False
+            elif nonempty:
+                b.append(self)
+
+            if _isinstance(s, utf8string):
+                encoding = None
+
+            b.append(s)
+
+        s = str(b)
+        if encoding:
+            s = utf8string(s)
+            s.encoding = encoding
+        return s
+
 def unicode(s, encoding):
 
     "Convert 's' to a Unicode object, interpreting 's' as using 'encoding'."
