@@ -445,18 +445,19 @@ class Importer:
                         if module.name not in self.required:
                             init_item(self.waiting, module.name, set)
                             self.waiting[module.name].add(provider)
+                            if self.verbose:
+                                print >>sys.stderr, "Noting", provider, "for", ref, "from", module.name
 
                         # Make this module required in the accessing module.
 
                         elif provider not in self.required:
                             self.required.add(provider)
                             if self.verbose:
-                                print >>sys.stderr, "Requiring", provider, "for", ref
+                                print >>sys.stderr, "Requiring", provider, "for", ref, "from", module.name
 
                         # Record a module ordering dependency.
 
-                        if not found.static() or self.uses_dynamic_callable(found):
-                            self.add_provider(module.name, provider)
+                        self.test_dependency(found, module.name, provider)
 
             module.deferred = original_deferred
 
@@ -465,6 +466,16 @@ class Importer:
 
         for module_name in self.waiting.keys():
             self.require_providers(module_name)
+
+    def test_dependency(self, ref, module_name, provider):
+
+        """
+        Test 'ref' for establishing a dependency from 'module_name' to
+        'provider'.
+        """
+
+        if not ref.static() or self.uses_dynamic_callable(ref):
+            self.add_provider(module_name, provider)
 
     def add_provider(self, module_name, provider):
 
@@ -488,6 +499,19 @@ class Importer:
                         print >>sys.stderr, "Requiring", provider
                     self.require_providers(provider)
 
+    def uses_callable(self, ref):
+
+        "Return whether 'ref' refers to a callable."
+
+        # Find the function or method associated with the reference.
+
+        if ref.has_kind("<function>"):
+            return ref.get_origin()
+        elif ref.has_kind("<class>"):
+            return "%s.__init__" % ref.get_origin()
+        else:
+            return False
+
     def uses_dynamic_callable(self, ref):
 
         """
@@ -495,14 +519,12 @@ class Importer:
         need initialising before the callable can be used.
         """
 
-        # Find the function or method associated with the reference.
-
-        if ref.has_kind("<function>"):
-            origin = ref.get_origin()
-        elif ref.has_kind("<class>"):
-            origin = "%s.__init__" % ref.get_origin()
-        else:
+        origin = self.uses_callable(ref)
+        if not origin:
             return False
+
+        if ref.has_kind("<class>"):
+            return True
 
         # Find any defaults for the function or method.
 
@@ -566,10 +588,35 @@ class Importer:
 
         "Check the ordering dependencies."
 
+        mutual = set()
+
+        # Get dependency relationships for each module.
+
         for module_name, modules in self.depends.items():
+
+            # Find the reverse relationship.
+
             for provider in modules:
                 if self.depends.has_key(provider) and module_name in self.depends[provider]:
-                    raise ProgramError, "Modules %s and %s may not depend on each other for non-static objects." % (module_name, provider)
+
+                    # Record the module names in order.
+
+                    mutual.add((module_name < provider and module_name or provider,
+                                module_name > provider and module_name or provider))
+
+        if not mutual:
+            return
+
+        # Format the dependencies.
+
+        mutual = list(mutual)
+        mutual.sort()
+        l = []
+
+        for module_name, provider in mutual:
+            l.append("(%s <-> %s)" % (module_name, provider))
+
+        raise ProgramError, "Modules may not depend on each other for non-static objects:\n%s" % "\n".join(l)
 
     def find_dependency(self, ref):
 

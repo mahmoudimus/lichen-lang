@@ -671,12 +671,12 @@ class Deducer(CommonOutput):
                 else:
                     raise DeduceError("Cannot find module for path %s." % path)
 
-            # Identify usage of callables employing dynamic defaults.
+            # Identify references providing dependencies.
 
             for attrtype, objtype, attr in referenced_attrs:
-                if self.importer.uses_dynamic_callable(attr):
+                if not attr.unresolved():
                     provider = self.importer.get_module_provider(attr)
-                    self.importer.add_provider(path, provider)
+                    self.importer.test_dependency(attr, path, provider)
 
     def get_referenced_attrs(self, location):
 
