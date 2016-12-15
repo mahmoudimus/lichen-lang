@@ -31,7 +31,7 @@ class slice:
 
         "Initialise the slice with the given 'start_or_end', 'end' and 'step'."
 
-        if end is xrange.NO_END:
+        if end is slice.NO_END:
             self.start = 0
             self.end = start_or_end
         else:
