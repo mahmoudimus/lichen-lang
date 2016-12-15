@@ -63,7 +63,7 @@ class Converter:
 
     def feed(self, s):
 
-        "Feed 's' to the converter."
+        "Feed 's' to the converter, converting its byte representation."
 
         if self.__data__ is None:
             raise ConverterError
@@ -90,6 +90,8 @@ class Converter:
                 if exc.value == EINVAL:
                     self.result.append(exc.arg)
                     return
+                elif exc.value == EILSEQ:
+                    raise UnicodeDecodeError(exc.arg)
                 else:
                     raise
 

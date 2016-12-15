@@ -37,6 +37,13 @@ print u3.encode("ISO-8859-1")       # זרו
 print u3.encoding                   # ISO-8859-1
 print len(u3)                       # 3
 
+# Test invalid sequences.
+
+try:
+    u4 = unicode(s, "UTF-8")
+except UnicodeDecodeError, exc:
+    print "Attempt to decode", s, "as UTF-8 failed."
+
 # Combine bytes and text.
 # The text should be decoded.
 

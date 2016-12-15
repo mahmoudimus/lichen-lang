@@ -1,7 +1,8 @@
 # -*- coding: ISO-8859-1 -*-
 
-from posix.iconv import Converter, EILSEQ
+from posix.iconv import Converter
 
+only_utf8 = Converter("UTF-8", "UTF-8")
 to_utf8 = Converter("ISO-8859-1", "UTF-8")
 to_utf16 = Converter("ISO-8859-1", "UTF-16")
 from_utf8 = Converter("UTF-8", "ISO-8859-1")
@@ -20,6 +21,12 @@ try:
     print utf16                         # ...
     from_utf16.feed(utf16)
     print str(from_utf16)               # æøå
+
+    # Convert UTF-8 to UTF-8.
+
+    only_utf8.feed(utf8)
+    utf8_2 = str(only_utf8)
+    print utf8_2                        # Ã¦Ã¸Ã¥
 
     # Convert part of a UTF-16 sequence, then convert the remainder, then obtain
     # the result.
@@ -52,11 +59,10 @@ try:
 
     try:
         from_utf8.feed(iso)             # should raise an exception
+    except UnicodeDecodeError, exc:
+        print "Not UTF-8 input:", exc.value
     except OSError, exc:
-        if exc.value == EILSEQ:
-            print "Not UTF-8 input:", exc.arg
-        else:
-            print "OSError:", exc.value
+        print "OSError:", exc.value
 
     print str(from_utf8)                #
 
@@ -70,11 +76,10 @@ try:
 
     try:
         from_utf8.feed(utf8_2 + iso)    # should raise an exception
+    except UnicodeDecodeError, exc:
+        print "Not UTF-8 input:", exc.value
     except OSError, exc:
-        if exc.value == EILSEQ:
-            print "Not UTF-8 input:", exc.arg
-        else:
-            print "OSError:", exc.value
+        print "OSError:", exc.value
 
     print str(from_utf8)                #
 

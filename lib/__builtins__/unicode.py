@@ -172,7 +172,8 @@ def unicode(s, encoding):
 
     s = s.__str__()
 
-    # Convert the string to UTF-8.
+    # Convert the string to UTF-8. Even if the stated encoding is UTF-8, it
+    # needs to be validated.
 
     to_utf8 = Converter(encoding, "UTF-8")
 
