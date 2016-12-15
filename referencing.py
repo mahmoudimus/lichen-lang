@@ -194,10 +194,11 @@ class Reference:
         depth.
         """
 
-        if not self.get_origin():
+        origin = self.get_origin()
+        if not origin:
             return None
 
-        parts = self.get_origin().split(".")
+        parts = origin.split(".")
         ancestors = []
 
         for i in range(len(parts) - 1, 0, -1):
