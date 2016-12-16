@@ -497,9 +497,9 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # the storage of namespace-related information.
 
         class_name = self.get_object_path(n.name)
-        ref = self.get_object(class_name)
+        ref = self.get_object(class_name, defer=False)
 
-        if ref.static():
+        if ref and ref.static():
             raise InspectError("Multiple definitions for the same name are not permitted.", class_name, n)
 
         # Record bases for the class and retain the class name.
@@ -586,9 +586,9 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # the storage of namespace-related information.
 
         function_name = self.get_object_path(name)
-        ref = self.get_object(function_name)
+        ref = self.get_object(function_name, defer=False)
 
-        if ref.static():
+        if ref and ref.static():
             raise InspectError("Multiple definitions for the same name are not permitted.", function_name, n)
 
         # Initialise argument and local records.
