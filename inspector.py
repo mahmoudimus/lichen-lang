@@ -137,13 +137,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
             key = "%s.%s" % (path, name)
 
-            # Find predefined constant names before anything else.
-
-            if name in predefined_constants:
-                ref = self.get_builtin(name)
-                self.set_name_reference(key, ref)
-                continue
-
             # Find local definitions (within dynamic namespaces).
 
             ref = self.get_resolved_object(key)
@@ -817,6 +810,13 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         "Process the given name node 'n'."
 
         path = self.get_namespace_path()
+
+        # Find predefined constant names before anything else.
+
+        if n.name in predefined_constants:
+            ref = self.get_builtin(n.name)
+            value = ResolvedNameRef(n.name, ref)
+            return value
 
         # Special names that have already been identified.
 
