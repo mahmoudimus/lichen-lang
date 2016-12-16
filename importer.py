@@ -381,6 +381,7 @@ class Importer:
         """
 
         self.finalise_classes()
+        self.add_init_dependencies()
         self.to_cache()
 
         if self.missing:
@@ -400,7 +401,6 @@ class Importer:
 
         self.waiting = {}
         self.depends = {}
-        self.depend_refs = {}
 
         for module in self.modules.values():
 
@@ -456,10 +456,6 @@ class Importer:
                             if self.verbose:
                                 print >>sys.stderr, "Requiring", provider, "for", ref, "from", module.name
 
-                        # Record a module ordering dependency.
-
-                        self.test_dependency(found, module.name, provider)
-
             module.deferred = original_deferred
 
         # Check modules again to see if they are now required and should now
@@ -468,30 +464,7 @@ class Importer:
         for module_name in self.waiting.keys():
             self.require_providers(module_name)
 
-    def test_dependency(self, ref, module_name, provider):
-
-        """
-        Test 'ref' for establishing a dependency from 'module_name' to
-        'provider'.
-        """
-
-        if not ref.static() or self.uses_dynamic_callable(ref):
-            self.add_provider(module_name, provider)
-            self.add_dependency(module_name, provider, ref)
-
-    def add_provider(self, module_name, provider):
-
-        "Add a dependency for 'module_name' of 'provider'."
-
-        init_item(self.depends, module_name, set)
-        self.depends[module_name].add(provider)
-
-    def add_dependency(self, module_name, provider, ref):
-
-        "Add dependency details for 'module_name' and 'provider' involving 'ref'."
-
-        init_item(self.depend_refs, (module_name, provider), set)
-        self.depend_refs[(module_name, provider)].add(ref)
+        self.add_special_dependencies()
 
     def require_providers(self, module_name):
 
@@ -508,36 +481,85 @@ class Importer:
                         print >>sys.stderr, "Requiring", provider
                     self.require_providers(provider)
 
-    def uses_callable(self, ref):
+    def add_special_dependencies(self):
 
-        "Return whether 'ref' refers to a callable."
+        "Add dependencies due to the use of special names in namespaces."
 
-        # Find the function or method associated with the reference.
+        for module in self.modules.values():
+            for ref, paths in module.special.values():
+                for path in paths:
+                    self.add_dependency(path, ref.get_origin())
 
-        if ref.has_kind("<function>"):
-            return ref.get_origin()
-        elif ref.has_kind("<class>"):
-            return "%s.__init__" % ref.get_origin()
-        else:
-            return False
+    def add_init_dependencies(self):
 
-    def uses_dynamic_callable(self, ref):
+        "Add dependencies related to object initialisation."
+
+        for name in self.classes.keys():
+            if self.is_dynamic_class(name):
+
+                # Make subclasses depend on any class with non-static
+                # attributes, plus its module for the initialisation.
+
+                for subclass in self.subclasses[name]:
+                    ref = Reference("<class>", subclass)
+                    self.add_dependency(subclass, name)
+                    self.add_dependency(subclass, self.get_module_provider(ref))
+
+                # Also make the class dependent on its module for
+                # initialisation.
+
+                ref = Reference("<class>", name)
+                self.add_dependency(name, self.get_module_provider(ref))
+
+        for name in self.function_defaults.keys():
+            if self.is_dynamic_callable(name):
+
+                # Make functions with defaults requiring initialisation depend
+                # on the parent scope.
+
+                ref = Reference("<function>", name)
+                self.add_dependency(name, ref.parent())
+
+    def add_dependency(self, path, origin):
+
+        "Add dependency details for 'path' involving 'origin'."
+
+        if origin:
+            init_item(self.depends, path, set)
+            self.depends[path].add(origin)
+
+    special_attributes = ("__args__", "__file__", "__fn__", "__fname__", "__mname__", "__name__")
+
+    def is_dynamic_class(self, name):
 
         """
-        Return whether 'ref' refers to a callable employing defaults that may
+        Return whether 'name' refers to a class with members that must be
+        initialised dynamically.
+        """
+
+        attrs = self.all_class_attrs.get(name)
+
+        if not attrs:
+            return False
+
+        for attrname, attr in attrs.items():
+            if attrname in self.special_attributes:
+                continue
+            if not attr or not self.get_object(attr).static():
+                return True
+
+        return False
+
+    def is_dynamic_callable(self, name):
+
+        """
+        Return whether 'name' refers to a callable employing defaults that may
         need initialising before the callable can be used.
         """
 
-        origin = self.uses_callable(ref)
-        if not origin:
-            return False
-
-        if ref.has_kind("<class>"):
-            return True
-
         # Find any defaults for the function or method.
 
-        defaults = self.function_defaults.get(origin)
+        defaults = self.function_defaults.get(name)
         if not defaults:
             return False
 
@@ -549,26 +571,21 @@ class Importer:
 
         return False
 
-    def order_modules(self):
+    def order_objects(self):
 
-        "Produce a module initialisation ordering."
-
-        self.check_ordering()
-
-        module_names = self.modules.keys()
+        "Produce an object initialisation ordering."
 
         # Record the number of modules using or depending on each module.
 
         usage = {}
 
-        for module_name in module_names:
-            usage[module_name] = 0
+        for path in self.depends.keys():
+            usage[path] = 0
 
-        for module_name, depends in self.depends.items():
-            if module_name in module_names:
-                for provider in depends:
-                    if provider in module_names:
-                        usage[provider] += 1
+        for path, depends in self.depends.items():
+            for origin in depends:
+                init_item(usage, origin, lambda: 0)
+                usage[origin] += 1
 
         # Produce an ordering by obtaining exposed modules (required by modules
         # already processed) and putting them at the start of the list.
@@ -576,60 +593,45 @@ class Importer:
         ordered = []
 
         while usage:
-            for module_name, n in usage.items():
+            have_next = False
+
+            for path, n in usage.items():
                 if n == 0:
-                    ordered.insert(0, module_name)
-                    module_names = self.depends.get(module_name)
+                    ordered.insert(0, path)
+                    depends = self.depends.get(path)
 
-                    # Reduce usage of the referenced modules.
+                    # Reduce usage of the referenced objects.
 
-                    if module_names:
-                        for name in module_names:
-                            usage[name] -= 1
+                    if depends:
+                        for origin in depends:
+                            usage[origin] -= 1
 
-                    del usage[module_name]
+                    del usage[path]
+                    have_next = True
+
+            if not have_next:
+                raise ProgramError("Modules with unresolvable dependencies exist: %s" % ", ".join(usage.keys()))
 
         ordered.remove("__main__")
         ordered.append("__main__")
         return ordered
 
-    def check_ordering(self):
+    def order_modules(self):
 
-        "Check the ordering dependencies."
+        "Produce a module initialisation ordering."
 
-        mutual = set()
+        ordered = self.order_objects()
+        filtered = []
 
-        # Get dependency relationships for each module.
+        for module_name in self.modules.keys():
+            if module_name not in ordered:
+                filtered.append(module_name)
 
-        for module_name, modules in self.depends.items():
+        for path in ordered:
+            if self.modules.has_key(path):
+                filtered.append(path)
 
-            # Find the reverse relationship.
-
-            for provider in modules:
-                if self.depends.has_key(provider) and module_name in self.depends[provider]:
-
-                    # Record the module names in order.
-
-                    mutual.add((module_name < provider and module_name or provider,
-                                module_name > provider and module_name or provider))
-
-        if not mutual:
-            return
-
-        # Format the dependencies.
-
-        mutual = list(mutual)
-        mutual.sort()
-        l = []
-
-        for module_name, provider in mutual:
-            refs = self.depend_refs.get((module_name, provider)) or set()
-            refs.update(self.depend_refs.get((provider, module_name)) or set())
-            refs = list(refs)
-            refs.sort()
-            l.append("%s <-> %s\n  %s" % (module_name, provider, "\n  ".join(map(str, refs))))
-
-        raise ProgramError, "Modules may not depend on each other for non-static objects:\n%s" % "\n".join(l)
+        return filtered
 
     def find_dependency(self, ref):
 

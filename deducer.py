@@ -674,9 +674,7 @@ class Deducer(CommonOutput):
             # Identify references providing dependencies.
 
             for attrtype, objtype, attr in referenced_attrs:
-                if not attr.unresolved():
-                    provider = self.importer.get_module_provider(attr)
-                    self.importer.test_dependency(attr, path, provider)
+                self.importer.add_dependency(path, attr.get_origin())
 
     def get_referenced_attrs(self, location):
 

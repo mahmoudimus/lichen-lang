@@ -431,8 +431,8 @@ class CachedModule(BasicModule):
         f.readline() # "special:"
         line = f.readline().rstrip()
         while line:
-            name, ref = line.split(" ", 1)
-            self.special[name] = decode_reference(ref)
+            name, ref, paths = self._get_fields(line, 3)
+            self.special[name] = decode_reference(ref), paths.split(", ")
             line = f.readline().rstrip()
 
     def _get_members(self, f):
@@ -698,7 +698,7 @@ class CacheWritingModule:
         "deferred:"
         deferred references
         "special:"
-        zero or more: special name " " reference
+        zero or more: special name " " reference " " qualified names
         (empty line)
         "members:"
         zero or more: qualified name " " reference
@@ -810,7 +810,8 @@ class CacheWritingModule:
             names = self.special.keys()
             names.sort()
             for name in names:
-                print >>f, name, self.special[name]
+                ref, paths = self.special[name]
+                print >>f, name, ref, ", ".join(paths)
 
             print >>f
             print >>f, "members:"

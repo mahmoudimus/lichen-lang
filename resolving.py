@@ -71,7 +71,8 @@ class NameResolving:
         "Check special names."
 
         for name, value in self.special.items():
-            self.special[name] = self.importer.identify(value.get_origin())
+            ref, paths = value
+            self.special[name] = self.importer.identify(ref.get_origin()), paths
 
     def check_names_used(self):
 

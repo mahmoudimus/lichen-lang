@@ -1421,7 +1421,12 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         "Return any stored value for the given special 'name'."
 
-        return self.special.get(name)
+        value = self.special.get(name)
+        if value:
+            ref, paths = value
+        else:
+            ref = None
+        return ref
 
     def set_special(self, name, value):
 
@@ -1430,7 +1435,13 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         'value'.
         """
 
-        self.special[name] = value
+        if not self.special.has_key(name):
+            paths = set()
+            self.special[name] = value, paths
+        else:
+            _ref, paths = self.special[name]
+
+        paths.add(self.get_namespace_path())
 
     def set_special_literal(self, name, ref):
 
