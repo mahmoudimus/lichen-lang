@@ -71,6 +71,7 @@ print len(uu2)                      # 6
 # Inspect and update the encoding of stdout.
 # Note that su and us are byte strings and are not recoded.
 
+print sys.stdout                    # <posix.io.sysstream instance>
 print sys.stdout.encoding           # None
 
 sys.stdout.encoding = "ISO-8859-1"
