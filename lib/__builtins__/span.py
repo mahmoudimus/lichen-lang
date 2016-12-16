@@ -19,8 +19,6 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.sequence import _max, _min
-
 class slice:
 
     "Implementation of slice."
@@ -112,5 +110,23 @@ def range(start_or_end, end=None, step=1):
     "Implementation of range."
 
     return list(xrange(start_or_end, end, step))
+
+def _max(x, y):
+
+    "Return the maximum of 'x' and 'y'."
+
+    if x >= y:
+        return x
+    else:
+        return y
+
+def _min(x, y):
+
+    "Return the minimum of 'x' and 'y'."
+
+    if x <= y:
+        return x
+    else:
+        return y
 
 # vim: tabstop=4 expandtab shiftwidth=4

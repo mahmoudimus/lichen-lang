@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iterator import itemiterator
-from __builtins__.sequence import _max
+from __builtins__.span import _max
 from native import isinstance as _isinstance
 
 class dict:

@@ -267,22 +267,4 @@ def _get_absolute_index(index, length):
     else:
         return index
 
-def _max(x, y):
-
-    "Return the maximum of 'x' and 'y'."
-
-    if x >= y:
-        return x
-    else:
-        return y
-
-def _min(x, y):
-
-    "Return the minimum of 'x' and 'y'."
-
-    if x <= y:
-        return x
-    else:
-        return y
-
 # vim: tabstop=4 expandtab shiftwidth=4
