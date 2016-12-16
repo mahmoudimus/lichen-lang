@@ -63,6 +63,10 @@ class Importer:
         self.accessing_modules = {}
         self.invalidated = set()
 
+        # Object relationships and dependencies.
+
+        self.depends = {}
+
         # Basic program information.
 
         self.objects = {}
@@ -400,7 +404,6 @@ class Importer:
         "Resolve dependencies between modules."
 
         self.waiting = {}
-        self.depends = {}
 
         for module in self.modules.values():
 
@@ -455,6 +458,14 @@ class Importer:
                             self.required.add(provider)
                             if self.verbose:
                                 print >>sys.stderr, "Requiring", provider, "for", ref, "from", module.name
+
+                        # Record a module ordering dependency.
+
+                        if not found.static():
+                            self.add_dependency(module.name, provider)
+
+            # Restore the original references so that they may be read back in
+            # and produce the same results.
 
             module.deferred = original_deferred
 
@@ -527,6 +538,8 @@ class Importer:
         if origin:
             init_item(self.depends, path, set)
             self.depends[path].add(origin)
+
+    # NOTE: Consolidate this information in a common location.
 
     special_attributes = ("__args__", "__file__", "__fn__", "__fname__", "__mname__", "__name__")
 
