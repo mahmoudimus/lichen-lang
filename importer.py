@@ -66,6 +66,7 @@ class Importer:
         # Object relationships and dependencies.
 
         self.depends = {}
+        self.module_depends = {}
 
         # Basic program information.
 
@@ -462,7 +463,7 @@ class Importer:
                         # Record a module ordering dependency.
 
                         if not found.static():
-                            self.add_dependency(module.name, provider)
+                            self.add_module_dependency(module.name, provider)
 
             # Restore the original references so that they may be read back in
             # and produce the same results.
@@ -476,6 +477,7 @@ class Importer:
             self.require_providers(module_name)
 
         self.add_special_dependencies()
+        self.add_module_dependencies()
 
     def require_providers(self, module_name):
 
@@ -531,13 +533,62 @@ class Importer:
                 ref = Reference("<function>", name)
                 self.add_dependency(name, ref.parent())
 
+    def add_module_dependencies(self):
+
+        "Record module-based dependencies."
+
+        for module_name, providers in self.module_depends.items():
+            if self.modules.has_key(module_name):
+                for provider in providers:
+                    if self.modules.has_key(provider):
+                        self.add_dependency(module_name, provider)
+
     def add_dependency(self, path, origin):
 
         "Add dependency details for 'path' involving 'origin'."
 
-        if origin:
+        if origin and not origin.startswith("%s." % path):
             init_item(self.depends, path, set)
             self.depends[path].add(origin)
+
+    def add_module_dependency(self, module_name, provider):
+
+        "Add dependency details for 'module_name' involving 'provider'."
+
+        if provider:
+            init_item(self.module_depends, module_name, set)
+            self.module_depends[module_name].add(provider)
+
+    def condense_dependencies(self):
+
+        """
+        Condense the dependencies by removing all functions that do not need
+        initialisation.
+        """
+
+        d = {}
+        for path, depends in self.depends.items():
+            d[path] = {}
+            d[path] = self.condense_dependency_entry(depends, d)
+
+        self.depends = {}
+
+        for path, depends in d.items():
+            if depends:
+                self.depends[path] = depends
+
+    def condense_dependency_entry(self, depends, d):
+        l = set()
+        for depend in depends:
+            if self.modules.has_key(depend) or self.classes.has_key(depend) or \
+               self.is_dynamic_callable(depend):
+
+                l.add(depend)
+            else:
+                deps = d.get(depend)
+                if deps:
+                    l.update(self.condense_dependency_entry(deps, d))
+        return l
 
     # NOTE: Consolidate this information in a common location.
 
@@ -579,7 +630,7 @@ class Importer:
         # Identify non-constant defaults.
 
         for name, ref in defaults:
-            if not ref.is_constant_alias():
+            if not ref.static() and not ref.is_constant_alias():
                 return True
 
         return False
@@ -588,17 +639,21 @@ class Importer:
 
         "Produce an object initialisation ordering."
 
+        self.condense_dependencies()
+
         # Record the number of modules using or depending on each module.
 
         usage = {}
 
+        # Record path-based dependencies.
+
         for path in self.depends.keys():
-            usage[path] = 0
+            usage[path] = set()
 
         for path, depends in self.depends.items():
             for origin in depends:
-                init_item(usage, origin, lambda: 0)
-                usage[origin] += 1
+                init_item(usage, origin, set)
+                usage[origin].add(path)
 
         # Produce an ordering by obtaining exposed modules (required by modules
         # already processed) and putting them at the start of the list.
@@ -609,7 +664,7 @@ class Importer:
             have_next = False
 
             for path, n in usage.items():
-                if n == 0:
+                if not n:
                     ordered.insert(0, path)
                     depends = self.depends.get(path)
 
@@ -617,7 +672,7 @@ class Importer:
 
                     if depends:
                         for origin in depends:
-                            usage[origin] -= 1
+                            usage[origin].remove(path)
 
                     del usage[path]
                     have_next = True
