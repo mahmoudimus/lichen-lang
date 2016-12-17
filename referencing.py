@@ -213,6 +213,14 @@ class Reference:
         name = self.get_name()
         return name and name.rsplit(".")[-1].startswith("$c")
 
+    def is_predefined_value(self):
+
+        "Return whether this reference identifies a predefined value."
+
+        # NOTE: Details of built-in types employed.
+
+        return self.get_origin() in ("__builtins__.none.NoneType", "__builtins__.boolean.boolean")
+
     def get_types(self):
 
         "Return class, instance-only and module types for this reference."

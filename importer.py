@@ -528,10 +528,22 @@ class Importer:
             if self.is_dynamic_callable(name):
 
                 # Make functions with defaults requiring initialisation depend
-                # on the parent scope.
+                # on the parent scope, if a function, or the module scope.
 
                 ref = Reference("<function>", name)
-                self.add_dependency(name, ref.parent())
+                parent_ref = self.get_object(ref.parent())
+
+                # Function no longer present in the program.
+
+                if not parent_ref:
+                    continue
+
+                if parent_ref.has_kind("<class>"):
+                    parent = self.get_module_provider(parent_ref)
+                else:
+                    parent = parent_ref.get_origin()
+
+                self.add_dependency(name, parent)
 
     def add_module_dependencies(self):
 
@@ -594,6 +606,9 @@ class Importer:
 
     special_attributes = ("__args__", "__file__", "__fn__", "__fname__", "__mname__", "__name__")
 
+    def is_dynamic(self, ref):
+        return not ref or not ref.static() and not ref.is_constant_alias() and not ref.is_predefined_value()
+
     def is_dynamic_class(self, name):
 
         """
@@ -609,7 +624,8 @@ class Importer:
         for attrname, attr in attrs.items():
             if attrname in self.special_attributes:
                 continue
-            if not attr or not self.get_object(attr).static():
+            ref = attr and self.get_object(attr)
+            if self.is_dynamic(ref):
                 return True
 
         return False
@@ -630,7 +646,7 @@ class Importer:
         # Identify non-constant defaults.
 
         for name, ref in defaults:
-            if not ref.static() and not ref.is_constant_alias():
+            if self.is_dynamic(ref):
                 return True
 
         return False
