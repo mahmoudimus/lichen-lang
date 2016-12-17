@@ -462,7 +462,7 @@ class Importer:
 
                         # Record a module ordering dependency.
 
-                        if not found.static():
+                        if not found.static() or self.is_dynamic_class(found) or self.is_dynamic_callable(found):
                             self.add_module_dependency(module.name, provider)
 
             # Restore the original references so that they may be read back in
