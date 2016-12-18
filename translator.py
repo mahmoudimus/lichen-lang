@@ -19,8 +19,13 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import *
-from encoders import *
+from common import CommonModule, CommonOutput, first, get_builtin_module, \
+                   get_builtin_type, init_item, predefined_constants
+from encoders import encode_access_instruction, encode_bound_reference, \
+                     encode_function_pointer, encode_literal_constant, \
+                     encode_literal_instantiator, encode_instantiator_pointer, \
+                     encode_path, encode_symbol, encode_type_attribute, \
+                     is_type_attribute
 from os.path import exists, join
 from os import makedirs
 from referencing import Reference
