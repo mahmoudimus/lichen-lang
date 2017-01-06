@@ -1,6 +1,6 @@
 SRC = exceptions.c main.c $(wildcard native/*.c) ops.c progops.c progtypes.c $(wildcard src/*.c)
 OBJ = $(SRC:.c=.o)
-CFLAGS = -I.
+CFLAGS = -I. -finput-charset=UTF-8
 LDFLAGS = -lm
 
 all: main
