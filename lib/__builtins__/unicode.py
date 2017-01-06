@@ -20,8 +20,10 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.str import basestring
+from __builtins__.types import check_int
 from posix.iconv import Converter
-from native import str_add, unicode_len, isinstance as _isinstance
+from native import str_add, unicode_len, unicode_substr, \
+                   isinstance as _isinstance
 
 class utf8string(basestring):
 
@@ -160,6 +162,34 @@ class utf8string(basestring):
             s = utf8string(s)
             s.encoding = encoding
         return s
+
+    # Special implementation methods.
+
+    def __get_single_item__(self, index):
+    
+        "Return the item at the normalised (positive) 'index'."
+    
+        self._check_index(index)
+        return utf8string(unicode_substr(self.__data__, index, index + 1, 1), self.encoding)
+
+    def __get_multiple_items__(self, start, end, step):
+
+        """
+        Return items from 'start' until (but excluding) 'end', at 'step'
+        intervals.
+        """
+
+        self._check_index(start)
+        self._check_end_index(end)
+        check_int(step)
+
+        if step == 0:
+            raise ValueError(step)
+
+        if start == end:
+            return ""
+
+        return utf8string(unicode_substr(self.__data__, start, end, step), self.encoding)
 
 def unicode(s, encoding):
 

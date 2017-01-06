@@ -27,5 +27,6 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 # Unicode string operations.
 
 def unicode_len(data): pass
+def unicode_substr(data, start, end, step): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

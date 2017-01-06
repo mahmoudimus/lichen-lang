@@ -85,3 +85,21 @@ print sys.stdout.encoding           # UTF-8
 print u                             # Ã¦Ã¸Ã¥
 print su                            # ÆØÅæøå
 print us                            # æøåÆØÅ
+
+# Reset the encoding.
+
+sys.stdout.encoding = "ISO-8859-1"
+
+# Test character access.
+
+u0 = u[0]
+print u0.__class__                  # __builtins__.unicode.utf8string
+print u0.encoding                   # ISO-8859-1
+print u0                            # æ
+print u[-1]                         # å
+print len(u[0])                     # 1
+print len(u[-1])                    # 1
+print u[:2]                         # æø
+print len(u[:2])                    # 2
+print u[-1::-1]                     # åøæ
+print len(u[-1::-1])                # 3

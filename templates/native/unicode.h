@@ -22,6 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 /* Unicode operations. */
 
 __attr __fn_native_unicode_unicode_len(__attr __args[]);
+__attr __fn_native_unicode_unicode_substr(__attr __args[]);
 
 /* Module initialisation. */
 

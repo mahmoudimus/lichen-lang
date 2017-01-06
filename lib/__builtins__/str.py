@@ -262,6 +262,10 @@ class basestring(itemaccess):
     def strip(self, chars=None): pass
     def upper(self): pass
 
+class string(basestring):
+
+    "A plain string of bytes."
+
     # Special implementation methods.
 
     def __get_single_item__(self, index):
@@ -289,12 +293,6 @@ class basestring(itemaccess):
             return ""
 
         return str_substr(self.__data__, start, end, step)
-
-class string(basestring):
-
-    "A plain string of bytes."
-
-    pass
 
 def str(obj):
 
