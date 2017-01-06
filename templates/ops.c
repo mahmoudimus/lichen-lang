@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
+#include "gc.h" /* GC_MALLOC, GC_REALLOC */
 #include "ops.h"
 #include "progops.h" /* for raising errors */
 #include "progconsts.h"
@@ -303,7 +303,7 @@ unsigned int __TYPEPOS(__ref obj)
 
 void *__ALLOCATE(size_t nmemb, size_t size)
 {
-    void *ptr = calloc(nmemb, size);
+    void *ptr = GC_MALLOC(nmemb * size); /* sets memory to zero */
     if (ptr == NULL)
         __raise_memory_error();
     return ptr;
@@ -311,7 +311,7 @@ void *__ALLOCATE(size_t nmemb, size_t size)
 
 void *__REALLOCATE(void *ptr, size_t size)
 {
-    void *nptr = realloc(ptr, size);
+    void *nptr = GC_REALLOC(ptr, size);
     if (nptr == NULL)
         __raise_memory_error();
     return nptr;
