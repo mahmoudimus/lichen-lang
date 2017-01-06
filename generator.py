@@ -178,6 +178,7 @@ class Generator(CommonOutput):
             print >>f_code, """\
 #include <string.h>
 #include <stdio.h>
+#include "gc.h"
 #include "types.h"
 #include "exceptions.h"
 #include "ops.h"
@@ -1091,6 +1092,8 @@ __attr %s(__attr __args[], unsigned int number)
 int main(int argc, char *argv[])
 {
     __exc __tmp_exc;
+
+    GC_INIT();
 
     __Try
     {"""
