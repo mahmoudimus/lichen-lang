@@ -178,7 +178,16 @@ class basestring(itemaccess):
         return str(b)
 
     def __bool__(self):
+
+        "Return whether the string provides any data."
+
         return str_nonempty(self.__data__)
+
+    def __contains__(self, value):
+
+        "Return whether this string contains 'value'."
+
+        return self.find(value) != -1
 
     def endswith(self, s):
 

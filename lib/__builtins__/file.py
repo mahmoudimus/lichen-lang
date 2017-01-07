@@ -32,7 +32,19 @@ class filestream:
 
         self.encoding = encoding
         self.bufsize = bufsize
+
+        # Internal stream details.
+
         self.__data__ = None
+
+    def _convert(self, bytes):
+
+        "Convert 'bytes' to text if necessary."
+
+        if self.encoding:
+            return unicode(bytes, self.encoding)
+        else:
+            return bytes
 
     def read(self, n=0):
 
@@ -63,12 +75,51 @@ class filestream:
 
             s = "".join(l)
 
-        # Convert bytes to text if necessary.
+        return self._convert(s)
 
-        if self.encoding:
-            return unicode(s, self.encoding)
+    def readline(self, n=0):
+
+        """
+        Read until an end-of-line indicator is encountered or at most 'n' bytes,
+        if indicated.
+        """
+
+        check_int(n)
+
+        # Read any indicated number of bytes.
+
+        if n > 0:
+            s = fread(self.__data__, n)
+
+        # Read until an end-of-line indicator.
+
         else:
-            return s
+            l = []
+
+            # Read until end-of-line or end-of-file.
+            # NOTE: Only POSIX newlines are supported currently.
+
+            try:
+                while True:
+                    s = fread(self.__data__, 1)
+                    l.append(s)
+
+                    # Where a newline has been read, provide the preceding data
+                    # plus the newline indicator.
+
+                    if s == "\n":
+                        break
+
+            # Handle end-of-file reads.
+
+            except EOFError:
+                pass
+
+            s = "".join(l)
+
+        return self._convert(s)
+
+    def readlines(self, n=None): pass
 
     def write(self, s):
 
@@ -103,8 +154,5 @@ class file(filestream):
 
         get_using(filestream.__init__, self)(encoding, bufsize)
         self.__data__ = fopen(filename, mode)
-
-    def readline(self, size=None): pass
-    def readlines(self, size=None): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

@@ -19,9 +19,21 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from sys import lstdin, stdout
+
 open = file
 
-def raw_input(prompt=None): pass
+def raw_input(prompt=None):
+
+    """
+    Write any specified 'prompt' to standard output and read text from standard
+    input.
+    """
+
+    if prompt:
+        stdout.write(prompt)
+
+    return lstdin.readline()
 
 def print_(dest, args, nl):
 
@@ -29,12 +41,6 @@ def print_(dest, args, nl):
     Write to 'dest' the string representation of 'args', adding a newline if
     'nl' is given as a true value.
     """
-
-    # If imported at the module level, the sys module must be set up first,
-    # which should be ensured by the module ordering activity, and a module
-    # attribute will be employed to hold a reference to sys.stdout.
-
-    from sys import stdout
 
     # Write to standard output if dest is not specified.
 
