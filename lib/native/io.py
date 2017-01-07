@@ -25,6 +25,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 def fclose(fp): IOError
+def fflush(fp): IOError
 def fopen(filename, mode): IOError
 def fdopen(fd, mode): IOError
 def close(fd): IOError

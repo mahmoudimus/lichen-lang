@@ -44,6 +44,19 @@ __attr __fn_native_io_fclose(__attr __args[])
     return __builtins___none_None;
 }
 
+__attr __fn_native_io_fflush(__attr __args[])
+{
+    __attr * const fp = &__args[1];
+    /* fp interpreted as FILE reference */
+    FILE *f = (FILE *) fp->datavalue;
+
+    errno = 0;
+    if (fflush(f))
+        __raise_io_error(__new_int(errno));
+
+    return __builtins___none_None;
+}
+
 __attr __fn_native_io_fopen(__attr __args[])
 {
     __attr * const filename = &__args[1];

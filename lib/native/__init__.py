@@ -31,7 +31,7 @@ from native.introspection import object_getattr, isinstance, issubclass
 
 from native.iconv import iconv, iconv_close, iconv_open, iconv_reset
 
-from native.io import fclose, fopen, fdopen, close, read, write, fread, fwrite
+from native.io import fclose, fflush, fopen, fdopen, close, read, write, fread, fwrite
 
 from native.limits import get_maxint, get_minint
 

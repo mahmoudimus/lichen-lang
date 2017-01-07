@@ -32,6 +32,7 @@ def raw_input(prompt=None):
 
     if prompt:
         stdout.write(prompt)
+        stdout.flush()
 
     return lstdin.readline()
 

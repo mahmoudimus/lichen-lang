@@ -9,6 +9,8 @@ try:
     print s                         # try:
     s = f.read(49)
     print s                         #     f = open("tests/read_file.py")   # this file!
+    s = f.readline()
+    print s                         # except IOError, exc:
     s = f.read()
     print s
 finally:

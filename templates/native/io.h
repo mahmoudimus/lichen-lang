@@ -24,6 +24,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 /* Input/output. */
 
 __attr __fn_native_io_fclose(__attr __args[]);
+__attr __fn_native_io_fflush(__attr __args[]);
 __attr __fn_native_io_fopen(__attr __args[]);
 __attr __fn_native_io_fdopen(__attr __args[]);
 __attr __fn_native_io_fread(__attr __args[]);

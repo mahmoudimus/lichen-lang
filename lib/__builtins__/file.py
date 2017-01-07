@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.types import check_int, check_string
-from native import isinstance as _isinstance, fclose, fopen, fread, fwrite
+from native import isinstance as _isinstance, fclose, fflush, fopen, fread, fwrite
 
 class filestream:
 
@@ -46,6 +46,12 @@ class filestream:
         else:
             return bytes
 
+    def flush(self):
+
+        "Flush the stream."
+
+        fflush(self.__data__)
+
     def read(self, n=0):
 
         "Read 'n' bytes from the stream."
@@ -66,7 +72,7 @@ class filestream:
 
             try:
                 while True:
-                    l.append(fread(self.__data__, self.bufsize))
+                    self._read_data(l)
 
             # Handle end-of-file reads.
 
@@ -97,18 +103,10 @@ class filestream:
             l = []
 
             # Read until end-of-line or end-of-file.
-            # NOTE: Only POSIX newlines are supported currently.
 
             try:
-                while True:
-                    s = fread(self.__data__, 1)
-                    l.append(s)
-
-                    # Where a newline has been read, provide the preceding data
-                    # plus the newline indicator.
-
-                    if s == "\n":
-                        break
+                while not self._read_until_newline(l):
+                    pass
 
             # Handle end-of-file reads.
 
@@ -118,6 +116,22 @@ class filestream:
             s = "".join(l)
 
         return self._convert(s)
+
+    def _read_data(self, l):
+
+        "Read data into 'l'."
+
+        l.append(fread(self.__data__, self.bufsize))
+
+    def _read_until_newline(self, l):
+
+        "Read data into 'l', returning whether a newline has been read."
+
+        # NOTE: Only POSIX newlines are supported currently.
+
+        s = fread(self.__data__, 1)
+        l.append(s)
+        return s == "\n"
 
     def readlines(self, n=None): pass
 
@@ -154,5 +168,43 @@ class file(filestream):
 
         get_using(filestream.__init__, self)(encoding, bufsize)
         self.__data__ = fopen(filename, mode)
+        self.buffered = ""
+
+    def _get_data(self):
+
+        "Get data from the file."
+
+        if self.buffered:
+            s = self.buffered
+            self.buffered = ""
+        else:
+            s = fread(self.__data__, self.bufsize)
+
+        return s
+
+    def _read_data(self, l):
+
+        "Read data into 'l'."
+
+        s = self._get_data()
+        l.append(s)
+
+    def _read_until_newline(self, l):
+
+        "Read data into 'l', returning whether a newline has been read."
+
+        s = self._get_data()
+
+        # NOTE: Only POSIX newlines are supported currently.
+
+        i = s.find("\n")
+
+        if i != -1:
+            l.append(s[:i+1])
+            self.buffered = s[i+1:]
+            return True
+
+        l.append(s)
+        return False
 
 # vim: tabstop=4 expandtab shiftwidth=4
