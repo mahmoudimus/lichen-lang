@@ -19,25 +19,19 @@ def _get_python_grammar():
 
 
 python_grammar = _get_python_grammar()
-python_grammar_no_print = python_grammar.shared_copy()
-python_grammar_no_print.keyword_ids = python_grammar_no_print.keyword_ids.copy()
-del python_grammar_no_print.keyword_ids["print"]
 
-class _Tokens(object):
-    pass
+# For token module compatibility, expose name-to-index and index-to-name
+# mappings.
 
-for tok_name, idx in pytoken.python_tokens.iteritems():
-    setattr(_Tokens, tok_name, idx)
-tokens = _Tokens()
+tokens = pytoken.python_tokens
+tok_name = pytoken.python_opmap
 
-class _Symbols(object):
-    pass
-rev_lookup = {}
-for sym_name, idx in python_grammar.symbol_ids.iteritems():
-    setattr(_Symbols, sym_name, idx)
-    rev_lookup[idx] = sym_name
-syms = _Symbols()
-syms._rev_lookup = rev_lookup # for debugging
-syms.sym_name = rev_lookup # for symbol module compatibility
+# For symbol module compatibility, expose name-to-index and index-to-name
+# mappings.
 
-del _get_python_grammar, _Tokens, tok_name, sym_name, idx
+syms = python_grammar.symbol_ids
+sym_name = {}
+for name, idx in python_grammar.symbol_ids.iteritems():
+    sym_name[idx] = name
+
+del _get_python_grammar, name, idx

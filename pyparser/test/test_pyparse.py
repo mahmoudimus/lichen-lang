@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import py
 from pyparser import pyparse
-from pyparser.pygram import syms, tokens
+from pyparser.pygram import syms
 from pyparser.error import SyntaxError, IndentationError
 from pyparser import consts
 
@@ -36,7 +36,8 @@ class TestPythonParser:
         tree = self.parse("""# coding: latin-1
 stuff = "nothing"
 """, info=info)
-        assert tree.type == syms.file_input
+        assert tree.type == syms["encoding_decl"]
+        assert tree.encoding == "iso-8859-1"
         assert info.encoding == "iso-8859-1"
         sentence = u"u'Die Männer ärgen sich!'"
         input = (u"# coding: utf-7\nstuff = %s" % (sentence,)).encode("utf-7")
@@ -125,12 +126,12 @@ pass"""
         self.parse("this_is\ra_mac\rfile")
 
     def test_mode(self):
-        assert self.parse("x = 43*54").type == syms.file_input
+        assert self.parse("x = 43*54").type == syms["file_input"]
         tree = self.parse("43**54", "eval")
-        assert tree.type == syms.eval_input
+        assert tree.type == syms["eval_input"]
         py.test.raises(SyntaxError, self.parse, "x = 54", "eval")
         tree = self.parse("x = 43", "single")
-        assert tree.type == syms.single_input
+        assert tree.type == syms["single_input"]
 
     def test_multiline_string(self):
         self.parse("''' \n '''")

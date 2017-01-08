@@ -70,9 +70,9 @@ class CompileInfo(object):
 
 
 _targets = {
-'eval' : pygram.syms.eval_input,
-'single' : pygram.syms.single_input,
-'exec' : pygram.syms.file_input,
+'eval' : pygram.syms["eval_input"],
+'single' : pygram.syms["single_input"],
+'exec' : pygram.syms["file_input"],
 }
 
 class PythonParser(parser.Parser):
@@ -145,9 +145,9 @@ class PythonParser(parser.Parser):
                 # Catch parse errors, pretty them up and reraise them as a
                 # SyntaxError.
                 new_err = error.IndentationError
-                if tp == pygram.tokens.INDENT:
+                if tp == pygram.tokens["INDENT"]:
                     msg = "unexpected indent"
-                elif e.expected == pygram.tokens.INDENT:
+                elif e.expected == pygram.tokens["INDENT"]:
                     msg = "expected an indented block"
                 else:
                     new_err = error.SyntaxError
@@ -163,7 +163,7 @@ class PythonParser(parser.Parser):
             compile_info.encoding = enc
             # Wrap the tree in a special encoding declaration for parser module
             # compatibility.
-            tree = parser.NonterminalEnc(pygram.syms.encoding_decl, tree, enc)
+            tree = parser.NonterminalEnc(pygram.syms["encoding_decl"], tree, enc)
         return tree
 
 def parse(filename):

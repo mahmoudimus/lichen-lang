@@ -26,9 +26,8 @@ parseFile(path) -> AST
 # and replace OWNER, ORGANIZATION, and YEAR as appropriate.
 
 from compiler.ast import *
+from pyparser.pygram import syms as symbol, sym_name, tokens as token, tok_name
 import pyparser.pyparse as parser
-from pyparser.pygram import syms as symbol
-import token
 
 class WalkerError(StandardError):
     pass
@@ -89,17 +88,17 @@ class Transformer:
 
     def __init__(self):
         self._dispatch = {}
-        for value, name in symbol.sym_name.items():
+        for value, name in sym_name.items():
             if hasattr(self, name):
                 self._dispatch[value] = getattr(self, name)
-        self._dispatch[token.NEWLINE] = self.com_NEWLINE
-        self._atom_dispatch = {token.LPAR: self.atom_lpar,
-                               token.LSQB: self.atom_lsqb,
-                               token.LBRACE: self.atom_lbrace,
-                               token.BACKQUOTE: self.atom_backquote,
-                               token.NUMBER: self.atom_number,
-                               token.STRING: self.atom_string,
-                               token.NAME: self.atom_name,
+        self._dispatch[token["NEWLINE"]] = self.com_NEWLINE
+        self._atom_dispatch = {token["LPAR"]: self.atom_lpar,
+                               token["LSQB"]: self.atom_lsqb,
+                               token["LBRACE"]: self.atom_lbrace,
+                               token["BACKQUOTE"]: self.atom_backquote,
+                               token["NUMBER"]: self.atom_number,
+                               token["STRING"]: self.atom_string,
+                               token["NAME"]: self.atom_name,
                                }
         self.encoding = None
 
@@ -132,22 +131,22 @@ class Transformer:
         ### emit a line-number node?
         n = node[0]
 
-        if n == symbol.encoding_decl:
+        if n == symbol["encoding_decl"]:
             self.encoding = node[2]
             node = node[1]
             n = node[0]
 
-        if n == symbol.single_input:
+        if n == symbol["single_input"]:
             return self.single_input(node[1:])
-        if n == symbol.file_input:
+        if n == symbol["file_input"]:
             return self.file_input(node[1:])
-        if n == symbol.eval_input:
+        if n == symbol["eval_input"]:
             return self.eval_input(node[1:])
-        if n == symbol.lambdef:
+        if n == symbol["lambdef"]:
             return self.lambdef(node[1:])
-        if n == symbol.funcdef:
+        if n == symbol["funcdef"]:
             return self.funcdef(node[1:])
-        if n == symbol.classdef:
+        if n == symbol["classdef"]:
             return self.classdef(node[1:])
 
         raise WalkerError, ('unexpected node type', n)
@@ -157,20 +156,20 @@ class Transformer:
 
         # NEWLINE | simple_stmt | compound_stmt NEWLINE
         n = node[0][0]
-        if n != token.NEWLINE:
+        if n != token["NEWLINE"]:
             return self.com_stmt(node[0])
 
         return Pass()
 
     def file_input(self, nodelist):
-        doc = self.get_docstring(nodelist, symbol.file_input)
+        doc = self.get_docstring(nodelist, symbol["file_input"])
         if doc is not None:
             i = 1
         else:
             i = 0
         stmts = []
         for node in nodelist[i:]:
-            if node[0] != token.ENDMARKER and node[0] != token.NEWLINE:
+            if node[0] != token["ENDMARKER"] and node[0] != token["NEWLINE"]:
                 self.com_append_stmt(stmts, node)
         return Module(doc, Stmt(stmts))
 
@@ -186,8 +185,8 @@ class Transformer:
         item = self.atom_name(nodelist)
         i = 1
         while i < listlen:
-            assert nodelist[i][0] == token.DOT
-            assert nodelist[i + 1][0] == token.NAME
+            assert nodelist[i][0] == token["DOT"]
+            assert nodelist[i + 1][0] == token["NAME"]
             item = Getattr(item, nodelist[i + 1][1])
             i += 2
 
@@ -196,14 +195,14 @@ class Transformer:
     def decorator(self, nodelist):
         # '@' dotted_name [ '(' [arglist] ')' ]
         assert len(nodelist) in (3, 5, 6)
-        assert nodelist[0][0] == token.AT
-        assert nodelist[-1][0] == token.NEWLINE
+        assert nodelist[0][0] == token["AT"]
+        assert nodelist[-1][0] == token["NEWLINE"]
 
-        assert nodelist[1][0] == symbol.dotted_name
+        assert nodelist[1][0] == symbol["dotted_name"]
         funcname = self.decorator_name(nodelist[1][1:])
 
         if len(nodelist) > 3:
-            assert nodelist[2][0] == token.LPAR
+            assert nodelist[2][0] == token["LPAR"]
             expr = self.com_call_function(funcname, nodelist[3])
         else:
             expr = funcname
@@ -214,16 +213,16 @@ class Transformer:
         # decorators: decorator ([NEWLINE] decorator)* NEWLINE
         items = []
         for dec_nodelist in nodelist:
-            assert dec_nodelist[0] == symbol.decorator
+            assert dec_nodelist[0] == symbol["decorator"]
             items.append(self.decorator(dec_nodelist[1:]))
         return Decorators(items)
 
     def decorated(self, nodelist):
-        assert nodelist[0][0] == symbol.decorators
-        if nodelist[1][0] == symbol.funcdef:
+        assert nodelist[0][0] == symbol["decorators"]
+        if nodelist[1][0] == symbol["funcdef"]:
             n = [nodelist[0]] + list(nodelist[1][1:])
             return self.funcdef(n)
-        elif nodelist[1][0] == symbol.classdef:
+        elif nodelist[1][0] == symbol["classdef"]:
             decorators = self.decorators(nodelist[0][1:])
             cls = self.classdef(nodelist[1][1:])
             cls.decorators = decorators
@@ -236,7 +235,7 @@ class Transformer:
         # parameters: '(' [varargslist] ')'
 
         if len(nodelist) == 6:
-            assert nodelist[0][0] == symbol.decorators
+            assert nodelist[0][0] == symbol["decorators"]
             decorators = self.decorators(nodelist[0][1:])
         else:
             assert len(nodelist) == 5
@@ -246,7 +245,7 @@ class Transformer:
         name = nodelist[-4][1]
         args = nodelist[-3][2]
 
-        if args[0] == symbol.varargslist:
+        if args[0] == symbol["varargslist"]:
             names, defaults, flags = self.com_arglist(args[1:])
         else:
             names = defaults = ()
@@ -265,7 +264,7 @@ class Transformer:
 
     def lambdef(self, nodelist):
         # lambdef: 'lambda' [varargslist] ':' test
-        if nodelist[2][0] == symbol.varargslist:
+        if nodelist[2][0] == symbol["varargslist"]:
             names, defaults, flags = self.com_arglist(nodelist[2][1:])
         else:
             names = defaults = ()
@@ -282,9 +281,9 @@ class Transformer:
 
         name = nodelist[1][1]
         doc = self.get_docstring(nodelist[-1])
-        if nodelist[2][0] == token.COLON:
+        if nodelist[2][0] == token["COLON"]:
             bases = []
-        elif nodelist[3][0] == token.RPAR:
+        elif nodelist[3][0] == token["RPAR"]:
             bases = []
         else:
             bases = self.com_bases(nodelist[3])
@@ -351,7 +350,7 @@ class Transformer:
         exprNode = self.lookup_node(en)(en[1:])
         if len(nodelist) == 1:
             return Discard(exprNode, lineno=exprNode.lineno)
-        if nodelist[1][0] == token.EQUAL:
+        if nodelist[1][0] == token["EQUAL"]:
             nodesl = []
             for i in range(0, len(nodelist) - 2, 2):
                 nodesl.append(self.com_assign(nodelist[i], OP_ASSIGN))
@@ -368,9 +367,9 @@ class Transformer:
         if len(nodelist) == 1:
             start = 1
             dest = None
-        elif nodelist[1][0] == token.RIGHTSHIFT:
+        elif nodelist[1][0] == token["RIGHTSHIFT"]:
             assert len(nodelist) == 3 \
-                   or nodelist[3][0] == token.COMMA
+                   or nodelist[3][0] == token["COMMA"]
             dest = self.com_node(nodelist[2])
             start = 4
         else:
@@ -378,7 +377,7 @@ class Transformer:
             start = 1
         for i in range(start, len(nodelist), 2):
             items.append(self.com_node(nodelist[i]))
-        if nodelist[-1][0] == token.COMMA:
+        if nodelist[-1][0] == token["COMMA"]:
             return Print(items, dest, lineno=nodelist[0][2])
         return Printnl(items, dest, lineno=nodelist[0][2])
 
@@ -445,17 +444,17 @@ class Transformer:
         while nodelist[idx][1] == '.':
             idx += 1
         level = idx - 1
-        if nodelist[idx][0] == symbol.dotted_name:
+        if nodelist[idx][0] == symbol["dotted_name"]:
             fromname = self.com_dotted_name(nodelist[idx])
             idx += 1
         else:
             fromname = ""
         assert nodelist[idx][1] == 'import'
-        if nodelist[idx + 1][0] == token.STAR:
+        if nodelist[idx + 1][0] == token["STAR"]:
             return From(fromname, [('*', None)], level,
                         lineno=nodelist[0][2])
         else:
-            node = nodelist[idx + 1 + (nodelist[idx + 1][0] == token.LPAR)]
+            node = nodelist[idx + 1 + (nodelist[idx + 1][0] == token["LPAR"])]
             return From(fromname, self.com_import_as_names(node), level,
                         lineno=nodelist[0][2])
 
@@ -545,7 +544,7 @@ class Transformer:
 
         stmts = []
         for node in nodelist:
-            if node[0] == symbol.stmt:
+            if node[0] == symbol["stmt"]:
                 self.com_append_stmt(stmts, node)
         return Stmt(stmts)
 
@@ -566,15 +565,15 @@ class Transformer:
 
     def testlist_comp(self, nodelist):
         # test ( comp_for | (',' test)* [','] )
-        assert nodelist[0][0] == symbol.test
-        if len(nodelist) == 2 and nodelist[1][0] == symbol.comp_for:
+        assert nodelist[0][0] == symbol["test"]
+        if len(nodelist) == 2 and nodelist[1][0] == symbol["comp_for"]:
             test = self.com_node(nodelist[0])
             return self.com_generator_expression(test, nodelist[1])
         return self.testlist(nodelist)
 
     def test(self, nodelist):
         # or_test ['if' or_test 'else' test] | lambdef
-        if len(nodelist) == 1 and nodelist[0][0] == symbol.lambdef:
+        if len(nodelist) == 1 and nodelist[0][0] == symbol["lambdef"]:
             return self.lambdef(nodelist[0])
         then = self.com_node(nodelist[0])
         if len(nodelist) > 1:
@@ -588,7 +587,7 @@ class Transformer:
 
     def or_test(self, nodelist):
         # and_test ('or' and_test)* | lambdef
-        if len(nodelist) == 1 and nodelist[0][0] == symbol.lambdef:
+        if len(nodelist) == 1 and nodelist[0][0] == symbol["lambdef"]:
             return self.lambdef(nodelist[0])
         return self.com_binary(Or, nodelist)
     old_test = or_test
@@ -617,7 +616,7 @@ class Transformer:
             # comp_op: '<' | '>' | '=' | '>=' | '<=' | '<>' | '!=' | '=='
             #          | 'in' | 'not' 'in' | 'is' | 'is' 'not'
             n = nl[1]
-            if n[0] == token.NAME:
+            if n[0] == token["NAME"]:
                 type = n[1]
                 if len(nl) == 3:
                     if type == 'not':
@@ -654,9 +653,9 @@ class Transformer:
         node = self.com_node(nodelist[0])
         for i in range(2, len(nodelist), 2):
             right = self.com_node(nodelist[i])
-            if nodelist[i-1][0] == token.LEFTSHIFT:
+            if nodelist[i-1][0] == token["LEFTSHIFT"]:
                 node = LeftShift([node, right], lineno=nodelist[1][2])
-            elif nodelist[i-1][0] == token.RIGHTSHIFT:
+            elif nodelist[i-1][0] == token["RIGHTSHIFT"]:
                 node = RightShift([node, right], lineno=nodelist[1][2])
             else:
                 raise ValueError, "unexpected token: %s" % nodelist[i-1][0]
@@ -666,9 +665,9 @@ class Transformer:
         node = self.com_node(nodelist[0])
         for i in range(2, len(nodelist), 2):
             right = self.com_node(nodelist[i])
-            if nodelist[i-1][0] == token.PLUS:
+            if nodelist[i-1][0] == token["PLUS"]:
                 node = Add([node, right], lineno=nodelist[1][2])
-            elif nodelist[i-1][0] == token.MINUS:
+            elif nodelist[i-1][0] == token["MINUS"]:
                 node = Sub([node, right], lineno=nodelist[1][2])
             else:
                 raise ValueError, "unexpected token: %s" % nodelist[i-1][0]
@@ -679,13 +678,13 @@ class Transformer:
         for i in range(2, len(nodelist), 2):
             right = self.com_node(nodelist[i])
             t = nodelist[i-1][0]
-            if t == token.STAR:
+            if t == token["STAR"]:
                 node = Mul([node, right])
-            elif t == token.SLASH:
+            elif t == token["SLASH"]:
                 node = Div([node, right])
-            elif t == token.PERCENT:
+            elif t == token["PERCENT"]:
                 node = Mod([node, right])
-            elif t == token.DOUBLESLASH:
+            elif t == token["DOUBLESLASH"]:
                 node = FloorDiv([node, right])
             else:
                 raise ValueError, "unexpected token: %s" % t
@@ -697,11 +696,11 @@ class Transformer:
         t = elt[0]
         node = self.lookup_node(nodelist[-1])(nodelist[-1][1:])
         # need to handle (unary op)constant here...
-        if t == token.PLUS:
+        if t == token["PLUS"]:
             return UnaryAdd(node, lineno=elt[2])
-        elif t == token.MINUS:
+        elif t == token["MINUS"]:
             return UnarySub(node, lineno=elt[2])
-        elif t == token.TILDE:
+        elif t == token["TILDE"]:
             node = Invert(node, lineno=elt[2])
         return node
 
@@ -710,7 +709,7 @@ class Transformer:
         node = self.com_node(nodelist[0])
         for i in range(1, len(nodelist)):
             elt = nodelist[i]
-            if elt[0] == token.DOUBLESTAR:
+            if elt[0] == token["DOUBLESTAR"]:
                 return Power([node, self.com_node(nodelist[i+1])],
                              lineno=elt[2])
 
@@ -722,17 +721,17 @@ class Transformer:
         return self._atom_dispatch[nodelist[0][0]](nodelist)
 
     def atom_lpar(self, nodelist):
-        if nodelist[1][0] == token.RPAR:
+        if nodelist[1][0] == token["RPAR"]:
             return Tuple((), lineno=nodelist[0][2])
         return self.com_node(nodelist[1])
 
     def atom_lsqb(self, nodelist):
-        if nodelist[1][0] == token.RSQB:
+        if nodelist[1][0] == token["RSQB"]:
             return List((), lineno=nodelist[0][2])
         return self.com_list_constructor(nodelist[1])
 
     def atom_lbrace(self, nodelist):
-        if nodelist[1][0] == token.RBRACE:
+        if nodelist[1][0] == token["RBRACE"]:
             return Dict((), lineno=nodelist[0][2])
         return self.com_dictorsetmaker(nodelist[1])
 
@@ -806,10 +805,10 @@ class Transformer:
         i = 0
         while i < len(nodelist):
             node = nodelist[i]
-            if node[0] == token.STAR or node[0] == token.DOUBLESTAR:
-                if node[0] == token.STAR:
+            if node[0] == token["STAR"] or node[0] == token["DOUBLESTAR"]:
+                if node[0] == token["STAR"]:
                     node = nodelist[i+1]
-                    if node[0] == token.NAME:
+                    if node[0] == token["NAME"]:
                         names.append(node[1])
                         flags = flags | CO_VARARGS
                         i = i + 3
@@ -817,7 +816,7 @@ class Transformer:
                 if i < len(nodelist):
                     # should be DOUBLESTAR
                     t = nodelist[i][0]
-                    if t == token.DOUBLESTAR:
+                    if t == token["DOUBLESTAR"]:
                         node = nodelist[i+1]
                     else:
                         raise ValueError, "unexpected token: %s" % t
@@ -830,7 +829,7 @@ class Transformer:
             names.append(self.com_fpdef(node))
 
             i = i + 1
-            if i < len(nodelist) and nodelist[i][0] == token.EQUAL:
+            if i < len(nodelist) and nodelist[i][0] == token["EQUAL"]:
                 defaults.append(self.com_node(nodelist[i + 1]))
                 i = i + 2
             elif len(defaults):
@@ -845,7 +844,7 @@ class Transformer:
 
     def com_fpdef(self, node):
         # fpdef: NAME | '(' fplist ')'
-        if node[1][0] == token.LPAR:
+        if node[1][0] == token["LPAR"]:
             return self.com_fplist(node[2])
         return node[1][1]
 
@@ -867,17 +866,17 @@ class Transformer:
         return name[:-1]
 
     def com_dotted_as_name(self, node):
-        assert node[0] == symbol.dotted_as_name
+        assert node[0] == symbol["dotted_as_name"]
         node = node[1:]
         dot = self.com_dotted_name(node[0][1:])
         if len(node) == 1:
             return dot, None
         assert node[1][1] == 'as'
-        assert node[2][0] == token.NAME
+        assert node[2][0] == token["NAME"]
         return dot, node[2][1]
 
     def com_dotted_as_names(self, node):
-        assert node[0] == symbol.dotted_as_names
+        assert node[0] == symbol["dotted_as_names"]
         node = node[1:]
         names = [self.com_dotted_as_name(node[0])]
         for i in range(2, len(node), 2):
@@ -885,17 +884,17 @@ class Transformer:
         return names
 
     def com_import_as_name(self, node):
-        assert node[0] == symbol.import_as_name
+        assert node[0] == symbol["import_as_name"]
         node = node[1:]
-        assert node[0][0] == token.NAME
+        assert node[0][0] == token["NAME"]
         if len(node) == 1:
             return node[0][1], None
         assert node[1][1] == 'as', node
-        assert node[2][0] == token.NAME
+        assert node[2][0] == token["NAME"]
         return node[0][1], node[2][1]
 
     def com_import_as_names(self, node):
-        assert node[0] == symbol.import_as_names
+        assert node[0] == symbol["import_as_names"]
         node = node[1:]
         names = [self.com_import_as_name(node[0])]
         for i in range(2, len(node), 2):
@@ -913,7 +912,7 @@ class Transformer:
         #  ((except_clause ':' suite)+ ['else' ':' suite] ['finally' ':' suite]
         #   | 'finally' ':' suite))
 
-        if nodelist[3][0] == token.NAME:
+        if nodelist[3][0] == token["NAME"]:
             # first clause is a finally clause: only try-finally
             return TryFinally(self.com_node(nodelist[2]),
                               self.com_node(nodelist[5]),
@@ -925,7 +924,7 @@ class Transformer:
         finallyNode = None
         for i in range(3, len(nodelist), 3):
             node = nodelist[i]
-            if node[0] == symbol.except_clause:
+            if node[0] == symbol["except_clause"]:
                 # except_clause: 'except' [expr [(',' | 'as') expr]] */
                 if len(node) > 2:
                     expr1 = self.com_node(node[2])
@@ -937,7 +936,7 @@ class Transformer:
                     expr1 = expr2 = None
                 clauses.append((expr1, expr2, self.com_node(nodelist[i+2])))
 
-            if node[0] == token.NAME:
+            if node[0] == token["NAME"]:
                 if node[1] == 'else':
                     elseNode = self.com_node(nodelist[i+2])
                 elif node[1] == 'finally':
@@ -968,7 +967,7 @@ class Transformer:
         return With(expr, var, body, lineno=lineno)
 
     def com_augassign_op(self, node):
-        assert node[0] == symbol.augassign
+        assert node[0] == symbol["augassign"]
         return node[1]
 
     def com_augassign(self, node):
@@ -986,7 +985,7 @@ class Transformer:
         # loop to avoid trivial recursion
         while 1:
             t = node[0]
-            if t in (symbol.exprlist, symbol.testlist, symbol.testlist_safe, symbol.testlist_comp):
+            if t in (symbol["exprlist"], symbol["testlist"], symbol["testlist_safe"], symbol["testlist_comp"]):
                 if len(node) > 2:
                     return self.com_assign_tuple(node, assigning)
                 node = node[1]
@@ -994,31 +993,31 @@ class Transformer:
                 if len(node) > 2:
                     raise SyntaxError, "can't assign to operator"
                 node = node[1]
-            elif t == symbol.power:
-                if node[1][0] != symbol.atom:
+            elif t == symbol["power"]:
+                if node[1][0] != symbol["atom"]:
                     raise SyntaxError, "can't assign to operator"
                 if len(node) > 2:
                     primary = self.com_node(node[1])
                     for i in range(2, len(node)-1):
                         ch = node[i]
-                        if ch[0] == token.DOUBLESTAR:
+                        if ch[0] == token["DOUBLESTAR"]:
                             raise SyntaxError, "can't assign to operator"
                         primary = self.com_apply_trailer(primary, ch)
                     return self.com_assign_trailer(primary, node[-1],
                                                    assigning)
                 node = node[1]
-            elif t == symbol.atom:
+            elif t == symbol["atom"]:
                 t = node[1][0]
-                if t == token.LPAR:
+                if t == token["LPAR"]:
                     node = node[2]
-                    if node[0] == token.RPAR:
+                    if node[0] == token["RPAR"]:
                         raise SyntaxError, "can't assign to ()"
-                elif t == token.LSQB:
+                elif t == token["LSQB"]:
                     node = node[2]
-                    if node[0] == token.RSQB:
+                    if node[0] == token["RSQB"]:
                         raise SyntaxError, "can't assign to []"
                     return self.com_assign_list(node, assigning)
-                elif t == token.NAME:
+                elif t == token["NAME"]:
                     return self.com_assign_name(node[1], assigning)
                 else:
                     raise SyntaxError, "can't assign to literal"
@@ -1035,9 +1034,9 @@ class Transformer:
         assigns = []
         for i in range(1, len(node), 2):
             if i + 1 < len(node):
-                if node[i + 1][0] == symbol.list_for:
+                if node[i + 1][0] == symbol["list_for"]:
                     raise SyntaxError, "can't assign to list comprehension"
-                assert node[i + 1][0] == token.COMMA, node[i + 1]
+                assert node[i + 1][0] == token["COMMA"], node[i + 1]
             assigns.append(self.com_assign(node[i], assigning))
         return AssList(assigns, lineno=extractLineNo(node))
 
@@ -1046,11 +1045,11 @@ class Transformer:
 
     def com_assign_trailer(self, primary, node, assigning):
         t = node[1][0]
-        if t == token.DOT:
+        if t == token["DOT"]:
             return self.com_assign_attr(primary, node[2], assigning)
-        if t == token.LSQB:
+        if t == token["LSQB"]:
             return self.com_subscriptlist(primary, node[2], assigning)
-        if t == token.LPAR:
+        if t == token["LPAR"]:
             raise SyntaxError, "can't assign to function call"
         raise SyntaxError, "unknown trailer type: %s" % t
 
@@ -1088,11 +1087,11 @@ class Transformer:
         # listmaker: test ( list_for | (',' test)* [','] )
         values = []
         for i in range(1, len(nodelist)):
-            if nodelist[i][0] == symbol.list_for:
+            if nodelist[i][0] == symbol["list_for"]:
                 assert len(nodelist[i:]) == 1
                 return self.com_list_comprehension(values[0],
                                                    nodelist[i])
-            elif nodelist[i][0] == token.COMMA:
+            elif nodelist[i][0] == token["COMMA"]:
                 continue
             values.append(self.com_node(nodelist[i]))
         return List(values, lineno=values[0].lineno)
@@ -1150,11 +1149,11 @@ class Transformer:
             raise ValueError("unexpected comprehension type: " + repr(type))
 
     def com_list_iter(self, node):
-        assert node[0] == symbol.list_iter
+        assert node[0] == symbol["list_iter"]
         return node[1]
 
     def com_comp_iter(self, node):
-        assert node[0] == symbol.comp_iter
+        assert node[0] == symbol["comp_iter"]
         return node[1]
 
     def com_generator_expression(self, expr, node):
@@ -1194,21 +1193,21 @@ class Transformer:
     def com_dictorsetmaker(self, nodelist):
         # dictorsetmaker: ( (test ':' test (comp_for | (',' test ':' test)* [','])) |
         #                   (test (comp_for | (',' test)* [','])) )
-        assert nodelist[0] == symbol.dictorsetmaker
+        assert nodelist[0] == symbol["dictorsetmaker"]
         nodelist = nodelist[1:]
-        if len(nodelist) == 1 or nodelist[1][0] == token.COMMA:
+        if len(nodelist) == 1 or nodelist[1][0] == token["COMMA"]:
             # set literal
             items = []
             for i in range(0, len(nodelist), 2):
                 items.append(self.com_node(nodelist[i]))
             return Set(items, lineno=items[0].lineno)
-        elif nodelist[1][0] == symbol.comp_for:
+        elif nodelist[1][0] == symbol["comp_for"]:
             # set comprehension
             expr = self.com_node(nodelist[0])
             return self.com_comprehension(expr, None, nodelist[1], 'set')
-        elif len(nodelist) > 3 and nodelist[3][0] == symbol.comp_for:
+        elif len(nodelist) > 3 and nodelist[3][0] == symbol["comp_for"]:
             # dict comprehension
-            assert nodelist[1][0] == token.COLON
+            assert nodelist[1][0] == token["COLON"]
             key = self.com_node(nodelist[0])
             value = self.com_node(nodelist[2])
             return self.com_comprehension(key, value, nodelist[3], 'dict')
@@ -1222,22 +1221,22 @@ class Transformer:
 
     def com_apply_trailer(self, primaryNode, nodelist):
         t = nodelist[1][0]
-        if t == token.LPAR:
+        if t == token["LPAR"]:
             return self.com_call_function(primaryNode, nodelist[2])
-        if t == token.DOT:
+        if t == token["DOT"]:
             return self.com_select_member(primaryNode, nodelist[2])
-        if t == token.LSQB:
+        if t == token["LSQB"]:
             return self.com_subscriptlist(primaryNode, nodelist[2], OP_APPLY)
 
         raise SyntaxError, 'unknown node type: %s' % t
 
     def com_select_member(self, primaryNode, nodelist):
-        if nodelist[0] != token.NAME:
+        if nodelist[0] != token["NAME"]:
             raise SyntaxError, "member must be a name"
         return Getattr(primaryNode, nodelist[1], lineno=nodelist[2])
 
     def com_call_function(self, primaryNode, nodelist):
-        if nodelist[0] == token.RPAR:
+        if nodelist[0] == token["RPAR"]:
             return CallFunc(primaryNode, [], lineno=extractLineNo(nodelist))
         args = []
         kw = 0
@@ -1247,13 +1246,13 @@ class Transformer:
         while i < len_nodelist:
             node = nodelist[i]
 
-            if node[0]==token.STAR:
+            if node[0]==token["STAR"]:
                 if star_node is not None:
                     raise SyntaxError, 'already have the varargs indentifier'
                 star_node = self.com_node(nodelist[i+1])
                 i = i + 3
                 continue
-            elif node[0]==token.DOUBLESTAR:
+            elif node[0]==token["DOUBLESTAR"]:
                 if dstar_node is not None:
                     raise SyntaxError, 'already have the kwargs indentifier'
                 dstar_node = self.com_node(nodelist[i+1])
@@ -1264,7 +1263,7 @@ class Transformer:
             kw, result = self.com_argument(node, kw, star_node)
 
             if len_nodelist != 2 and isinstance(result, GenExpr) \
-               and len(node) == 3 and node[2][0] == symbol.comp_for:
+               and len(node) == 3 and node[2][0] == symbol["comp_for"]:
                 # allow f(x for x in y), but reject f(x for x in y, 1)
                 # should use f((x for x in y), 1) instead of f(x for x in y, 1)
                 raise SyntaxError, 'generator expression needs parenthesis'
@@ -1276,7 +1275,7 @@ class Transformer:
                         lineno=extractLineNo(nodelist))
 
     def com_argument(self, nodelist, kw, star_node):
-        if len(nodelist) == 3 and nodelist[2][0] == symbol.comp_for:
+        if len(nodelist) == 3 and nodelist[2][0] == symbol["comp_for"]:
             test = self.com_node(nodelist[1])
             return 0, self.com_generator_expression(test, nodelist[2])
         if len(nodelist) == 2:
@@ -1287,9 +1286,9 @@ class Transformer:
             return 0, self.com_node(nodelist[1])
         result = self.com_node(nodelist[3])
         n = nodelist[1]
-        while len(n) == 2 and n[0] != token.NAME:
+        while len(n) == 2 and n[0] != token["NAME"]:
             n = n[1]
-        if n[0] != token.NAME:
+        if n[0] != token["NAME"]:
             raise SyntaxError, "keyword can't be an expression (%s)"%n[0]
         node = Keyword(n[1], result, lineno=n[2])
         return 1, node
@@ -1303,9 +1302,9 @@ class Transformer:
         # backwards compat slice for '[i:j]'
         if len(nodelist) == 2:
             sub = nodelist[1]
-            if (sub[1][0] == token.COLON or \
-                            (len(sub) > 2 and sub[2][0] == token.COLON)) and \
-                            sub[-1][0] != symbol.sliceop:
+            if (sub[1][0] == token["COLON"] or \
+                            (len(sub) > 2 and sub[2][0] == token["COLON"])) and \
+                            sub[-1][0] != symbol["sliceop"]:
                 return self.com_slice(primary, sub, assigning)
 
         subscripts = []
@@ -1318,9 +1317,9 @@ class Transformer:
         # slice_item: expression | proper_slice | ellipsis
         ch = node[1]
         t = ch[0]
-        if t == token.DOT and node[2][0] == token.DOT:
+        if t == token["DOT"] and node[2][0] == token["DOT"]:
             return Ellipsis()
-        if t == token.COLON or len(node) > 2:
+        if t == token["COLON"] or len(node) > 2:
             return self.com_sliceobj(node)
         return self.com_node(ch)
 
@@ -1336,7 +1335,7 @@ class Transformer:
 
         items = []
 
-        if node[1][0] == token.COLON:
+        if node[1][0] == token["COLON"]:
             items.append(Const(None))
             i = 2
         else:
@@ -1344,7 +1343,7 @@ class Transformer:
             # i == 2 is a COLON
             i = 3
 
-        if i < len(node) and node[i][0] == symbol.test:
+        if i < len(node) and node[i][0] == symbol["test"]:
             items.append(self.com_node(node[i]))
             i = i + 1
         else:
@@ -1364,7 +1363,7 @@ class Transformer:
         # short_slice:  [lower_bound] ":" [upper_bound]
         lower = upper = None
         if len(node) == 3:
-            if node[1][0] == token.COLON:
+            if node[1][0] == token["COLON"]:
                 upper = self.com_node(node[2])
             else:
                 lower = self.com_node(node[1])
@@ -1378,27 +1377,27 @@ class Transformer:
         if n is None:
             n = node[0]
             node = node[1:]
-        if n == symbol.suite:
+        if n == symbol["suite"]:
             if len(node) == 1:
                 return self.get_docstring(node[0])
             for sub in node:
-                if sub[0] == symbol.stmt:
+                if sub[0] == symbol["stmt"]:
                     return self.get_docstring(sub)
             return None
-        if n == symbol.file_input:
+        if n == symbol["file_input"]:
             for sub in node:
-                if sub[0] == symbol.stmt:
+                if sub[0] == symbol["stmt"]:
                     return self.get_docstring(sub)
             return None
-        if n == symbol.atom:
-            if node[0][0] == token.STRING:
+        if n == symbol["atom"]:
+            if node[0][0] == token["STRING"]:
                 s = ''
                 for t in node:
                     s = s + eval(t[1])
                 return s
             return None
-        if n == symbol.stmt or n == symbol.simple_stmt \
-           or n == symbol.small_stmt:
+        if n == symbol["stmt"] or n == symbol["simple_stmt"] \
+           or n == symbol["small_stmt"]:
             return self.get_docstring(node[0])
         if n in _doc_nodes and len(node) == 1:
             return self.get_docstring(node[0])
@@ -1406,101 +1405,101 @@ class Transformer:
 
 
 _doc_nodes = [
-    symbol.expr_stmt,
-    symbol.testlist,
-    symbol.testlist_safe,
-    symbol.test,
-    symbol.or_test,
-    symbol.and_test,
-    symbol.not_test,
-    symbol.comparison,
-    symbol.expr,
-    symbol.xor_expr,
-    symbol.and_expr,
-    symbol.shift_expr,
-    symbol.arith_expr,
-    symbol.term,
-    symbol.factor,
-    symbol.power,
+    symbol["expr_stmt"],
+    symbol["testlist"],
+    symbol["testlist_safe"],
+    symbol["test"],
+    symbol["or_test"],
+    symbol["and_test"],
+    symbol["not_test"],
+    symbol["comparison"],
+    symbol["expr"],
+    symbol["xor_expr"],
+    symbol["and_expr"],
+    symbol["shift_expr"],
+    symbol["arith_expr"],
+    symbol["term"],
+    symbol["factor"],
+    symbol["power"],
     ]
 
 # comp_op: '<' | '>' | '=' | '>=' | '<=' | '<>' | '!=' | '=='
 #             | 'in' | 'not' 'in' | 'is' | 'is' 'not'
 _cmp_types = {
-    token.LESS : '<',
-    token.GREATER : '>',
-    token.EQEQUAL : '==',
-    token.EQUAL : '==',
-    token.LESSEQUAL : '<=',
-    token.GREATEREQUAL : '>=',
-    token.NOTEQUAL : '!=',
+    token["LESS"] : '<',
+    token["GREATER"] : '>',
+    token["EQEQUAL"] : '==',
+    token["EQUAL"] : '==',
+    token["LESSEQUAL"] : '<=',
+    token["GREATEREQUAL"] : '>=',
+    token["NOTEQUAL"] : '!=',
     }
 
 _legal_node_types = [
-    symbol.funcdef,
-    symbol.classdef,
-    symbol.stmt,
-    symbol.small_stmt,
-    symbol.flow_stmt,
-    symbol.simple_stmt,
-    symbol.compound_stmt,
-    symbol.expr_stmt,
-    symbol.print_stmt,
-    symbol.del_stmt,
-    symbol.pass_stmt,
-    symbol.break_stmt,
-    symbol.continue_stmt,
-    symbol.return_stmt,
-    symbol.raise_stmt,
-    symbol.import_stmt,
-    symbol.global_stmt,
-    symbol.exec_stmt,
-    symbol.assert_stmt,
-    symbol.if_stmt,
-    symbol.while_stmt,
-    symbol.for_stmt,
-    symbol.try_stmt,
-    symbol.with_stmt,
-    symbol.suite,
-    symbol.testlist,
-    symbol.testlist_safe,
-    symbol.test,
-    symbol.and_test,
-    symbol.not_test,
-    symbol.comparison,
-    symbol.exprlist,
-    symbol.expr,
-    symbol.xor_expr,
-    symbol.and_expr,
-    symbol.shift_expr,
-    symbol.arith_expr,
-    symbol.term,
-    symbol.factor,
-    symbol.power,
-    symbol.atom,
-    symbol.yield_stmt,
-    symbol.yield_expr,
+    symbol["funcdef"],
+    symbol["classdef"],
+    symbol["stmt"],
+    symbol["small_stmt"],
+    symbol["flow_stmt"],
+    symbol["simple_stmt"],
+    symbol["compound_stmt"],
+    symbol["expr_stmt"],
+    symbol["print_stmt"],
+    symbol["del_stmt"],
+    symbol["pass_stmt"],
+    symbol["break_stmt"],
+    symbol["continue_stmt"],
+    symbol["return_stmt"],
+    symbol["raise_stmt"],
+    symbol["import_stmt"],
+    symbol["global_stmt"],
+    symbol["exec_stmt"],
+    symbol["assert_stmt"],
+    symbol["if_stmt"],
+    symbol["while_stmt"],
+    symbol["for_stmt"],
+    symbol["try_stmt"],
+    symbol["with_stmt"],
+    symbol["suite"],
+    symbol["testlist"],
+    symbol["testlist_safe"],
+    symbol["test"],
+    symbol["and_test"],
+    symbol["not_test"],
+    symbol["comparison"],
+    symbol["exprlist"],
+    symbol["expr"],
+    symbol["xor_expr"],
+    symbol["and_expr"],
+    symbol["shift_expr"],
+    symbol["arith_expr"],
+    symbol["term"],
+    symbol["factor"],
+    symbol["power"],
+    symbol["atom"],
+    symbol["yield_stmt"],
+    symbol["yield_expr"],
     ]
 
 _assign_types = [
-    symbol.test,
-    symbol.or_test,
-    symbol.and_test,
-    symbol.not_test,
-    symbol.comparison,
-    symbol.expr,
-    symbol.xor_expr,
-    symbol.and_expr,
-    symbol.shift_expr,
-    symbol.arith_expr,
-    symbol.term,
-    symbol.factor,
+    symbol["test"],
+    symbol["or_test"],
+    symbol["and_test"],
+    symbol["not_test"],
+    symbol["comparison"],
+    symbol["expr"],
+    symbol["xor_expr"],
+    symbol["and_expr"],
+    symbol["shift_expr"],
+    symbol["arith_expr"],
+    symbol["term"],
+    symbol["factor"],
     ]
 
 _names = {}
-for k, v in symbol.sym_name.items():
+for k, v in sym_name.items():
     _names[k] = v
-for k, v in token.tok_name.items():
+for k, v in tok_name.items():
     _names[k] = v
 
 def debug_tree(tree):

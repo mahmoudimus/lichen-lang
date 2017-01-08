@@ -103,7 +103,7 @@ def generate_tokens(lines, flags):
             endmatch = endDFA.recognize(line)
             if endmatch >= 0:
                 pos = end = endmatch
-                tok = (tokens.STRING, contstr + line[:end], strstart[0],
+                tok = (tokens["STRING"], contstr + line[:end], strstart[0],
                        strstart[1], line)
                 token_list.append(tok)
                 last_comment = ''
@@ -111,7 +111,7 @@ def generate_tokens(lines, flags):
                 contline = None
             elif (needcont and not line.endswith('\\\n') and
                                not line.endswith('\\\r\n')):
-                tok = (tokens.ERRORTOKEN, contstr + line, strstart[0],
+                tok = (tokens["ERRORTOKEN"], contstr + line, strstart[0],
                        strstart[1], line)
                 token_list.append(tok)
                 last_comment = ''
@@ -140,11 +140,11 @@ def generate_tokens(lines, flags):
 
             if column > indents[-1]:           # count indents or dedents
                 indents.append(column)
-                token_list.append((tokens.INDENT, line[:pos], lnum, 0, line))
+                token_list.append((tokens["INDENT"], line[:pos], lnum, 0, line))
                 last_comment = ''
             while column < indents[-1]:
                 indents = indents[:-1]
-                token_list.append((tokens.DEDENT, '', lnum, pos, line))
+                token_list.append((tokens["DEDENT"], '', lnum, pos, line))
                 last_comment = ''
             if column != indents[-1]:
                 err = "unindent does not match any outer indentation level"
@@ -177,11 +177,11 @@ def generate_tokens(lines, flags):
                 token, initial = line[start:end], line[start]
                 if initial in numchars or \
                    (initial == '.' and token != '.'):      # ordinary number
-                    token_list.append((tokens.NUMBER, token, lnum, start, line))
+                    token_list.append((tokens["NUMBER"], token, lnum, start, line))
                     last_comment = ''
                 elif initial in '\r\n':
                     if parenlev <= 0:
-                        tok = (tokens.NEWLINE, last_comment, lnum, start, line)
+                        tok = (tokens["NEWLINE"], last_comment, lnum, start, line)
                         token_list.append(tok)
                     last_comment = ''
                 elif initial == '#':
@@ -193,7 +193,7 @@ def generate_tokens(lines, flags):
                     if endmatch >= 0:                     # all on one line
                         pos = endmatch
                         token = line[start:pos]
-                        tok = (tokens.STRING, token, lnum, start, line)
+                        tok = (tokens["STRING"], token, lnum, start, line)
                         token_list.append(tok)
                         last_comment = ''
                     else:
@@ -212,11 +212,11 @@ def generate_tokens(lines, flags):
                         contline = line
                         break
                     else:                                  # ordinary string
-                        tok = (tokens.STRING, token, lnum, start, line)
+                        tok = (tokens["STRING"], token, lnum, start, line)
                         token_list.append(tok)
                         last_comment = ''
                 elif initial in namechars:                 # ordinary name
-                    token_list.append((tokens.NAME, token, lnum, start, line))
+                    token_list.append((tokens["NAME"], token, lnum, start, line))
                     last_comment = ''
                 elif initial == '\\':                      # continued stmt
                     continued = 1
@@ -233,7 +233,7 @@ def generate_tokens(lines, flags):
                     if token in python_opmap:
                         punct = python_opmap[token]
                     else:
-                        punct = tokens.OP
+                        punct = tokens["OP"]
                     token_list.append((punct, token, lnum, start, line))
                     last_comment = ''
             else:
@@ -243,22 +243,22 @@ def generate_tokens(lines, flags):
                 if start<max and line[start] in single_quoted:
                     raise TokenError("EOL while scanning string literal",
                              line, lnum, start+1, token_list)
-                tok = (tokens.ERRORTOKEN, line[pos], lnum, pos, line)
+                tok = (tokens["ERRORTOKEN"], line[pos], lnum, pos, line)
                 token_list.append(tok)
                 last_comment = ''
                 pos = pos + 1
 
     lnum -= 1
     if not (flags & consts.PyCF_DONT_IMPLY_DEDENT):
-        if token_list and token_list[-1][0] != tokens.NEWLINE:
-            tok = (tokens.NEWLINE, '', lnum, 0, '\n')
+        if token_list and token_list[-1][0] != tokens["NEWLINE"]:
+            tok = (tokens["NEWLINE"], '', lnum, 0, '\n')
             token_list.append(tok)
         for indent in indents[1:]:                # pop remaining indent levels
-            token_list.append((tokens.DEDENT, '', lnum, pos, line))
-    tok = (tokens.NEWLINE, '', lnum, 0, '\n')
+            token_list.append((tokens["DEDENT"], '', lnum, pos, line))
+    tok = (tokens["NEWLINE"], '', lnum, 0, '\n')
     token_list.append(tok)
 
-    token_list.append((tokens.ENDMARKER, '', lnum, pos, line))
+    token_list.append((tokens["ENDMARKER"], '', lnum, pos, line))
     return token_list
 
 

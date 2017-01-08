@@ -1,10 +1,10 @@
 # New parser tests.
 import py
 import tokenize
-import token
 import StringIO
 from pyparser import parser, metaparser, pygram
 from pyparser.test.test_metaparser import MyGrammar
+from pyparser.pygram import tokens as token
 
 
 class SimpleParser(parser.Parser):
@@ -45,10 +45,10 @@ def tree_from_string(expected, gram):
             continue
         data = line.split()
         if data[0].isupper():
-            tp = getattr(token, data[0])
+            tp = token.get(data[0])
             if len(data) == 2:
                 value = data[1].strip("\"")
-            elif tp == token.NEWLINE:
+            elif tp == token["NEWLINE"]:
                 value = "\n"
             else:
                 value = ""
