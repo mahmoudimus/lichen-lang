@@ -16,3 +16,25 @@ details.
 
 You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Licence Details for compiler
+----------------------------
+
+See LICENCE-Python.txt for the licensing details applying to the compiler
+package.
+
+The compiler package has been modified to only provide essential abstract
+syntax tree support for Lichen. The following applies to these modifications:
+
+Copyright (C) 2014, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+
+Licence Details for pyparser
+----------------------------
+
+See LICENSE-PyPy.txt for the licensing details applying to the pyparser
+package.
+
+The pyparser package has been modified to work with the modified compiler
+package. The following applies to these modifications:
+
+Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>

@@ -26,8 +26,8 @@ parseFile(path) -> AST
 # and replace OWNER, ORGANIZATION, and YEAR as appropriate.
 
 from compiler.ast import *
-import parser
-import symbol
+import pyparser.pyparse as parser
+from pyparser.pygram import syms as symbol
 import token
 
 class WalkerError(StandardError):
