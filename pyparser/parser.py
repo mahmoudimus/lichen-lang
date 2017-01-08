@@ -164,6 +164,14 @@ class Nonterminal1(AbstractNonterminal):
         assert 0, "should be unreachable"
 
 
+class NonterminalEnc(Nonterminal1):
+    def __init__(self, type, child, encoding):
+        Nonterminal1.__init__(self, type, child)
+        self.encoding = encoding
+
+    def __repr__(self):
+        return "NonterminalEnc(type=%s, child=%r, encoding=%r)" % (self.type, self._child, self.encoding)
+
 
 class ParseError(Exception):
 

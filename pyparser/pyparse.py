@@ -161,6 +161,9 @@ class PythonParser(parser.Parser):
             self.root = None
         if enc is not None:
             compile_info.encoding = enc
+            # Wrap the tree in a special encoding declaration for parser module
+            # compatibility.
+            tree = parser.NonterminalEnc(pygram.syms.encoding_decl, tree, enc)
         return tree
 
 def parse(filename):
@@ -188,6 +191,8 @@ def st2tuple(tree, line_info=True, col_info=False):
         l = [tree.type]
         for i in range(0, tree.num_children()):
             l.append(st2tuple(tree.get_child(i)))
+        if isinstance(tree, parser.NonterminalEnc):
+            l.append(tree.encoding)
         return tuple(l)
     elif isinstance(tree, parser.Terminal):
         l = [tree.type, tree.value]
