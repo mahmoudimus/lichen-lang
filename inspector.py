@@ -303,17 +303,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         elif isinstance(n, compiler.ast.Tuple):
             return self.get_literal_instance(n, "tuple")
 
-        # Unsupported nodes.
-
-        elif isinstance(n, compiler.ast.GenExpr):
-            raise InspectError("Generator expressions are not supported.", path, n)
-
-        elif isinstance(n, compiler.ast.IfExp):
-            raise InspectError("If-else expressions are not supported.", path, n)
-
-        elif isinstance(n, compiler.ast.ListComp):
-            raise InspectError("List comprehensions are not supported.", path, n)
-
         # All other nodes are processed depth-first.
 
         else:

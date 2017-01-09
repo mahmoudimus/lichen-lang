@@ -931,25 +931,6 @@ class If(Node):
             self.else_ and "\nelse:%s" % indent("\n%s" % self.else_) or ""
             )
 
-class IfExp(Node):
-    def __init__(self, test, then, else_, lineno=None):
-        self.test = test
-        self.then = then
-        self.else_ = else_
-        self.lineno = lineno
-
-    def getChildren(self):
-        return self.test, self.then, self.else_
-
-    def getChildNodes(self):
-        return self.test, self.then, self.else_
-
-    def __repr__(self):
-        return "IfExp(%r, %r, %r)" % (self.test, self.then, self.else_)
-
-    def __str__(self):
-        return "%s if %s else %s" % (self.then, self.test, self.else_)
-
 class Import(Node):
     def __init__(self, names, lineno=None):
         self.names = names
@@ -1073,128 +1054,6 @@ class List(Node):
 
     def __str__(self):
         return "[%s]" % ", ".join(map(str, self.nodes))
-
-class ListComp(Node):
-    def __init__(self, expr, quals, lineno=None):
-        self.expr = expr
-        self.quals = quals
-        self.lineno = lineno
-
-    def getChildren(self):
-        children = []
-        children.append(self.expr)
-        children.extend(flatten(self.quals))
-        return tuple(children)
-
-    def getChildNodes(self):
-        nodelist = []
-        nodelist.append(self.expr)
-        nodelist.extend(flatten_nodes(self.quals))
-        return tuple(nodelist)
-
-    def __repr__(self):
-        return "ListComp(%r, %r)" % (self.expr, self.quals)
-
-    def __str__(self):
-        return "[%s %s]" % (self.expr, " ".join(map(str, self.quals)))
-
-class ListCompFor(Node):
-    def __init__(self, assign, list, ifs, lineno=None):
-        self.assign = assign
-        self.list = list
-        self.ifs = ifs
-        self.lineno = lineno
-
-    def getChildren(self):
-        children = []
-        children.append(self.assign)
-        children.append(self.list)
-        children.extend(flatten(self.ifs))
-        return tuple(children)
-
-    def getChildNodes(self):
-        nodelist = []
-        nodelist.append(self.assign)
-        nodelist.append(self.list)
-        nodelist.extend(flatten_nodes(self.ifs))
-        return tuple(nodelist)
-
-    def __repr__(self):
-        return "ListCompFor(%r, %r, %r)" % (self.assign, self.list, self.ifs)
-
-    def __str__(self):
-        return "for %s in %s%s" % (
-            self.assign, self.list,
-            self.ifs and " ".join(map(str, self.ifs)) or ""
-            )
-
-class ListCompIf(Node):
-    def __init__(self, test, lineno=None):
-        self.test = test
-        self.lineno = lineno
-
-    def getChildren(self):
-        return self.test,
-
-    def getChildNodes(self):
-        return self.test,
-
-    def __repr__(self):
-        return "ListCompIf(%r)" % (self.test,)
-
-    def __str__(self):
-        return " if %s" % self.test
-
-class SetComp(Node):
-    def __init__(self, expr, quals, lineno=None):
-        self.expr = expr
-        self.quals = quals
-        self.lineno = lineno
-
-    def getChildren(self):
-        children = []
-        children.append(self.expr)
-        children.extend(flatten(self.quals))
-        return tuple(children)
-
-    def getChildNodes(self):
-        nodelist = []
-        nodelist.append(self.expr)
-        nodelist.extend(flatten_nodes(self.quals))
-        return tuple(nodelist)
-
-    def __repr__(self):
-        return "SetComp(%r, %r)" % (self.expr, self.quals)
-
-    def __str__(self):
-        return "{%s %s}" % (self.expr, " ".join(map(str, self.quals)))
-
-class DictComp(Node):
-    def __init__(self, key, value, quals, lineno=None):
-        self.key = key
-        self.value = value
-        self.quals = quals
-        self.lineno = lineno
-
-    def getChildren(self):
-        children = []
-        children.append(self.key)
-        children.append(self.value)
-        children.extend(flatten(self.quals))
-        return tuple(children)
-
-    def getChildNodes(self):
-        nodelist = []
-        nodelist.append(self.key)
-        nodelist.append(self.value)
-        nodelist.extend(flatten_nodes(self.quals))
-        return tuple(nodelist)
-
-    def __repr__(self):
-        return "DictComp(%r, %r, %r)" % (self.key, self.value, self.quals)
-
-    def __str__(self):
-        return "{%s : %s %s}" % (self.key, self.value, " ".join(map(str, self.quals)))
 
 class Mod(Node, Operator):
     def __init__(self, leftright, lineno=None):
@@ -1764,23 +1623,6 @@ class With(Node):
             self.vars and " as %s" % ", ".join(map(str, self.vars)),
             indent("\n%s" % self.body),
             )
-
-class Yield(Node):
-    def __init__(self, value, lineno=None):
-        self.value = value
-        self.lineno = lineno
-
-    def getChildren(self):
-        return self.value,
-
-    def getChildNodes(self):
-        return self.value,
-
-    def __repr__(self):
-        return "Yield(%r)" % (self.value,)
-
-    def __str__(self):
-        return "yield %s" % self.value
 
 for name, obj in globals().items():
     if isinstance(obj, type) and issubclass(obj, Node):
