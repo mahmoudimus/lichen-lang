@@ -3,6 +3,10 @@ OBJ = $(SRC:.c=.o)
 CFLAGS = -I. -finput-charset=UTF-8
 LDFLAGS = -lm -lgc
 
+ifdef ARCH
+CC := $(ARCH)-$(CC)
+endif
+
 all: main
 
 clean:

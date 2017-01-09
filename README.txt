@@ -1,11 +1,13 @@
 Introduction
 ============
 
-Lichen is a Python-like language and toolchain. The language foregoes various
-dynamic aspects of Python to provide a foundation upon which more predictable
-programs can be built, while preserving essential functionality to make the
-core of the language seem very much like Python. The general syntax is largely
-identical to Python, with only certain syntactic constructs being unsupported.
+Lichen is both a Python-like language and a toolchain for that language. The
+language foregoes various dynamic aspects of Python to provide a foundation
+upon which more predictable programs can be built, while preserving essential
+functionality to make the core of the language seem very much "like Python"
+(thus yielding the name "Lichen"). The general syntax is largely identical to
+Python, with only certain syntactic constructs being deliberately unsupported,
+largely because the associated features are not desired.
 
 The toolchain employs existing tokeniser and parser software to obtain an
 abstract syntax tree which is then inspected to provide data to support
@@ -13,7 +15,48 @@ deductions about the structure and nature of a given program. With the
 information obtained from these processes, a program is then constructed,
 consisting of a number of source files in the target compilation language
 (which is currently the C programming language). This generated program may be
-compiled and run, hopefully producing the intended results.
+compiled and run, hopefully producing the results intended by the source
+program's authors.
+
+Lichen source files use the .py suffix since the language syntax is
+superficially compatible with Python, allowing text editors to provide
+highlighting and editing support for Lichen programs without the need to
+reconfigure such tools. However, an alternative suffix is likely to be
+introduced in future.
+
+Getting Started
+===============
+
+The principal interface to the toolchain is the lplc command which can be run
+on source files as in the following example:
+
+lplc tests/unicode.py
+
+This causes the inspection of the indicated program file and all imported
+modules, the deduction and optimisation of program information, and the
+generation and translation of the program to a form suitable for compilation.
+By default, compilation is performed by invoking the widely-known make
+utility.
+
+The results of this process are stored in the _lplc directory, with the
+executable program being written out as "_main" in the working directory
+unless the -o option is presented to lplc. For example:
+
+lplc -o unicode tests/unicode.py
+
+The executable program here will be written out as "unicode" and can be run
+directly:
+
+./unicode
+
+Since the executable program is merely C source code and can be compiled using
+a normal C compiler, it may also be compiled using a cross compiler by setting
+the ARCH environment variable. For example:
+
+ARCH=mipsel-linux-gnu lplc -o unicode tests/unicode.py
+
+This employs a cross compiler targeting the mipsel (little-endian MIPS)
+architecture running GNU/Linux.
 
 Contact, Copyright and Licence Information
 ==========================================
