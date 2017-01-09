@@ -6,7 +6,8 @@ DATADIR="_lplc"
 # Expect failure from the "bad" tests.
 
 expect_failure() {
-    return `echo "$FILENAME" | grep -q '_bad[._]'`
+    echo "$FILENAME" | grep -q '_bad[._/]'
+    return $?
 }
 
 # Check deduction output for type warnings, indicating that the program contains
@@ -65,7 +66,7 @@ for FILENAME in tests/* ; do
 
     echo "$FILENAME..." 1>&2
     if ! "$LPLC" -c -r "$FILENAME" ; then
-        if ! expect_failure; then
+        if ! expect_failure ; then
             exit 1
         else
             echo 1>&2
