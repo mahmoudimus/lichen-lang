@@ -503,17 +503,10 @@ class Transformer:
         return self.testlist(nodelist)
 
     def test(self, nodelist):
-        # or_test ['if' or_test 'else' test] | lambdef
+        # or_test | lambdef
         if len(nodelist) == 1 and nodelist[0][0] == symbol["lambdef"]:
             return self.lambdef(nodelist[0])
         then = self.com_node(nodelist[0])
-        if len(nodelist) > 1:
-            assert len(nodelist) == 5
-            assert nodelist[1][1] == 'if'
-            assert nodelist[3][1] == 'else'
-            test = self.com_node(nodelist[2])
-            else_ = self.com_node(nodelist[4])
-            return IfExp(test, then, else_, lineno=nodelist[1][2])
         return then
 
     def or_test(self, nodelist):
