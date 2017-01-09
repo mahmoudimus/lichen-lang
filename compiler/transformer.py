@@ -178,68 +178,13 @@ class Transformer:
         ### is this sufficient?
         return Expression(self.com_node(nodelist[0]))
 
-    def decorator_name(self, nodelist):
-        listlen = len(nodelist)
-        assert listlen >= 1 and listlen % 2 == 1
-
-        item = self.atom_name(nodelist)
-        i = 1
-        while i < listlen:
-            assert nodelist[i][0] == token["DOT"]
-            assert nodelist[i + 1][0] == token["NAME"]
-            item = Getattr(item, nodelist[i + 1][1])
-            i += 2
-
-        return item
-
-    def decorator(self, nodelist):
-        # '@' dotted_name [ '(' [arglist] ')' ]
-        assert len(nodelist) in (3, 5, 6)
-        assert nodelist[0][0] == token["AT"]
-        assert nodelist[-1][0] == token["NEWLINE"]
-
-        assert nodelist[1][0] == symbol["dotted_name"]
-        funcname = self.decorator_name(nodelist[1][1:])
-
-        if len(nodelist) > 3:
-            assert nodelist[2][0] == token["LPAR"]
-            expr = self.com_call_function(funcname, nodelist[3])
-        else:
-            expr = funcname
-
-        return expr
-
-    def decorators(self, nodelist):
-        # decorators: decorator ([NEWLINE] decorator)* NEWLINE
-        items = []
-        for dec_nodelist in nodelist:
-            assert dec_nodelist[0] == symbol["decorator"]
-            items.append(self.decorator(dec_nodelist[1:]))
-        return Decorators(items)
-
-    def decorated(self, nodelist):
-        assert nodelist[0][0] == symbol["decorators"]
-        if nodelist[1][0] == symbol["funcdef"]:
-            n = [nodelist[0]] + list(nodelist[1][1:])
-            return self.funcdef(n)
-        elif nodelist[1][0] == symbol["classdef"]:
-            decorators = self.decorators(nodelist[0][1:])
-            cls = self.classdef(nodelist[1][1:])
-            cls.decorators = decorators
-            return cls
-        raise WalkerError()
-
     def funcdef(self, nodelist):
-        #                    -6   -5    -4         -3  -2    -1
-        # funcdef: [decorators] 'def' NAME parameters ':' suite
+        #          -5    -4   -3         -2  -1
+        # funcdef: 'def' NAME parameters ':' suite
         # parameters: '(' [varargslist] ')'
 
-        if len(nodelist) == 6:
-            assert nodelist[0][0] == symbol["decorators"]
-            decorators = self.decorators(nodelist[0][1:])
-        else:
-            assert len(nodelist) == 5
-            decorators = None
+        assert len(nodelist) == 5
+        decorators = None
 
         lineno = nodelist[-4][2]
         name = nodelist[-4][1]
@@ -399,17 +344,6 @@ class Transformer:
             return Return(Const(None), lineno=nodelist[0][2])
         return Return(self.com_node(nodelist[1]), lineno=nodelist[0][2])
 
-    def yield_stmt(self, nodelist):
-        expr = self.com_node(nodelist[0])
-        return Discard(expr, lineno=expr.lineno)
-
-    def yield_expr(self, nodelist):
-        if len(nodelist) > 1:
-            value = self.com_node(nodelist[1])
-        else:
-            value = Const(None)
-        return Yield(value, lineno=nodelist[0][2])
-
     def raise_stmt(self, nodelist):
         # raise: [test [',' test [',' test]]]
         if len(nodelist) > 5:
@@ -564,11 +498,8 @@ class Transformer:
     exprlist = testlist
 
     def testlist_comp(self, nodelist):
-        # test ( comp_for | (',' test)* [','] )
+        # test ( (',' test)* [','] )
         assert nodelist[0][0] == symbol["test"]
-        if len(nodelist) == 2 and nodelist[1][0] == symbol["comp_for"]:
-            test = self.com_node(nodelist[0])
-            return self.com_generator_expression(test, nodelist[1])
         return self.testlist(nodelist)
 
     def test(self, nodelist):
@@ -1084,115 +1015,17 @@ class Transformer:
             stmts.append(result)
 
     def com_list_constructor(self, nodelist):
-        # listmaker: test ( list_for | (',' test)* [','] )
+        # listmaker: test ( (',' test)* [','] )
         values = []
         for i in range(1, len(nodelist)):
-            if nodelist[i][0] == symbol["list_for"]:
-                assert len(nodelist[i:]) == 1
-                return self.com_list_comprehension(values[0],
-                                                   nodelist[i])
-            elif nodelist[i][0] == token["COMMA"]:
+            if nodelist[i][0] == token["COMMA"]:
                 continue
             values.append(self.com_node(nodelist[i]))
         return List(values, lineno=values[0].lineno)
 
-    def com_list_comprehension(self, expr, node):
-        return self.com_comprehension(expr, None, node, 'list')
-
-    def com_comprehension(self, expr1, expr2, node, type):
-        # list_iter: list_for | list_if
-        # list_for: 'for' exprlist 'in' testlist [list_iter]
-        # list_if: 'if' test [list_iter]
-
-        # XXX should raise SyntaxError for assignment
-        # XXX(avassalotti) Set and dict comprehensions should have generator
-        #                  semantics. In other words, they shouldn't leak
-        #                  variables outside of the comprehension's scope.
-
-        lineno = node[1][2]
-        fors = []
-        while node:
-            t = node[1][1]
-            if t == 'for':
-                assignNode = self.com_assign(node[2], OP_ASSIGN)
-                compNode = self.com_node(node[4])
-                newfor = ListCompFor(assignNode, compNode, [])
-                newfor.lineno = node[1][2]
-                fors.append(newfor)
-                if len(node) == 5:
-                    node = None
-                elif type == 'list':
-                    node = self.com_list_iter(node[5])
-                else:
-                    node = self.com_comp_iter(node[5])
-            elif t == 'if':
-                test = self.com_node(node[2])
-                newif = ListCompIf(test, lineno=node[1][2])
-                newfor.ifs.append(newif)
-                if len(node) == 3:
-                    node = None
-                elif type == 'list':
-                    node = self.com_list_iter(node[3])
-                else:
-                    node = self.com_comp_iter(node[3])
-            else:
-                raise SyntaxError, \
-                      ("unexpected comprehension element: %s %d"
-                       % (node, lineno))
-        if type == 'list':
-            return ListComp(expr1, fors, lineno=lineno)
-        elif type == 'set':
-            return SetComp(expr1, fors, lineno=lineno)
-        elif type == 'dict':
-            return DictComp(expr1, expr2, fors, lineno=lineno)
-        else:
-            raise ValueError("unexpected comprehension type: " + repr(type))
-
-    def com_list_iter(self, node):
-        assert node[0] == symbol["list_iter"]
-        return node[1]
-
-    def com_comp_iter(self, node):
-        assert node[0] == symbol["comp_iter"]
-        return node[1]
-
-    def com_generator_expression(self, expr, node):
-        # comp_iter: comp_for | comp_if
-        # comp_for: 'for' exprlist 'in' test [comp_iter]
-        # comp_if: 'if' test [comp_iter]
-
-        lineno = node[1][2]
-        fors = []
-        while node:
-            t = node[1][1]
-            if t == 'for':
-                assignNode = self.com_assign(node[2], OP_ASSIGN)
-                genNode = self.com_node(node[4])
-                newfor = GenExprFor(assignNode, genNode, [],
-                                    lineno=node[1][2])
-                fors.append(newfor)
-                if (len(node)) == 5:
-                    node = None
-                else:
-                    node = self.com_comp_iter(node[5])
-            elif t == 'if':
-                test = self.com_node(node[2])
-                newif = GenExprIf(test, lineno=node[1][2])
-                newfor.ifs.append(newif)
-                if len(node) == 3:
-                    node = None
-                else:
-                    node = self.com_comp_iter(node[3])
-            else:
-                raise SyntaxError, \
-                        ("unexpected generator expression element: %s %d"
-                         % (node, lineno))
-        fors[0].is_outmost = True
-        return GenExpr(GenExprInner(expr, fors), lineno=lineno)
-
     def com_dictorsetmaker(self, nodelist):
-        # dictorsetmaker: ( (test ':' test (comp_for | (',' test ':' test)* [','])) |
-        #                   (test (comp_for | (',' test)* [','])) )
+        # dictorsetmaker: ( (test ':' test ( (',' test ':' test)* [','])) |
+        #                   (test ( (',' test)* [','])) )
         assert nodelist[0] == symbol["dictorsetmaker"]
         nodelist = nodelist[1:]
         if len(nodelist) == 1 or nodelist[1][0] == token["COMMA"]:
@@ -1201,16 +1034,6 @@ class Transformer:
             for i in range(0, len(nodelist), 2):
                 items.append(self.com_node(nodelist[i]))
             return Set(items, lineno=items[0].lineno)
-        elif nodelist[1][0] == symbol["comp_for"]:
-            # set comprehension
-            expr = self.com_node(nodelist[0])
-            return self.com_comprehension(expr, None, nodelist[1], 'set')
-        elif len(nodelist) > 3 and nodelist[3][0] == symbol["comp_for"]:
-            # dict comprehension
-            assert nodelist[1][0] == token["COLON"]
-            key = self.com_node(nodelist[0])
-            value = self.com_node(nodelist[2])
-            return self.com_comprehension(key, value, nodelist[3], 'dict')
         else:
             # dict literal
             items = []
@@ -1262,12 +1085,6 @@ class Transformer:
             # positional or named parameters
             kw, result = self.com_argument(node, kw, star_node)
 
-            if len_nodelist != 2 and isinstance(result, GenExpr) \
-               and len(node) == 3 and node[2][0] == symbol["comp_for"]:
-                # allow f(x for x in y), but reject f(x for x in y, 1)
-                # should use f((x for x in y), 1) instead of f(x for x in y, 1)
-                raise SyntaxError, 'generator expression needs parenthesis'
-
             args.append(result)
             i = i + 2
 
@@ -1275,9 +1092,6 @@ class Transformer:
                         lineno=extractLineNo(nodelist))
 
     def com_argument(self, nodelist, kw, star_node):
-        if len(nodelist) == 3 and nodelist[2][0] == symbol["comp_for"]:
-            test = self.com_node(nodelist[1])
-            return 0, self.com_generator_expression(test, nodelist[2])
         if len(nodelist) == 2:
             if kw:
                 raise SyntaxError, "non-keyword arg after keyword arg"
@@ -1477,8 +1291,6 @@ _legal_node_types = [
     symbol["factor"],
     symbol["power"],
     symbol["atom"],
-    symbol["yield_stmt"],
-    symbol["yield_expr"],
     ]
 
 _assign_types = [
