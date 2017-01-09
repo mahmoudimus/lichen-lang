@@ -20,12 +20,6 @@ class SyntaxError(Exception):
 class IndentationError(SyntaxError):
     pass
 
-class ASTError(Exception):
-    def __init__(self, msg, ast_node ):
-        self.msg = msg
-        self.ast_node = ast_node
-
-
 class TokenError(SyntaxError):
 
     def __init__(self, msg, line, lineno, column, tokens, lastlineno=0):
