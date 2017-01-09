@@ -3,6 +3,7 @@
 from errors import *
 from os import rename
 from os.path import abspath, exists, join, split
+from pyparser import error
 from subprocess import Popen, PIPE
 from time import time
 import importer, deducer, optimiser, generator, translator
@@ -25,6 +26,12 @@ def show_missing(missing):
     missing.sort()
     for module_name, name in missing:
         print >>sys.stderr, "Module %s references an unknown object: %s" % (module_name, name)
+
+def show_syntax_error(exc):
+    print >>sys.stderr, "Syntax error at column %d on line %d in file %s:" % (exc.offset, exc.lineno, exc.filename)
+    print >>sys.stderr
+    print >>sys.stderr, exc.text.rstrip()
+    print >>sys.stderr, " " * exc.offset + "^"
 
 def stopwatch(activity, now):
     print >>sys.stderr, "%s took %.2f seconds" % (activity, time() - now)
@@ -150,6 +157,12 @@ if __name__ == "__main__":
             rename(join(generated_dir, "main"), output)
 
     # Report any errors.
+
+    except error.SyntaxError, exc:
+        show_syntax_error(exc)
+        if "-tb" in args:
+            raise
+        sys.exit(1)
 
     except ProcessingError, exc:
         print exc
