@@ -115,6 +115,9 @@ class Importer:
         self.make_cache()
 
     def make_cache(self):
+
+        "Make a cache directory if it does not already exist."
+
         if self.cache and not exists(self.cache):
             makedirs(self.cache)
 
