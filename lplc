@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 from errors import *
+from os import rename
 from os.path import abspath, exists, join, split
+from subprocess import Popen, PIPE
 from time import time
 import importer, deducer, optimiser, generator, translator
 import sys
@@ -28,25 +30,75 @@ def stopwatch(activity, now):
     print >>sys.stderr, "%s took %.2f seconds" % (activity, time() - now)
     return time()
 
+def call(tokens, verbose=False):
+    out = not verbose and PIPE or None
+    cmd = Popen(tokens, stdout=out, stderr=out)
+    stdout, stderr = cmd.communicate()
+    return cmd.wait()
+
 # Main program.
 
 if __name__ == "__main__":
-    args = sys.argv[2:]
+    args = sys.argv[1:]
     path = libdirs + sys.path[:]
 
-    filename = abspath(sys.argv[1])
+    # Determine the options and arguments.
+
+    verbose = False
+    reset = False
+    debug = False
+    make = True
+    make_verbose = True
+
+    filenames = []
+    outputs = []
+
+    # Obtain program filenames by default.
+
+    l = filenames
+
+    for arg in args:
+        if arg == "-v": verbose = True
+        elif arg == "-r": reset = True
+        elif arg == "-g": debug = True
+        elif arg == "-c": make = False
+        elif arg == "-q": make_verbose = False
+        elif arg == "-o": l = outputs
+        else:
+            l.append(arg)
+
+            # Revert to collecting program filenames after obtaining the output
+            # executable filename.
+
+            if l is outputs: l = filenames
+
+    # Obtain the program filename.
+
+    if len(filenames) > 1:
+        print >>sys.stderr, "Only one main program file can be specified."
+        sys.exit(1)
+
+    filename = abspath(filenames[0])
     path.append(split(filename)[0])
 
-    verbose = "-v" in args
-    reset = "-r" in args
-    debug = "-g" in args
+    # Obtain the output filename.
+
+    output = outputs and outputs[0] or "main"
+
+    # Define the output data directories.
+
+    datadir = "_lplc"
+    cache_dir = join(datadir, "_cache")
+    deduced_dir = join(datadir, "_deduced")
+    output_dir = join(datadir, "_output")
+    generated_dir = join(datadir, "_generated")
 
     # Load the program.
 
     try:
         start = now = time()
 
-        i = importer.Importer(path, "_cache", verbose)
+        i = importer.Importer(path, cache_dir, verbose)
         m = i.initialise(filename, reset)
         success = i.finalise()
 
@@ -58,25 +110,44 @@ if __name__ == "__main__":
             show_missing(i.missing)
             sys.exit(1)
 
-        d = deducer.Deducer(i, "_deduced")
+        d = deducer.Deducer(i, deduced_dir)
         d.to_output()
 
         now = stopwatch("Deduction", now)
 
-        o = optimiser.Optimiser(i, d, "_output")
+        o = optimiser.Optimiser(i, d, output_dir)
         o.to_output()
 
         now = stopwatch("Optimisation", now)
 
-        g = generator.Generator(i, o, "_generated")
+        g = generator.Generator(i, o, generated_dir)
         g.to_output(debug)
 
         now = stopwatch("Generation", now)
 
-        t = translator.Translator(i, d, o, "_generated")
+        t = translator.Translator(i, d, o, generated_dir)
         t.to_output()
 
-        stopwatch("Translation", now)
+        now = stopwatch("Translation", now)
+
+        # Compile the program unless otherwise indicated.
+
+        if make:
+            make_clean_cmd = ["make", "-C", generated_dir, "clean"]
+            make_cmd = make_clean_cmd[:-1]
+
+            retval = call(make_clean_cmd, make_verbose)
+            if not retval:
+                retval = call(make_cmd, make_verbose)
+
+            if not retval:
+                stopwatch("Compilation", now)
+            else:
+                sys.exit(retval)
+
+            # Move the executable into the current directory.
+
+            rename(join(generated_dir, "main"), output)
 
     # Report any errors.
 

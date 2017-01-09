@@ -1,5 +1,8 @@
 #!/bin/sh
 
+LPLC="./lplc"
+DATADIR="_lplc"
+
 # Expect failure from the "bad" tests.
 
 expect_failure() {
@@ -11,8 +14,8 @@ expect_failure() {
 
 check_type_warnings() {
 
-    if [ -e "_deduced/type_warnings" ] && \
-       [ `stat -c %s "_deduced/type_warnings"` -ne 0 ] ; then
+    if [ -e "$DATADIR/_deduced/type_warnings" ] && \
+       [ `stat -c %s "$DATADIR/_deduced/type_warnings"` -ne 0 ] ; then
 
        echo "Type warnings in deduced information." 1>&2
        return 1
@@ -61,7 +64,7 @@ for FILENAME in tests/* ; do
     # Run tests without an existing cache.
 
     echo "$FILENAME..." 1>&2
-    if ! ./lplc "$FILENAME" -r ; then
+    if ! "$LPLC" -c -r "$FILENAME" ; then
         if ! expect_failure; then
             exit 1
         else
@@ -73,7 +76,7 @@ for FILENAME in tests/* ; do
     # Check for unresolved names in the cache.
 
     echo " (depends)..." 1>&2
-    for CACHEFILE in "_cache/"* ; do
+    for CACHEFILE in "$DATADIR/_cache/"* ; do
         STARTLINE=`grep -n '^deferred:' "$CACHEFILE" | cut -d: -f 1`
         if tail -n +$(($STARTLINE + 2)) "$CACHEFILE" | grep -q '<depends>' ; then
            echo "Unresolved names in the cache." 1>&2
@@ -89,7 +92,7 @@ for FILENAME in tests/* ; do
     # Run tests with an existing cache.
 
     echo " (cached)..." 1>&2
-    if ! ./lplc "$FILENAME" ; then exit 1 ; fi
+    if ! "$LPLC" -c "$FILENAME" ; then exit 1 ; fi
 
     echo " (warnings)..." 1>&2
     if ! check_type_warnings ; then exit 1 ; fi
@@ -101,13 +104,13 @@ for FILENAME in tests/* ; do
         OUTLOG="_results/$TESTNAME.out"
 
         echo " (build)..." 1>&2
-        if ! make -C _generated clean > "$BUILDLOG" || \
-           ! make -C _generated > "$BUILDLOG" ; then
+        if ! make -C "$DATADIR/_generated" clean > "$BUILDLOG" || \
+           ! make -C "$DATADIR/_generated" > "$BUILDLOG" ; then
             exit 1
         fi
 
         echo " (run)..." 1>&2
-        if ! "_generated/main" > "$OUTLOG" < "$TESTINPUT" ; then
+        if ! "$DATADIR/_generated/main" > "$OUTLOG" < "$TESTINPUT" ; then
             exit 1
         fi
     fi
