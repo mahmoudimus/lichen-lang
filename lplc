@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
     # Obtain the output filename.
 
-    output = outputs and outputs[0] or "main"
+    output = outputs and outputs[0] or "_main"
 
     # Define the output data directories.
 
