@@ -32,6 +32,11 @@ class OSError(Exception):
         self.value = value
         self.arg = arg
 
+    def __str__(self):
+        return str(buffer(["OSError(", repr(self.value), ", ", repr(self.arg), ")"]))
+
+    __repr__ = __str__
+
 class RuntimeError(Exception): pass
 class RuntimeWarning(Warning): pass
 class SystemError(Exception): pass
