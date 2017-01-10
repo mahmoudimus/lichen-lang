@@ -337,7 +337,19 @@ def encode_literal_constant_value(value):
     if isinstance(value, (int, float)):
         return str(value)
     else:
-        return '"%s"' % str(value).replace('"', '\\"').replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r")
+        l = []
+
+        # Encode characters including non-ASCII ones.
+
+        for c in str(value):
+            if c == '"': l.append('\\"')
+            elif c == '\n': l.append('\\n')
+            elif c == '\t': l.append('\\t')
+            elif c == '\r': l.append('\\r')
+            elif 0x20 <= ord(c) < 0x80: l.append(c)
+            else: l.append("\\x%02x" % ord(c))
+
+        return '"%s"' % "".join(l)
 
 def encode_literal_data_initialiser(style):
 
