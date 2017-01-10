@@ -1,7 +1,29 @@
 #!/bin/sh
 
+# This tool runs the toolchain for each of the tests, optionally building and
+# running the test programs.
+#
+# Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program.  If not, see <http://www.gnu.org/licenses/>.
+
+PROGNAME=$0
+OPTION=$1
+
 LPLC="./lplc"
 DATADIR="_lplc"
+TESTINPUT="_results/testinput.txt"
 
 # Expect failure from the "bad" tests.
 
@@ -27,19 +49,46 @@ check_type_warnings() {
 
 # Main program.
 
-OPTION=$1
-TESTINPUT="_results/testinput.txt"
+# Show help if requested.
 
-# Make any required results directory.
+if [ "$OPTION" = '--help' ] ; then
+    cat 1>&2 <<EOF
+Usage: $0 [ --build | --build-only | --run-built ]
 
-if [ "$OPTION" = '--build' ] || [ "$OPTION" = '--build-only' ] ; then
-    if [ ! -e "_results" ]; then
-        mkdir "_results"
-    else
-        rm "_results/"*
-    fi
+Run the toolchain over all tests in the tests directory.
 
-    cp "tests/testinput.txt" "$TESTINPUT"
+If --build is specified, the generated program code will be compiled and run,
+with the results collected in the _results directory.
+
+If --build-only is specified, the generated programs themselves will be
+collected in the _results directory, each taking their name from that of the
+main program file used as input.
+
+If --run-built is specified, any generated programs in the _results directory
+will be run and their output collected in the _results directory.
+
+By using --build-only on one system, copying the _results directory to another
+system, and then running this script with the --run-built option on the other
+system, it becomes possible to test the toolchain output on the other system
+without needing to actually use the toolchain on that system. This permits the
+testing of cross-compiled programs.
+
+For example, to build on one system but not run the generated programs:
+
+ARCH=mipsel-linux-gnu $PROGNAME --build-only
+
+And to run the generated programs on another system:
+
+$PROGNAME --run-built
+
+Of course, this script will need to be copied to the target system if it is not
+already available there.
+
+Build and output logs are stored in the _results directory with the .build and
+.out suffixes employed respectively, one of each kind for each generated
+program.
+EOF
+    exit 1
 fi
 
 # If just running existing programs, do so now and exit.
@@ -64,6 +113,18 @@ if [ "$OPTION" = '--run-built' ] ; then
     done
 
     exit 0
+fi
+
+# Make any required results directory.
+
+if [ "$OPTION" = '--build' ] || [ "$OPTION" = '--build-only' ] ; then
+    if [ ! -e "_results" ]; then
+        mkdir "_results"
+    else
+        rm "_results/"*
+    fi
+
+    cp "tests/testinput.txt" "$TESTINPUT"
 fi
 
 # Perform each test.
