@@ -40,10 +40,6 @@ void __newdata_mapping(__attr args[], unsigned int number);
 
 void __raise_eof_error();
 
-void __raise_incomplete_sequence_error(__attr value, __attr arg);
-
-void __raise_invalid_sequence_error(__attr value, __attr arg);
-
 void __raise_io_error(__attr value);
 
 void __raise_memory_error();

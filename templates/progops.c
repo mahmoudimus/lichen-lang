@@ -103,24 +103,6 @@ void __raise_eof_error()
 #endif /* __HAVE___builtins___exception_io_EOFError */
 }
 
-void __raise_incomplete_sequence_error(__attr value, __attr arg)
-{
-#ifdef __HAVE_posix_iconv_IncompleteSequenceError
-    __attr args[3] = {{0, 0}, value, arg};
-    __attr exc = __new_posix_iconv_IncompleteSequenceError(args);
-    __Raise(exc);
-#endif /* __HAVE_posix_iconv_IncompleteSequenceError */
-}
-
-void __raise_invalid_sequence_error(__attr value, __attr arg)
-{
-#ifdef __HAVE_posix_iconv_InvalidSequenceError
-    __attr args[3] = {{0, 0}, value, arg};
-    __attr exc = __new_posix_iconv_InvalidSequenceError(args);
-    __Raise(exc);
-#endif /* __HAVE_posix_iconv_InvalidSequenceError */
-}
-
 void __raise_io_error(__attr value)
 {
 #ifdef __HAVE___builtins___exception_io_IOError
