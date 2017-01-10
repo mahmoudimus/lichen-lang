@@ -22,10 +22,17 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.types import check_int, check_string
 from native import iconv, iconv_close, iconv_open, iconv_reset
 
-# Errors produced by iconv.
+class IncompleteSequenceError(OSError):
 
-EINVAL = 22
-EILSEQ = 84
+    "An error indicating an incomplete multibyte sequence."
+
+    pass
+
+class InvalidSequenceError(OSError):
+
+    "An error indicating an incomplete multibyte sequence."
+
+    pass
 
 class ConverterError(Exception):
 
@@ -86,14 +93,14 @@ class Converter:
 
             # Incomplete input does not cause an exception.
 
-            except OSError, exc:
-                if exc.value == EINVAL:
-                    self.result.append(exc.arg)
-                    return
-                elif exc.value == EILSEQ:
-                    raise UnicodeDecodeError(exc.arg)
-                else:
-                    raise
+            except IncompleteSequenceError, exc:
+                self.result.append(exc.arg)
+                return
+
+            # Invalid input causes a Unicode exception.
+
+            except InvalidSequenceError, exc:
+                raise UnicodeDecodeError(exc.arg)
 
             # Add any returned text to the result.
 

@@ -24,7 +24,11 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from posix.iconv import IncompleteSequenceError, InvalidSequenceError
+
 def iconv(cd, state):
+    IncompleteSequenceError
+    InvalidSequenceError
     OSError
 
 def iconv_close(cd):
