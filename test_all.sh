@@ -28,18 +28,43 @@ check_type_warnings() {
 # Main program.
 
 OPTION=$1
+TESTINPUT="_results/testinput.txt"
 
 # Make any required results directory.
 
-if [ "$OPTION" = '--build' ]; then
+if [ "$OPTION" = '--build' ] || [ "$OPTION" = '--build-only' ] ; then
     if [ ! -e "_results" ]; then
         mkdir "_results"
     else
         rm "_results/"*
     fi
+
+    cp "tests/testinput.txt" "$TESTINPUT"
 fi
 
-TESTINPUT="tests/testinput.txt"
+# If just running existing programs, do so now and exit.
+
+if [ "$OPTION" = '--run-built' ] ; then
+    for FILENAME in _results/* ; do
+        TESTNAME=`basename "$FILENAME"`
+
+        # Skip non-program files.
+
+        if [ ! -x "$FILENAME" ]; then
+            continue
+        fi
+
+        echo "$FILENAME..." 1>&2
+        OUTLOG="_results/$TESTNAME.out"
+
+        echo " (run)..." 1>&2
+        if ! "$FILENAME" > "$OUTLOG" < "$TESTINPUT" ; then
+            exit 1
+        fi
+    done
+
+    exit 0
+fi
 
 # Perform each test.
 
@@ -100,7 +125,7 @@ for FILENAME in tests/* ; do
 
     # Build and run if appropriate.
 
-    if [ "$OPTION" = '--build' ]; then
+    if [ "$OPTION" = '--build' ] || [ "$OPTION" = "--build-only" ] ; then
         BUILDLOG="_results/$TESTNAME.build"
         OUTLOG="_results/$TESTNAME.out"
 
@@ -110,9 +135,13 @@ for FILENAME in tests/* ; do
             exit 1
         fi
 
-        echo " (run)..." 1>&2
-        if ! "$DATADIR/_generated/main" > "$OUTLOG" < "$TESTINPUT" ; then
-            exit 1
+        if [ "$OPTION" = "--build-only" ]; then
+            mv "$DATADIR/_generated/main" "_results/$TESTNAME"
+        else
+            echo " (run)..." 1>&2
+            if ! "$DATADIR/_generated/main" > "$OUTLOG" < "$TESTINPUT" ; then
+                exit 1
+            fi
         fi
     fi
 
