@@ -58,6 +58,42 @@ ARCH=mipsel-linux-gnu lplc -o unicode tests/unicode.py
 This employs a cross compiler targeting the mipsel (little-endian MIPS)
 architecture running GNU/Linux.
 
+Test Suite
+==========
+
+A test suite is provided to exercise the toolchain and expose regressions.
+More information is available by running the test_all.sh script with the
+appropriate option:
+
+./test_all.sh --help
+
+Running it with the --build option should prove to be the most useful
+approach in testing code analysis and validating code generation.
+
+Source Code Overview
+====================
+
+The source files implementing the toolchain are found in the distribution
+directory with .py suffixes. The lplc tool is also found in the distribution
+directory.
+
+The following directories also contain source code employed by the toolchain:
+
+compiler       - a modified version of the Python compiler package
+pyparser       - a modified version of the PyPy parser package
+
+The following directories provide tests:
+
+internal_tests - a collection of tests exercising toolchain objects directly
+tests          - individual test programs exercising the toolchain itself
+
+The toolchain relies on additional code when generating output programs:
+
+lib            - the standard library for Lichen programs
+templates      - runtime support libraries for generated programs
+
+Finally, a docs directory provides documentation about this project.
+
 Contact, Copyright and Licence Information
 ==========================================
 
