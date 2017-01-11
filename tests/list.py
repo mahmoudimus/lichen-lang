@@ -41,3 +41,6 @@ try:
     print l.index(4)    # should raise an exception
 except ValueError, exc:
     print "l.index(4): failed to find argument", exc.value
+
+print l == [1, 2, 3]         # False
+print l == [1, 2, 3, "four"] # True

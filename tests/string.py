@@ -54,8 +54,13 @@ s5 = "--".join(l)
 print s5                    # Hello--world!
 print len(s5)               # 13
 
+print "# hash(s): ",
 print hash(s)
+print "# hash(s2): ",
 print hash(s2)
+print "# hash(s3): ",
 print hash(s3)
+print "# hash(s4): ",
 print hash(s4)
+print "# hash(s5): ",
 print hash(s5)
