@@ -20,11 +20,11 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iterator import itemiterator
-from __builtins__.sequence import sequence
+from __builtins__.sequence import hashable, sequence
 from native import list_element, list_init, list_len, list_setsize, \
                    list_setelement
 
-class tuple(sequence):
+class tuple(sequence, hashable):
 
     "Implementation of tuple."
 
@@ -46,6 +46,12 @@ class tuple(sequence):
             for arg in args:
                 list_setelement(self.__data__, i, arg)
                 i += 1
+
+    def __hash__(self):
+
+        "Return a hashable value for the tuple."
+
+        return self._hashvalue(hash)
 
     def __getslice__(self, start, end=None):
 

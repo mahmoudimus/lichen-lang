@@ -19,19 +19,15 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.int import maxint
 from __builtins__.operator import _negate
-from __builtins__.sequence import itemaccess
+from __builtins__.sequence import hashable, itemaccess
 from __builtins__.types import check_int
 from native import str_add, str_lt, str_gt, str_eq, str_len, str_nonempty, \
                    str_substr
 
-class basestring(itemaccess):
+class basestring(hashable):
 
     "The base class for all strings."
-
-    _p = maxint / 32
-    _a = 31
 
     def __init__(self, other=None):
 
@@ -62,15 +58,7 @@ class basestring(itemaccess):
 
         "Return a value for hashing purposes."
 
-        result = 0
-        l = self.__len__()
-        i = 0
-
-        while i < l:
-            result = (result * self._a + ord(self.__get_single_item__(i))) % self._p
-            i += 1
-
-        return result
+        return self._hashvalue(ord)
 
     def _binary_op(self, op, other):
 

@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __builtins__.int import maxint
 from native import isinstance as _isinstance
 
 class itemaccess:
@@ -156,6 +157,30 @@ class itemaccess:
 
         return 0
 
+class hashable(itemaccess):
+
+    "An abstract class providing support for hashable sequences."
+
+    _p = maxint / 32
+    _a = 31
+
+    def _hashvalue(self, fn):
+
+        """
+        Return a value for hashing purposes for the sequence using the given
+        'fn' on each item.
+        """
+
+        result = 0
+        l = self.__len__()
+        i = 0
+
+        while i < l:
+            result = (result * self._a + fn(self.__get_single_item__(i))) % self._p
+            i += 1
+
+        return result
+
 class sequence(itemaccess):
 
     "A common base class for sequence types."
@@ -213,6 +238,18 @@ class sequence(itemaccess):
     def __eq__(self, other):
 
         "Return whether this sequence is equal to 'other'."
+
+        try:
+            return self._eq(other)
+        except TypeError:
+            return NotImplemented
+
+    def _eq(self, other):
+
+        """
+        Return whether this sequence is equal to 'other' sequence. Note that
+        this method will raise a TypeError if 'other' is not a sequence.
+        """
 
         # Sequences must have equal lengths to be equal.
 
