@@ -38,3 +38,9 @@ The pyparser package has been modified to work with the modified compiler
 package. The following applies to these modifications:
 
 Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+
+Licence Details for cexcept
+---------------------------
+
+See templates/cexcept.h for the licensing details applying to the cexcept code
+which provides exception support to generated C language programs.
