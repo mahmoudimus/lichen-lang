@@ -74,4 +74,8 @@ __attr __GETDEFAULT(__ref obj, int pos);
 
 int __BOOL(__attr attr);
 
+/* Convenience definitions. */
+
+#define __ISINSTANCE(__ATTR, __TYPE) __BOOL(__fn_native_introspection_isinstance((__attr[]) {{0, 0}, __ATTR, __TYPE}))
+
 #endif /* __PROGOPS_H__ */

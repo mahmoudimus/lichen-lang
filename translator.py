@@ -1510,7 +1510,7 @@ class TranslatedModule(CommonModule):
 
             if name is not None:
                 name_ref = self.process_structure_node(name)
-                self.writeline("else if (__BOOL(__fn_native_introspection_isinstance((__attr[]) {{0, 0}, __tmp_exc.arg, %s})))" % name_ref)
+                self.writeline("else if (__ISINSTANCE(__tmp_exc.arg, %s))" % name_ref)
             else:
                 self.writeline("else if (1)")
 
