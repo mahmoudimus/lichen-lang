@@ -105,11 +105,11 @@ if [ "$OPTION" = '--run-built' ] ; then
 
         echo "$FILENAME..." 1>&2
         OUTLOG="_results/$TESTNAME.out"
+        OUTCODE="_results/$TESTNAME.exitcode"
 
         echo " (run)..." 1>&2
-        if ! "$FILENAME" > "$OUTLOG" < "$TESTINPUT" ; then
-            exit 1
-        fi
+        "$FILENAME" > "$OUTLOG" < "$TESTINPUT"
+        echo $? > "$OUTCODE"
     done
 
     exit 0
@@ -189,6 +189,7 @@ for FILENAME in tests/* ; do
     if [ "$OPTION" = '--build' ] || [ "$OPTION" = "--build-only" ] ; then
         BUILDLOG="_results/$TESTNAME.build"
         OUTLOG="_results/$TESTNAME.out"
+        OUTCODE="_results/$TESTNAME.exitcode"
 
         echo " (build)..." 1>&2
         if ! make -C "$DATADIR/_generated" clean > "$BUILDLOG" || \
@@ -200,9 +201,8 @@ for FILENAME in tests/* ; do
             mv "$DATADIR/_generated/main" "_results/$TESTNAME"
         else
             echo " (run)..." 1>&2
-            if ! "$DATADIR/_generated/main" > "$OUTLOG" < "$TESTINPUT" ; then
-                exit 1
-            fi
+            "$DATADIR/_generated/main" > "$OUTLOG" < "$TESTINPUT"
+            echo $? > "$OUTCODE"
         fi
     fi
 
