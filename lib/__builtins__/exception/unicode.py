@@ -3,7 +3,7 @@
 """
 Unicode exception objects.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,7 +19,13 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class UnicodeDecodeError(Exception):
+class UnicodeError(ValueError):
+
+    "A general Unicode error."
+
+    pass
+
+class UnicodeDecodeError(UnicodeError):
 
     """
     An exception indicating a failure to interpret a byte sequence according to
@@ -35,9 +41,7 @@ class UnicodeDecodeError(Exception):
 
         self.value = value
 
-class UnicodeEncodeError(Exception): pass
-class UnicodeError(Exception): pass
-class UnicodeTranslateError(Exception): pass
-class UnicodeWarning(Warning): pass
+class UnicodeEncodeError(UnicodeError): pass
+class UnicodeTranslateError(UnicodeError): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

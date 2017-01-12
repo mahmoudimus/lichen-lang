@@ -3,7 +3,7 @@
 """
 System exception objects.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,7 +19,11 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class EnvironmentError(Exception): pass
+class EnvironmentError(Exception):
+
+    "The base class for external errors."
+
+    pass
 
 class OSError(Exception):
 
@@ -37,9 +41,11 @@ class OSError(Exception):
 
     __repr__ = __str__
 
-class RuntimeError(Exception): pass
-class RuntimeWarning(Warning): pass
-class SystemError(Exception): pass
+class SystemError(Exception):
+
+    "A non-serious error occurring within the runtime system."
+
+    pass
 
 class SystemExit(Exception):
 

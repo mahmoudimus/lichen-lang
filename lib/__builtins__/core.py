@@ -3,7 +3,7 @@
 """
 Core objects.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -113,18 +113,57 @@ class type:
 
     __repr__ = __str__
 
-class BaseException:
+class Exception:
 
     "The root of all exception types."
 
     pass
 
-class Exception(BaseException): pass
-class MemoryError(Exception): pass
-class OverflowError(Exception): pass
-class TypeError(Exception): pass
-class UnboundMethodInvocation(Exception): pass
-class Warning: pass
-class ZeroDivisionError(Exception): pass
+# Fundamental exceptions 
+
+class MemoryError(Exception):
+
+    "An error indicating failure to allocate or manage memory."
+
+    pass
+
+class TypeError(Exception):
+
+    "An error indicating unsuitable type usage."
+
+    pass
+
+class UnboundMethodInvocation(Exception):
+
+    "An error indicating an attempt to call an unbound method."
+
+    pass
+
+class ArithmeticError(Exception):
+
+    "A general arithmetic operation error."
+
+    pass
+
+class FloatingPointError(Exception):
+
+    "A floating point operation error."
+
+    pass
+
+class OverflowError(ArithmeticError):
+
+    """
+    Indicates that an arithmetic operation produced a result that could not be
+    represented.
+    """
+
+    pass
+
+class ZeroDivisionError(ArithmeticError):
+
+    "An error occurring when an attempt was made to divide an operand by zero."
+
+    pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

@@ -3,7 +3,7 @@
 """
 Simple built-in classes and functions.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,22 +19,19 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.core import function, get_using, module, object, type, \
-                              BaseException, Exception, MemoryError, \
-                              OverflowError, TypeError, ZeroDivisionError, \
-                              UnboundMethodInvocation, Warning
+from __builtins__.core import (
+    function, get_using, module, object, type,
+    ArithmeticError, Exception, FloatingPointError, MemoryError, OverflowError,
+    TypeError, UnboundMethodInvocation, ZeroDivisionError
+    )
 
 # Exceptions.
 
 from __builtins__.exception import (
-    ArithmeticError,
     AssertionError,
     AttributeError,
-    DeprecationWarning,
     EOFError,
     EnvironmentError,
-    FloatingPointError,
-    FutureWarning,
     IndentationError,
     IndexError,
     IOError,
@@ -42,12 +39,9 @@ from __builtins__.exception import (
     KeyboardInterrupt,
     NotImplementedError,
     OSError,
-    PendingDeprecationWarning,
     RuntimeError,
-    RuntimeWarning,
     StopIteration,
     SyntaxError,
-    SyntaxWarning,
     SystemError,
     SystemExit,
     TabError,
@@ -55,8 +49,6 @@ from __builtins__.exception import (
     UnicodeEncodeError,
     UnicodeError,
     UnicodeTranslateError,
-    UnicodeWarning,
-    UserWarning,
     ValueError
     )
 

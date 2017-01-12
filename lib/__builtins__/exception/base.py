@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Base exception objects.
+Base exception objects. See __builtins__.core for the core exceptions.
 
 Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
 
@@ -19,21 +19,33 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-class IndexError(Exception):
+class LookupError(Exception):
+
+    "A general lookup error."
+
+    pass
+
+class IndexError(LookupError):
 
     "An error condition involving an index."
 
     def __init__(self, index):
         self.index = index
 
-class KeyError(Exception):
+class KeyError(LookupError):
 
     "An error concerned with a dictionary key."
 
     def __init__(self, key):
         self.key = key
 
-class NotImplementedError(Exception):
+class RuntimeError(Exception):
+
+    "A general runtime error."
+
+    pass
+
+class NotImplementedError(RuntimeError):
 
     "An error indicating an unimplemented function or method."
 
