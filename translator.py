@@ -1417,15 +1417,24 @@ class TranslatedModule(CommonModule):
         # NOTE: Determine which raise statement variants should be permitted.
 
         if n.expr1:
-            exc = self.process_structure_node(n.expr1)
+
+            # Names with accompanying arguments are treated like invocations.
+
+            if n.expr2:
+                call = compiler.ast.CallFunc(n.expr1, [n.expr2])
+                exc = self.process_structure_node(call)
+                self.writestmt("__Raise(%s);" % exc)
 
             # Raise instances, testing the kind at run-time if necessary and
             # instantiating any non-instance.
 
-            if isinstance(exc, TrInstanceRef):
-                self.writestmt("__Raise(%s);" % exc)
             else:
-                self.writestmt("__Raise(__ensure_instance(%s));" % exc)
+                exc = self.process_structure_node(n.expr1)
+
+                if isinstance(exc, TrInstanceRef):
+                    self.writestmt("__Raise(%s);" % exc)
+                else:
+                    self.writestmt("__Raise(__ensure_instance(%s));" % exc)
         else:
             self.writestmt("__Throw(__tmp_exc);")
 
