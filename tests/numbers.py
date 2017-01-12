@@ -1,8 +1,11 @@
 import sys
 
+print "# sys.maxint: ",
 print sys.maxint
+print "# sys.minint: ",
 print sys.minint
 
+print "# sys.maxint + sys.minint: ",
 print sys.maxint + sys.minint
 
 i = 2 ** 30
@@ -40,3 +43,12 @@ print i - 1 & ~j                        # 1073741823
 
 print hex(31)                           # 0x1f
 print oct(31)                           # 037
+
+print "# hash(sys.maxint): ",
+print hash(sys.maxint)
+
+print "# hash((sys.maxint, 0)): ",
+print hash((sys.maxint, 0))
+
+print "# hash((sys.maxint - 1, 0)): ",
+print hash((sys.maxint - 1, 0))
