@@ -1115,6 +1115,11 @@ int main(int argc, char *argv[])
     }
     __Catch(__tmp_exc)
     {
+        if (__ISINSTANCE(__tmp_exc.arg, ((__attr) {0, &__builtins___exception_system_SystemExit})))
+            return __load_via_object(
+                __load_via_object(__tmp_exc.arg.value, %s).value,
+                %s).intvalue;
+
         fprintf(stderr, "Program terminated due to exception: %%s.\\n",
                 __load_via_object(
                     %s((__attr[]) {{0, 0}, __tmp_exc.arg}).value,
@@ -1123,6 +1128,8 @@ int main(int argc, char *argv[])
     }
 }
 """ % (
+    encode_symbol("pos", "value"),
+    encode_symbol("pos", "__data__"),
     encode_function_pointer("__builtins__.str.str"),
     encode_symbol("pos", "__data__")
     )

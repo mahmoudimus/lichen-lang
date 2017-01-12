@@ -40,6 +40,12 @@ class OSError(Exception):
 class RuntimeError(Exception): pass
 class RuntimeWarning(Warning): pass
 class SystemError(Exception): pass
-class SystemExit(Exception): pass
+
+class SystemExit(Exception):
+
+    "An exception exiting the program."
+
+    def __init__(self, value):
+        self.value = value
 
 # vim: tabstop=4 expandtab shiftwidth=4
