@@ -973,12 +973,10 @@ class Importer:
             path_so_far.append(p)
             module_name = ".".join(path_so_far)
 
-            # Return None if the module could not be located.
+            # Raise an exception if the module could not be located.
 
             if not m:
-                if self.verbose:
-                    print >>sys.stderr, "Not found (%s)" % name
-                return None
+                raise ProgramError("Module not found: %s" % name)
 
             # Get the directory and module filename.
 
