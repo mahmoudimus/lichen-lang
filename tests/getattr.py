@@ -36,3 +36,8 @@ for attrname in attrnames:
         print "", v
     except AttributeError:
         print " ?"
+
+try:
+    setattr(c, "x", 7)
+except NotImplementedError, exc:
+    print 'setattr(c, "x", 7): not implemented:', exc.name

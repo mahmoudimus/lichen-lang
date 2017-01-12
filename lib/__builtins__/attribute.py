@@ -70,6 +70,7 @@ def hasattr(obj, name):
 # NOTE: setattr would probably only be supported on instances due to deductions
 # NOTE: applying to static objects being undermined by dynamic modifications.
 
-def setattr(obj, name, value): pass
+def setattr(obj, name, value):
+    raise NotImplementedError, "setattr"
 
 # vim: tabstop=4 expandtab shiftwidth=4

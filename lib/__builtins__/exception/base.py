@@ -33,8 +33,18 @@ class KeyError(Exception):
     def __init__(self, key):
         self.key = key
 
-class NotImplementedError(Exception): pass
-class StopIteration(Exception): pass
+class NotImplementedError(Exception):
+
+    "An error indicating an unimplemented function or method."
+
+    def __init__(self, name):
+        self.name = name
+
+class StopIteration(Exception):
+
+    "An exception signalling the end of iteration."
+
+    pass
 
 class ValueError(Exception):
 
