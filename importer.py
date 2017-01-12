@@ -699,7 +699,9 @@ class Importer:
             if not have_next:
                 raise ProgramError("Modules with unresolvable dependencies exist: %s" % ", ".join(usage.keys()))
 
-        ordered.remove("__main__")
+        if "__main__" in ordered:
+            ordered.remove("__main__")
+
         ordered.append("__main__")
         return ordered
 
