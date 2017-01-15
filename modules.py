@@ -803,7 +803,9 @@ class CacheWritingModule:
 
             print >>f
             print >>f, "deferred:"
-            print >>f, " ".join(map(str, self.deferred))
+            deferred = map(str, set(self.deferred))
+            deferred.sort()
+            print >>f, " ".join(deferred)
 
             print >>f
             print >>f, "special:"
