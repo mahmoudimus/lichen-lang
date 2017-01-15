@@ -56,6 +56,7 @@ if __name__ == "__main__":
     debug = False
     make = True
     make_verbose = True
+    traceback = False
 
     filenames = []
     outputs = []
@@ -70,6 +71,7 @@ if __name__ == "__main__":
         elif arg == "-g": debug = True
         elif arg == "-c": make = False
         elif arg == "-q": make_verbose = False
+        elif arg == "-tb": traceback = True
         elif arg == "-o": l = outputs
         else:
             l.append(arg)
@@ -160,13 +162,13 @@ if __name__ == "__main__":
 
     except error.SyntaxError, exc:
         show_syntax_error(exc)
-        if "-tb" in args:
+        if traceback:
             raise
         sys.exit(1)
 
     except ProcessingError, exc:
         print exc
-        if "-tb" in args:
+        if traceback:
             raise
         sys.exit(1)
 
