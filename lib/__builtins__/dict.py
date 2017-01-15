@@ -151,12 +151,17 @@ class dict:
 
     def __delitem__(self, key, value): pass
 
-    def __getitem__(self, key, default=MISSING):
+    def __getitem__(self, key):
+
+        "Return the value associated with 'key' from the dictionary."
+
+        return self.get(key, self.MISSING)
+
+    def get(self, key, default=None):
 
         """
         Return the value stored for 'key'. If 'key' does not have an entry in
-        the dictionary, a KeyError will be raised unless 'default' is specified.
-        In which case, 'default' will be returned instead.
+        the dictionary, 'default' will be returned instead.
         """
 
         # Find an index identifying the bucket involved.
@@ -181,6 +186,7 @@ class dict:
             return self.buckets[index][i][1]
 
     def clear(self): pass
+
     def has_key(self): pass
 
     def keys(self):
@@ -210,7 +216,6 @@ class dict:
             l += bucket
         return l
 
-    def get(self, key): pass
     def setdefault(self, key, value): pass
     def update(self, other): pass
 

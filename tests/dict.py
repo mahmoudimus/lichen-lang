@@ -16,6 +16,8 @@ try:
     print d[30]                         # should fail with an exception
 except KeyError, exc:
     print "d[30]: key not found", exc.key
+print d.get(30)                         # None
+print d.get(30, "c")                    # c
 
 l = f(d)
 print "# l: ",
