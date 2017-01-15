@@ -18,6 +18,8 @@ except KeyError, exc:
     print "d[30]: key not found", exc.key
 print d.get(30)                         # None
 print d.get(30, "c")                    # c
+print d.has_key(20)                     # True
+print d.has_key(30)                     # False
 
 l = f(d)
 print "# l: ",
@@ -60,3 +62,17 @@ try:
     print d[[1, 2]]
 except TypeError:
     print "d[[1, 2]]: key not appropriate"
+
+# Attempt to remove items.
+
+del d[20]
+print d.has_key(20)                     # False
+try:
+    del d[30]                           # should fail with an exception
+except KeyError, exc:
+    print "del d[30]: key not found", exc.key
+
+# Clear the dictionary.
+
+d.clear()
+print d                                 # {}

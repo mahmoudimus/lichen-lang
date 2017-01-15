@@ -33,8 +33,7 @@ class dict:
 
         "Initialise the dictionary."
 
-        self.size = 0
-        self.buckets = self._get_buckets(args is not None and len(args) / 2 or 0)
+        self.clear()
 
         if args is not None:
             for key, value in args:
@@ -80,6 +79,20 @@ class dict:
 
         return buckets
 
+    def _get_entry(self, key):
+
+        "Return the index and entry index as a tuple for 'key'."
+
+        # Find an index identifying the bucket involved.
+
+        index = self._get_index(key)
+
+        # Find the entry index within the bucket of the key.
+
+        i = self._find_entry(key, index)
+
+        return index, i
+
     def _get_index(self, key):
 
         "Check 'key' and return an index or raise TypeError."
@@ -119,13 +132,7 @@ class dict:
 
         "Set in the 'buckets' an item having the given 'key' and 'value'."
 
-        # Find an index identifying the bucket involved.
-
-        index = self._get_index(key)
-
-        # Find the entry index within the bucket of the key.
-
-        i = self._find_entry(key, index)
+        index, i = self._get_entry(key)
 
         # With no existing entry, append to the bucket.
 
@@ -138,6 +145,32 @@ class dict:
         else:
             buckets[index][i] = key, value
 
+    # Public special methods.
+
+    def __delitem__(self, key):
+
+        "Remove the entry associated with the given 'key' from this dictionary."
+
+        index, i = self._get_entry(key)
+
+        if index is None or i is None:
+            raise KeyError, key
+
+        del self.buckets[index][i]
+        self.size -= 1
+
+    def __getitem__(self, key):
+
+        "Return the value associated with 'key' from the dictionary."
+
+        return self.get(key, self.MISSING)
+
+    def __iter__(self):
+
+        "Return an iterator."
+
+        return itemiterator(self.keys())
+
     def __setitem__(self, key, value):
 
         "Set a mapping from 'key' to 'value' in the dictionary."
@@ -149,13 +182,14 @@ class dict:
 
         self._setitem(self.buckets, key, value)
 
-    def __delitem__(self, key, value): pass
+    # Public conventional methods.
 
-    def __getitem__(self, key):
+    def clear(self):
 
-        "Return the value associated with 'key' from the dictionary."
+        "Reset the dictionary to an empty state."
 
-        return self.get(key, self.MISSING)
+        self.size = 0
+        self.buckets = self._get_buckets(0)
 
     def get(self, key, default=None):
 
@@ -164,13 +198,7 @@ class dict:
         the dictionary, 'default' will be returned instead.
         """
 
-        # Find an index identifying the bucket involved.
-
-        index = self._get_index(key)
-
-        # Find the entry index within the bucket of the key.
-
-        i = self._find_entry(key, index)
+        index, i = self._get_entry(key)
 
         # With no entry index, either raise an exception or return the default.
 
@@ -185,9 +213,11 @@ class dict:
         else:
             return self.buckets[index][i][1]
 
-    def clear(self): pass
+    def has_key(self, key):
 
-    def has_key(self): pass
+        "Return whether the given 'key' is used with this dictionary."
+
+        return self.get(key) and True or False
 
     def keys(self):
 
@@ -196,15 +226,6 @@ class dict:
         l = []
         for key, value in self.items():
             l.append(key)
-        return l
-
-    def values(self):
-
-        "Return the values in this dictionary."
-
-        l = []
-        for key, value in self.items():
-            l.append(value)
         return l
 
     def items(self):
@@ -217,12 +238,16 @@ class dict:
         return l
 
     def setdefault(self, key, value): pass
+
     def update(self, other): pass
 
-    def __iter__(self):
+    def values(self):
 
-        "Return an iterator."
+        "Return the values in this dictionary."
 
-        return itemiterator(self.keys())
+        l = []
+        for key, value in self.items():
+            l.append(value)
+        return l
 
 # vim: tabstop=4 expandtab shiftwidth=4
