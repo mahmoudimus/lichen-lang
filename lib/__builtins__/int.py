@@ -20,6 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.operator import _negate
+from __builtins__.unicode import utf8string
 from native import isinstance as _isinstance, get_maxint, get_minint, \
                    int_add, int_and, int_div, int_eq, int_gt, int_lt, int_mod, \
                    int_mul, int_ne, int_neg, int_not, int_or, int_pow, \
@@ -217,7 +218,7 @@ class int:
 
         "Return a string representation."
 
-        return int_str(self.__data__)
+        return utf8string(int_str(self.__data__))
 
     __repr__ = __str__
 

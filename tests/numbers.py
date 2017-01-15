@@ -1,3 +1,5 @@
+# -*- coding: ISO-8859-1 -*-
+
 import sys
 
 print "# sys.maxint: ",
@@ -52,3 +54,15 @@ print hash((sys.maxint, 0))
 
 print "# hash((sys.maxint - 1, 0)): ",
 print hash((sys.maxint - 1, 0))
+
+# Test combining numbers with strings.
+
+s = "Number is " + str(123)
+s2 = "זרו -> " + str(123)
+print s.__class__
+print s2.__class__
+print s
+print s2
+
+sys.stdout.encoding = "UTF-8"
+print s2
