@@ -1722,7 +1722,10 @@ class TranslatedModule(CommonModule):
 
         self.writeline("__ref __tmp_context, __tmp_value, __tmp_target_value;")
         self.writeline("__attr %s__tmp_result;" % targets)
-        self.writeline("__exc __tmp_exc;")
+
+        module = self.importer.get_module(self.name)
+        if self.get_namespace_path() in module.exception_namespaces:
+            self.writeline("__exc __tmp_exc;")
 
     def write_parameters(self, name):
 

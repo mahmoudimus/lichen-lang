@@ -4,7 +4,7 @@
 Module abstractions.
 
 Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+              2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -70,6 +70,10 @@ class BasicModule(CommonModule):
 
         self.function_targets = {}
         self.function_arguments = {}
+
+        # Exception handler details.
+
+        self.exception_namespaces = set()
 
         # Attribute usage at module and function levels.
 
@@ -401,6 +405,7 @@ class CachedModule(BasicModule):
             self._get_attr_access_modifiers(f)
             self._get_constant_literals(f)
             self._get_constant_values(f)
+            self._get_exception_namespaces(f)
 
         finally:
             f.close()
@@ -633,6 +638,12 @@ class CachedModule(BasicModule):
             self.constant_values[name] = value, value_type, encoding
             line = f.readline().rstrip()
 
+    def _get_exception_namespaces(self, f):
+        f.readline() # "exception namespaces:"
+        values = f.readline.rstrip().split(", ")
+        self.exception_namespaces = set(values)
+        f.readline()
+
     # Generic parsing methods.
 
     def from_lines(self, f, d):
@@ -759,10 +770,15 @@ class CacheWritingModule:
         (empty line)
         "attribute access modifiers:"
         zero or more: qualified function name " " local/global variable name " " attribute name " " access modifiers
+        (empty line)
         "constant literals:"
         zero or more: qualified scope name " " value type " " constant literal
+        (empty line)
         "constant values:"
         zero or more: qualified name " " value type " " constant literal
+        (empty line)
+        "exception namespaces:"
+        qualified names
 
         All collections of names are separated by ", " characters.
 
@@ -994,6 +1010,12 @@ class CacheWritingModule:
             for name in names:
                 value, value_type, encoding = self.constant_values[name]
                 print >>f, name, value_type, encoding or "{}", repr(value)
+
+            print >>f
+            print >>f, "exception namespaces:"
+            paths = list(self.exception_namespaces)
+            paths.sort()
+            print >>f, ", ".join(paths)
 
         finally:
             f.close()

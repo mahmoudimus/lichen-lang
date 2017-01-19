@@ -4,7 +4,7 @@
 Inspect and obtain module structure.
 
 Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+              2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -920,6 +920,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         Process the given "try...except" node 'n'.
         """
 
+        self.record_exception_handler()
+
         tracker = self.trackers[-1]
         tracker.new_branchpoint()
 
@@ -966,6 +968,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         """
         Process the given "try...finally" node 'n'.
         """
+
+        self.record_exception_handler()
 
         tracker = self.trackers[-1]
         self.process_structure_node(n.body)
@@ -1491,5 +1495,13 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         self.function_targets[path][0] -= 1
         self.function_arguments[path][0] -= len(args) + 1
+
+    # Exceptions.
+
+    def record_exception_handler(self):
+
+        "Record the current namespace as employing an exception handler."
+
+        self.exception_namespaces.add(self.get_namespace_path())
 
 # vim: tabstop=4 expandtab shiftwidth=4
