@@ -32,7 +32,7 @@ __attr __fn_native_list_list_init(__attr __args[])
     __attr * const size = &__args[1];
     /* size.__data__ interpreted as int */
     unsigned int n = __load_via_object(size->value, __pos___data__).intvalue;
-    __attr attr = {0, .seqvalue=__new_fragment(n)};
+    __attr attr = {{0}, .seqvalue=__new_fragment(n)};
 
     /* Return the __data__ attribute. */
     return attr;
@@ -61,7 +61,7 @@ __attr __fn_native_list_list_append(__attr __args[])
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(self->value, __pos___data__, ((__attr) {0, .seqvalue=newdata}));
+        __store_via_object(self->value, __pos___data__, ((__attr) {{0}, .seqvalue=newdata}));
     return __builtins___none_None;
 }
 
@@ -92,7 +92,7 @@ __attr __fn_native_list_list_concat(__attr __args[])
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(self->value, __pos___data__, ((__attr) {0, .seqvalue=newdata}));
+        __store_via_object(self->value, __pos___data__, ((__attr) {{0}, .seqvalue=newdata}));
     return __builtins___none_None;
 }
 

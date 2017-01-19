@@ -19,7 +19,6 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __PROGOPS_H__
 #define __PROGOPS_H__
 
-#include <stdlib.h>
 #include "types.h"
 
 /* Generic instantiation operations, defining common members. */
@@ -76,6 +75,6 @@ int __BOOL(__attr attr);
 
 /* Convenience definitions. */
 
-#define __ISINSTANCE(__ATTR, __TYPE) __BOOL(__fn_native_introspection_isinstance((__attr[]) {{0, 0}, __ATTR, __TYPE}))
+#define __ISINSTANCE(__ATTR, __TYPE) __BOOL(__fn_native_introspection_isinstance((__attr[]) {__NULL, __ATTR, __TYPE}))
 
 #endif /* __PROGOPS_H__ */

@@ -200,10 +200,12 @@ __attr __test_context(__ref context, __attr attr)
        attribute. */
 
     if (__is_instance(context))
+    {
         if (__test_common_instance(context, __TYPEPOS(attr.context), __TYPECODE(attr.context)))
             return __replace_context(context, attr);
         else
             __raise_type_error();
+    }
 
     /* Test for access to a type class attribute using a type instance. */
 
@@ -232,7 +234,7 @@ __attr __replace_context(__ref context, __attr attr)
 
 __attr __update_context(__ref context, __attr attr)
 {
-    __attr out = {context, .fn=attr.fn};
+    __attr out = {.context=context, .fn=attr.fn};
     return out;
 }
 

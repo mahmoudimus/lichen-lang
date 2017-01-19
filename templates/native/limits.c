@@ -30,15 +30,11 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __attr __fn_native_limits_get_maxint(__attr __args[])
 {
-    __attr * const status = &__args[1];
-
     return __new_int(INT_MAX);
 }
 
 __attr __fn_native_limits_get_minint(__attr __args[])
 {
-    __attr * const status = &__args[1];
-
     return __new_int(INT_MIN);
 }
 

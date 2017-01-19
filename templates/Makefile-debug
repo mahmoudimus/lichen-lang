@@ -1,6 +1,6 @@
 SRC = exceptions.c main.c $(wildcard native/*.c) ops.c progops.c progtypes.c $(wildcard src/*.c)
 OBJ = $(SRC:.c=.o)
-CFLAGS = -I. -finput-charset=UTF-8 -g
+CFLAGS = -Wall -I. -finput-charset=UTF-8 -g
 LDFLAGS = -lm -lgc
 
 ifdef ARCH

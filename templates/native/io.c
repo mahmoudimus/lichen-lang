@@ -84,6 +84,10 @@ __attr __fn_native_io_fopen(__attr __args[])
         attr.datavalue = (void *) f;
         return attr;
     }
+
+    /* Should never be reached: included to satisfy the compiler. */
+
+    return __builtins___none_None;
 }
 
 __attr __fn_native_io_fdopen(__attr __args[])
@@ -113,6 +117,10 @@ __attr __fn_native_io_fdopen(__attr __args[])
         attr.datavalue = (void *) f;
         return attr;
     }
+
+    /* Should never be reached: included to satisfy the compiler. */
+
+    return __builtins___none_None;
 }
 
 __attr __fn_native_io_fread(__attr __args[])
@@ -134,7 +142,7 @@ __attr __fn_native_io_fread(__attr __args[])
     {
         if (feof(f) && (have_read == 0))
             __raise_eof_error();
-        else if (error = ferror(f))
+        else if ((error = ferror(f)))
             __raise_io_error(__new_int(error));
     }
 
@@ -162,7 +170,7 @@ __attr __fn_native_io_fwrite(__attr __args[])
     {
         if (feof(f))
             __raise_eof_error();
-        else if (error = ferror(f))
+        else if ((error = ferror(f)))
             __raise_io_error(__new_int(error));
     }
 

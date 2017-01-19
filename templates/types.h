@@ -106,9 +106,9 @@ typedef struct __fragment
 
 #define __INSTANCEPOS 0
 
-/* Special null value. */
+/* Special null values. */
 
-#define __NULL ((__attr) {0, 0})
+#define __NULL ((__attr) {{0}, {0}})
 
 /* Function pointer type. */
 

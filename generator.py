@@ -535,7 +535,7 @@ class Generator(CommonOutput):
         # Define a macro for the constant.
 
         attr_name = encode_path(const_path)
-        print >>f_decls, "#define %s ((__attr) {&%s, &%s})" % (attr_name, structure_name, structure_name)
+        print >>f_decls, "#define %s ((__attr) {.context=&%s, .value=&%s})" % (attr_name, structure_name, structure_name)
 
     def make_parameter_table(self, f_decls, f_defs, parameters):
 
@@ -851,7 +851,7 @@ __obj %s = {
             # Handle gaps in the structure.
 
             if attrname is None:
-                structure.append("{0, 0}")
+                structure.append("__NULL")
 
             # Handle non-constant and constant members.
 
@@ -884,7 +884,7 @@ __obj %s = {
                     else:
                         attr = encode_function_pointer(attr)
 
-                    structure.append("{%s, .fn=%s}" % (bound_attr and ".b=&%s" % bound_attr or "0", attr))
+                    structure.append("{.b=%s, .fn=%s}" % (bound_attr and "&%s" % bound_attr or "0", attr))
                     continue
 
                 # Special argument specification member.
@@ -937,7 +937,7 @@ __obj %s = {
                 # Special class relationship attributes.
 
                 elif is_type_attribute(attrname):
-                    structure.append("{0, &%s}" % encode_path(decode_type_attribute(attrname)))
+                    structure.append("{.context=0, .value=&%s}" % encode_path(decode_type_attribute(attrname)))
                     continue
 
                 # All other kinds of members.
@@ -976,19 +976,19 @@ __obj %s = {
 
         if kind == "<instance>" and origin == self.none_type:
             attr_path = encode_predefined_reference(self.none_value)
-            return "{&%s, &%s} /* %s */" % (attr_path, attr_path, name)
+            return "{.context=&%s, .value=&%s} /* %s */" % (attr_path, attr_path, name)
 
         # Predefined constant members.
 
         if (path, name) in self.predefined_constant_members:
             attr_path = encode_predefined_reference("%s.%s" % (path, name))
-            return "{&%s, &%s} /* %s */" % (attr_path, attr_path, name)
+            return "{.context=&%s, .value=&%s} /* %s */" % (attr_path, attr_path, name)
 
         # General undetermined members.
 
         if kind in ("<var>", "<instance>"):
             attr_path = encode_predefined_reference(self.none_value)
-            return "{&%s, &%s} /* %s */" % (attr_path, attr_path, name)
+            return "{.context=&%s, .value=&%s} /* %s */" % (attr_path, attr_path, name)
 
         # Set the context depending on the kind of attribute.
         # For methods:          {&<parent>, &<attr>}
@@ -1002,7 +1002,7 @@ __obj %s = {
                 context = "&%s" % encode_path(origin)
             else:
                 context = "0"
-            return "{%s, &%s}" % (context, encode_path(origin))
+            return "{.context=%s, .value=&%s}" % (context, encode_path(origin))
 
     def append_defaults(self, path, structure):
 
@@ -1111,21 +1111,22 @@ int main(int argc, char *argv[])
         %s();""" % function_name
 
         print >>f_code, """\
-        return 0;
     }
     __Catch(__tmp_exc)
     {
-        if (__ISINSTANCE(__tmp_exc.arg, ((__attr) {0, &__builtins___exception_system_SystemExit})))
+        if (__ISINSTANCE(__tmp_exc.arg, ((__attr) {.context=0, .value=&__builtins___exception_system_SystemExit})))
             return __load_via_object(
                 __load_via_object(__tmp_exc.arg.value, %s).value,
                 %s).intvalue;
 
         fprintf(stderr, "Program terminated due to exception: %%s.\\n",
                 __load_via_object(
-                    %s((__attr[]) {{0, 0}, __tmp_exc.arg}).value,
+                    %s((__attr[]) {__NULL, __tmp_exc.arg}).value,
                     %s).strvalue);
         return 1;
     }
+
+    return 0;
 }
 """ % (
     encode_symbol("pos", "value"),

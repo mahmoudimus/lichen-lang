@@ -37,16 +37,12 @@ __attr __fn_native_system_exit(__attr __args[])
 
 __attr __fn_native_system_get_argv(__attr __args[])
 {
-    __attr * const status = &__args[1];
-
     /* NOTE: To be written. */
     return __builtins___none_None;
 }
 
 __attr __fn_native_system_get_path(__attr __args[])
 {
-    __attr * const status = &__args[1];
-
     /* NOTE: To be written. */
     return __builtins___none_None;
 }

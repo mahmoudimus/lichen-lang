@@ -30,8 +30,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __new(const __table * table, __ref cls, size_t size)
 {
     __ref obj = (__ref) __ALLOCATE(1, size);
-    __attr self = {obj, obj};
-    __attr tmp = {0, cls};
+    __attr self = {.context=obj, .value=obj};
+    __attr tmp = {.context=0, .value=cls};
     obj->table = table;
     __store_via_object(obj, __pos___class__, tmp);
     return self;
@@ -57,7 +57,7 @@ void __newdata_sequence(__attr args[], unsigned int number)
     /* Calculate the size of the fragment. */
 
     __fragment *data = __new_fragment(number);
-    __attr attr = {0, .seqvalue=data};
+    __attr attr = {{0}, .seqvalue=data};
     unsigned int i, j;
 
     /* Copy the given number of values, starting from the second element. */
@@ -106,7 +106,7 @@ void __raise_eof_error()
 void __raise_io_error(__attr value)
 {
 #ifdef __HAVE___builtins___exception_io_IOError
-    __attr args[2] = {{0, 0}, value};
+    __attr args[2] = {__NULL, value};
     __attr exc = __new___builtins___exception_io_IOError(args);
     __Raise(exc);
 #endif /* __HAVE___builtins___exception_io_IOError */
@@ -122,7 +122,7 @@ void __raise_memory_error()
 void __raise_os_error(__attr value, __attr arg)
 {
 #ifdef __HAVE___builtins___exception_system_OSError
-    __attr args[3] = {{0, 0}, value, arg};
+    __attr args[3] = {__NULL, value, arg};
     __attr exc = __new___builtins___exception_system_OSError(args);
     __Raise(exc);
 #endif /* __HAVE___builtins___exception_system_OSError */
@@ -272,7 +272,7 @@ __attr __GETDEFAULT(__ref obj, int pos)
 
 int __BOOL(__attr attr)
 {
-    __attr args[2] = {{0, 0}, attr};
+    __attr args[2] = {__NULL, attr};
 
     /* Invoke the bool function with the object and test against True. */
 

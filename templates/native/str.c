@@ -84,8 +84,6 @@ __attr __fn_native_str_str_eq(__attr __args[])
 __attr __fn_native_str_str_len(__attr __args[])
 {
     __attr * const _data = &__args[1];
-    /* _data interpreted as string */
-    char *s = _data->strvalue;
 
     /* Return the new integer. */
     return __new_int(_data->size);
@@ -94,8 +92,6 @@ __attr __fn_native_str_str_len(__attr __args[])
 __attr __fn_native_str_str_nonempty(__attr __args[])
 {
     __attr * const _data = &__args[1];
-    /* _data interpreted as string */
-    char *s = _data->strvalue;
 
     return _data->size ? __builtins___boolean_True : __builtins___boolean_False;
 }

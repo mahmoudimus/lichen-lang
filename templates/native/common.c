@@ -40,7 +40,7 @@ __attr __new_str(char *s, size_t size)
     __attr attr = __new(&__InstanceTable___builtins___str_string, &__builtins___str_string, sizeof(__obj___builtins___str_string));
     attr.value->attrs[__pos___data__].size = size;
     attr.value->attrs[__pos___data__].strvalue = s;
-    attr.value->attrs[__pos___key__] = (__attr) {0, 0};
+    attr.value->attrs[__pos___key__] = __NULL;
     return attr;
 }
 
