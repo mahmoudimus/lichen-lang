@@ -377,7 +377,7 @@ class Optimiser:
             # Determine whether the first access involves assignment.
 
             assigning = not traversed and not attrnames and final_method == "assign"
-            set_accessor = assigning and "__set_target_accessor" or "__set_accessor"
+            set_accessor = assigning and "<set_target_accessor>" or "<set_accessor>"
             stored_accessor = assigning and "<target_accessor>" or "<accessor>"
 
             # Set the context if already available.

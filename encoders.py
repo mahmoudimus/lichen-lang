@@ -194,10 +194,13 @@ def encode_access_instruction(instruction, subs):
 
     The 'subs' parameter defines a mapping of substitutions for special values
     used in instructions.
+
+    Return both the encoded instruction and a collection of substituted names.
     """
 
     op = instruction[0]
     args = instruction[1:]
+    substituted = set()
 
     if not args:
         argstr = ""
@@ -208,7 +211,9 @@ def encode_access_instruction(instruction, subs):
         a = []
         converting_op = op
         for arg in args:
-            a.append(encode_access_instruction_arg(arg, subs, converting_op))
+            s, _substituted = encode_access_instruction_arg(arg, subs, converting_op)
+            substituted.update(_substituted)
+            a.append(s)
             converting_op = None
 
         # Modify certain arguments.
@@ -250,40 +255,45 @@ def encode_access_instruction(instruction, subs):
     # operation at all.
 
     if subs.has_key(op):
+        substituted.add(op)
         op = subs[op]
     elif not args:
         op = "&%s" % encode_path(op)
 
-    return "%s%s" % (op, argstr)
+    return "%s%s" % (op, argstr), substituted
 
 def encode_access_instruction_arg(arg, subs, op):
 
-    "Encode 'arg' using 'subs' to define substitutions."
+    """
+    Encode 'arg' using 'subs' to define substitutions, returning a tuple
+    containing the encoded form of 'arg' along with a collection of any
+    substituted values.
+    """
 
     if isinstance(arg, tuple):
-        encoded = encode_access_instruction(arg, subs)
+        encoded, substituted = encode_access_instruction(arg, subs)
 
         # Convert attribute results to references where required.
 
         if op and op in reference_acting_ops and arg[0] in attribute_producing_ops:
-            return "%s.value" % encoded
+            return "%s.value" % encoded, substituted
         else:
-            return encoded
+            return encoded, substituted
 
     # Special values only need replacing, not encoding.
 
     elif subs.has_key(arg):
-        return subs.get(arg)
+        return subs.get(arg), set([arg])
 
     # Convert static references to the appropriate type.
 
     elif op and op in reference_acting_ops and arg != "<accessor>":
-        return "&%s" % encode_path(arg)
+        return "&%s" % encode_path(arg), set()
 
     # Other values may need encoding.
 
     else:
-        return encode_path(arg)
+        return encode_path(arg), set()
 
 def encode_bound_reference(path):
 

@@ -3,7 +3,7 @@
 """
 Translate programs.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -29,6 +29,7 @@ from encoders import encode_access_instruction, encode_bound_reference, \
 from os.path import exists, join
 from os import makedirs
 from referencing import Reference
+from StringIO import StringIO
 import compiler
 import results
 
@@ -41,6 +42,7 @@ class Translator(CommonOutput):
         self.deducer = deducer
         self.optimiser = optimiser
         self.output = output
+        self.modules = {}
 
     def to_output(self):
         output = join(self.output, "src")
@@ -55,6 +57,7 @@ class Translator(CommonOutput):
             if parts[0] != "native":
                 tm = TranslatedModule(module.name, self.importer, self.deducer, self.optimiser)
                 tm.translate(module.filename, join(output, "%s.c" % module.name))
+                self.modules[module.name] = tm 
 
 # Classes representing intermediate translation results.
 
@@ -267,7 +270,7 @@ class TranslatedModule(CommonModule):
 
         # Output stream.
 
-        self.out = None
+        self.out_toplevel = self.out = None
         self.indent = 0
         self.tabstop = "    "
 
@@ -285,6 +288,10 @@ class TranslatedModule(CommonModule):
 
         self.attr_accesses = {}
         self.attr_accessors = {}
+
+        # Special variable usage.
+
+        self.temp_usage = {}
 
     def __repr__(self):
         return "TranslatedModule(%r, %r)" % (self.name, self.importer)
@@ -307,7 +314,7 @@ class TranslatedModule(CommonModule):
 
         self.reset_lambdas()
 
-        self.out = open(output_filename, "w")
+        self.out_toplevel = self.out = open(output_filename, "w")
         try:
             self.start_output()
 
@@ -696,15 +703,42 @@ class TranslatedModule(CommonModule):
         subs = {
             "<expr>" : str(attr_expr),
             "<assexpr>" : str(self.in_assignment),
+            }
+
+        temp_subs = {
             "<context>" : "__tmp_context",
             "<accessor>" : "__tmp_value",
             "<target_accessor>" : "__tmp_target_value",
+            "<set_accessor>" : "__tmp_value",
+            "<set_target_accessor>" : "__tmp_target_value",
             }
 
+        op_subs = {
+            "<set_accessor>" : "__set_accessor",
+            "<set_target_accessor>" : "__set_target_accessor",
+            }
+
+        subs.update(temp_subs)
+        subs.update(op_subs)
+
         output = []
+        substituted = set()
+
+        # Obtain encoded versions of each instruction, accumulating temporary
+        # variables.
 
         for instruction in self.optimiser.access_instructions[location]:
-            output.append(encode_access_instruction(instruction, subs))
+            encoded, _substituted = encode_access_instruction(instruction, subs)
+            output.append(encoded)
+            substituted.update(_substituted)
+
+        # Record temporary name usage.
+
+        for sub in substituted:
+            if temp_subs.has_key(sub):
+                self.record_temp(temp_subs[sub])
+
+        # Format the output.
 
         if len(output) == 1:
             out = output[0]
@@ -1146,6 +1180,7 @@ class TranslatedModule(CommonModule):
         # set to null.
 
         if context_required:
+            self.record_temp("__tmp_targets")
             args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
         else:
             args = ["__NULL"]
@@ -1240,6 +1275,7 @@ class TranslatedModule(CommonModule):
         # Without a known specific callable, the expression provides the target.
 
         if not target or context_required:
+            self.record_temp("__tmp_targets")
             stages.append("__tmp_targets[%d] = %s" % (self.function_target, expr))
 
         # Any specific callable is then obtained.
@@ -1247,6 +1283,7 @@ class TranslatedModule(CommonModule):
         if target:
             stages.append(target)
         elif function:
+            self.record_temp("__tmp_targets")
             stages.append("__load_via_object(__tmp_targets[%d].value, %s).fn" % (
                 self.function_target, encode_symbol("pos", "__fn__")))
 
@@ -1259,6 +1296,7 @@ class TranslatedModule(CommonModule):
         # the callable and argument collections.
 
         else:
+            self.record_temp("__tmp_targets")
             output = "(%s, __invoke(\n__tmp_targets[%d],\n%d, %d, %s, %s,\n%d, %s\n))" % (
                 ",\n".join(stages),
                 self.function_target,
@@ -1312,6 +1350,7 @@ class TranslatedModule(CommonModule):
         # copy.
 
         else:
+            self.record_temp("__tmp_value")
             return make_expression("(__tmp_value = __COPY(&%s, sizeof(%s)), %s, (__attr) {.context=0, .value=__tmp_value})" % (
                 encode_path(function_name),
                 encode_symbol("obj", function_name),
@@ -1330,6 +1369,8 @@ class TranslatedModule(CommonModule):
         <a> or <b>
         (__tmp_result = <a>, __BOOL(__tmp_result)) ? __tmp_result : <b>
         """
+
+        self.record_temp("__tmp_result")
 
         if isinstance(n, compiler.ast.And):
             op = "!"
@@ -1638,6 +1679,35 @@ class TranslatedModule(CommonModule):
         self.indent -= 1
         self.writeline("}")
 
+    # Special variable usage.
+
+    def record_temp(self, name):
+
+        """
+        Record the use of the temporary 'name' in the current namespace. At the
+        class or module level, the temporary name is associated with the module,
+        since the variable will then be allocated in the module's own main
+        program.
+        """
+
+        if self.in_function:
+            path = self.get_namespace_path()
+        else:
+            path = self.name
+
+        init_item(self.temp_usage, path, set)
+        self.temp_usage[path].add(name)
+
+    def uses_temp(self, path, name):
+
+        """
+        Return whether the given namespace 'path' employs a temporary variable
+        with the given 'name'. Note that 'path' should only be a module or a
+        function or method, not a class.
+        """
+
+        return self.temp_usage.has_key(path) and name in self.temp_usage[path]
+
     # Output generation.
 
     def start_output(self):
@@ -1654,6 +1724,28 @@ class TranslatedModule(CommonModule):
 #include "main.h"
 """
 
+    def start_unit(self):
+
+        "Record output within a generated function for later use."
+
+        self.out = StringIO()
+
+    def end_unit(self, name):
+
+        "Add declarations and generated code."
+
+        # Restore the output stream.
+
+        out = self.out
+        self.out = self.out_toplevel
+
+        self.write_temporaries(name)
+        out.seek(0)
+        self.out.write(out.read())
+
+        self.indent -= 1
+        print >>self.out, "}"
+
     def start_module(self):
 
         "Write the start of each module's main function."
@@ -1661,14 +1753,13 @@ class TranslatedModule(CommonModule):
         print >>self.out, "void __main_%s()" % encode_path(self.name)
         print >>self.out, "{"
         self.indent += 1
-        self.write_temporaries(self.importer.function_targets.get(self.name))
+        self.start_unit()
 
     def end_module(self):
 
         "End each module by closing its main function."
 
-        self.indent -= 1
-        print >>self.out, "}"
+        self.end_unit(self.name)
 
     def start_function(self, name):
 
@@ -1677,7 +1768,6 @@ class TranslatedModule(CommonModule):
         print >>self.out, "__attr %s(__attr __args[])" % encode_function_pointer(name)
         print >>self.out, "{"
         self.indent += 1
-        self.write_temporaries(self.importer.function_targets.get(name))
 
         # Obtain local names from parameters.
 
@@ -1702,29 +1792,39 @@ class TranslatedModule(CommonModule):
             self.writeline("__attr %s;" % ", ".join(names))
 
         self.write_parameters(name)
+        self.start_unit()
 
     def end_function(self, name):
 
         "End the function having the given 'name'."
 
-        self.indent -= 1
-        print >>self.out, "}"
+        self.end_unit(name)
         print >>self.out
 
-    def write_temporaries(self, targets):
+    def write_temporaries(self, name):
 
-        """
-        Write temporary storage employed by functions, providing space for the
-        given number of 'targets'.
-        """
+        "Write temporary storage employed by 'name'."
 
-        targets = targets is not None and "__tmp_targets[%d], " % targets or ""
+        # Provide space for the given number of targets.
 
-        self.writeline("__ref __tmp_context, __tmp_value, __tmp_target_value;")
-        self.writeline("__attr %s__tmp_result;" % targets)
+        if self.uses_temp(name, "__tmp_targets"):
+            targets = self.importer.function_targets.get(name)
+            self.writeline("__attr __tmp_targets[%d];" % targets)
+
+        # Add temporary variable usage details.
+
+        if self.uses_temp(name, "__tmp_context"):
+            self.writeline("__ref __tmp_context;")
+        if self.uses_temp(name, "__tmp_value"):
+            self.writeline("__ref __tmp_value;")
+        if self.uses_temp(name, "__tmp_target_value"):
+            self.writeline("__ref __tmp_target_value;")
+        if self.uses_temp(name, "__tmp_result"):
+            self.writeline("__attr __tmp_result;")
 
         module = self.importer.get_module(self.name)
-        if self.get_namespace_path() in module.exception_namespaces:
+
+        if name in module.exception_namespaces:
             self.writeline("__exc __tmp_exc;")
 
     def write_parameters(self, name):
