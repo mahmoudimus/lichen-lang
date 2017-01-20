@@ -640,8 +640,8 @@ class CachedModule(BasicModule):
 
     def _get_exception_namespaces(self, f):
         f.readline() # "exception namespaces:"
-        values = f.readline().rstrip().split(", ")
-        self.exception_namespaces = set(values)
+        value = f.readline().rstrip()
+        self.exception_namespaces = value and set(value.split(", ")) or set()
         f.readline()
 
     # Generic parsing methods.
@@ -778,6 +778,9 @@ class CacheWritingModule:
         zero or more: qualified name " " value type " " constant literal
         (empty line)
         "exception namespaces:"
+        qualified names
+        (empty line)
+        "operator result namespaces:"
         qualified names
 
         All collections of names are separated by ", " characters.
