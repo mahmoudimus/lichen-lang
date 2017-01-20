@@ -1282,15 +1282,22 @@ class TranslatedModule(CommonModule):
 
         if target:
             stages.append(target)
+
+        # Methods accessed via unidentified accessors are obtained. 
+
         elif function:
             self.record_temp("__tmp_targets")
             stages.append("__load_via_object(__tmp_targets[%d].value, %s).fn" % (
                 self.function_target, encode_symbol("pos", "__fn__")))
 
         # With a known target, the function is obtained directly and called.
+        # By putting the invocation at the end of the final element in the
+        # instruction sequence (the stages), the result becomes the result of
+        # the sequence. Moreover, the parameters become part of the sequence
+        # and thereby participate in a guaranteed evaluation order.
 
         if target or function:
-            output = "(\n%s\n)(%s)" % (",\n".join(stages), argstr)
+            output = "(\n%s(%s))" % (",\n".join(stages), argstr)
 
         # With unknown targets, the generic invocation function is applied to
         # the callable and argument collections.
