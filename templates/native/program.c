@@ -1,6 +1,6 @@
 /* Native functions for program operations.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -30,8 +30,13 @@ __attr __fn_native_program_get_using(__attr __args[])
 {
     __attr * const callable = &__args[1];
     __attr * const instance = &__args[2];
+    __attr out;
 
-    return __replace_context(instance->value, *callable);
+    out = __replace_context(instance->value, *callable);
+    if (out.value == 0)
+        __raise_type_error();
+
+    return out;
 }
 
 /* Module initialisation. */
