@@ -640,7 +640,7 @@ class CachedModule(BasicModule):
 
     def _get_exception_namespaces(self, f):
         f.readline() # "exception namespaces:"
-        values = f.readline.rstrip().split(", ")
+        values = f.readline().rstrip().split(", ")
         self.exception_namespaces = set(values)
         f.readline()
 
