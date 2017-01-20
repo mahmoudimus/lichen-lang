@@ -192,8 +192,8 @@ for FILENAME in tests/* ; do
         OUTCODE="_results/$TESTNAME.exitcode"
 
         echo " (build)..." 1>&2
-        if ! make -C "$DATADIR/_generated" clean > "$BUILDLOG" || \
-           ! make -C "$DATADIR/_generated" > "$BUILDLOG" ; then
+        if ! make -C "$DATADIR/_generated" clean > "$BUILDLOG" 2>&1 || \
+           ! make -C "$DATADIR/_generated" > "$BUILDLOG" 2>&1 ; then
             exit 1
         fi
 
