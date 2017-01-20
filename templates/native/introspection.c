@@ -33,11 +33,28 @@ __attr __fn_native_introspection_object_getattr(__attr __args[])
     __attr * const _default = &__args[3];
     /* name.__data__ interpreted as string */
     __attr key = __load_via_object(name->value, __pos___key__);
+    __attr out;
 
     if ((key.code == 0) && (key.pos == 0))
         return *_default;
-    else
-        return __check_and_load_via_any(obj->value, key.pos, key.code);
+
+    /* Attempt to get the attribute from the object. */
+
+    out = __check_and_load_via_object_null(obj->value, key.pos, key.code);
+    if (out.value == 0)
+    {
+        /* Inspect the object's class if this failed. */
+
+        out = __check_and_load_via_class(obj->value, key.pos, key.code);
+        if (out.value == 0)
+            return *_default;
+
+        /* Update the context to the object if it is a method. */
+
+        return __replace_context(obj->value, out);
+    }
+
+    return out;
 }
 
 static int __issubclass(__ref obj, __attr cls)

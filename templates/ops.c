@@ -122,7 +122,7 @@ __ref __test_common_type(__ref obj, int pos, int code)
 
 /* Attribute testing and retrieval operations. */
 
-static __attr __check_and_load_via_object_null(__ref obj, int pos, int code)
+__attr __check_and_load_via_object_null(__ref obj, int pos, int code)
 {
     if (__HASATTR(obj, pos, code))
         return __load_via_object(obj, pos);

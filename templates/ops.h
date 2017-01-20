@@ -57,6 +57,7 @@ __ref __test_common_type(__ref obj, int pos, int code);
 
 __attr __check_and_load_via_class(__ref obj, int pos, int code);
 __attr __check_and_load_via_object(__ref obj, int pos, int code);
+__attr __check_and_load_via_object_null(__ref obj, int pos, int code);
 __attr __check_and_load_via_any(__ref obj, int pos, int code);
 
 /* Attribute testing and storage operations. */
