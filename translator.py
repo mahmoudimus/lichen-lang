@@ -19,11 +19,13 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import CommonModule, CommonOutput, first, get_builtin_module, \
-                   get_builtin_type, init_item, predefined_constants
+from common import CommonModule, CommonOutput, InstructionSequence, \
+                   first, get_builtin_module, get_builtin_type, init_item, \
+                   predefined_constants
 from encoders import encode_access_instruction, encode_bound_reference, \
                      encode_function_pointer, encode_literal_constant, \
                      encode_literal_instantiator, encode_instantiator_pointer, \
+                     encode_instructions, \
                      encode_path, encode_symbol, encode_type_attribute, \
                      is_type_attribute
 from os.path import exists, join
@@ -183,12 +185,12 @@ class TrInstanceRef(results.InstanceRef, TranslationResult):
     def __repr__(self):
         return "TrResolvedInstanceRef(%r, %r)" % (self.ref, self.expr)
 
-class AttrResult(Expression, TranslationResult):
+class AttrResult(Expression, TranslationResult, InstructionSequence):
 
     "A translation result for an attribute access."
 
-    def __init__(self, s, refs, accessor_kinds):
-        Expression.__init__(self, s)
+    def __init__(self, instructions, refs, accessor_kinds):
+        InstructionSequence.__init__(self, instructions)
         self.refs = refs
         self.accessor_kinds = accessor_kinds
 
@@ -206,10 +208,13 @@ class AttrResult(Expression, TranslationResult):
     def get_accessor_kinds(self):
         return self.accessor_kinds
 
-    def __repr__(self):
-        return "AttrResult(%r, %r, %r)" % (self.s, self.refs, self.accessor_kinds)
+    def __str__(self):
+        return encode_instructions(self.instructions)
 
-class PredefinedConstantRef(AttrResult):
+    def __repr__(self):
+        return "AttrResult(%r, %r, %r)" % (self.instructions, self.refs, self.accessor_kinds)
+
+class PredefinedConstantRef(Expression, TranslationResult):
 
     "A predefined constant reference."
 
@@ -701,8 +706,8 @@ class TranslatedModule(CommonModule):
         # Generate access instructions.
 
         subs = {
-            "<expr>" : str(attr_expr),
-            "<assexpr>" : str(self.in_assignment),
+            "<expr>" : attr_expr,
+            "<assexpr>" : self.in_assignment,
             }
 
         temp_subs = {
@@ -738,15 +743,8 @@ class TranslatedModule(CommonModule):
             if temp_subs.has_key(sub):
                 self.record_temp(temp_subs[sub])
 
-        # Format the output.
-
-        if len(output) == 1:
-            out = output[0]
-        else:
-            out = "(\n%s\n)" % ",\n".join(output)
-
         del self.attrs[0]
-        return AttrResult(out, refs, self.get_accessor_kinds(location))
+        return AttrResult(output, refs, self.get_accessor_kinds(location))
 
     def get_referenced_attributes(self, location):
 

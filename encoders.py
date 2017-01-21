@@ -249,7 +249,7 @@ def encode_access_instruction(instruction, subs):
             a[0] = "&%s" % a[0]
             a[1] = "&%s" % a[1]
 
-        argstr = "(%s)" % ", ".join(a)
+        argstr = "(%s)" % ", ".join(map(str, a))
 
     # Substitute the first element of the instruction, which may not be an
     # operation at all.
@@ -318,6 +318,15 @@ def encode_instantiator_pointer(path):
     "Encode 'path' as a reference to an output program instantiator."
 
     return "__new_%s" % encode_path(path)
+
+def encode_instructions(instructions):
+
+    "Encode 'instructions' as a sequence."
+
+    if len(instructions) == 1:
+        return instructions[0]
+    else:
+        return "(\n%s\n)" % ",\n".join(instructions)
 
 def encode_literal_constant(n):
 

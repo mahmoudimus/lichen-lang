@@ -795,6 +795,21 @@ def get_argnames(args):
             l.append(arg)
     return l
 
+# Result classes.
+
+class InstructionSequence:
+
+    "A generic sequence of instructions."
+
+    def __init__(self, instructions):
+        self.instructions = instructions
+
+    def get_value_instruction(self):
+        return self.instructions[-1]
+
+    def get_init_instructions(self):
+        return self.instructions[:-1]
+
 # Dictionary utilities.
 
 def init_item(d, key, fn):
