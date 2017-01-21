@@ -184,8 +184,8 @@ class Generator(CommonOutput):
 #include "ops.h"
 #include "progconsts.h"
 #include "progtypes.h"
-#include "progops.h"
 #include "main.h"
+#include "progops.h"
 """
 
             # Generate table and structure data.
