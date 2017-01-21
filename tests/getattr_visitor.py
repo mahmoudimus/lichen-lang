@@ -2,8 +2,6 @@ class Expr:
 
     "An expression."
 
-    name = "Expr"
-
     def __init__(self, ops):
         self.ops = ops
 
@@ -13,8 +11,6 @@ class Expr:
 class Binary:
 
     "A binary operator."
-
-    name = "Binary"
 
     def __init__(self, left, op, right):
         self.left = left
@@ -28,8 +24,6 @@ class Unary:
 
     "A unary operator."
 
-    name = "Unary"
-
     def __init__(self, op, operand):
         self.op = op
         self.operand = operand
@@ -40,8 +34,6 @@ class Unary:
 class Value:
 
     "A general value."
-
-    name = "Value"
 
     def __init__(self, value):
         self.value = value
@@ -60,7 +52,7 @@ class Visitor:
 
         # Obtain the method for the node name.
 
-        fn = getattr(self, node.name)
+        fn = getattr(self, node.__name__)
 
         # Call the method.
 

@@ -918,9 +918,26 @@ __obj %s = {
                     path = ref.get_origin()
                     value_type = self.string_type
 
+                    # Provide constant values. These must match the values
+                    # originally recorded during inspection.
+
                     if attrname == "__file__":
                         module = self.importer.get_module(path)
                         value = module.filename
+
+                    # Function and class names are leafnames.
+
+                    elif attrname in ("__fname__", "__name__"):
+                        value = path.rsplit(".", 1)[-1]
+
+                    # Module names of classes and functions are derived from
+                    # their object paths.
+
+                    elif attrname == "__mname__" and not ref.has_kind("<module>"):
+                        value = self.importer.get_module_provider(ref)
+
+                    # All other names just use the object path information.
+
                     else:
                         value = path
 
