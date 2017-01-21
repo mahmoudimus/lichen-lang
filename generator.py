@@ -914,7 +914,7 @@ __obj %s = {
 
                 # Special cases.
 
-                elif attrname in ("__file__", "__fname__",  "__mname__", "__name__"):
+                elif attrname in ("__file__", "__fname__",  "__mname__", "__name__", "__oname__"):
                     path = ref.get_origin()
                     value_type = self.string_type
 
@@ -930,11 +930,11 @@ __obj %s = {
                     elif attrname in ("__fname__", "__name__"):
                         value = path.rsplit(".", 1)[-1]
 
-                    # Module names of classes and functions are derived from
+                    # Object names of classes and functions are derived from
                     # their object paths.
 
-                    elif attrname == "__mname__" and not ref.has_kind("<module>"):
-                        value = self.importer.get_module_provider(ref)
+                    elif attrname == "__oname__":
+                        value = path.rsplit(".", 1)[0]
 
                     # All other names just use the object path information.
 

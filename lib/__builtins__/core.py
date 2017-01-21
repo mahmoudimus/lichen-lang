@@ -41,7 +41,7 @@ class object:
 
         "Return a string representation."
 
-        return str(buffer(["<", self.__mname__, ".", self.__name__, " instance>"]))
+        return str(buffer(["<", self.__oname__, ".", self.__name__, " instance>"]))
 
     __repr__ = __str__
 
@@ -82,7 +82,7 @@ class function:
         self.__fn__ = None
         self.__args__ = None
         self.__fname__ = None
-        self.__mname__ = None
+        self.__oname__ = None
 
     def __bool__(self):
 
@@ -94,7 +94,7 @@ class function:
 
         "Return a string representation."
 
-        return str(buffer([self.__mname__, ".", self.__fname__]))
+        return str(buffer([self.__oname__, ".", self.__fname__]))
 
     __repr__ = __str__
 
@@ -110,7 +110,7 @@ class type:
 
         "Return a string representation."
 
-        return self.__name__
+        return str(buffer([self.__oname__, ".", self.__name__]))
 
     __repr__ = __str__
 

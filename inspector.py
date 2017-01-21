@@ -524,10 +524,10 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             self.set_name("__fn__") # special instantiator attribute
             self.set_name("__args__") # special instantiator attribute
 
-        # Provide leafname and module name attributes.
+        # Provide leafname and object name attributes.
 
         self.set_name("__name__", self.get_constant("string", class_name.rsplit(".", 1)[-1]).reference())
-        self.set_name("__mname__", self.get_constant("string", self.name).reference())
+        self.set_name("__oname__", self.get_constant("string", class_name.rsplit(".", 1)[0]).reference())
 
         self.process_structure_node(n.code)
         self.exit_namespace()
@@ -646,11 +646,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         self.enter_namespace(name)
 
-        # Define leafname and module name attribute values for the function instance.
+        # Define leafname and object name attribute values for the function instance.
 
         ref = self.get_builtin_class("string")
         self.reserve_constant(function_name, name, ref.get_origin())
-        self.reserve_constant(function_name, self.name, ref.get_origin())
+        self.reserve_constant(function_name, function_name.rsplit(".", 1)[0], ref.get_origin())
 
         # Track attribute usage within the namespace.
 
