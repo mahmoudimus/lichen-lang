@@ -3,7 +3,7 @@
 """
 Deduce types for usage observations.
 
-Copyright (C) 2014, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -1991,7 +1991,14 @@ class Deducer(CommonOutput):
 
         # First attribute accessed at a known position via the accessor.
 
-        if base or dynamic_base:
+        # Static bases support object-relative accesses only.
+
+        if base:
+            first_method = "relative-object"
+
+        # Dynamic bases support either object- or class-relative accesses.
+
+        elif dynamic_base:
             first_method = "relative" + (object_relative and "-object" or "") + \
                                         (class_relative and "-class" or "")
 
