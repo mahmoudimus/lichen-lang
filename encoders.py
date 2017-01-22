@@ -3,7 +3,7 @@
 """
 Encoder functions, producing representations of program objects.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import first
+from common import first, InstructionSequence
 
 # Output encoding and decoding for the summary files.
 
@@ -256,7 +256,18 @@ def encode_access_instruction(instruction, subs):
 
     if subs.has_key(op):
         substituted.add(op)
+
+        # Break accessor initialisation into initialisation and value-yielding
+        # parts:
+
+        if op == "<set_accessor>" and isinstance(a[0], InstructionSequence):
+            ops = []
+            ops += a[0].get_init_instructions()
+            ops.append("%s(%s)" % (subs[op], a[0].get_value_instruction()))
+            return ", ".join(map(str, ops)), substituted
+
         op = subs[op]
+
     elif not args:
         op = "&%s" % encode_path(op)
 

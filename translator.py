@@ -214,6 +214,30 @@ class AttrResult(Expression, TranslationResult, InstructionSequence):
     def __repr__(self):
         return "AttrResult(%r, %r, %r)" % (self.instructions, self.refs, self.accessor_kinds)
 
+class InvocationResult(Expression, TranslationResult, InstructionSequence):
+
+    "A translation result for an invocation."
+
+    def __init__(self, instructions):
+        InstructionSequence.__init__(self, instructions)
+
+    def __str__(self):
+        return encode_instructions(self.instructions)
+
+    def __repr__(self):
+        return "InvocationResult(%r)" % self.instructions
+
+class InstantiationResult(InvocationResult, TrInstanceRef):
+
+    "An instantiation result acting like an invocation result."
+
+    def __init__(self, ref, instructions):
+        results.InstanceRef.__init__(self, ref)
+        InvocationResult.__init__(self, instructions)
+
+    def __repr__(self):
+        return "InstantiationResult(%r, %r)" % (self.ref, self.instructions)
+
 class PredefinedConstantRef(Expression, TranslationResult):
 
     "A predefined constant reference."
@@ -1295,24 +1319,23 @@ class TranslatedModule(CommonModule):
         # and thereby participate in a guaranteed evaluation order.
 
         if target or function:
-            output = "(\n%s(%s))" % (",\n".join(stages), argstr)
+            stages[-1] += "(%s)" % argstr
+            if instantiation:
+                return InstantiationResult(instantiation, stages)
+            else:
+                return InvocationResult(stages)
 
         # With unknown targets, the generic invocation function is applied to
         # the callable and argument collections.
 
         else:
             self.record_temp("__tmp_targets")
-            output = "(%s, __invoke(\n__tmp_targets[%d],\n%d, %d, %s, %s,\n%d, %s\n))" % (
-                ",\n".join(stages),
+            stages.append("__invoke(\n__tmp_targets[%d],\n%d, %d, %s, %s,\n%d, %s\n)" % (
                 self.function_target,
                 self.always_callable and 1 or 0,
                 len(kwargs), kwcodestr, kwargstr,
-                len(args), argstr)
-
-        if instantiation:
-            return TrInstanceRef(instantiation, output)
-        else:
-            return make_expression(output)
+                len(args), argstr))
+            return InvocationResult(stages)
 
     def always_callable(self, refs):
 
