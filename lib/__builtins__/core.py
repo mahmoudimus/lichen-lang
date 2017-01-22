@@ -41,7 +41,10 @@ class object:
 
         "Return a string representation."
 
-        return str(buffer(["<", self.__oname__, ".", self.__name__, " instance>"]))
+        # The string representation of the class should be provided by the
+        # type.__str__ method using the class as self.
+
+        return str(buffer(["<", self.__class__, " instance>"]))
 
     __repr__ = __str__
 
@@ -56,13 +59,13 @@ class module:
         """
 
         self.__file__ = None
-        self.__mname__ = None
+        self.__name__ = None
 
     def __str__(self):
 
         "Return a string representation."
 
-        return self.__mname__
+        return self.__name__
 
     __repr__ = __str__
 
@@ -81,8 +84,8 @@ class function:
 
         self.__fn__ = None
         self.__args__ = None
-        self.__fname__ = None
-        self.__oname__ = None
+        self.__name__ = None
+        self.__parent__ = None
 
     def __bool__(self):
 
@@ -94,7 +97,9 @@ class function:
 
         "Return a string representation."
 
-        return str(buffer([self.__oname__, ".", self.__fname__]))
+        # Combine the function's parent representation with the function's name.
+
+        return str(buffer([self.__parent__, ".", self.__name__]))
 
     __repr__ = __str__
 
@@ -110,7 +115,10 @@ class type:
 
         "Return a string representation."
 
-        return str(buffer([self.__oname__, ".", self.__name__]))
+        # With the class as self, combine the class's parent representation with
+        # the class's name.
+
+        return str(buffer([self.__parent__, ".", self.__name__]))
 
     __repr__ = __str__
 

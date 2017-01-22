@@ -914,7 +914,7 @@ __obj %s = {
 
                 # Special cases.
 
-                elif attrname in ("__file__", "__fname__",  "__mname__", "__name__", "__oname__"):
+                elif attrname in ("__file__", "__name__"):
                     path = ref.get_origin()
                     value_type = self.string_type
 
@@ -927,14 +927,8 @@ __obj %s = {
 
                     # Function and class names are leafnames.
 
-                    elif attrname in ("__fname__", "__name__"):
+                    elif attrname == "__name__" and not ref.has_kind("<module>"):
                         value = path.rsplit(".", 1)[-1]
-
-                    # Object names of classes and functions are derived from
-                    # their object paths.
-
-                    elif attrname == "__oname__":
-                        value = path.rsplit(".", 1)[0]
 
                     # All other names just use the object path information.
 
@@ -949,6 +943,16 @@ __obj %s = {
                     constant_number = self.optimiser.constant_numbers[attr_path]
                     constant_value = "__const%d" % constant_number
                     structure.append("%s /* %s */" % (constant_value, attrname))
+                    continue
+
+                elif attrname == "__parent__":
+                    path = ref.get_origin()
+
+                    # Parents of classes and functions are derived from their
+                    # object paths.
+
+                    value = path.rsplit(".", 1)[0]
+                    structure.append("{.context=0, .value=&%s}" % encode_path(value))
                     continue
 
                 # Special class relationship attributes.

@@ -607,7 +607,7 @@ class Importer:
 
     # NOTE: Consolidate this information in a common location.
 
-    special_attributes = ("__args__", "__file__", "__fn__", "__fname__", "__mname__", "__name__", "__oname__")
+    special_attributes = ("__args__", "__file__", "__fn__", "__name__", "__parent__")
 
     def is_dynamic(self, ref):
         return not ref or not ref.static() and not ref.is_constant_alias() and not ref.is_predefined_value()
