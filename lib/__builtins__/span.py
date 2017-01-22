@@ -3,7 +3,7 @@
 """
 Span-related objects.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -45,7 +45,7 @@ class slice:
 
         "Return a string representation."
 
-        b = buffer([self.__name__, "(", self.start, ", ", self.end, ", ", self.step, ")"])
+        b = buffer([self.__oname__, ".", self.__name__, "(", self.start, ", ", self.end, ", ", self.step, ")"])
         return str(b)
 
     __repr__ = __str__
