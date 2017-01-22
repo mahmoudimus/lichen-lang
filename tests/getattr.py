@@ -27,15 +27,15 @@ for attrname in attrnames:
     print attrname,
     try:
         v = getattr(c, attrname)
-        print "", v,
+        print v,
     except AttributeError:
-        print " ?",
+        print "?",
 
     try:
         v = getattr(d, attrname)
-        print "", v
+        print v
     except AttributeError:
-        print " ?"
+        print "?"
 
 try:
     setattr(c, "x", 7)

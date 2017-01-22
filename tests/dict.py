@@ -6,7 +6,7 @@ def g(d):
         return value
 
 d = {10 : "a", 20 : "b", "c" : 30, (1, 2) : "d"}
-print "# d: ",
+print "# d:",
 print d
 print d[10]                             # a
 print d[20]                             # b
@@ -22,7 +22,7 @@ print d.has_key(20)                     # True
 print d.has_key(30)                     # False
 
 l = f(d)
-print "# l: ",
+print "# l:",
 print l
 print 10 in l                          	# True
 print 20 in l                          	# True
@@ -32,7 +32,7 @@ print 30 in l                          	# False
 print (1, 2) in l                       # True
 
 l = d.values()
-print "# l: ",
+print "# l:",
 print l
 print "a" in l                          # True
 print "b" in l                          # True
@@ -42,13 +42,13 @@ print 30 in l                           # True
 print (1, 2) in l                       # False
 
 v = g(d) # either "a" or "b" or 30 or "d"
-print "# v: ",
+print "# v:",
 print v
 print v == "a" or v == "b" or v == 30 or v == "d"   # True
 print v == 10 or v == 20 or v == "c" or v == (1, 2) # False
 
 l = d.items()
-print "# l: ",
+print "# l:",
 print l
 print (10, "a") in l                    # True
 print ("c", 30) in l                    # True
