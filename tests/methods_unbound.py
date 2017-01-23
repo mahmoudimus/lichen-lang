@@ -83,6 +83,8 @@ try:
 except TypeError:
     print "f(d, 1): d is not a suitable argument."
 
+# Get an unbound method, C.m.
+
 fn = f(C, 0)
 
 try:
@@ -91,6 +93,9 @@ except UnboundMethodInvocation:
     print "fn(2): Unbound method is not callable."
 
 print get_using(fn, c)(2)       # 2
+
+# Repeat with fn re-evaluated.
+
 print get_using(f(C, 0), c)(2)  # 2
 
 try:
