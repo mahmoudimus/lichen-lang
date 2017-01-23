@@ -852,7 +852,7 @@ class Deducer(CommonOutput):
                     # Plain name accesses do not employ attributes and are
                     # ignored.
 
-                    if attrname_str:
+                    if not attrname_str:
                         continue
 
                     attrnames = get_attrnames(attrname_str)
