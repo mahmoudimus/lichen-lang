@@ -79,6 +79,10 @@ class Deducer(CommonOutput):
         self.attr_instance_types = {}
         self.attr_module_types = {}
 
+        # All known attribute names.
+
+        self.all_attrnames = set()
+
         # Modified attributes from usage observations.
 
         self.modified_attributes = {}
@@ -128,10 +132,11 @@ class Deducer(CommonOutput):
         # The processing workflow itself.
 
         self.init_usage_index()
+        self.init_attr_type_indexes()
+        self.init_combined_attribute_index()
         self.init_accessors()
         self.init_accesses()
         self.init_aliases()
-        self.init_attr_type_indexes()
         self.modify_mutated_attributes()
         self.identify_references()
         self.classify_accessors()
@@ -818,6 +823,10 @@ class Deducer(CommonOutput):
     def init_accesses(self):
 
         """
+        Check that attributes used in accesses are actually defined on some
+        object. This can be overlooked if unknown attributes are employed in
+        attribute chains.
+
         Initialise collections for accesses involving assignments.
         """
 
@@ -834,23 +843,37 @@ class Deducer(CommonOutput):
                 # assignments.
 
                 for access_number, (assignment, invocation) in enumerate(modifiers):
-                    if not assignment and not invocation:
-                        continue
 
                     if name:
                         access_location = (path, name, attrname_str, access_number)
                     else:
                         access_location = (path, None, attrname_str, 0)
 
+                    # Plain name accesses do not employ attributes and are
+                    # ignored.
+
+                    if attrname_str:
+                        continue
+
+                    attrnames = get_attrnames(attrname_str)
+
+                    # Check the attribute names.
+
+                    for attrname in attrnames:
+                        if not attrname in self.all_attrnames:
+                            raise DeduceError("In %s, attribute %s is not defined in the program." % (path, attrname))
+
+                    # Now only process assignments and invocations.
+
                     if invocation:
                         self.reference_invocations.add(access_location)
                         continue
-
-                    self.reference_assignments.add(access_location)
+                    elif not assignment:
+                        continue
 
                     # Associate assignments with usage.
 
-                    attrnames = get_attrnames(attrname_str)
+                    self.reference_assignments.add(access_location)
 
                     # Assignment occurs for the only attribute.
 
@@ -1118,6 +1141,15 @@ class Deducer(CommonOutput):
             types.intersection_update(attr_types.get(key) or [])
 
         return types
+
+    def init_combined_attribute_index(self):
+
+        "Initialise a combined index for the detection of invalid attributes."
+
+        self.all_attrnames = set()
+        for attrs in (self.importer.all_combined_attrs, self.importer.all_module_attrs):
+            for name, attrnames in attrs.items():
+                self.all_attrnames.update(attrnames)
 
     # Reference identification.
 
