@@ -3,7 +3,7 @@
 """
 Optimise object layouts and generate access instruction plans.
 
-Copyright (C) 2014, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -632,7 +632,10 @@ class Optimiser:
 
         all_names = locations.keys()
         all_names.sort()
-        return all_names, dict([(name, i) for i, name in enumerate(all_names)])
+        d = {}
+        for i, name in enumerate(all_names):
+            d[name] = i
+        return all_names, d
 
     def populate_constants(self):
 
