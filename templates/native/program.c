@@ -30,13 +30,8 @@ __attr __fn_native_program_get_using(__attr __args[])
 {
     __attr * const callable = &__args[1];
     __attr * const instance = &__args[2];
-    __attr out;
 
-    out = __replace_context(instance->value, *callable);
-    if (out.value == 0)
-        __raise_type_error();
-
-    return out;
+    return __test_context(instance->value, *callable);
 }
 
 /* Module initialisation. */
