@@ -394,9 +394,18 @@ class CommonModule:
 
         name_ref = self.process_structure_node(expr)
 
-        # Have the assignment nodes access each item via the sequence API.
+        # Either unpack the items and present them directly to each assignment
+        # node.
 
-        self.process_assignment_node_items_by_position(n, expr, name_ref)
+        if isinstance(name_ref, LiteralSequenceRef) and \
+           self.process_literal_sequence_items(n, name_ref):
+
+            pass
+
+        # Or have the assignment nodes access each item via the sequence API.
+
+        else:
+            self.process_assignment_node_items_by_position(n, expr, name_ref)
 
     def process_assignment_node_items_by_position(self, n, expr, name_ref):
 
@@ -441,11 +450,31 @@ class CommonModule:
         """
         Process the given assignment node 'n', obtaining from the given
         'name_ref' the items to be assigned to the assignment targets.
+
+        Return whether this method was able to process the assignment node as
+        a sequence of direct assignments.
         """
 
         if len(n.nodes) == len(name_ref.items):
-            for node, item in zip(n.nodes, name_ref.items):
-                self.process_assignment_node(node, item)
+            assigned_names, count = get_names_from_nodes(n.nodes)
+            accessed_names, _count = get_names_from_nodes(name_ref.items)
+
+            # Only assign directly between items if all assigned names are
+            # plain names (not attribute assignments), and if the assigned names
+            # do not appear in the accessed names.
+
+            if len(assigned_names) == count and \
+               not assigned_names.intersection(accessed_names):
+
+                for node, item in zip(n.nodes, name_ref.items):
+                    self.process_assignment_node(node, item)
+
+                return True
+
+            # Otherwise, use the position-based mechanism to obtain values.
+
+            else:
+                return False
         else:
             raise InspectError("In %s, item assignment needing %d items is given %d items." % (
                 self.get_namespace_path(), len(n.nodes), len(name_ref.items)))
@@ -795,6 +824,40 @@ def get_argnames(args):
         else:
             l.append(arg)
     return l
+
+def get_names_from_nodes(nodes):
+
+    """
+    Return the names employed in the given 'nodes' along with the number of
+    nodes excluding sequences.
+    """
+
+    names = set()
+    count = 0
+
+    for node in nodes:
+
+        # Add names and count them.
+
+        if isinstance(node, (compiler.ast.AssName, compiler.ast.Name)):
+            names.add(node.name)
+            count += 1
+
+        # Add names from sequences and incorporate their counts.
+
+        elif isinstance(node, (compiler.ast.AssList, compiler.ast.AssTuple,
+                               compiler.ast.List, compiler.ast.Set,
+                               compiler.ast.Tuple)):
+            _names, _count = get_names_from_nodes(node.nodes)
+            names.update(_names)
+            count += _count
+
+        # Count non-name, non-sequence nodes.
+
+        else:
+            count += 1
+
+    return names, count
 
 # Result classes.
 
