@@ -4,8 +4,7 @@ class fib:
 
     def next(self):
         result = self.b
-        #self.a, self.b = self.b, self.a + self.b
-        self.b, self.a = self.a + self.b, result
+        self.a, self.b = self.b, self.a + self.b
         return result
 
 seq = fib()

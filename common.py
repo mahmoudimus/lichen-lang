@@ -4,7 +4,7 @@
 Common functions.
 
 Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+              2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -394,16 +394,9 @@ class CommonModule:
 
         name_ref = self.process_structure_node(expr)
 
-        # Either unpack the items and present them directly to each assignment
-        # node.
+        # Have the assignment nodes access each item via the sequence API.
 
-        if isinstance(name_ref, LiteralSequenceRef):
-            self.process_literal_sequence_items(n, name_ref)
-
-        # Or have the assignment nodes access each item via the sequence API.
-
-        else:
-            self.process_assignment_node_items_by_position(n, expr, name_ref)
+        self.process_assignment_node_items_by_position(n, expr, name_ref)
 
     def process_assignment_node_items_by_position(self, n, expr, name_ref):
 
@@ -417,8 +410,14 @@ class CommonModule:
 
         assignments = []
 
-        if isinstance(name_ref, NameRef):
+        # Employ existing names to access the sequence.
+        # Literal sequences do not provide names of accessible objects.
+
+        if isinstance(name_ref, NameRef) and not isinstance(name_ref, LiteralSequenceRef):
             temp = name_ref.name
+
+        # For other expressions, create a temporary name to reference the items.
+
         else:
             temp = self.get_temporary_name()
             self.next_temporary()
@@ -426,6 +425,8 @@ class CommonModule:
             assignments.append(
                 compiler.ast.Assign([compiler.ast.AssName(temp, "OP_ASSIGN")], expr)
                 )
+
+        # Assign the items to the target nodes.
 
         for i, node in enumerate(n.nodes):
             assignments.append(
