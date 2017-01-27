@@ -98,9 +98,10 @@ class Generator(CommonOutput):
 
         self.check_output()
         self.write_structures()
-        self.copy_templates(debug)
+        self.write_scripts(debug)
+        self.copy_templates()
 
-    def copy_templates(self, debug=False):
+    def copy_templates(self):
 
         "Copy template files to the generated output directory."
 
@@ -108,20 +109,6 @@ class Generator(CommonOutput):
 
         for filename in listdir(templates):
             target = self.output
-
-            # Handle debug resources.
-
-            if filename.endswith("-debug"):
-                if debug:
-                    target = join(self.output, filename[:-len("-debug")])
-                else:
-                    continue
-
-            # Handle non-debug resources.
-
-            if debug and exists(join(templates, "%s-debug" % filename)):
-                continue
-
             pathname = join(templates, filename)
 
             # Copy files into the target directory.
@@ -437,6 +424,34 @@ class Generator(CommonOutput):
             f_decls.close()
             f_signatures.close()
             f_code.close()
+
+    def write_scripts(self, debug):
+
+        "Write scripts used to build the program."
+
+        f_native = open(join(self.output, "native.mk"), "w")
+        f_options = open(join(self.output, "options.mk"), "w")
+        try:
+            if debug:
+                print >>f_options, "CFLAGS = -g"
+
+            # Identify native modules used by the program.
+
+            native_modules = ["native/common.c"]
+
+            for name in self.importer.modules.keys():
+                parts = name.split(".", 1)
+
+                # Identify source files to be built.
+
+                if parts[0] == "native":
+                    native_modules.append("native/%s.c" % parts[1])
+
+            print >>f_native, "SRC =", " ".join(native_modules)
+
+        finally:
+            f_native.close()
+            f_options.close()
 
     def make_literal_constant(self, f_decls, f_defs, n, constant):
 
