@@ -20,11 +20,11 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from compiler.transformer import Transformer
 from errors import InspectError
 from os import listdir, makedirs, remove
 from os.path import exists, isdir, join, split
 from results import ConstantValueRef, LiteralSequenceRef, NameRef
-from compiler.transformer import Transformer
 import compiler.ast
 
 class CommonOutput:
@@ -248,7 +248,7 @@ class CommonModule:
         elif isinstance(value, str) and self.encoding:
             if not literal.startswith("b"):
                 try:
-                    return unicode(value, self.encoding).encode("utf-8"), "unicode", self.encoding
+                    return get_string_details(literal, self.encoding)
                 except UnicodeDecodeError:
                     pass
 
@@ -963,6 +963,175 @@ def sorted_output(x):
     x = map(str, x)
     x.sort()
     return ", ".join(x)
+
+def get_string_details(s, encoding):
+
+    """
+    Determine whether 's' represents a Unicode string or a byte string, using
+    'encoding' to interpret byte sequences. The contents of 's' is the full
+    literal representation including prefix and quotes.
+
+    Find and convert Unicode values starting with <backslash>u or <backslash>U,
+    and byte or Unicode values starting with <backslash><octal digit> or
+    <backslash>x.
+
+    Literals prefixed with "u" cause <backslash><octal digit> and <backslash>x
+    to be considered as Unicode values. Otherwise, they produce byte values and
+    cause unprefixed strings to be considered as byte strings.
+
+    Literals prefixed with "r" do not have their backslash-encoded values
+    converted unless also prefixed with "u", in which case only the above value
+    formats are converted, not any of the other special sequences for things
+    like newlines.
+
+    Return the encoded literal value, type name, and original encoding as a
+    tuple.
+    """
+
+    l = []
+    typename = "unicode"
+
+    # Identify the quote character and use it to identify the prefix.
+
+    quote_type = s[-1]
+    prefix_end = s.find(quote_type)
+    prefix = s[:prefix_end].lower()
+
+    if prefix not in ("", "b", "br", "r", "u", "ur"):
+        raise ValueError, "String literal does not have a supported prefix: %s" % s
+
+    # Identify triple quotes or single quotes.
+
+    if len(s) >= 6 and s[-2] == quote_type and s[-3] == quote_type:
+        quote = s[prefix_end:prefix_end+3]
+        current = prefix_end + 3
+        end = len(s) - 3
+    else:
+        quote = s[prefix_end]
+        current = prefix_end + 1
+        end = len(s) - 1
+
+    # Conversions of some quoted values.
+
+    searches = {
+        "u" : (6, 16),
+        "U" : (10, 16),
+        "x" : (4, 16),
+        }
+
+    octal_digits = map(str, range(0, 8))
+
+    # Translations of some quoted values.
+
+    escaped = {
+        "\\" : "\\", "'" : "'", '"' : '"',
+        "a" : "\a", "b" : "\b", "f" : "\f",
+        "n" : "\n", "r" : "\r", "t" : "\t",
+        }
+
+    while current < end:
+
+        # Look for quoted values.
+
+        index = s.find("\\", current)
+        if index == -1 or index + 1 == end:
+            l.append(s[current:end])
+            break
+
+        # Add the preceding text.
+
+        l.append(s[current:index])
+
+        # Handle quoted text.
+
+        term = s[index+1]
+
+        # Add Unicode values. Where a string is u-prefixed, even \o and \x
+        # produce Unicode values.
+
+        if term in ("u", "U") or prefix == "u" and (
+           term == "x" or term in octal_digits):
+
+            needed, base = searches.get(term, (4, 8))
+            value = convert_quoted_value(s, index, needed, end, base, unichr)
+            l.append(value)
+            current = index + needed
+
+        # Add raw byte values, changing the string type.
+
+        elif "r" not in prefix and (
+             term == "x" or term in octal_digits):
+
+            needed, base = searches.get(term, (4, 8))
+            value = convert_quoted_value(s, index, needed, end, base, chr)
+            l.append(value)
+            typename = "str"
+            current = index + needed
+
+        # Add other escaped values.
+
+        elif "r" not in prefix and escaped.has_key(term):
+            l.append(escaped[term])
+            current = index + 2
+
+        # Add other text as found.
+
+        else:
+            l.append(s[index:index+2])
+            current = index + 2
+
+    # For byte string values, convert any Unicode values to the original
+    # encoding.
+
+    if typename == "str":
+        out = []
+        for value in l:
+            if isinstance(value, unicode):
+                out.append(value.encode(encoding))
+            else:
+                out.append(value)
+        out = "".join(out)
+
+    # For Unicode values, convert byte sequences to Unicode.
+
+    else:
+        out = []
+        for value in l:
+            if isinstance(value, unicode):
+                out.append(value)
+            else:
+                out.append(unicode(value, encoding))
+        out = "".join(out).encode("utf-8")
+
+    return out, typename, encoding
+
+def convert_quoted_value(s, index, needed, end, base, fn):
+
+    """
+    Interpret a quoted value in 's' at 'index' with the given 'needed' number of
+    positions, and with the given 'end' indicating the first position after the
+    end of the actual string content.
+
+    Use 'base' as the numerical base when interpreting the value, and use 'fn'
+    to convert the value to an appropriate type.
+    """
+
+    s = s[index:min(index+needed, end)]
+
+    # Not a complete occurrence.
+
+    if len(s) < needed:
+        return s
+
+    # Test for a well-formed value.
+
+    try:
+        first = base == 8 and 1 or 2
+        value = int(s[first:needed], base)
+    except ValueError:
+        return s
+    else:
+        return fn(value)
 
 # Attribute chain decoding.
 

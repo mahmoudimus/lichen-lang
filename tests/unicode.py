@@ -5,14 +5,52 @@ import sys
 # Print bytes.
 
 s = b"ÆØÅ"
+print "ISO-8859-1 values:"
 print s                             # ÆØÅ
 print len(s)                        # 3
+
+s2 = b"\xe6\xf8\xe5"
+print "ISO-8859-1 values:"
+print s2                            # זרו
+print s2.__class__                  # __builtins__.str.string
+print len(s2)                       # 3
+
+s3 = "\xe6\xf8\xe5"
+print "ISO-8859-1 values:"
+print s3                            # זרו
+print s3.__class__                  # __builtins__.str.string
+print len(s3)                       # 3
+
+s4 = b"\u00e6\u00f8\u00e5"
+print "Untranslated values:"
+print s4                            # \u00e6\u00f8\u00e5
+print s4.__class__                  # __builtins__.str.string
+print len(s4)                       # 18
+
+s5 = b"\346\370\345"
+print "ISO-8859-1 values:"
+print s5                            # זרו
+print s5.__class__                  # __builtins__.str.string
+print len(s5)                       # 3
+
+s6 = "\346\370\345"
+print "ISO-8859-1 values:"
+print s6                            # זרו
+print s6.__class__                  # __builtins__.str.string
+print len(s6)                       # 3
+
+s7 = r"\346\370\345"
+print "Untranslated values:"
+print s7                            # \346\370\345
+print s7.__class__                  # __builtins__.unicode.utf8string
+print len(s7)                       # 12
 
 # Obtain text and print it.
 
 # Explicitly from bytes.
 
-u = unicode("זרו", "ISO-8859-1")
+u = unicode(b"זרו", "ISO-8859-1")
+print "Unicode values:"
 print u                             # זרו
 print u.__class__                   # __builtins__.unicode.utf8string
 print u.encode("ISO-8859-1")        # זרו
@@ -22,6 +60,7 @@ print len(u)                        # 3
 # Explicitly from Unicode literals.
 
 u2 = u"זרו"
+print "Unicode values:"
 print u2                            # זרו
 print u2.__class__                  # __builtins__.unicode.utf8string
 print u2.encode("ISO-8859-1")       # זרו
@@ -31,16 +70,59 @@ print len(u2)                       # 3
 # Implicitly from string literals.
 
 u3 = "זרו"
+print "Unicode values:"
 print u3                            # זרו
 print u3.__class__                  # __builtins__.unicode.utf8string
 print u3.encode("ISO-8859-1")       # זרו
 print u3.encoding                   # ISO-8859-1
 print len(u3)                       # 3
 
+# Explicitly from implicitly-converted literal.
+
+u4 = unicode("זרו", "ISO-8859-1")
+print "Unicode values:"
+print u4                            # זרו
+print u4.__class__                  # __builtins__.unicode.utf8string
+print u4.encode("ISO-8859-1")       # זרו
+print u4.encoding                   # ISO-8859-1
+print len(u4)                       # 3
+
+# Test Unicode values.
+
+u5 = "\u00e6\u00f8\u00e5"
+print "Unicode values:"
+print u5                            # זרו
+print u5.__class__                  # __builtins__.unicode.ut8string
+print len(u5)                       # 3
+
+# Test some untranslated values.
+
+u6 = "\\u00e6\\u00f8\\u00e5"
+print "Untranslated values:"
+print u6                            # \u00e6\u00f8\u00e5
+print u6.__class__                  # __builtins__.unicode.ut8string
+print len(u6)                       # 18
+
+# Test Unicode values.
+
+u7 = u"\346\370\345"
+print "Unicode values:"
+print u7                            # זרו
+print u7.__class__                  # __builtins__.unicode.ut8string
+print len(u7)                       # 3
+
+# Test Unicode values.
+
+u8 = ur"\346\370\345"
+print "Untranslated values:"
+print u8                            # \346\370\345
+print u8.__class__                  # __builtins__.unicode.ut8string
+print len(u8)                       # 12
+
 # Test invalid sequences.
 
 try:
-    u4 = unicode(s, "UTF-8")
+    u9 = unicode(s, "UTF-8")
 except UnicodeDecodeError, exc:
     print "Attempt to decode", s, "as UTF-8 failed."
 
@@ -48,6 +130,7 @@ except UnicodeDecodeError, exc:
 # The text should be decoded.
 
 su = s + u
+print "ISO-8859-1 values:"
 print su                            # ÆØÅזרו
 print su.__class__                  # __builtins__.str.string
 print len(su)                       # 6
@@ -56,6 +139,7 @@ print len(su)                       # 6
 # The text should be decoded.
 
 us = u + s
+print "ISO-8859-1 values:"
 print us                            # זרוÆØÅ
 print us.__class__                  # __builtins__.str.string
 print len(us)                       # 6
@@ -63,6 +147,7 @@ print len(us)                       # 6
 # Combine text and text.
 
 uu2 = u + u2
+print "Unicode values:"
 print uu2                           # זרוזרו
 print uu2.__class__                 # __builtins__.unicode.utf8string
 print uu2.encoding                  # ISO-8859-1
@@ -75,14 +160,17 @@ print sys.stdout                    # <posix.io.sysstream instance>
 print sys.stdout.encoding           # None
 
 sys.stdout.encoding = "ISO-8859-1"
+print "ISO-8859-1 and Unicode values as ISO-8859-1:"
 print sys.stdout.encoding           # ISO-8859-1
 print u                             # זרו
 print su                            # ÆØÅזרו
 print us                            # זרוÆØÅ
 
 sys.stdout.encoding = "UTF-8"
+print "Unicode values as UTF-8:"
 print sys.stdout.encoding           # UTF-8
 print u                             # Ã¦Ã¸Ã¥
+print "ISO-8859-1 values bypassing UTF-8 output encoding:"
 print su                            # ÆØÅזרו
 print us                            # זרוÆØÅ
 

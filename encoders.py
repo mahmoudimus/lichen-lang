@@ -376,6 +376,7 @@ def encode_literal_constant_value(value):
             elif c == '\n': l.append('\\n')
             elif c == '\t': l.append('\\t')
             elif c == '\r': l.append('\\r')
+            elif c == '\\': l.append('\\\\')
             elif 0x20 <= ord(c) < 0x80: l.append(c)
             else: l.append("\\x%02x" % ord(c))
 
@@ -403,6 +404,8 @@ def encode_literal_reference(n):
     "Encode a reference to a literal constant with the number 'n'."
 
     return "__constvalue%d" % n
+
+
 
 # Track all encoded paths, detecting and avoiding conflicts.
 
