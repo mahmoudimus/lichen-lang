@@ -3,7 +3,7 @@
 """
 String objects.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -102,8 +102,20 @@ class basestring(hashable):
 
         return self._binary_op_rev(str_add, other)
 
-    def __mul__(self, other): pass
-    def __rmul__(self, other): pass
+    def __mul__(self, other):
+
+        "Multiply the string by 'other'."
+
+        b = buffer()
+
+        while other > 0:
+            b.append(self)
+            other -= 1
+
+        return str(b)
+
+    __rmul__ = __mul__
+
     def __mod__(self, other): pass
     def __rmod__(self, other): pass
 

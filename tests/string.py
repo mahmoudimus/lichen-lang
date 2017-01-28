@@ -64,3 +64,15 @@ print "# hash(s4):",
 print hash(s4)
 print "# hash(s5):",
 print hash(s5)
+
+# Test multiplication of strings.
+
+s6 = "abc"
+print s6 * -1               #
+print s6 * 0                #
+print s6 * 1                # abc
+print s6 * 2                # abcabc
+print -1 * s6               #
+print 0 * s6                #
+print 1 * s6                # abc
+print 2 * s6                # abcabc
