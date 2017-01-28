@@ -3,7 +3,7 @@
 """
 List objects.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.iterator import itemiterator
 from __builtins__.sequence import sequence
 from native import list_append, list_concat, list_element, list_init, \
-                   list_len, list_nonempty, list_setelement
+                   list_len, list_nonempty, list_setelement, list_setsize
 
 class list(sequence):
 
@@ -59,8 +59,19 @@ class list(sequence):
         for i in iterable:
             self.append(i)
 
-    def pop(self): pass
+    def pop(self):
+
+        "Remove the last item from the list, returning the item."
+
+        i = self[-1]
+
+        # NOTE: Should truncate the allocated list after several pops.
+
+        list_setsize(self.__data__, self.__len__() - 1)
+        return i
+
     def reverse(self): pass
+
     def sort(self, cmp=None, key=None, reverse=0): pass
 
     def __len__(self):
@@ -69,7 +80,13 @@ class list(sequence):
 
         return list_len(self.__data__)
 
-    def __add__(self, other): pass
+    def __add__(self, other):
+
+        "Add this list to 'other', producing a new list."
+
+        l = list(self)
+        l.extend(other)
+        return l
 
     def __iadd__(self, other):
 

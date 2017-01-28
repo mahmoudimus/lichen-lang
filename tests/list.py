@@ -42,5 +42,28 @@ try:
 except ValueError, exc:
     print "l.index(4): failed to find argument", exc.value
 
+# Test equality.
+
 print l == [1, 2, 3]         # False
 print l == [1, 2, 3, "four"] # True
+
+# Test concatenation.
+
+a = [1, 2]
+a += [3, 4]
+print a                 # [1, 2, 3, 4]
+
+b = [5, 6]
+c = a + b
+print c                 # [1, 2, 3, 4, 5, 6]
+
+# Test removal.
+
+print c.pop()           # 6
+print c                 # [1, 2, 3, 4, 5]
+
+d = []
+try:
+    d.pop()             # should raise an exception
+except IndexError, exc:
+    print "d.pop(): failed to access item", exc.index
