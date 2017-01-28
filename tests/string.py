@@ -10,6 +10,10 @@ print s.find("w")           # 6
 print s.find("w", 7)        # -1
 print s.find("w", 0, 6)     # -1
 print s.index("o")          # 4
+print s.rfind("o")          # 7
+print s.rfind("o", 7)       # 7
+print s.rfind("o", 8)       # -1
+print s.rfind("o", 0, 7)    # 4
 
 try:
     print s.index("p")      # should raise an exception
@@ -76,3 +80,10 @@ print -1 * s6               #
 print 0 * s6                #
 print 1 * s6                # abc
 print 2 * s6                # abcabc
+
+# Test splitting of strings.
+
+s7 = "Hello...\n  world,\n  planet,\n  globe."
+print s7.split()            # ["Hello...", "world,", "planet,", "globe."]
+print s7.split(maxsplit=2)  # ["Hello...", "world,", "planet,\n  globe."]
+print s7.split("\n")        # ["Hello...", "  world,", "  planet,", "  globe."]

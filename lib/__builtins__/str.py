@@ -25,6 +25,8 @@ from __builtins__.types import check_int
 from native import str_add, str_lt, str_gt, str_eq, str_len, str_nonempty, \
                    str_substr
 
+WHITESPACE = (" ", "\f", "\n", "\r", "\t")
+
 class basestring(hashable):
 
     "The base class for all strings."
@@ -198,15 +200,18 @@ class basestring(hashable):
     def find(self, sub, start=None, end=None):
 
         """
-        Find 'sub' in the string, starting at 'start' (or 0, if omitted), ending
-        at 'end' (or the end of the string, if omitted), returning -1 if 'sub'
-        is not present.
+        Find 'sub' in the string if it occurs from or after the 'start' position
+        (or 0, if omitted) and before the 'end' position (or the end of the
+        string, if omitted), returning the earliest occurrence or -1 if 'sub' is
+        not present.
         """
 
         sublen = sub.__len__()
 
         i = start or 0
-        end = end or self.__len__()
+
+        if end is None:
+            end = self.__len__()
 
         while i < end - sublen:
             if sub == self[i:i+sublen]:
@@ -256,10 +261,83 @@ class basestring(hashable):
     def lower(self): pass
     def lstrip(self, chars=None): pass
     def replace(self, old, new, count=None): pass
-    def rfind(self, sub, start=None, end=None): pass
+    def rfind(self, sub, start=None, end=None):
+
+        """
+        Find 'sub' in the string if it occurs from or after the 'start' position
+        (or 0, if omitted) and before the 'end' position (or the end of the
+        string, if omitted), returning the latest occurrence or -1 if 'sub' is
+        not present.
+        """
+
+        sublen = sub.__len__()
+
+        start = start or 0
+
+        if end is None:
+            end = self.__len__()
+
+        i = end - sublen
+
+        while i >= start:
+            if sub == self[i:i+sublen]:
+                return i
+            i -= 1
+
+        return -1
+
     def rsplit(self, sep=None, maxsplit=None): pass
     def rstrip(self, chars=None): pass
-    def split(self, sep=None, maxsplit=None): pass
+
+    def split(self, sep=None, maxsplit=None):
+
+        """
+        Split the string using the given 'sep' as separator (or any whitespace
+        character if omitted or specified as None), splitting at most 'maxsplit'
+        times (or as many times as is possible if omitted or specified as None).
+        """
+
+        if sep is not None and not sep:
+            raise ValueError, sep
+
+        end = self.__len__()
+        seplen = sep and len(sep)
+        splits = 0
+
+        l = []
+        i = last = 0
+
+        while i < end and (maxsplit is None or splits < maxsplit):
+
+            # Find any specified separator.
+
+            if sep and self[i:i+seplen] == sep:
+                l.append(self[last:i])
+                i += seplen
+                last = i
+                splits += 1
+
+            # Find any whitespace character and skip adjacent characters.
+
+            elif not sep and self[i] in WHITESPACE:
+                l.append(self[last:i])
+                while i < end:
+                    i += 1
+                    if self[i] not in WHITESPACE:
+                        break
+                else:
+                    break
+                last = i
+                splits += 1
+
+            # Check the next character.
+
+            else:
+                i += 1
+
+        l.append(self[last:])
+        return l
+
     def splitlines(self, keepends=False): pass
 
     def startswith(self, s):
