@@ -246,11 +246,10 @@ class CommonModule:
         # Attempt to convert plain strings to text.
 
         elif isinstance(value, str) and self.encoding:
-            if not literal.startswith("b"):
-                try:
-                    return get_string_details(literal, self.encoding)
-                except UnicodeDecodeError:
-                    pass
+            try:
+                return get_string_details(literal, self.encoding)
+            except UnicodeDecodeError:
+                pass
 
         return value, value.__class__.__name__, None
 
@@ -989,7 +988,6 @@ def get_string_details(s, encoding):
     """
 
     l = []
-    typename = "unicode"
 
     # Identify the quote character and use it to identify the prefix.
 
@@ -999,6 +997,11 @@ def get_string_details(s, encoding):
 
     if prefix not in ("", "b", "br", "r", "u", "ur"):
         raise ValueError, "String literal does not have a supported prefix: %s" % s
+
+    if "b" in prefix:
+        typename = "str"
+    else:
+        typename = "unicode"
 
     # Identify triple quotes or single quotes.
 
@@ -1049,8 +1052,9 @@ def get_string_details(s, encoding):
         # Add Unicode values. Where a string is u-prefixed, even \o and \x
         # produce Unicode values.
 
-        if term in ("u", "U") or prefix == "u" and (
-           term == "x" or term in octal_digits):
+        if typename == "unicode" and (
+            term in ("u", "U") or 
+            "u" in prefix and (term == "x" or term in octal_digits)):
 
             needed, base = searches.get(term, (4, 8))
             value = convert_quoted_value(s, index, needed, end, base, unichr)
