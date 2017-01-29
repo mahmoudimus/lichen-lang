@@ -208,12 +208,14 @@ class basestring(hashable):
 
         sublen = sub.__len__()
 
-        i = start or 0
-
         if end is None:
             end = self.__len__()
 
-        while i < end - sublen:
+        end -= sublen
+
+        i = start or 0
+
+        while i <= end:
             if sub == self[i:i+sublen]:
                 return i
             i += 1
@@ -259,8 +261,27 @@ class basestring(hashable):
         return str(b)
 
     def lower(self): pass
-    def lstrip(self, chars=None): pass
+
+    def lstrip(self, chars=None):
+
+        """
+        Strip any of the given 'chars' from the start of the string, or strip
+        whitespace characters is 'chars' is omitted or None.
+        """
+
+        if chars is not None and not chars:
+            return self
+
+        i = 0
+        end = self.__len__()
+
+        while i < end and self[i] in (chars or WHITESPACE):
+            i += 1
+
+        return self[i:]
+
     def replace(self, old, new, count=None): pass
+
     def rfind(self, sub, start=None, end=None):
 
         """
@@ -286,8 +307,76 @@ class basestring(hashable):
 
         return -1
 
-    def rsplit(self, sep=None, maxsplit=None): pass
-    def rstrip(self, chars=None): pass
+    def rsplit(self, sep=None, maxsplit=None):
+
+        """
+        Split the string using the given 'sep' as separator (or any whitespace
+        character if omitted or specified as None), splitting at most 'maxsplit'
+        times (or as many times as is possible if omitted or specified as None).
+        Where 'maxsplit' is given, the number of split points is counted from
+        the end of the string.
+        """
+
+        if not maxsplit:
+            return self.split(sep, maxsplit)
+
+        if sep is not None and not sep:
+            raise ValueError, sep
+
+        seplen = sep and len(sep) or 1
+        start = seplen
+        splits = 0
+
+        l = []
+        i = last = self.__len__()
+
+        while i >= start and (maxsplit is None or splits < maxsplit):
+
+            # Find any specified separator.
+
+            if sep and self[i-seplen:i] == sep:
+                l.insert(0, self[i:last])
+                i -= seplen
+                last = i
+                splits += 1
+
+            # Find any whitespace character and skip adjacent characters.
+
+            elif not sep and self[i-1] in WHITESPACE:
+                l.insert(0, self[i:last])
+                while i > start:
+                    i -= 1
+                    if self[i-1] not in WHITESPACE:
+                        break
+                else:
+                    break
+                last = i
+                splits += 1
+
+            # Check the next character.
+
+            else:
+                i -= 1
+
+        l.insert(0, self[:last])
+        return l
+
+    def rstrip(self, chars=None):
+
+        """
+        Strip any of the given 'chars' from the end of the string, or strip
+        whitespace characters is 'chars' is omitted or None.
+        """
+
+        if chars is not None and not chars:
+            return self
+
+        i = self.__len__() - 1
+
+        while i >= 0 and self[i] in (chars or WHITESPACE):
+            i -= 1
+
+        return self[:i+1]
 
     def split(self, sep=None, maxsplit=None):
 
@@ -295,19 +384,24 @@ class basestring(hashable):
         Split the string using the given 'sep' as separator (or any whitespace
         character if omitted or specified as None), splitting at most 'maxsplit'
         times (or as many times as is possible if omitted or specified as None).
+        Where 'maxsplit' is given, the number of split points is counted from
+        the start of the string.
         """
 
         if sep is not None and not sep:
             raise ValueError, sep
 
-        end = self.__len__()
-        seplen = sep and len(sep)
+        if maxsplit is not None and not maxsplit:
+            return [self]
+
+        seplen = sep and len(sep) or 1
+        end = self.__len__() - seplen
         splits = 0
 
         l = []
         i = last = 0
 
-        while i < end and (maxsplit is None or splits < maxsplit):
+        while i <= end and (maxsplit is None or splits < maxsplit):
 
             # Find any specified separator.
 
@@ -346,7 +440,15 @@ class basestring(hashable):
 
         return self[:s.__len__()] == s
 
-    def strip(self, chars=None): pass
+    def strip(self, chars=None):
+
+        """
+        Strip any of the given 'chars' from the start and end of the string, or
+        strip whitespace characters is 'chars' is omitted or None.
+        """
+
+        return self.lstrip(chars).rstrip(chars)
+
     def upper(self): pass
 
 class string(basestring):

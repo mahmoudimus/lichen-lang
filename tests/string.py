@@ -87,3 +87,17 @@ s7 = "Hello...\n  world,\n  planet,\n  globe."
 print s7.split()            # ["Hello...", "world,", "planet,", "globe."]
 print s7.split(maxsplit=2)  # ["Hello...", "world,", "planet,\n  globe."]
 print s7.split("\n")        # ["Hello...", "  world,", "  planet,", "  globe."]
+
+# NOTE: To test rsplit once list.insert is implemented.
+
+# Test stripping of strings.
+
+s8 = "  \nHello world\n  "
+print repr(s8.strip())      # "Hello world"
+print repr(s8.lstrip())     # "Hello world\n  "
+print repr(s8.rstrip())     # "  \nHello world"
+
+s9 = "xyzHello worldXYZ"
+print repr(s9.strip("xyYZ"))    # "zHello worldX"
+print repr(s9.lstrip("xyYZ"))   # "zHello worldXYZ"
+print repr(s9.rstrip("xyYZ"))   # "xyzHello worldX"
