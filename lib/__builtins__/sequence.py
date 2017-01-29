@@ -36,22 +36,6 @@ class itemaccess:
         if index < 0 or index >= self.__len__():
             raise IndexError(index)
 
-    def _confine_index(self, index):
-
-        """
-        Return the given absolute 'index', confined by the bounds of the
-        sequence.
-        """
-
-        length = self.__len__()
-
-        if index < 0:
-            return 0
-        elif index > length:
-            return length
-        else:
-            return index
-
     def __getitem__(self, index):
 
         "Return the item or slice specified by 'index'."
@@ -153,9 +137,18 @@ class itemaccess:
 
     def __get_multiple_items__(self, start, end, step):
 
-        "Method to be overridden by subclasses."
+        """
+        Return items from 'start' until (but excluding) 'end', at 'step'
+        intervals.
+        """
 
-        return None
+        result = []
+
+        while step > 0 and start < end or step < 0 and start > end:
+            result.append(self.__get_single_item__(start))
+            start += step
+
+        return result
 
     def __len__(self):
 
@@ -282,21 +275,6 @@ class sequence(itemaccess):
         "Method to be overridden by subclasses."
 
         raise StopIteration()
-
-    def __get_multiple_items__(self, start, end, step):
-
-        """
-        Return items from 'start' until (but excluding) 'end', at 'step'
-        intervals.
-        """
-
-        result = []
-
-        while step > 0 and start < end or step < 0 and start > end:
-            result.append(self.__get_single_item__(start))
-            start += step
-
-        return result
 
 def _get_absolute_index(index, length):
 

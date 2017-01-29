@@ -537,17 +537,16 @@ class string(basestring):
         intervals.
         """
 
-        start = self._confine_index(start)
-        end = self._confine_index(end)
+        if start == end:
+            return ""
+
         check_int(step)
 
         if step == 0:
             raise ValueError(step)
 
-        if start == end:
-            return ""
-
-        return str_substr(self.__data__, start, end, step)
+        l = get_using(basestring.__get_multiple_items__, self)(start, end, step)
+        return "".join(l)
 
 def str(obj):
 

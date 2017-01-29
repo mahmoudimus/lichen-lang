@@ -179,17 +179,16 @@ class utf8string(basestring):
         intervals.
         """
 
-        start = self._confine_index(start)
-        end = self._confine_index(end)
+        if start == end:
+            return ""
+
         check_int(step)
 
         if step == 0:
             raise ValueError(step)
 
-        if start == end:
-            return ""
-
-        return utf8string(unicode_substr(self.__data__, start, end, step), self.encoding)
+        l = get_using(basestring.__get_multiple_items__, self)(start, end, step)
+        return utf8string("".join(l), self.encoding)
 
 def unicode(s, encoding):
 
