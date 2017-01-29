@@ -18,7 +18,7 @@ print s.rfind("o", 0, 7)    # 4
 try:
     print s.index("p")      # should raise an exception
 except ValueError, exc:
-    print 's.index("p"): value is not appropriate', exc.value
+    print 's.index("p"): value is not appropriate', repr(exc.value)
 
 print s.startswith("Hello") # True
 print s.startswith("world") # False
@@ -43,7 +43,7 @@ print ord(s[0])             # 72
 try:
     print ord(s)            # should raise an exception
 except ValueError, exc:
-    print "ord(s): value is not appropriate", exc.value
+    print "ord(s): value is not appropriate", repr(exc.value)
 
 l = ["Hello", "world!"]
 s3 = " ".join(l)
@@ -101,3 +101,7 @@ s9 = "xyzHello worldXYZ"
 print repr(s9.strip("xyYZ"))    # "zHello worldX"
 print repr(s9.lstrip("xyYZ"))   # "zHello worldXYZ"
 print repr(s9.rstrip("xyYZ"))   # "xyzHello worldX"
+
+# Test quoting of strings.
+
+print repr('æ\nø\rå\t"')    # "\xe6\n\xf8\r\xe5\t\""

@@ -56,11 +56,7 @@ class basestring(hashable):
         else:
             self.__key__ = None
 
-    def __hash__(self):
-
-        "Return a value for hashing purposes."
-
-        return self._hashvalue(ord)
+    # Internal methods.
 
     def _binary_op(self, op, other):
 
@@ -90,6 +86,99 @@ class basestring(hashable):
         else:
             return op(other.__data__, self.__data__)
 
+    def _quote(self, quote):
+
+        "Return a quoted representation of this string."
+
+        b = buffer([quote])
+        i = last = 0
+        end = self.__len__()
+
+        while i < end:
+            c = self[i]
+            n = ord(c)
+
+            # Extended unquoted text.
+
+            if 32 <= n < 128:
+                i += 1
+                continue
+
+            # Before quoting, emit unquoted text.
+
+            b.append(self[last:i])
+
+            # Add quoted value.
+
+            if c == quote:
+                b.append("\\")
+                b.append(quote)
+            elif c == "\t":
+                b.append("\\t")
+            elif c == "\n":
+                b.append("\\n")
+            elif c == "\r":
+                b.append("\\r")
+            else:
+                if n < 0:
+                    n += 256
+                b.append("\\x")
+                x = hex(n, "")
+                if len(x) < 2:
+                    b.append("0")
+                b.append(x)
+
+            i += 1
+            last = i
+
+        # Emit remaining unquoted text.
+
+        b.append(self[last:])
+        b.append(quote)
+        return str(b)
+
+    def bytelength(self):
+
+        "Return the number of bytes in this string."
+
+        return str_len(self.__data__)
+
+    # General type methods.
+
+    def __bool__(self):
+
+        "Return whether the string provides any data."
+
+        return str_nonempty(self.__data__)
+
+    def __contains__(self, value):
+
+        "Return whether this string contains 'value'."
+
+        return self.find(value) != -1
+
+    def __hash__(self):
+
+        "Return a value for hashing purposes."
+
+        return self._hashvalue(ord)
+
+    __len__ = bytelength
+
+    def __repr__(self):
+
+        "Return a program representation."
+
+        return self._quote('"')
+
+    def __str__(self):
+
+        "Return a string representation."
+
+        return self
+
+    # Operator methods.
+
     def __iadd__(self, other):
 
         "Return a string combining this string with 'other'."
@@ -103,6 +192,9 @@ class basestring(hashable):
         "Return a string combining this string with 'other'."
 
         return self._binary_op_rev(str_add, other)
+
+    def __mod__(self, other): pass
+    def __rmod__(self, other): pass
 
     def __mul__(self, other):
 
@@ -118,14 +210,19 @@ class basestring(hashable):
 
     __rmul__ = __mul__
 
-    def __mod__(self, other): pass
-    def __rmod__(self, other): pass
+    # Comparison methods.
 
-    def __lt__(self, other):
+    def __eq__(self, other):
 
-        "Return whether this string is less than 'other'."
+        "Return whether this string is equal to 'other'."
 
-        return self._binary_op(str_lt, other)
+        return self._binary_op(str_eq, other)
+
+    def __ge__(self, other):
+
+        "Return whether this string is greater than or equal to 'other'."
+
+        return _negate(self.__lt__(other))
 
     def __gt__(self, other):
 
@@ -139,17 +236,11 @@ class basestring(hashable):
 
         return _negate(self.__gt__(other))
 
-    def __ge__(self, other):
+    def __lt__(self, other):
 
-        "Return whether this string is greater than or equal to 'other'."
+        "Return whether this string is less than 'other'."
 
-        return _negate(self.__lt__(other))
-
-    def __eq__(self, other):
-
-        "Return whether this string is equal to 'other'."
-
-        return self._binary_op(str_eq, other)
+        return self._binary_op(str_lt, other)
 
     def __ne__(self, other):
 
@@ -157,39 +248,7 @@ class basestring(hashable):
 
         return _negate(self.__eq__(other))
 
-    def bytelength(self):
-
-        "Return the number of bytes in this string."
-
-        return str_len(self.__data__)
-
-    __len__ = bytelength
-
-    def __str__(self):
-
-        "Return a string representation."
-
-        return self
-
-    def __repr__(self):
-
-        "Return a program representation."
-
-        # NOTE: To be implemented with proper quoting.
-        b = buffer(['"', self, '"'])
-        return str(b)
-
-    def __bool__(self):
-
-        "Return whether the string provides any data."
-
-        return str_nonempty(self.__data__)
-
-    def __contains__(self, value):
-
-        "Return whether this string contains 'value'."
-
-        return self.find(value) != -1
+    # String-specific methods.
 
     def endswith(self, s):
 
