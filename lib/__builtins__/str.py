@@ -96,9 +96,19 @@ class basestring(hashable):
 
         while i < end:
             c = self[i]
-            n = ord(c)
+
+            # Handle quotes before anything else.
+
+            if c == quote:
+                b.append("\\")
+                b.append(quote)
+                i += 1
+                last = i
+                continue
 
             # Extended unquoted text.
+
+            n = ord(c)
 
             if 32 <= n < 128:
                 i += 1
@@ -110,10 +120,7 @@ class basestring(hashable):
 
             # Add quoted value.
 
-            if c == quote:
-                b.append("\\")
-                b.append(quote)
-            elif c == "\t":
+            if c == "\t":
                 b.append("\\t")
             elif c == "\n":
                 b.append("\\n")
@@ -530,8 +537,8 @@ class string(basestring):
         intervals.
         """
 
-        self._check_index(start)
-        self._check_end_index(end)
+        start = self._confine_index(start)
+        end = self._confine_index(end)
         check_int(step)
 
         if step == 0:

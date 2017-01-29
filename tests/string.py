@@ -6,6 +6,10 @@ print s[:5]                 # Hello
 print s[5:]                 #  world!
 print s[1:10:2]             # el ol
 print s[10:1:-2]            # drwol
+print s[11:]                # !
+print s[:-11]               # H
+print s[12:]                #
+print s[:-12]               #
 print s.find("w")           # 6
 print s.find("w", 7)        # -1
 print s.find("w", 0, 6)     # -1

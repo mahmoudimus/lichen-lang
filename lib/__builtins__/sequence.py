@@ -3,7 +3,7 @@
 """
 Sequence operations.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -36,15 +36,21 @@ class itemaccess:
         if index < 0 or index >= self.__len__():
             raise IndexError(index)
 
-    def _check_end_index(self, index):
+    def _confine_index(self, index):
 
         """
-        Check the given absolute end 'index', raising an IndexError if out of
-        bounds.
+        Return the given absolute 'index', confined by the bounds of the
+        sequence.
         """
 
-        if index < -1 or index > self.__len__():
-            raise IndexError(index)
+        length = self.__len__()
+
+        if index < 0:
+            return 0
+        elif index > length:
+            return length
+        else:
+            return index
 
     def __getitem__(self, index):
 
