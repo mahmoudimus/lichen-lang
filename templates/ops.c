@@ -1,6 +1,6 @@
 /* Common operations.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -21,6 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "progops.h" /* for raising errors */
 #include "progconsts.h"
 #include "progtypes.h"
+#include <stdio.h>
 
 /* Direct access and manipulation of static objects. */
 
@@ -202,7 +203,7 @@ __attr __test_context(__ref context, __attr attr)
     if (__is_instance(context))
     {
         if (__test_common_instance(context, __TYPEPOS(attr.context), __TYPECODE(attr.context)))
-            return __replace_context(context, attr);
+            return __update_context(context, attr);
         else
             __raise_type_error();
     }
@@ -210,32 +211,56 @@ __attr __test_context(__ref context, __attr attr)
     /* Test for access to a type class attribute using a type instance. */
 
     if (__test_specific_type(attr.context, &__TYPE_CLASS_TYPE) && __is_type_instance(context))
-        return __replace_context(context, attr);
+        return __update_context(context, attr);
 
     /* Otherwise, preserve the attribute as retrieved. */
 
     return attr;
 }
 
-__attr __replace_context(__ref context, __attr attr)
-{
-    __attr out;
-
-    /* Set the context. */
-
-    out.context = context;
-
-    /* Reference a callable version of the attribute by obtaining the bound
-       method reference from the __fn__ special attribute. */
-
-    out.value = __load_via_object(attr.value, __ATTRPOS(__fn__)).b;
-    return out;
-}
-
 __attr __update_context(__ref context, __attr attr)
 {
     __attr out = {.context=context, .value=attr.value};
     return out;
+}
+
+/* Context testing for invocations. */
+
+int __type_method_invocation(__attr attr)
+{
+    __attr parent;
+
+    /* Require instances, not classes, where methods are function instances. */
+
+    if (!__is_instance(attr.value))
+        return 0;
+
+    /* Access the parent of the callable and test if it is the type object. */
+
+    parent = __check_and_load_via_object_null(attr.value, __ATTRPOS(__parent__), __ATTRCODE(__parent__));
+    return ((parent.value != 0) && __test_specific_type(parent.value, &__TYPE_CLASS_TYPE) && __is_type_instance(attr.context));
+}
+
+__attr (*__get_function(__attr attr))(__attr[])
+{
+    /* Require null or instance contexts for functions and methods respectively,
+       or type instance contexts for type methods. */
+
+    if ((attr.context == 0) || __is_instance(attr.context) || __type_method_invocation(attr))
+        return __load_via_object(attr.value, __ATTRPOS(__fn__)).fn;
+    else
+        return __load_via_object(attr.value, __ATTRPOS(__fn__)).inv;
+}
+
+__attr (*__check_and_get_function(__attr attr))(__attr[])
+{
+    /* Require null or instance contexts for functions and methods respectively,
+       or type instance contexts for type methods. */
+
+    if ((attr.context == 0) || __is_instance(attr.context) || __type_method_invocation(attr))
+        return __check_and_load_via_object(attr.value, __ATTRPOS(__fn__), __ATTRCODE(__fn__)).fn;
+    else
+        return __check_and_load_via_object(attr.value, __ATTRPOS(__fn__), __ATTRCODE(__fn__)).inv;
 }
 
 /* Basic structure tests. */

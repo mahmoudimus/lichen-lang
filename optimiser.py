@@ -520,18 +520,7 @@ class Optimiser:
                 emit(("__test_context", context_var, accessor))
 
             elif context_test == "replace":
-
-                # Static invocation targets have a context added but no other
-                # transformation performed.
-
-                if final_method == "static-invoke":
-                    emit(("__update_context", context_var, accessor))
-
-                # Other invocation targets gain a context and have the bound
-                # version of the callable activated.
-
-                else:
-                    emit(("__replace_context", context_var, accessor))
+                emit(("__update_context", context_var, accessor))
 
             elif final_method not in ("assign", "static-assign"):
                 emit(accessor)

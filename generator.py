@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from common import CommonOutput, get_builtin_module, get_builtin_type
-from encoders import encode_bound_reference, encode_function_pointer, \
+from encoders import encode_function_pointer, \
                      encode_instantiator_pointer, \
                      encode_literal_constant, encode_literal_constant_member, \
                      encode_literal_constant_size, encode_literal_constant_value, \
@@ -282,20 +282,15 @@ class Generator(CommonOutput):
 
                 if parent_kind == "<class>":
 
-                    # A bound version of a method.
+                    # A method.
 
-                    structure = self.populate_function(path, function_instance_attrs, False)
-                    self.write_structure(f_decls, f_defs, encode_bound_reference(path), table_name, structure)
-
-                    # An unbound version of a method.
-
-                    structure = self.populate_function(path, function_instance_attrs, True)
+                    structure = self.populate_function(path, function_instance_attrs)
                     self.write_structure(f_decls, f_defs, path, table_name, structure)
 
                 else:
                     # A normal function.
 
-                    structure = self.populate_function(path, function_instance_attrs, False)
+                    structure = self.populate_function(path, function_instance_attrs)
                     self.write_structure(f_decls, f_defs, path, table_name, structure)
 
                 # Functions with defaults need to declare instance structures.
@@ -821,32 +816,27 @@ __obj %s = {
                 name, pos = value
                 table.append((encode_symbol("pcode", name), pos))
 
-    def populate_function(self, path, function_instance_attrs, unbound=False):
+    def populate_function(self, path, function_instance_attrs):
 
         """
         Populate a structure for the function with the given 'path'. The given
-        'attrs' provide the instance attributes, and if 'unbound' is set to a
-        true value, an unbound method structure is produced (as opposed to a
-        callable bound method structure).
+        'attrs' provide the instance attributes.
         """
 
         structure = []
-        self.populate_structure(Reference("<function>", path), function_instance_attrs, "<instance>", structure, unbound)
+        self.populate_structure(Reference("<function>", path), function_instance_attrs, "<instance>", structure)
 
         # Append default members.
 
         self.append_defaults(path, structure)
         return structure
 
-    def populate_structure(self, ref, attrs, kind, structure, unbound=False):
+    def populate_structure(self, ref, attrs, kind, structure):
 
         """
         Traverse the attributes in the determined order for the structure having
         the given 'ref' whose members are provided by the 'attrs' mapping, in a
         structure of the given 'kind', adding entries to the object 'structure'.
-        If 'unbound' is set to a true value, an unbound method function pointer
-        will be employed, with a reference to the bound method incorporated into
-        the special __fn__ attribute.
         """
 
         # Populate function instance structures for functions.
@@ -877,29 +867,21 @@ __obj %s = {
 
                 if attrname == "__fn__":
 
-                    # Provide bound method references and the unbound function
-                    # pointer if populating methods in a class.
-
-                    bound_attr = None
-
-                    # Classes offer instantiators.
+                    # Classes offer instantiators which can be called without a
+                    # context.
 
                     if kind == "<class>":
                         attr = encode_instantiator_pointer(attr)
+                        unbound_attr = attr
 
-                    # Methods offers references to bound versions and an unbound
-                    # method function.
-
-                    elif unbound:
-                        bound_attr = encode_bound_reference(attr)
-                        attr = "__unbound_method"
-
-                    # Other functions just offer function pointers.
+                    # Provide bound method and unbound function pointers if
+                    # populating methods in a class.
 
                     else:
                         attr = encode_function_pointer(attr)
+                        unbound_attr = "__unbound_method"
 
-                    structure.append("{.b=%s, .fn=%s}" % (bound_attr and "&%s" % bound_attr or "0", attr))
+                    structure.append("{.inv=%s, .fn=%s}" % (unbound_attr, attr))
                     continue
 
                 # Special argument specification member.

@@ -1,6 +1,6 @@
 /* Native functions for introspection operations.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -51,7 +51,7 @@ __attr __fn_native_introspection_object_getattr(__attr __args[])
 
         /* Update the context to the object if it is a method. */
 
-        return __replace_context(obj->value, out);
+        return __update_context(obj->value, out);
     }
 
     return out;

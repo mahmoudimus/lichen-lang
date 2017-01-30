@@ -1,6 +1,6 @@
 /* Operations depending on program specifics.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -243,9 +243,7 @@ __attr __invoke(__attr callable, int always_callable,
 
     /* Call with the prepared arguments. */
 
-    return (always_callable ? __load_via_object(callable.value, __pos___fn__)
-                            : __check_and_load_via_object(callable.value, __pos___fn__, __code___fn__)
-                            ).fn(allargs);
+    return (always_callable ? __get_function(callable) : __check_and_get_function(callable))(allargs);
 }
 
 /* Error routines. */

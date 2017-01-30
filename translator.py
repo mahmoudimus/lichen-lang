@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from common import CommonModule, CommonOutput, InstructionSequence, \
                    first, get_builtin_module, get_builtin_type, init_item, \
                    predefined_constants
-from encoders import encode_access_instruction, encode_bound_reference, \
+from encoders import encode_access_instruction, \
                      encode_function_pointer, encode_literal_constant, \
                      encode_literal_instantiator, encode_instantiator_pointer, \
                      encode_instructions, \
@@ -1072,10 +1072,7 @@ class TranslatedModule(CommonModule):
         # Handle bound methods.
 
         if not instance_name:
-            if self.is_method(objpath):
-                instance_name = "&%s" % encode_bound_reference(objpath)
-            else:
-                instance_name = "&%s" % encode_path(objpath)
+            instance_name = "&%s" % encode_path(objpath)
 
         # Where defaults are involved but cannot be identified, obtain a new
         # instance of the lambda and populate the defaults.
@@ -1164,7 +1161,7 @@ class TranslatedModule(CommonModule):
             if expr.has_kind("<class>"):
                 instantiation = objpath
                 target = encode_instantiator_pointer(objpath)
-                target_structure = "&%s" % encode_bound_reference("%s.__init__" % objpath)
+                target_structure = "&%s" % encode_path("%s.__init__" % objpath)
                 context_required = False
 
             # Only plain functions and bound methods employ function pointers.
@@ -1188,9 +1185,7 @@ class TranslatedModule(CommonModule):
                 # Access bound method defaults even if it is not clear whether
                 # the accessor is appropriate.
 
-                target_structure = self.is_method(objpath) and \
-                    "&%s" % encode_bound_reference(objpath) or \
-                    "&%s" % encode_path(objpath)
+                target_structure = "&%s" % encode_path(objpath)
 
         # Other targets are retrieved at run-time.
 
@@ -1309,8 +1304,12 @@ class TranslatedModule(CommonModule):
 
         elif function:
             self.record_temp("__tmp_targets")
-            stages.append("__load_via_object(__tmp_targets[%d].value, %s).fn" % (
-                self.function_target, encode_symbol("pos", "__fn__")))
+
+            if context_required:
+                stages.append("__get_function(__tmp_targets[%d])" % self.function_target)
+            else:
+                stages.append("__load_via_object(__tmp_targets[%d].value, %s).fn" % (
+                    self.function_target, encode_symbol("pos", "__fn__")))
 
         # With a known target, the function is obtained directly and called.
         # By putting the invocation at the end of the final element in the

@@ -1,6 +1,6 @@
 /* Common operations.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -69,12 +69,16 @@ int __check_and_store_via_any(__ref obj, int pos, int code, __attr value);
 /* Context-related operations. */
 
 __attr __test_context(__ref context, __attr attr);
-__attr __replace_context(__ref context, __attr attr);
 __attr __update_context(__ref context, __attr attr);
 
 #define __set_context(__ATTR) (__tmp_context = (__ATTR).value)
 #define __set_accessor(__ATTR) (__tmp_value = (__ATTR).value)
 #define __set_target_accessor(__ATTR) (__tmp_target_value = (__ATTR).value)
+
+/* Context testing for invocations. */
+
+__attr (*__get_function(__attr attr))(__attr[]);
+__attr (*__check_and_get_function(__attr attr))(__attr[]);
 
 /* Basic structure tests. */
 
