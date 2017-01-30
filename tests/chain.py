@@ -3,9 +3,7 @@ class C:
         class E:
             def m(self, x):
                 self.x = x
-                l = self.x.__len__
-                s = self.o
-                return self.o.__len__
+                return self.x.__len__
             n = 123
             o = "123"
 
@@ -36,12 +34,12 @@ def static():
     print e                                 # __main__.C.D.E
     print f                                 # __main__.C.D.E.m
     print g                                 # 123
-    print h                                 # "456"
+    print h                                 # 456
 
 def static_via_constant():
     i = C.D.p.__len__
 
-    print i                                 # __builtins__.str.basestring.__len__
+    print i                                 # __builtins__.str.basestring.bytelength
 
 def assign():
     C.D.q = 987
@@ -60,9 +58,9 @@ def broken():
 static()
 static_via_constant()
 assign()
-print indirect()                            # __builtins__.str.basestring.__len__
-print indirect()()                          # 3
-print broken()                              # __builtins__.str.basestring.__len__
+print indirect()                            # __builtins__.str.basestring.bytelength
+print indirect()()                          # 1
+print broken()                              # __builtins__.str.basestring.bytelength
 print broken()()                            # 3
 
 print C.D.q                                 # 987
@@ -87,7 +85,7 @@ print h                                     # "456"
 
 i = C.D.p.__len__
 
-print i                                     # __builtins__.str.basestring.__len__
+print i                                     # __builtins__.str.basestring.bytelength
 print i()                                   # 3
 
 # Static assignment.
@@ -100,12 +98,12 @@ print C.D.q                                 # 654
 
 inst = e()
 method = inst.m
-print method("5")                           # __builtins__.str.basestring.__len__
-print method("5")()                         # 3
+print method("5")                           # __builtins__.str.basestring.bytelength
+print method("5")()                         # 1
 
 # Broken chains.
 
 inst2 = C.D.F()
 l = inst2.u().__len__
-print l                                     # __builtins__.str.basestring.__len__
+print l                                     # __builtins__.str.basestring.bytelength
 print l()                                   # 3
