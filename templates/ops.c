@@ -234,7 +234,7 @@ __attr __replace_context(__ref context, __attr attr)
 
 __attr __update_context(__ref context, __attr attr)
 {
-    __attr out = {.context=context, .fn=attr.fn};
+    __attr out = {.context=context, .value=attr.value};
     return out;
 }
 
