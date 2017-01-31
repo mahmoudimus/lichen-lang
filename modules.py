@@ -429,7 +429,7 @@ class CachedModule(BasicModule):
     def _get_deferred(self, f):
         f.readline() # "deferred:"
         line = f.readline().rstrip()
-        self.deferred = map(decode_reference, line.split(" "))
+        self.deferred = map(decode_reference, line.split(", "))
         f.readline()
 
     def _get_special(self, f):
@@ -698,113 +698,8 @@ class CacheWritingModule:
     def to_cache(self, filename):
 
         """
-        Write a cached representation of the inspected module with the following
-        format to the file having the given 'filename':
-
-        filename
-        (empty line)
-        "imports:"
-        required module names
-        possibly required module names
-        "deferred:"
-        deferred references
-        "special:"
-        zero or more: special name " " reference " " qualified names
-        (empty line)
-        "members:"
-        zero or more: qualified name " " reference
-        (empty line)
-        "class relationships:"
-        zero or more: qualified class name " " base class references
-        (empty line)
-        "instance attributes:"
-        zero or more: qualified class name " " instance attribute names
-        (empty line)
-        "instance attribute constants:"
-        zero or more: qualified class name " " attribute name " " reference
-        (empty line)
-        "names used:"
-        zero or more: qualified class/function/module name " " names
-        (empty line)
-        "names missing:"
-        zero or more: qualified class/function/module name " " names
-        (empty line)
-        "name references:"
-        zero or more: qualified name " " reference
-        (empty line)
-        "initialised names:"
-        zero or more: qualified name " " definition version " " reference
-        (empty line)
-        "aliased names:"
-        zero or more: qualified name " " definition version " " original name " " attribute names " " access number
-        (empty line)
-        "function parameters:"
-        zero or more: qualified function name " " parameter names
-        (empty line)
-        "function default parameters:"
-        zero or more: qualified function name " " parameter names with defaults
-        (empty line)
-        "function locals:"
-        zero or more: qualified function name " " local variable name " " reference
-        (empty line)
-        "scope globals:"
-        zero or more: qualified function name " " global variable names
-        (empty line)
-        "function targets:"
-        zero or more: qualified function name " " maximum number of targets allocated
-        (empty line)
-        "function arguments:"
-        zero or more: qualified function name " " maximum number of arguments allocated
-        (empty line)
-        "attribute usage:"
-        zero or more: qualified scope name " " local/global/qualified variable name " " usages
-        (empty line)
-        "attribute accesses:"
-        zero or more: qualified scope name " " attribute-chains
-        (empty line)
-        "constant accesses:"
-        zero or more: qualified function name " " attribute-chain " " reference " " remaining attribute-chain
-        (empty line)
-        "attribute access usage:"
-        zero or more: qualified function name " " local/global variable name " " attribute name " " definition versions
-        (empty line)
-        "attribute access modifiers:"
-        zero or more: qualified function name " " local/global variable name " " attribute name " " access modifiers
-        (empty line)
-        "constant literals:"
-        zero or more: qualified scope name " " value type " " constant literal
-        (empty line)
-        "constant values:"
-        zero or more: qualified name " " value type " " constant literal
-        (empty line)
-        "exception namespaces:"
-        qualified names
-        (empty line)
-        "operator result namespaces:"
-        qualified names
-
-        All collections of names are separated by ", " characters.
-
-        References can be "<var>", a module name, or one of "<class>" or
-        "<function>" followed optionally by a ":" character and a qualified
-        name.
-
-        Parameter names with defaults are separated by ", " characters, with
-        each name followed by "=" and then followed by a reference. If "{}" is
-        indicated, no defaults are defined for the function. Similarly, function
-        locals may be indicated as "{}" meaning that there are no locals.
-
-        All usages (attribute usage sets) are separated by "; " characters, with
-        the special string "{}" representing an empty set.
-
-        Each usage is a collection of names separated by ", " characters, with
-        invoked attribute names suffixed with a "!" character.
-
-        Definition versions are separated by ", " characters and indicate the
-        name definition version associated with the access.
-
-        Access modifiers are separated by ", " characters and indicate features
-        of each access, with multiple accesses described on a single line.
+        Write a cached representation of the inspected module to the file having
+        the given 'filename'.
         """
 
         f = open(filename, "w")
@@ -824,7 +719,7 @@ class CacheWritingModule:
             print >>f, "deferred:"
             deferred = map(str, set(self.deferred))
             deferred.sort()
-            print >>f, " ".join(deferred)
+            print >>f, ", ".join(deferred)
 
             print >>f
             print >>f, "special:"
