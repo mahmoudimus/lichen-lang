@@ -3,7 +3,7 @@
 """
 POSIX input/output functions.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -72,8 +72,11 @@ class sysstream(filestream):
         'bufsize'.
         """
 
+        check_int(fd)
+        check_string(mode)
+
         get_using(filestream.__init__, self)(encoding, bufsize)
-        self.__data__ = fdopen(fd, mode)
+        self.__data__ = _fdopen(fd, mode)
 
 # Standard streams.
 
@@ -111,9 +114,7 @@ def fdopen(fd, mode="r"):
     'mode'.
     """
 
-    check_int(fd)
-    check_string(mode)
-    return _fdopen(fd, mode)
+    return sysstream(fd, mode)
 
 def fpathconf(fd, name): pass
 def fstat(fd): pass
