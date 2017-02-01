@@ -47,16 +47,16 @@ def call(tokens, verbose=False):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    path = libdirs + sys.path[:]
+    path = libdirs
 
     # Determine the options and arguments.
 
-    verbose = False
-    reset = False
     debug = False
     make = True
     make_verbose = True
+    reset = False
     traceback = False
+    verbose = False
 
     filenames = []
     outputs = []
@@ -66,13 +66,13 @@ if __name__ == "__main__":
     l = filenames
 
     for arg in args:
-        if arg == "-v": verbose = True
-        elif arg == "-r": reset = True
+        if arg == "-c": make = False
         elif arg == "-g": debug = True
-        elif arg == "-c": make = False
         elif arg == "-q": make_verbose = False
+        elif arg == "-r": reset = True
         elif arg == "-tb": traceback = True
         elif arg == "-o": l = outputs
+        elif arg == "-v": verbose = True
         else:
             l.append(arg)
 
