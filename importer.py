@@ -33,6 +33,8 @@ class Importer:
 
     "An import machine, searching for and loading modules."
 
+    special_attributes = ("__args__", "__file__", "__fn__", "__name__", "__parent__")
+
     def __init__(self, path, cache=None, verbose=False):
 
         """
@@ -604,10 +606,6 @@ class Importer:
                 if deps:
                     l.update(self.condense_dependency_entry(deps, d))
         return l
-
-    # NOTE: Consolidate this information in a common location.
-
-    special_attributes = ("__args__", "__file__", "__fn__", "__name__", "__parent__")
 
     def is_dynamic(self, ref):
         return not ref or not ref.static() and not ref.is_constant_alias() and not ref.is_predefined_value()
