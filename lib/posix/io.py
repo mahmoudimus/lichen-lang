@@ -19,85 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.file import filestream
-from __builtins__.types import check_int, check_string
-
-from native import (
-    close as _close,
-    fdopen as _fdopen,
-    read as _read,
-    write as _write
-    )
-
-import locale
-
-# Abstractions for system-level files and streams.
-
-class sysfile:
-
-    "A system-level file object."
-
-    def __init__(self, fd):
-
-        "Initialise the file with the given 'fd'."
-
-        self.fd = fd
-
-    def read(self, n):
-
-        "Read 'n' bytes from the file, returning a string."
-
-        return read(self.fd, n)
-
-    def write(self, s):
-
-        "Write string 's' to the file."
-
-        return write(self.fd, s)
-
-    def close(self):
-
-        "Close the file."
-
-        close(self.fd)
-
-class sysstream(filestream):
-
-    "A system-level stream object."
-
-    def __init__(self, fd, mode="r", encoding=None, bufsize=1024):
-
-        """
-        Initialise the stream with the given 'fd', 'mode', 'encoding' and
-        'bufsize'.
-        """
-
-        check_int(fd)
-        check_string(mode)
-
-        get_using(filestream.__init__, self)(encoding, bufsize)
-        self.__data__ = _fdopen(fd, mode)
-
-# Standard streams.
-
-stdin = sysstream(0)
-stdout = sysstream(1, "w")
-stderr = sysstream(2, "w")
-
-# Localised streams.
-# Perform locale initialisation explicitly to ensure that the locale module
-# and various function defaults have been initialised.
-
-locale.initlocale()
-lstdin = sysstream(0, "r", locale.getpreferredencoding())
-
-# Input/output functions.
-
-def close(fd):
-
-    "Close the file descriptor 'fd'."
-
-    _close(fd)
+from libc.io import close, fdopen, read, write
 
 def closerange(fd_low, fd_high): pass
 def dup(fd): pass
@@ -106,16 +28,6 @@ def fchdir(fd): pass
 def fchmod(fd, mode): pass
 def fchown(fd, uid, gid): pass
 def fdatasync(fd): pass
-
-def fdopen(fd, mode="r"):
-
-    """
-    Open a stream for the given file descriptor 'fd', operating in the given
-    'mode'.
-    """
-
-    return sysstream(fd, mode)
-
 def fpathconf(fd, name): pass
 def fstat(fd): pass
 def fstatvfs(fd): pass
@@ -132,30 +44,11 @@ def open(filename, flag, mode=0777): pass
 def openpty(): pass
 def pipe(): pass
 def putenv(key, value): pass
-
-def read(fd, n):
-
-    """
-    Read using the low-level file descriptor 'fd' the given number of bytes 'n'.
-    """
-
-    check_int(fd)
-    check_int(n)
-    return _read(fd, n)
-
 def times(): pass
 def ttyname(fd): pass
 def umask(new_mask): pass
 def uname(): pass
 def unsetenv(key): pass
-
-def write(fd, s):
-
-    "Write using the low-level file descriptor 'fd' the given string 's'."
-
-    check_int(fd)
-    check_string(s)
-    return _write(fd, s)
 
 # Constants.
 
