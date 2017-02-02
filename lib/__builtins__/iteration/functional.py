@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 """
-Iteration-related functions.
+Functional operations for iterators.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,45 +19,6 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-def all(iterable):
-
-    "Return whether all of the elements provided by 'iterable' are true."
-
-    for i in iterable:
-        if not i:
-            return False
-
-    return True
-
-def any(iterable):
-
-    "Return whether any of the elements provided by 'iterable' are true."
-
-    for i in iterable:
-        if i:
-            return True
-
-    return False
-
-def enumerate(iterable, start=0):
-
-    """
-    Iterate over 'iterable', obtaining items and combining them with position
-    information, producing a sequence containing tuples of the form
-    (position, item). The first position is indicated by 'start' (which is zero
-    by default) and each subsequent positions is incremented from the one
-    preceding it.
-    """
-
-    l = []
-    pos = start
-
-    for i in iterable:
-        l.append((pos, i))
-        pos += 1
-
-    return l
-
 def filter(function, sequence):
 
     """
@@ -71,18 +32,6 @@ def filter(function, sequence):
             l.append(i)
     return l
 
-def iter(collection):
-
-    "Implementation of iter without callable plus sentinel support."
-
-    return collection.__iter__()
-
-def len(obj):
-
-    "Implementation of len."
-
-    return obj.__len__()
-
 def map(function, sequence):
 
     """
@@ -94,26 +43,6 @@ def map(function, sequence):
     for i in sequence:
         l.append(function(i))
     return l
-
-def max(args):
-
-    "Implementation of max."
-
-    highest = None
-    for arg in args:
-        if highest is None or arg > highest:
-            highest = arg
-    return highest
-
-def min(args):
-
-    "Implementation of min."
-
-    lowest = None
-    for arg in args:
-        if lowest is None or arg < lowest:
-            lowest = arg
-    return lowest
 
 _reduce_default = object()
 
@@ -141,23 +70,6 @@ def reduce(function, sequence, initial=_reduce_default):
             result = function(result, i)
 
     return result
-
-def reversed(sequence):
-
-    "Return a reversed version of the given 'sequence'."
-
-    return sequence[::-1]
-
-def sorted(iterable, cmp=None, key=None, reverse=False): pass
-
-def sum(sequence, start=0):
-
-    "Sum the elements in 'sequence', adding to any indicated 'start' value."
-
-    total = start
-    for i in sequence:
-        total += i
-    return total
 
 def zip(args):
 

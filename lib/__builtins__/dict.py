@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.iterator import itemiterator
+from __builtins__.iteration.iterator import itemiterator
 from __builtins__.span import _max
 from native import isinstance as _isinstance
 

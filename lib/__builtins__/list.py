@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.iterator import itemiterator
+from __builtins__.iteration.iterator import itemiterator
 from __builtins__.sequence import sequence
 from native import list_append, list_concat, list_element, list_init, \
                    list_len, list_nonempty, list_setelement, list_setsize
