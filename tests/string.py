@@ -49,6 +49,14 @@ try:
 except ValueError, exc:
     print "ord(s): value is not appropriate", repr(exc.value)
 
+print chr(72)               # H
+print repr(chr(0))          # "\x00"
+
+try:
+    print repr(chr(-1))     # should raise an exception
+except ValueError, exc:
+    print "chr(-1): value is not appropriate", exc.value
+
 l = ["Hello", "world!"]
 s3 = " ".join(l)
 print s3                    # Hello world!

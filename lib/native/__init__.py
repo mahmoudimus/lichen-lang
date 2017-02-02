@@ -3,7 +3,7 @@
 """
 Native library functions.
 
-Copyright (C) 2011, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2011, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -42,8 +42,8 @@ from native.locale import getlocale, setlocale
 
 from native.program import get_using
 
-from native.str import str_add, str_eq, str_gt, str_lt, str_len, str_nonempty, \
-                       str_ord, str_substr
+from native.str import str_add, str_chr, str_eq, str_gt, str_lt, str_len, \
+                       str_nonempty, str_ord, str_substr
 
 from native.system import exit, get_argv, get_path
 

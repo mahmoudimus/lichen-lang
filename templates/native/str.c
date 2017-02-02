@@ -1,6 +1,6 @@
 /* Native functions for string operations.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -43,6 +43,17 @@ __attr __fn_native_str_str_add(__attr __args[])
 
     /* Return a new string. */
     return __new_str(r, n);
+}
+
+__attr __fn_native_str_str_chr(__attr __args[])
+{
+    __attr * const _data = &__args[1];
+    /* _data interpreted as int */
+    int n = _data->intvalue;
+    char *s = (char *) __ALLOCATE(2, sizeof(char));
+
+    s[0] = (char) n;
+    return __new_str(s, 1);
 }
 
 __attr __fn_native_str_str_lt(__attr __args[])

@@ -19,9 +19,19 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import str_ord
+from __builtins__.types import check_int, check_string
+from native import str_chr, str_ord
 
-def chr(i): pass
+def chr(i):
+
+    "Return a string containing a character having the value 'i'."
+
+    check_int(i)
+
+    if 0 <= i <= 255:
+        return str_chr(i.__data__)
+    else:
+        raise ValueError, i
 
 _hexdigits = "0123456789abcdef"
 
@@ -75,10 +85,12 @@ def ord(c):
 
     "Return the value of the given character 'c'."
 
-    if isinstance(c, string) and len(c) == 1:
+    check_string(c)
+
+    if c.__len__() == 1:
         return str_ord(c.__data__)
     else:
-        raise ValueError(c)
+        raise ValueError, c
 
 def unichr(i): pass
 

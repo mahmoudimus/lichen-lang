@@ -1,6 +1,6 @@
 /* Native functions for string operations.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -22,6 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 /* String operations. */
 
 __attr __fn_native_str_str_add(__attr __args[]);
+__attr __fn_native_str_str_chr(__attr __args[]);
 __attr __fn_native_str_str_lt(__attr __args[]);
 __attr __fn_native_str_str_gt(__attr __args[]);
 __attr __fn_native_str_str_eq(__attr __args[]);
