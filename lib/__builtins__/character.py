@@ -3,7 +3,7 @@
 """
 Character-related functions.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -39,9 +39,12 @@ def _base(number, base, prefix=""):
 
     digits = []
 
-    while number:
-        digits.append(_hexdigits[number % base])
-        number = number / base
+    if number:
+        while number:
+            digits.append(_hexdigits[number % base])
+            number = number / base
+    else:
+        digits.append("0")
 
     digits.append(prefix)
 
