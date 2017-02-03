@@ -89,6 +89,34 @@ class utf8string(basestring):
         else:
             return result
 
+    def _quote_value(self, b, n):
+
+        "Append to 'b' the quoted form of 'n'."
+
+        if n < 0:
+            n += 256
+
+        if n > 0xffff:
+            b.append("\\U")
+            digits = 8
+        elif n > 0xff:
+            b.append("\\u")
+            digits = 4
+        else:
+            b.append("\\x")
+            digits = 2
+
+        x = hex(n, "")
+        i = len(x)
+
+        while i < digits:
+            b.append("0")
+            i += 1
+
+        b.append(x)
+
+    # Operator methods.
+
     def __iadd__(self, other):
 
         "Return a string combining this string with 'other'."

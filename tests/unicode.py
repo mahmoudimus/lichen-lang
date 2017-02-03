@@ -1,22 +1,22 @@
-# -*- coding: ISO-8859-1 -*-
+# -*- coding: ISO-8859-15 -*-
 
 import sys
 
 # Print bytes.
 
 s = b"ֶ״ֵ"
-print "ISO-8859-1 values:"
+print "ISO-8859-15 values:"
 print s                             # ֶ״ֵ
 print len(s)                        # 3
 
 s2 = b"\xe6\xf8\xe5"
-print "ISO-8859-1 values:"
+print "ISO-8859-15 values:"
 print s2                            # זרו
 print s2.__class__                  # __builtins__.str.string
 print len(s2)                       # 3
 
 s3 = "\xe6\xf8\xe5"
-print "ISO-8859-1 values:"
+print "ISO-8859-15 values:"
 print s3                            # זרו
 print s3.__class__                  # __builtins__.str.string
 print len(s3)                       # 3
@@ -28,13 +28,13 @@ print s4.__class__                  # __builtins__.str.string
 print len(s4)                       # 18
 
 s5 = b"\346\370\345"
-print "ISO-8859-1 values:"
+print "ISO-8859-15 values:"
 print s5                            # זרו
 print s5.__class__                  # __builtins__.str.string
 print len(s5)                       # 3
 
 s6 = "\346\370\345"
-print "ISO-8859-1 values:"
+print "ISO-8859-15 values:"
 print s6                            # זרו
 print s6.__class__                  # __builtins__.str.string
 print len(s6)                       # 3
@@ -49,12 +49,12 @@ print len(s7)                       # 12
 
 # Explicitly from bytes.
 
-u = unicode(b"זרו", "ISO-8859-1")
+u = unicode(b"זרו", "ISO-8859-15")
 print "Unicode values:"
 print u                             # זרו
 print u.__class__                   # __builtins__.unicode.utf8string
-print u.encode("ISO-8859-1")        # זרו
-print u.encoding                    # ISO-8859-1
+print u.encode("ISO-8859-15")       # זרו
+print u.encoding                    # ISO-8859-15
 print len(u)                        # 3
 
 # Explicitly from Unicode literals.
@@ -63,8 +63,8 @@ u2 = u"זרו"
 print "Unicode values:"
 print u2                            # זרו
 print u2.__class__                  # __builtins__.unicode.utf8string
-print u2.encode("ISO-8859-1")       # זרו
-print u2.encoding                   # ISO-8859-1
+print u2.encode("ISO-8859-15")      # זרו
+print u2.encoding                   # ISO-8859-15
 print len(u2)                       # 3
 
 # Implicitly from string literals.
@@ -73,18 +73,18 @@ u3 = "זרו"
 print "Unicode values:"
 print u3                            # זרו
 print u3.__class__                  # __builtins__.unicode.utf8string
-print u3.encode("ISO-8859-1")       # זרו
-print u3.encoding                   # ISO-8859-1
+print u3.encode("ISO-8859-15")      # זרו
+print u3.encoding                   # ISO-8859-15
 print len(u3)                       # 3
 
 # Explicitly from implicitly-converted literal.
 
-u4 = unicode("זרו", "ISO-8859-1")
+u4 = unicode("זרו", "ISO-8859-15")
 print "Unicode values:"
 print u4                            # זרו
 print u4.__class__                  # __builtins__.unicode.utf8string
-print u4.encode("ISO-8859-1")       # זרו
-print u4.encoding                   # ISO-8859-1
+print u4.encode("ISO-8859-15")      # זרו
+print u4.encoding                   # ISO-8859-15
 print len(u4)                       # 3
 
 # Test Unicode values.
@@ -130,7 +130,7 @@ except UnicodeDecodeError, exc:
 # The text should be decoded.
 
 su = s + u
-print "ISO-8859-1 values:"
+print "ISO-8859-15 values:"
 print su                            # ֶ״ֵזרו
 print su.__class__                  # __builtins__.str.string
 print len(su)                       # 6
@@ -139,7 +139,7 @@ print len(su)                       # 6
 # The text should be decoded.
 
 us = u + s
-print "ISO-8859-1 values:"
+print "ISO-8859-15 values:"
 print us                            # זרוֶ״ֵ
 print us.__class__                  # __builtins__.str.string
 print len(us)                       # 6
@@ -150,7 +150,7 @@ uu2 = u + u2
 print "Unicode values:"
 print uu2                           # זרוזרו
 print uu2.__class__                 # __builtins__.unicode.utf8string
-print uu2.encoding                  # ISO-8859-1
+print uu2.encoding                  # ISO-8859-15
 print len(uu2)                      # 6
 
 # Inspect and update the encoding of stdout.
@@ -159,9 +159,9 @@ print len(uu2)                      # 6
 print sys.stdout                    # <libc.io.sysstream instance>
 print sys.stdout.encoding           # None
 
-sys.stdout.encoding = "ISO-8859-1"
-print "ISO-8859-1 and Unicode values as ISO-8859-1:"
-print sys.stdout.encoding           # ISO-8859-1
+sys.stdout.encoding = "ISO-8859-15"
+print "ISO-8859-15 and Unicode values as ISO-8859-15:"
+print sys.stdout.encoding           # ISO-8859-15
 print u                             # זרו
 print su                            # ֶ״ֵזרו
 print us                            # זרוֶ״ֵ
@@ -170,19 +170,19 @@ sys.stdout.encoding = "UTF-8"
 print "Unicode values as UTF-8:"
 print sys.stdout.encoding           # UTF-8
 print u                             # ֳ¦ֳ¸ֳ¥
-print "ISO-8859-1 values bypassing UTF-8 output encoding:"
+print "ISO-8859-15 values bypassing UTF-8 output encoding:"
 print su                            # ֶ״ֵזרו
 print us                            # זרוֶ״ֵ
 
 # Reset the encoding.
 
-sys.stdout.encoding = "ISO-8859-1"
+sys.stdout.encoding = "ISO-8859-15"
 
 # Test character access.
 
 u0 = u[0]
 print u0.__class__                  # __builtins__.unicode.utf8string
-print u0.encoding                   # ISO-8859-1
+print u0.encoding                   # ISO-8859-15
 print u0                            # ז
 print u[-1]                         # ו
 print len(u[0])                     # 1
@@ -200,3 +200,9 @@ try:
     print ord(u)                    # should raise an exception
 except ValueError, exc:
     print "ord(u): value is not appropriate", repr(exc.value)
+
+euro = "₪"
+print euro                          # ₪
+print repr(euro)                    # "\u20ac"
+print ord(euro)                     # 8364
+print "\u20ac"                      # ₪

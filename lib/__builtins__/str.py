@@ -127,13 +127,7 @@ class basestring(hashable):
             elif c == "\r":
                 b.append("\\r")
             else:
-                if n < 0:
-                    n += 256
-                b.append("\\x")
-                x = hex(n, "")
-                if len(x) < 2:
-                    b.append("0")
-                b.append(x)
+                self._quote_value(b, n)
 
             i += 1
             last = i
@@ -143,6 +137,18 @@ class basestring(hashable):
         b.append(self[last:])
         b.append(quote)
         return str(b)
+
+    def _quote_value(self, b, n):
+
+        "Append to 'b' the quoted form of 'n'."
+
+        if n < 0:
+            n += 256
+        b.append("\\x")
+        x = hex(n, "")
+        if len(x) < 2:
+            b.append("0")
+        b.append(x)
 
     def bytelength(self):
 
