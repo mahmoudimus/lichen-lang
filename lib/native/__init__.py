@@ -47,6 +47,6 @@ from native.str import str_add, str_chr, str_eq, str_gt, str_lt, str_len, \
 
 from native.system import exit, get_argv, get_path
 
-from native.unicode import unicode_len, unicode_substr
+from native.unicode import unicode_len, unicode_ord, unicode_substr
 
 # vim: tabstop=4 expandtab shiftwidth=4

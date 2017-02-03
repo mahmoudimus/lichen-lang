@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.str import basestring
 from __builtins__.types import check_int
 from posix.iconv import Converter
-from native import str_add, unicode_len, unicode_substr, \
+from native import str_add, unicode_len, unicode_ord, unicode_substr, \
                    isinstance as _isinstance
 
 class utf8string(basestring):
@@ -111,6 +111,15 @@ class utf8string(basestring):
             self.length = unicode_len(self.__data__)
 
         return self.length
+
+    def __ord__(self):
+
+        "Return the value of the string, if only a single character."
+
+        if self.__len__() == 1:
+            return unicode_ord(self.__data__)
+        else:
+            raise ValueError, self
 
     def encode(self, encoding=None):
 

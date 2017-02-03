@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.types import check_int, check_string
-from native import str_chr, str_ord
+from native import str_chr
 
 def chr(i):
 
@@ -85,12 +85,7 @@ def ord(c):
 
     "Return the value of the given character 'c'."
 
-    check_string(c)
-
-    if c.__len__() == 1:
-        return str_ord(c.__data__)
-    else:
-        raise ValueError, c
+    return c.__ord__()
 
 def unichr(i): pass
 

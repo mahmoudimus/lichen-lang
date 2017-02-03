@@ -30,6 +30,15 @@ static inline int boundary(char c)
     return ((c & 0xc0) == 0xc0) || !(c & 0x80);
 }
 
+static inline int boundary_value(char c)
+{
+    if (!(c & 0x80)) return c;
+    else if ((c & 0xf8) == 0xf0) return c & 0x07;
+    else if ((c & 0xf0) == 0xe0) return c & 0x0f;
+    else if ((c & 0xe0) == 0xc0) return c & 0x1f;
+    else return 0;
+}
+
 static unsigned int nextpos(char *s, unsigned int size, unsigned int bytestart)
 {
     unsigned int i = bytestart;
@@ -70,6 +79,39 @@ __attr __fn_native_unicode_unicode_len(__attr __args[])
     for (i = 0; i < _data->size; i++)
         if (boundary(s[i]))
             c++;
+
+    /* Return the new integer. */
+    return __new_int(c);
+}
+
+__attr __fn_native_unicode_unicode_ord(__attr __args[])
+{
+    __attr * const _data = &__args[1];
+    /* _data interpreted as string */
+    char *s = _data->strvalue;
+    unsigned int i, c = 0, v;
+
+    for (i = 0; i < _data->size; i++)
+    {
+        /* Evaluate the current character as a boundary. */
+
+        v = boundary_value(s[i]);
+
+        /* Boundary with characters read: stop reading. */
+
+        if (v && i)
+            break;
+
+        /* Boundary: initialise with the extracted value. */
+
+        else if (v)
+            c = v;
+
+        /* Not a boundary: shift and combine with the continuation value. */
+
+        else
+            c = (c << 6) | (s[i] & 0x3f);
+    }
 
     /* Return the new integer. */
     return __new_int(c);

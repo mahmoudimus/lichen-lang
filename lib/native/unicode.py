@@ -8,7 +8,7 @@ substituted when each program is built. It is, however, important to declare
 non-core exceptions used by the native functions because they need to be
 identified as being needed by the program.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -27,6 +27,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 # Unicode string operations.
 
 def unicode_len(data): pass
+def unicode_ord(data): pass
 def unicode_substr(data, start, end, step): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

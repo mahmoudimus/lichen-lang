@@ -191,3 +191,12 @@ print u[:2]                         # זר
 print len(u[:2])                    # 2
 print u[-1::-1]                     # ורז
 print len(u[-1::-1])                # 3
+
+# Test character values.
+
+print ord(u[0])                     # 230
+
+try:
+    print ord(u)                    # should raise an exception
+except ValueError, exc:
+    print "ord(u): value is not appropriate", repr(exc.value)

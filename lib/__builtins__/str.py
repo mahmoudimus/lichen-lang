@@ -22,8 +22,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.operator import _negate
 from __builtins__.sequence import hashable, itemaccess
 from __builtins__.types import check_int
-from native import str_add, str_lt, str_gt, str_eq, str_len, str_nonempty, \
-                   str_substr
+from native import str_add, str_lt, str_gt, str_eq, str_len, str_ord, \
+                   str_nonempty, str_substr
 
 WHITESPACE = (" ", "\f", "\n", "\r", "\t")
 
@@ -256,6 +256,15 @@ class basestring(hashable):
         return _negate(self.__eq__(other))
 
     # String-specific methods.
+
+    def __ord__(self):
+
+        "Return the value of the string, if only a single character."
+
+        if self.__len__() == 1:
+            return str_ord(self.__data__)
+        else:
+            raise ValueError, self
 
     def endswith(self, s):
 
