@@ -533,18 +533,19 @@ class CommonModule:
 
         node = compiler.ast.Stmt([
 
-            # <iterator> = {n.list}.__iter__
+            # <next> = {n.list}.__iter__().next
 
             compiler.ast.Assign(
                 [compiler.ast.AssName(self.get_iterator_name(), "OP_ASSIGN")],
-                compiler.ast.CallFunc(
-                    compiler.ast.Getattr(n.list, "__iter__"),
-                    []
-                    )),
+                compiler.ast.Getattr(
+                    compiler.ast.CallFunc(
+                        compiler.ast.Getattr(n.list, "__iter__"),
+                        []
+                        ), "next")),
 
             # try:
             #     while True:
-            #         <var>... = <iterator>.next()
+            #         <var>... = <next>()
             #         ...
             # except StopIteration:
             #     pass
@@ -556,7 +557,7 @@ class CommonModule:
                         compiler.ast.Assign(
                             [n.assign],
                             compiler.ast.CallFunc(
-                                compiler.ast.Getattr(compiler.ast.Name(self.get_iterator_name()), "next"),
+                                compiler.ast.Name(self.get_iterator_name()),
                                 []
                                 )),
                         n.body]),
