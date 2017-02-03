@@ -669,11 +669,6 @@ class Transformer:
 
     def decode_literal(self, lit):
         if self.encoding:
-            # this is particularly fragile & a bit of a
-            # hack... changes in compile.c:parsestr and
-            # tokenizer.c must be reflected here.
-            if self.encoding not in ['utf-8', 'iso-8859-1']:
-                lit = unicode(lit, 'utf-8').encode(self.encoding)
             return eval("# coding: %s\n%s" % (self.encoding, lit))
         else:
             return eval(lit)
