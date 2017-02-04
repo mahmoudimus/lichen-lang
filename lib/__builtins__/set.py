@@ -19,7 +19,6 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.iteration.iterator import itemiterator
 from __builtins__.mapping import hashtable
 
 class frozenset(hashtable):
@@ -38,13 +37,16 @@ class frozenset(hashtable):
 
     # Implementation methods.
 
-    def _find_entry(self, value, index):
+    def _find_entry(self, buckets, value, index):
 
-        "Search for 'value', using an 'index' identifying the bucket involved."
+        """
+        Search in 'buckets' for 'value', using an 'index' identifying the bucket
+        involved.
+        """
 
         i = 0
 
-        for found in self.buckets[index]:
+        for found in buckets[index]:
             if found == value:
                 return i
             i += 1
@@ -66,7 +68,7 @@ class frozenset(hashtable):
 
         "Set in the 'buckets' an item having the given 'value'."
 
-        index, i = self._get_entry(value)
+        index, i = self._get_entry(buckets, value)
 
         # With no existing entry, append to the bucket.
 
@@ -106,24 +108,104 @@ class frozenset(hashtable):
 
         "Return whether 'value' is in the set."
 
-        index, i = self._get_entry(value)
+        index, i = self._get_entry(self.buckets, value)
         return i is not None
 
     def __iter__(self):
 
         "Return an iterator."
 
-        return itemiterator(list(self))
+        return setiterator(self)
 
     # Public conventional methods.
 
-    def copy(self): pass
-    def difference(self, other): pass
-    def intersection(self, other): pass
-    def issubset(self, other): pass
-    def issuperset(self, other): pass
-    def symmetric_difference(self, other): pass
-    def union(self, other): pass
+    def copy(self):
+
+        "Return a copy of this set."
+
+        result = set()
+        result.update(self)
+        return result
+
+    def difference(self, other):
+
+        """
+        Return a set containing only those values in this set that are not in
+        'other'.
+        """
+
+        result = set()
+
+        for value in self:
+            if value not in other:
+                result.add(value)
+
+        return result
+
+    def intersection(self, other):
+
+        "Return a set containing only those values in this set and in 'other'."
+
+        result = set()
+
+        for value in self:
+            if value in other:
+                result.add(value)
+
+        return result
+
+    def issubset(self, other):
+
+        "Return whether this set is a subset of 'other'."
+
+        for value in self:
+            if value not in other:
+                return False
+
+        return True
+
+    def issuperset(self, other):
+
+        "Return whether this set is a superset of 'other'."
+
+        for value in other:
+            if value not in self:
+                return False
+
+        return True
+
+    def symmetric_difference(self, other):
+
+        """
+        Return a set containing only the values either in this set or in 'other'
+        but not in both.
+        """
+
+        result = set()
+
+        for value in self:
+            if value not in other:
+                result.add(value)
+
+        for value in other:
+            if value not in self:
+                result.add(value)
+
+        return result
+
+    def union(self, other):
+
+        "Return a set combining this set and 'other'."
+
+        result = set()
+
+        for value in self:
+            result.add(value)
+
+        for value in other:
+            result.add(value)
+
+        return result
 
 class set(frozenset):
 
@@ -152,7 +234,12 @@ class set(frozenset):
 
         self._setitem(self.buckets, value)
 
-    def difference_update(self, other): pass
+    def difference_update(self, other):
+
+        "Remove from this set all values from 'other'."
+
+        for value in other:
+            self.remove(value)
 
     def discard(self, value):
 
@@ -163,9 +250,26 @@ class set(frozenset):
         except KeyError:
             pass
 
-    def intersection_update(self, other): pass
+    def intersection_update(self, other):
 
-    def pop(self): pass
+        "Preserve in this set only values in this set found in 'other'."
+
+        for value in self:
+            if value not in other:
+                self.remove(value)
+
+    def pop(self):
+
+        "Remove and return an arbitrary value."
+
+        # Get the last element from the first non-empty bucket.
+
+        for bucket in self.buckets:
+            if bucket:
+                self.size -= 1
+                return bucket.pop()
+
+        raise KeyError
 
     def remove(self, value):
 
@@ -173,8 +277,59 @@ class set(frozenset):
 
         self._remove_entry(value)
 
-    def symmetric_difference_update(self, other): pass
+    def symmetric_difference_update(self, other):
 
-    def update(self, other): pass
+        """
+        Remove from this set all values found in 'other', adding values only
+        found in 'other'.
+        """
+
+        to_add = other.difference(self)
+        self.difference_update(other)
+        self.update(to_add)
+
+    def update(self, other):
+
+        "Update this set using the contents of 'other'."
+
+        for value in other:
+            self.add(value)
+
+class setiterator:
+
+    "An iterator for set types."
+
+    def __init__(self, mapping):
+
+        "Initialise the iterator with the given 'mapping'."
+
+        self.mapping = mapping
+        self.index = 0
+        self.i = 0
+
+    def next(self):
+
+        "Return the next value."
+
+        while True:
+
+            # Access the current bucket. If no such bucket exists, stop.
+
+            try:
+                bucket = self.mapping.buckets[self.index]
+            except IndexError:
+                raise StopIteration
+
+            # Access the current item. If no such item exists, get another
+            # bucket.
+
+            try:
+                value = bucket[self.i]
+                self.i += 1
+                return value
+
+            except IndexError:
+                self.index += 1
+                self.i = 0
 
 # vim: tabstop=4 expandtab shiftwidth=4

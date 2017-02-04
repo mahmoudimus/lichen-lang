@@ -40,13 +40,16 @@ class dict(hashtable):
 
     # Implementation methods.
 
-    def _find_entry(self, key, index):
+    def _find_entry(self, buckets, key, index):
 
-        "Search for 'key', using an 'index' identifying the bucket involved."
+        """
+        Search in 'buckets' for 'key', using an 'index' identifying the bucket
+        involved.
+        """
 
         i = 0
 
-        for found, value in self.buckets[index]:
+        for found, value in buckets[index]:
             if found == key:
                 return i
             i += 1
@@ -68,7 +71,7 @@ class dict(hashtable):
 
         "Set in the 'buckets' an item having the given 'key' and 'value'."
 
-        index, i = self._get_entry(key)
+        index, i = self._get_entry(buckets, key)
 
         # With no existing entry, append to the bucket.
 
@@ -146,13 +149,13 @@ class dict(hashtable):
         the dictionary, 'default' will be returned instead.
         """
 
-        index, i = self._get_entry(key)
+        index, i = self._get_entry(self.buckets, key)
 
         # With no entry index, either raise an exception or return the default.
 
         if i is None:
             if default is self.MISSING:
-                raise KeyError(key)
+                raise KeyError, key
             else:
                 return default
 
@@ -182,9 +185,25 @@ class dict(hashtable):
 
         return self._items()
 
-    def setdefault(self, key, value): pass
+    def setdefault(self, key, value):
 
-    def update(self, other): pass
+        """
+        Set for 'key' the given 'value' only if no entry for 'key' is already
+        present. Return the associated value for 'key', which will either be the
+        existing value already present in the dictionary or the supplied 'value'
+        that was given to establish an entry in the dictionary.
+        """
+
+        if not self.has_key(key):
+            self[key] = value
+        return self.get(key)
+
+    def update(self, other):
+
+        "Update this dictionary with the items from 'other'."
+
+        for key, value in other.items():
+            self[key] = value
 
     def values(self):
 

@@ -43,23 +43,26 @@ class hashtable:
 
         return buckets
 
-    def _get_entry(self, key):
+    def _get_entry(self, buckets, key):
 
-        "Return the index and entry index as a tuple for 'key'."
+        "Return the index and entry index as a tuple in 'buckets' for 'key'."
 
         # Find an index identifying the bucket involved.
 
-        index = self._get_index(key)
+        index = self._get_index(buckets, key)
 
         # Find the entry index within the bucket of the key.
 
-        i = self._find_entry(key, index)
+        i = self._find_entry(buckets, key, index)
 
         return index, i
 
-    def _get_index(self, key):
+    def _get_index(self, buckets, key):
 
-        "Check 'key' and return an index or raise TypeError."
+        """
+        Find in 'buckets' the given 'key', returning an index or raising
+        TypeError.
+        """
 
         index = key.__hash__()
 
@@ -68,10 +71,12 @@ class hashtable:
 
         return index % len(self.buckets)
 
-    def _find_entry(self, key, index):
+    def _find_entry(self, buckets, key, index):
 
         """
-        Search for 'key', using an 'index' identifying the bucket involved.
+        Search in 'buckets' for 'key', using an 'index' identifying the bucket
+        involved.
+
         Method to be overridden by subclasses.
         """
 
@@ -106,6 +111,17 @@ class hashtable:
         """
 
         pass
+
+    # Public special methods.
+
+    def __len__(self):
+
+        "Return the number of items in the mapping."
+
+        n = 0
+        for bucket in self.buckets:
+            n += bucket.__len__()
+        return n
 
     # Public conventional methods.
 
