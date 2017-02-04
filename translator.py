@@ -1155,7 +1155,8 @@ class TranslatedModule(CommonModule):
             if expr.has_kind("<class>"):
                 instantiation = objpath
                 target = encode_instantiator_pointer(objpath)
-                target_structure = "&%s" % encode_path("%s.__init__" % objpath)
+                init_ref = self.importer.all_class_attrs[objpath]["__init__"]
+                target_structure = "&%s" % encode_path(init_ref)
                 context_required = False
 
             # Only plain functions and bound methods employ function pointers.
