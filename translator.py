@@ -27,6 +27,7 @@ from encoders import encode_access_instruction, \
                      encode_instructions, \
                      encode_path, encode_symbol, encode_type_attribute, \
                      is_type_attribute
+from errors import InspectError, TranslateError
 from os.path import exists, join
 from os import makedirs
 from referencing import Reference
