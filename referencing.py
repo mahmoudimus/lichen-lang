@@ -3,7 +3,7 @@
 """
 Reference abstractions.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -186,6 +186,15 @@ class Reference:
             return None
 
         return self.get_name().rsplit(".", 1)[0]
+
+    def leaf(self):
+
+        "Return the leafname of the reference's origin."
+
+        if not self.get_origin():
+            return None
+
+        return self.get_origin().rsplit(".", 1)[-1]
 
     def ancestors(self):
 

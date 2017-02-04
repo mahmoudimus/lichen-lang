@@ -444,6 +444,13 @@ class Importer:
 
                     if provider and provider != module.name:
 
+                        # Handle built-in modules accidentally referenced by
+                        # names.
+
+                        if provider == "__builtins__" and found.has_kind("<module>"):
+                            raise ProgramError("Name %s, used by %s, refers to module %s." %
+                                               (found.leaf(), module.name, found.get_origin()))
+
                         # Record the provider dependency.
 
                         module.required.add(provider)
