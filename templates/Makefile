@@ -1,7 +1,8 @@
 include native.mk
+include modules.mk
 include options.mk
 
-SRC += exceptions.c main.c ops.c progops.c progtypes.c $(wildcard src/*.c)
+SRC += exceptions.c main.c ops.c progops.c progtypes.c
 OBJ = $(SRC:.c=.o)
 CFLAGS += -Wall -I. -finput-charset=UTF-8
 LDFLAGS += -lm -lgc

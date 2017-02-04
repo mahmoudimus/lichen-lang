@@ -425,14 +425,16 @@ class Generator(CommonOutput):
         "Write scripts used to build the program."
 
         f_native = open(join(self.output, "native.mk"), "w")
+        f_modules = open(join(self.output, "modules.mk"), "w")
         f_options = open(join(self.output, "options.mk"), "w")
         try:
             if debug:
                 print >>f_options, "CFLAGS = -g"
 
-            # Identify native modules used by the program.
+            # Identify modules used by the program.
 
-            native_modules = ["native/common.c"]
+            native_modules = [join("native", "common.c")]
+            modules = []
 
             for name in self.importer.modules.keys():
                 parts = name.split(".", 1)
@@ -440,12 +442,16 @@ class Generator(CommonOutput):
                 # Identify source files to be built.
 
                 if parts[0] == "native":
-                    native_modules.append("native/%s.c" % parts[1])
+                    native_modules.append(join("native", "%s.c" % parts[1]))
+                else:
+                    modules.append(join("src", "%s.c" % name))
 
             print >>f_native, "SRC =", " ".join(native_modules)
+            print >>f_modules, "SRC +=", " ".join(modules)
 
         finally:
             f_native.close()
+            f_modules.close()
             f_options.close()
 
     def make_literal_constant(self, f_decls, f_defs, n, constant):
