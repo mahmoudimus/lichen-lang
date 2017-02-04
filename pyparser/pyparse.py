@@ -1,6 +1,13 @@
 from pyparser import parser, pytokenizer, pygram, error
 from pyparser import consts
 
+def recode_to_utf8(bytes, encoding):
+    text = bytes.decode(encoding)
+    if not isinstance(text, unicode):
+        raise error.SyntaxError("codec did not return a unicode object")
+    recoded = text.encode("utf-8")
+    return recoded
+
 def _normalize_encoding(encoding):
     """returns normalized name for <encoding>
 
@@ -96,6 +103,17 @@ class PythonParser(parser.Parser):
                                         filename=compile_info.filename)
         else:
             enc = _normalize_encoding(_check_for_encoding(textsrc))
+            if enc is not None and enc != 'utf-8':
+                try:
+                    textsrc = recode_to_utf8(textsrc, enc)
+                except LookupError as e:
+                    # if the codec is not found, LookupError is raised.
+                    raise error.SyntaxError("Unknown encoding: %s" % enc,
+                                            filename=compile_info.filename)
+                # Transform unicode errors into SyntaxError
+                except UnicodeDecodeError as e:
+                    message = str(e)
+                    raise error.SyntaxError(message)
 
         flags = compile_info.flags
 

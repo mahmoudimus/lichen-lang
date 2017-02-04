@@ -9,6 +9,12 @@ print "ISO-8859-15 values:"
 print s                             # ∆ÿ≈
 print len(s)                        # 3
 
+s1 = b"∆ÿ≈" \
+      "∆ÿ≈"
+print "ISO-8859-15 values:"
+print s1                            # ∆ÿ≈∆ÿ≈
+print len(s1)                       # 6
+
 s2 = b"\xe6\xf8\xe5"
 print "ISO-8859-15 values:"
 print s2                            # Ê¯Â

@@ -1407,7 +1407,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Constant values are independently recorded.
 
         else:
-            value, typename, encoding = self.get_constant_value(n.value, n.literal)
+            value, typename, encoding = self.get_constant_value(n.value, n.literals)
             name = get_builtin_type(typename)
             ref = self.get_builtin_class(name)
             return self.get_constant_reference(ref, value, encoding)

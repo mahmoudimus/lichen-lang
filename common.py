@@ -233,7 +233,7 @@ class CommonModule:
 
     # Constant and literal recording.
 
-    def get_constant_value(self, value, literal=None):
+    def get_constant_value(self, value, literals=None):
 
         """
         Encode the 'value' if appropriate, returning a value, a typename and any
@@ -247,7 +247,7 @@ class CommonModule:
 
         elif isinstance(value, str) and self.encoding:
             try:
-                return get_string_details(literal, self.encoding)
+                return get_string_details(literals, self.encoding)
             except UnicodeDecodeError:
                 pass
 
@@ -964,12 +964,48 @@ def sorted_output(x):
     x.sort()
     return ", ".join(x)
 
-def get_string_details(s, encoding):
+def get_string_details(literals, encoding):
 
     """
-    Determine whether 's' represents a Unicode string or a byte string, using
-    'encoding' to interpret byte sequences. The contents of 's' is the full
-    literal representation including prefix and quotes.
+    Determine whether 'literals' represent Unicode strings or byte strings,
+    using 'encoding' to reproduce byte sequences.
+
+    Each literal is the full program representation including prefix and quotes
+    recoded by the parser to UTF-8. Thus, any literal found to represent a byte
+    string needs to be translated back to its original encoding.
+
+    Return a single encoded literal value, a type name, and the original
+    encoding as a tuple.
+    """
+
+    typename = "unicode"
+
+    l = []
+
+    for s in literals:
+        out, _typename = get_literal_details(s)
+        if _typename == "str":
+            typename = "str"
+        l.append(out)
+
+    out = "".join(l)
+
+    # For Unicode values, convert to the UTF-8 program representation.
+
+    if typename == "unicode":
+        return out.encode("utf-8"), typename, encoding
+
+    # For byte string values, convert back to the original encoding.
+
+    else:
+        return out.encode(encoding), typename, encoding
+
+def get_literal_details(s):
+
+    """
+    Determine whether 's' represents a Unicode string or a byte string, where
+    's' contains the full program representation of a literal including prefix
+    and quotes, recoded by the parser to UTF-8.
 
     Find and convert Unicode values starting with <backslash>u or <backslash>U,
     and byte or Unicode values starting with <backslash><octal digit> or
@@ -984,8 +1020,8 @@ def get_string_details(s, encoding):
     formats are converted, not any of the other special sequences for things
     like newlines.
 
-    Return the encoded literal value, type name, and original encoding as a
-    tuple.
+    Return the literal value as a Unicode object together with the appropriate
+    type name in a tuple.
     """
 
     l = []
@@ -1085,30 +1121,19 @@ def get_string_details(s, encoding):
             l.append(s[index:index+2])
             current = index + 2
 
-    # For byte string values, convert any Unicode values to the original
-    # encoding.
+    # Collect the components into a single Unicode object. Since the literal
+    # text was already in UTF-8 form, interpret plain strings as UTF-8
+    # sequences.
 
-    if typename == "str":
-        out = []
-        for value in l:
-            if isinstance(value, unicode):
-                out.append(value.encode(encoding))
-            else:
-                out.append(value)
-        out = "".join(out)
+    out = []
 
-    # For Unicode values, convert byte sequences to Unicode.
+    for value in l:
+        if isinstance(value, unicode):
+            out.append(value)
+        else:
+            out.append(unicode(value, "utf-8"))
 
-    else:
-        out = []
-        for value in l:
-            if isinstance(value, unicode):
-                out.append(value)
-            else:
-                out.append(unicode(value, encoding))
-        out = "".join(out).encode("utf-8")
-
-    return out, typename, encoding
+    return "".join(out), typename
 
 def convert_quoted_value(s, index, needed, end, base, fn):
 

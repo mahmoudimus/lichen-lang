@@ -669,15 +669,22 @@ class Transformer:
 
     def decode_literal(self, lit):
         if self.encoding:
+            # this is particularly fragile & a bit of a
+            # hack... changes in compile.c:parsestr and
+            # tokenizer.c must be reflected here.
+            if self.encoding != 'utf-8':
+                lit = unicode(lit, 'utf-8').encode(self.encoding)
             return eval("# coding: %s\n%s" % (self.encoding, lit))
         else:
             return eval(lit)
 
     def atom_string(self, nodelist):
         k = ''
+        l = []
         for node in nodelist:
             k += self.decode_literal(node[1])
-        return Const(k, node[1], lineno=nodelist[0][2])
+            l.append(node[1])
+        return Const(k, l, lineno=nodelist[0][2])
 
     def atom_name(self, nodelist):
         return Name(nodelist[0][1], lineno=nodelist[0][2])
