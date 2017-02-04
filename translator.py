@@ -20,8 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from common import CommonModule, CommonOutput, InstructionSequence, \
-                   first, get_builtin_module, get_builtin_type, init_item, \
-                   predefined_constants
+                   first, get_builtin_class, init_item, predefined_constants
 from encoders import encode_access_instruction, \
                      encode_function_pointer, encode_literal_constant, \
                      encode_literal_instantiator, encode_instantiator_pointer, \
@@ -369,11 +368,7 @@ class TranslatedModule(CommonModule):
 
         "Return a reference to the actual object providing 'name'."
 
-        # NOTE: This makes assumptions about the __builtins__ structure.
-
-        modname = get_builtin_module(name)
-        typename = get_builtin_type(name)
-        return self.importer.get_object("__builtins__.%s.%s" % (modname, typename))
+        return self.importer.get_object(get_builtin_class(name))
 
     def is_method(self, path):
 
@@ -473,8 +468,7 @@ class TranslatedModule(CommonModule):
             return self.process_literal_sequence_node(n, name, ref, TrLiteralSequenceRef)
         else:
             value, typename, encoding = self.get_constant_value(n.value, n.literals)
-            name = get_builtin_type(typename)
-            ref = self.get_builtin_class(name)
+            ref = self.get_builtin_class(typename)
             value_type = ref.get_origin()
 
             path = self.get_namespace_path()

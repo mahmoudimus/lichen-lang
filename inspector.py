@@ -21,8 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from branching import BranchTracker
-from common import CommonModule, get_argnames, get_builtin_type, init_item, \
-                   predefined_constants
+from common import CommonModule, get_argnames, init_item, predefined_constants
 from modules import BasicModule, CacheWritingModule, InspectionNaming
 from errors import InspectError
 from referencing import Reference
@@ -1408,8 +1407,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         else:
             value, typename, encoding = self.get_constant_value(n.value, n.literals)
-            name = get_builtin_type(typename)
-            ref = self.get_builtin_class(name)
+            ref = self.get_builtin_class(typename)
             return self.get_constant_reference(ref, value, encoding)
 
     # Special names.

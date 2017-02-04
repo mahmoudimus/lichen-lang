@@ -1237,21 +1237,22 @@ def get_assigned_attributes(usage):
     return assigned
 
 # Type and module functions.
+# NOTE: This makes assumptions about the __builtins__ structure.
 
 def get_builtin_module(name):
 
     "Return the module name containing the given type 'name'."
 
-    # NOTE: This makes assumptions about the __builtins__ structure.
-
     if name == "string":
-        return "str"
+        modname = "str"
     elif name == "utf8string":
-        return "unicode"
+        modname = "unicode"
     elif name == "NoneType":
-        return "none"
+        modname = "none"
     else:
-        return name
+        modname = name
+
+    return "__builtins__.%s" % modname
 
 def get_builtin_type(name):
 
@@ -1263,6 +1264,14 @@ def get_builtin_type(name):
         return "utf8string"
     else:
         return name
+
+def get_builtin_class(name):
+
+    "Return the full name of the built-in class having the given 'name'."
+
+    typename = get_builtin_type(name)
+    module = get_builtin_module(typename)
+    return "%s.%s" % (module, typename)
 
 # Useful data.
 

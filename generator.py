@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import CommonOutput, get_builtin_module, get_builtin_type
+from common import CommonOutput
 from encoders import encode_function_pointer, \
                      encode_instantiator_pointer, \
                      encode_literal_constant, encode_literal_constant_member, \
