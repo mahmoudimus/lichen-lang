@@ -95,7 +95,7 @@ class hashtable:
 
         "Remove the entry associated with the given 'key'."
 
-        index, i = self._get_entry(key)
+        index, i = self._get_entry(self.buckets, key)
 
         if index is None or i is None:
             raise KeyError, key
