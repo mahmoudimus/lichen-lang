@@ -51,3 +51,20 @@ print 9 in aub                      # True
 print 9 in aib                      # False
 print 9 in adb                      # True
 print 9 in asdb                     # False
+print
+
+aub2 = a.copy()
+aub2.update(b)
+print len(aub2)                     # 6
+
+aib2 = a.copy()
+aib2.intersection_update(b)
+print len(aib2)                     # 4
+
+adb2 = a.copy()
+adb2.difference_update(b)
+print len(adb2)                     # 1
+
+asdb2 = a.copy()
+asdb2.symmetric_difference_update(b)
+print len(asdb2)                    # 2

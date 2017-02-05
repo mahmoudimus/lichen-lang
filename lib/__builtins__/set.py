@@ -239,7 +239,7 @@ class set(frozenset):
         "Remove from this set all values from 'other'."
 
         for value in other:
-            self.remove(value)
+            self.discard(value)
 
     def discard(self, value):
 
@@ -254,9 +254,14 @@ class set(frozenset):
 
         "Preserve in this set only values in this set found in 'other'."
 
+        to_remove = set()
+
         for value in self:
             if value not in other:
-                self.remove(value)
+                to_remove.add(value)
+
+        for value in to_remove:
+            self.remove(value)
 
     def pop(self):
 
