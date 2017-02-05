@@ -199,9 +199,10 @@ __attr __invoke(__attr callable, int always_callable,
     unsigned int pos, kwpos;
 
     /* Check the number of arguments. */
+    /* NOTE: Should use a more specific exception. */
 
     if ((min > (nargs + nkwargs)) || ((nargs + nkwargs) > max))
-        return __NULL;
+        __raise_type_error();
 
     /* Copy the arguments. */
 
@@ -224,9 +225,10 @@ __attr __invoke(__attr callable, int always_callable,
         /* Check the table entry against the supplied argument details.
            Set the argument but only if it does not overwrite positional
            arguments. */
+        /* NOTE: Should use a more specific exception. */
 
         if ((pos == -1) || (pos < nargs))
-            return __NULL;
+            __raise_type_error();
 
         /* Set the argument using the appropriate position. */
 
