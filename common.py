@@ -626,12 +626,21 @@ class CommonModule:
         Process the given slice node 'n' as an operator function invocation.
         """
 
-        op = n.flags == "OP_ASSIGN" and "setslice" or "getslice"
+        if n.flags == "OP_ASSIGN": op = "setslice"
+        elif n.flags == "OP_DELETE": op = "delslice"
+        else: op = "getslice"
+
         invocation = compiler.ast.CallFunc(
             compiler.ast.Name("$op%s" % op),
             [n.expr, n.lower or compiler.ast.Name("None"), n.upper or compiler.ast.Name("None")] +
                 (expr and [expr] or [])
             )
+
+        # Fix parse tree structure.
+
+        if op == "delslice":
+            invocation = compiler.ast.Discard(invocation)
+
         return self.process_structure_node(invocation)
 
     def process_sliceobj_node(self, n):
@@ -653,11 +662,20 @@ class CommonModule:
         Process the given subscript node 'n' as an operator function invocation.
         """
 
-        op = n.flags == "OP_ASSIGN" and "setitem" or "getitem"
+        if n.flags == "OP_ASSIGN": op = "setitem"
+        elif n.flags == "OP_DELETE": op = "delitem"
+        else: op = "getitem"
+
         invocation = compiler.ast.CallFunc(
             compiler.ast.Name("$op%s" % op),
             [n.expr] + list(n.subs) + (expr and [expr] or [])
             )
+
+        # Fix parse tree structure.
+
+        if op == "delitem":
+            invocation = compiler.ast.Discard(invocation)
+
         return self.process_structure_node(invocation)
 
     def process_attribute_chain(self, n):

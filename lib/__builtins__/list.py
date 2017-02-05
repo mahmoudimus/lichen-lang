@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iteration.iterator import itemiterator
-from __builtins__.sequence import sequence
+from __builtins__.sequence import sequence, _get_absolute_index
 from native import list_append, list_concat, list_element, list_init, \
                    list_len, list_nonempty, list_setelement, list_setsize
 
@@ -40,7 +40,22 @@ class list(sequence):
         if args is not None:
             self.extend(args)
 
-    def __delitem__(self, index): pass
+    def __delitem__(self, index):
+
+        "Delete the item at 'index'."
+
+        length = self.__len__()
+        index = _get_absolute_index(index, length)
+        last = length - 1
+
+        while index < last:
+            self[index] = self[index + 1]
+            index += 1
+
+        # NOTE: Should truncate the allocated list after several pops.
+
+        list_setsize(self.__data__, last)
+
     def __setslice__(self, start, end, slice): pass
     def __delslice__(self, start, end): pass
 
