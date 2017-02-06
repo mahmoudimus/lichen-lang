@@ -33,6 +33,9 @@ class Result:
     def reference(self):
         return None
 
+    def references(self):
+        return None
+
     def get_name(self):
         return None
 
@@ -112,8 +115,14 @@ class ResolvedRef:
 
     "A resolved reference mix-in."
 
+    def __init__(self, ref):
+        self.ref = ref
+
     def reference(self):
         return self.ref
+
+    def references(self):
+        return [self.ref]
 
     def get_name(self):
         return self.ref and self.ref.get_name() or None
@@ -139,7 +148,7 @@ class ResolvedNameRef(ResolvedRef, NameRef):
 
     def __init__(self, name, ref, expr=None):
         NameRef.__init__(self, name, expr)
-        self.ref = ref
+        ResolvedRef.__init__(self, ref)
 
     def __repr__(self):
         return "ResolvedNameRef(%r, %r, %r)" % (self.name, self.ref, self.expr)
@@ -159,9 +168,6 @@ class ConstantValueRef(ResolvedNameRef):
 class InstanceRef(ResolvedRef, Result):
 
     "An instance reference."
-
-    def __init__(self, ref):
-        self.ref = ref
 
     def reference(self):
         return self.ref

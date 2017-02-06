@@ -194,6 +194,9 @@ class AttrResult(Expression, TranslationResult, InstructionSequence):
         self.refs = refs
         self.accessor_kinds = accessor_kinds
 
+    def references(self):
+        return self.refs
+
     def get_origin(self):
         return self.refs and len(self.refs) == 1 and first(self.refs).get_origin()
 
@@ -285,6 +288,8 @@ def make_expression(expr):
         return expr
     else:
         return Expression(str(expr))
+
+
 
 # The actual translation process itself.
 
@@ -1129,20 +1134,32 @@ class TranslatedModule(CommonModule):
 
         expr = self.process_structure_node(n.node)
         objpath = expr.get_origin()
+
+        # Identified target details.
+
         target = None
         target_structure = None
+
+        # Specific function target information.
+
         function = None
+
+        # Instantiation involvement.
+
         instantiation = False
         literal_instantiation = False
-        context_required = True
 
-        # Obtain details of the callable.
+        # Invocation requirements.
+
+        context_required = True
+        parameters = None
+
+        # Obtain details of the callable and of its parameters.
 
         # Literals may be instantiated specially.
 
         if expr.is_name() and expr.name.startswith("$L") and objpath:
             instantiation = literal_instantiation = objpath
-            parameters = None
             target = encode_literal_instantiator(objpath)
             context_required = False
 
@@ -1186,7 +1203,30 @@ class TranslatedModule(CommonModule):
         # Other targets are retrieved at run-time.
 
         else:
-            parameters = None
+            refs = expr.references()
+
+            # Attempt to test the number of arguments and warn about possible
+            # invocation problems.
+
+            if refs:
+                for ref in refs:
+                    _objpath = ref.get_origin()
+                    _parameters = self.importer.function_parameters.get(_objpath)
+
+                    if _parameters is None:
+                        continue
+
+                    # Determine whether the possible target has a different
+                    # number of parameters to the number of arguments given.
+
+                    num_parameters = len(_parameters)
+                    _defaults = len(self.importer.function_defaults.get(_objpath, []))
+
+                    if len(n.args) < num_parameters - _defaults or len(n.args) > num_parameters:
+                        print "In %s, at line %d, inappropriate number of " \
+                            "arguments given. Need %d arguments to call %s." % (
+                            self.get_namespace_path(), n.lineno, num_parameters,
+                            _objpath)
 
         # Arguments are presented in a temporary frame array with any context
         # always being the first argument. Where it would be unused, it may be
@@ -1197,6 +1237,9 @@ class TranslatedModule(CommonModule):
             args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
         else:
             args = ["__NULL"]
+
+        # Complete the array with null values, permitting tests for a complete
+        # set of arguments.
 
         args += [None] * (not parameters and len(n.args) or parameters and len(parameters) or 0)
         kwcodes = []
@@ -1888,9 +1931,6 @@ class TranslatedModule(CommonModule):
         self.writeline("}")
 
     def statement(self, expr):
-        # NOTE: Should never be None.
-        if not expr:
-            self.writestmt("...;")
         s = str(expr)
         if s:
             self.writestmt("%s;" % s)
