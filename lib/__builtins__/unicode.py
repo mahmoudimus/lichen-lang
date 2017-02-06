@@ -99,12 +99,9 @@ class utf8string(basestring):
         if n > 0xffff:
             b.append("\\U")
             digits = 8
-        elif n > 0xff:
+        else:
             b.append("\\u")
             digits = 4
-        else:
-            b.append("\\x")
-            digits = 2
 
         x = hex(n, "")
         i = len(x)
