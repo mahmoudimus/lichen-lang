@@ -53,11 +53,14 @@ class tuple(sequence, hashable):
 
         return self._hashvalue(hash)
 
-    def __getslice__(self, start, end=None):
+    def __getslice__(self, start, end=None, step=1):
 
-        "Return a slice starting from 'start', with the optional 'end'."
+        """
+        Return a slice starting from 'start', with the optional 'end' and
+        'step'.
+        """
 
-        return tuple(get_using(sequence.__getslice__, self)(start, end))
+        return tuple(get_using(sequence.__getslice__, self)(start, end, step))
 
     def __len__(self):
 
