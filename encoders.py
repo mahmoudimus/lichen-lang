@@ -78,7 +78,7 @@ def encode_location(t):
 
 def encode_modifiers(modifiers):
 
-    "Encode assignment details from 'modifiers'."
+    "Encode assignment and invocation details from 'modifiers'."
 
     all_modifiers = []
     for t in modifiers:
@@ -87,16 +87,38 @@ def encode_modifiers(modifiers):
 
 def encode_modifier_term(t):
 
-    "Encode modifier 't' representing assignment status."
+    "Encode modifier 't' representing an assignment or an invocation."
 
     assignment, invocation = t
-    return assignment and "=" or invocation and "!" or "_"
+    if assignment:
+        return "="
+    elif invocation is not None:
+        return "(%d)" % invocation
+    else:
+        return "_"
 
-def decode_modifier_term(s):
+def decode_modifiers(s):
 
-    "Decode modifier term 's' representing assignment status."
+    "Decode 's' containing modifiers."
 
-    return (s == "=", s == "!")
+    i = 0
+    end = len(s)
+
+    modifiers = []
+
+    while i < end:
+        if s[i] == "=":
+            modifiers.append((True, None))
+            i += 1
+        elif s[i] == "(":
+            j = s.index(")", i)
+            modifiers.append((False, int(s[i+1:j])))
+            i = j + 1
+        else:
+            modifiers.append((False, None))
+            i += 1
+
+    return modifiers
 
 
 

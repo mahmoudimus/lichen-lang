@@ -438,7 +438,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Record attribute usage in the tracker, and record the branch
             # information for the access.
 
-            branches = tracker.use_attribute(name, attrname, self.in_invocation, assignment)
+            branches = tracker.use_attribute(name, attrname, self.in_invocation is not None, assignment)
 
             if not branches:
                 raise InspectError("Name %s is accessed using %s before an assignment." % (
@@ -746,12 +746,12 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # target of an invocation, potentially affecting attribute accesses.
 
             in_invocation = self.in_invocation
-            self.in_invocation = True
+            self.in_invocation = len(n.args)
 
             # Process the expression, obtaining any identified reference.
 
             name_ref = self.process_structure_node(n.node)
-            self.in_invocation = False
+            self.in_invocation = None
 
             # Process the arguments.
 
@@ -885,7 +885,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
             if branches:
                 self.record_branches_for_access(branches, n.name, None)
-                access_number = self.record_access_details(n.name, None, False, False)
+                access_number = self.record_access_details(n.name, None, None, None)
                 return LocalNameRef(n.name, access_number)
 
             # Possible global or built-in name.
@@ -1147,7 +1147,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         """
         For the given 'name' and 'attrnames', record an access indicating
-        whether 'assignment' is occurring.
+        whether an 'assignment' or an 'invocation' is occurring.
 
         These details correspond to accesses otherwise recorded by the attribute
         accessor and attribute access dictionaries.

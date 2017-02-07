@@ -91,9 +91,13 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
     "A reference to a name in the translation."
 
-    def __init__(self, name, ref, expr=None, parameter=None):
+    def __init__(self, name, ref, expr=None, parameter=None, unsuitable=None):
         results.ResolvedNameRef.__init__(self, name, ref, expr)
         self.parameter = parameter
+        self.unsuitable = unsuitable
+
+    def unsuitable_invocations(self):
+        return self.unsuitable
 
     def __str__(self):
 
@@ -189,13 +193,17 @@ class AttrResult(Expression, TranslationResult, InstructionSequence):
 
     "A translation result for an attribute access."
 
-    def __init__(self, instructions, refs, accessor_kinds):
+    def __init__(self, instructions, refs, accessor_kinds, unsuitable):
         InstructionSequence.__init__(self, instructions)
         self.refs = refs
         self.accessor_kinds = accessor_kinds
+        self.unsuitable = unsuitable
 
     def references(self):
         return self.refs
+
+    def unsuitable_invocations(self):
+        return self.unsuitable
 
     def get_origin(self):
         return self.refs and len(self.refs) == 1 and first(self.refs).get_origin()
@@ -724,8 +732,9 @@ class TranslatedModule(CommonModule):
         name_ref = attr_expr and attr_expr.is_name() and attr_expr
         name = name_ref and self.get_name_for_tracking(name_ref.name, name_ref and name_ref.final()) or None
 
-        location = self.get_access_location(name)
+        location = self.get_access_location(name, self.attrs)
         refs = self.get_referenced_attributes(location)
+        unsuitable = self.get_referenced_attribute_invocations(location)
 
         # Generate access instructions.
 
@@ -768,13 +777,13 @@ class TranslatedModule(CommonModule):
                 self.record_temp(temp_subs[sub])
 
         del self.attrs[0]
-        return AttrResult(output, refs, self.get_accessor_kinds(location))
+        return AttrResult(output, refs, self.get_accessor_kinds(location), unsuitable)
 
     def get_referenced_attributes(self, location):
 
         """
         Convert 'location' to the form used by the deducer and retrieve any
-        identified attribute.
+        identified attributes.
         """
 
         access_location = self.deducer.const_accesses.get(location)
@@ -783,17 +792,27 @@ class TranslatedModule(CommonModule):
             refs.append(attr)
         return refs
 
+    def get_referenced_attribute_invocations(self, location):
+
+        """
+        Convert 'location' to the form used by the deducer and retrieve any
+        identified attribute invocation details.
+        """
+
+        access_location = self.deducer.const_accesses.get(location)
+        return self.deducer.reference_invocations_unsuitable.get(access_location or location)
+
     def get_accessor_kinds(self, location):
 
         "Return the accessor kinds for 'location'."
 
         return self.optimiser.accessor_kinds[location]
 
-    def get_access_location(self, name):
+    def get_access_location(self, name, attrnames=None):
 
         """
-        Using the current namespace and the given 'name', return the access
-        location.
+        Using the current namespace, the given 'name', and the 'attrnames'
+        employed in an access, return the access location.
         """
 
         path = self.get_path_for_access()
@@ -801,7 +820,7 @@ class TranslatedModule(CommonModule):
         # Get the location used by the deducer and optimiser and find any
         # recorded access.
 
-        attrnames = ".".join(self.attrs)
+        attrnames = attrnames and ".".join(self.attrs)
         access_number = self.get_access_number(path, name, attrnames)
         self.update_access_number(path, name, attrnames)
         return (path, name, attrnames, access_number)
@@ -1203,30 +1222,16 @@ class TranslatedModule(CommonModule):
         # Other targets are retrieved at run-time.
 
         else:
-            refs = expr.references()
+            unsuitable = expr.unsuitable_invocations()
 
-            # Attempt to test the number of arguments and warn about possible
-            # invocation problems.
-
-            if refs:
-                for ref in refs:
+            if unsuitable:
+                for ref in unsuitable:
                     _objpath = ref.get_origin()
-                    _parameters = self.importer.function_parameters.get(_objpath)
-
-                    if _parameters is None:
-                        continue
-
-                    # Determine whether the possible target has a different
-                    # number of parameters to the number of arguments given.
-
-                    num_parameters = len(_parameters)
-                    _defaults = len(self.importer.function_defaults.get(_objpath, []))
-
-                    if len(n.args) < num_parameters - _defaults or len(n.args) > num_parameters:
-                        print "In %s, at line %d, inappropriate number of " \
-                            "arguments given. Need %d arguments to call %s." % (
-                            self.get_namespace_path(), n.lineno, num_parameters,
-                            _objpath)
+                    num_parameters = len(self.importer.function_parameters[_objpath])
+                    print "In %s, at line %d, inappropriate number of " \
+                        "arguments given. Need %d arguments to call %s." % (
+                        self.get_namespace_path(), n.lineno, num_parameters,
+                        _objpath)
 
         # Arguments are presented in a temporary frame array with any context
         # always being the first argument. Where it would be unused, it may be
@@ -1503,11 +1508,16 @@ class TranslatedModule(CommonModule):
         parameter = n.name == "self" and self.in_method() or \
                     parameters and n.name in parameters
 
+        # Find any invocation details.
+
+        location = self.get_access_location(n.name)
+        unsuitable = self.get_referenced_attribute_invocations(location)
+
         # Qualified names are used for resolved static references or for
         # static namespace members. The reference should be configured to return
         # such names.
 
-        return TrResolvedNameRef(n.name, ref, expr=expr, parameter=parameter)
+        return TrResolvedNameRef(n.name, ref, expr=expr, parameter=parameter, unsuitable=unsuitable)
 
     def process_not_node(self, n):
 

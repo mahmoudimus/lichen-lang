@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from common import get_builtin_class, get_builtin_module, init_item, \
                    remove_items, CommonModule
-from encoders import decode_modifier_term, decode_usage, encode_modifiers, encode_usage
+from encoders import decode_modifiers, decode_usage, encode_modifiers, encode_usage
 from referencing import decode_reference, Reference
 from results import ResolvedNameRef
 import sys
@@ -605,7 +605,7 @@ class CachedModule(BasicModule):
             access = name, attrnames
             init_item(self.attr_access_modifiers, objpath, dict)
             init_item(self.attr_access_modifiers[objpath], access, list)
-            modifiers = [decode_modifier_term(s) for s in value]
+            modifiers = decode_modifiers(value)
             self.attr_access_modifiers[objpath][access] = modifiers
             line = f.readline().rstrip()
 

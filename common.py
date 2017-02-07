@@ -114,7 +114,7 @@ class CommonModule:
         # Retain the assignment value expression and track invocations.
 
         self.in_assignment = None
-        self.in_invocation = False
+        self.in_invocation = None
 
         # Attribute chain state management.
 
@@ -725,7 +725,7 @@ class CommonModule:
         self.chain_assignment.append(self.in_assignment)
         self.chain_invocation.append(self.in_invocation)
         self.in_assignment = None
-        self.in_invocation = False
+        self.in_invocation = None
 
     def restore_attribute_chain(self, attrs):
 

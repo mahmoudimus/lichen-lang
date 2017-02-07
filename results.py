@@ -36,6 +36,9 @@ class Result:
     def references(self):
         return None
 
+    def unsuitable_invocations(self):
+        return None
+
     def get_name(self):
         return None
 

@@ -90,7 +90,8 @@ class Deducer(CommonOutput):
         # Accesses that are assignments or invocations.
 
         self.reference_assignments = set()
-        self.reference_invocations = set()
+        self.reference_invocations = {}
+        self.reference_invocations_unsuitable = {}
 
         # Map locations to types, constrained indicators and attributes.
 
@@ -104,6 +105,7 @@ class Deducer(CommonOutput):
         self.access_constrained = set()
         self.referenced_attrs = {}
         self.referenced_objects = {}
+        self.accessor_invocation_types = {}
 
         # Details of access operations.
 
@@ -139,6 +141,7 @@ class Deducer(CommonOutput):
         self.init_aliases()
         self.modify_mutated_attributes()
         self.identify_references()
+        self.classify_invocations()
         self.classify_accessors()
         self.classify_accesses()
         self.initialise_access_plans()
@@ -346,6 +349,7 @@ class Deducer(CommonOutput):
         f_attrs = open(join(self.output, "attributes"), "w")
         f_tests = open(join(self.output, "tests"), "w")
         f_warnings = open(join(self.output, "attribute_warnings"), "w")
+        f_unsuitable = open(join(self.output, "invocation_warnings"), "w")
 
         try:
             locations = self.referenced_attrs.keys()
@@ -383,6 +387,15 @@ class Deducer(CommonOutput):
                     print >>f_attr_summary, encode_access_location(location), encode_constrained(constrained), \
                         test_type and "-".join(test_type) or "untested", sorted_output(all_accessed_attrs)
 
+                    # Write details of potentially unsuitable invocation
+                    # occurrences.
+
+                    unsuitable = self.reference_invocations_unsuitable.get(location)
+                    if unsuitable:
+                        unsuitable = map(str, unsuitable)
+                        unsuitable.sort()
+                        print >>f_unsuitable, encode_access_location(location), ", ".join(unsuitable)
+
                 else:
                     print >>f_warnings, encode_access_location(location)
 
@@ -391,6 +404,7 @@ class Deducer(CommonOutput):
             f_attrs.close()
             f_tests.close()
             f_warnings.close()
+            f_unsuitable.close()
 
     def write_access_plans(self):
 
@@ -429,6 +443,55 @@ class Deducer(CommonOutput):
 
         finally:
             f_attrs.close()
+
+    def classify_invocations(self):
+
+        """
+        Classify invocations, suggesting guard opportunities where accessors
+        providing attributes involved in invocations can be sufficiently
+        determined, recording invocation candidates that would not be suitable.
+        """
+
+        for access_location, arguments in self.reference_invocations.items():
+
+            # Obtain the possible attributes.
+
+            referenced_attrs = self.referenced_attrs[access_location]
+
+            if referenced_attrs:
+                object_types = set()
+                unsuitable = set()
+
+                for attrtype, object_type, attr in referenced_attrs:
+
+                    # Obtain identifiable callables.
+
+                    objpath = attr.get_origin()
+                    if objpath:
+                        parameters = self.importer.function_parameters.get(objpath)
+                        if parameters:
+                            defaults = self.importer.function_defaults.get(objpath)
+
+                            # Determine whether the specified arguments are
+                            # compatible with the callable signature.
+
+                            if arguments >= len(parameters) - len(defaults) and \
+                               arguments <= len(parameters):
+
+                                object_types.add(object_type)
+                            else:
+                                unsuitable.add(attr)
+
+                # Record the unsuitable candidates for the invocation.
+
+                if unsuitable:
+                    self.reference_invocations_unsuitable[access_location] = unsuitable
+
+                # Record the possible accessor types for the invocation.
+
+                for accessor_location in self.get_accessors_for_access(access_location):
+                    init_item(self.accessor_invocation_types, accessor_location, set)
+                    self.accessor_invocation_types[accessor_location].update(object_types)
 
     def classify_accessors(self):
 
@@ -866,7 +929,7 @@ class Deducer(CommonOutput):
                     # Now only process assignments and invocations.
 
                     if invocation:
-                        self.reference_invocations.add(access_location)
+                        self.reference_invocations[access_location] = invocation
                         continue
                     elif not assignment:
                         continue
@@ -1576,7 +1639,9 @@ class Deducer(CommonOutput):
 
                     # Obtain attribute references for the access.
 
-                    attrs = [attr for _attrtype, object_type, attr in self.referenced_attrs[access_location]]
+                    attrs = []
+                    for _attrtype, object_type, attr in self.referenced_attrs[access_location]:
+                        attrs.append(attr)
 
                     # Separate the different attribute types.
 
@@ -1635,7 +1700,9 @@ class Deducer(CommonOutput):
                 # Alias references an attribute access.
 
                 if attrnames:
-                    attrs = [attr for attrtype, object_type, attr in self.referenced_attrs[access_location]]
+                    attrs = []
+                    for attrtype, object_type, attr in self.referenced_attrs[access_location]:
+                        attrs.append(attr)
                     refs.update(attrs)
 
                 # Alias references a name, not an access.
@@ -1739,14 +1806,25 @@ class Deducer(CommonOutput):
         From the given 'class_types', identify methods for the given
         'attrnames' that are being invoked, returning a filtered collection of
         class types.
+
+        This method may be used to remove class types from consideration where
+        their attributes are methods that are directly invoked: method
+        invocations must involve instance accessors.
         """
 
         to_filter = set()
 
         for class_type in class_types:
             for attrname in attrnames:
+
+                # Attempt to obtain a class attribute of the given name. This
+                # may return an attribute provided by an ancestor class.
+
                 ref = self.importer.get_class_attribute(class_type, attrname)
                 parent_class = ref and ref.parent()
+
+                # If such an attribute is a method and would be available on
+                # the given class, record the class for filtering.
 
                 if ref and ref.has_kind("<function>") and (
                    parent_class == class_type or
@@ -1823,6 +1901,8 @@ class Deducer(CommonOutput):
                 attrs.add(("<module>", object_type, ref))
 
         return attrs
+
+    # Attribute access plan formulation.
 
     class_tests = (
         ("guarded", "specific", "type"),
