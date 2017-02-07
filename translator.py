@@ -67,8 +67,7 @@ class TranslationResult:
 
     "An abstract translation result mix-in."
 
-    def get_accessor_kinds(self):
-        return None
+    pass
 
 class ReturnRef(TranslationResult):
 
@@ -91,13 +90,13 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
     "A reference to a name in the translation."
 
-    def __init__(self, name, ref, expr=None, parameter=None, unsuitable=None):
+    def __init__(self, name, ref, expr=None, parameter=None, location=None):
         results.ResolvedNameRef.__init__(self, name, ref, expr)
         self.parameter = parameter
-        self.unsuitable = unsuitable
+        self.location = location
 
-    def unsuitable_invocations(self):
-        return self.unsuitable
+    def access_location(self):
+        return self.location
 
     def __str__(self):
 
@@ -193,17 +192,16 @@ class AttrResult(Expression, TranslationResult, InstructionSequence):
 
     "A translation result for an attribute access."
 
-    def __init__(self, instructions, refs, accessor_kinds, unsuitable):
+    def __init__(self, instructions, refs, location):
         InstructionSequence.__init__(self, instructions)
         self.refs = refs
-        self.accessor_kinds = accessor_kinds
-        self.unsuitable = unsuitable
+        self.location = location
 
     def references(self):
         return self.refs
 
-    def unsuitable_invocations(self):
-        return self.unsuitable
+    def access_location(self):
+        return self.location
 
     def get_origin(self):
         return self.refs and len(self.refs) == 1 and first(self.refs).get_origin()
@@ -216,14 +214,11 @@ class AttrResult(Expression, TranslationResult, InstructionSequence):
                 return True
         return False
 
-    def get_accessor_kinds(self):
-        return self.accessor_kinds
-
     def __str__(self):
         return encode_instructions(self.instructions)
 
     def __repr__(self):
-        return "AttrResult(%r, %r, %r)" % (self.instructions, self.refs, self.accessor_kinds)
+        return "AttrResult(%r, %r, %r)" % (self.instructions, self.refs, self.location)
 
 class InvocationResult(Expression, TranslationResult, InstructionSequence):
 
@@ -734,7 +729,6 @@ class TranslatedModule(CommonModule):
 
         location = self.get_access_location(name, self.attrs)
         refs = self.get_referenced_attributes(location)
-        unsuitable = self.get_referenced_attribute_invocations(location)
 
         # Generate access instructions.
 
@@ -777,7 +771,7 @@ class TranslatedModule(CommonModule):
                 self.record_temp(temp_subs[sub])
 
         del self.attrs[0]
-        return AttrResult(output, refs, self.get_accessor_kinds(location), unsuitable)
+        return AttrResult(output, refs, location)
 
     def get_referenced_attributes(self, location):
 
@@ -806,7 +800,7 @@ class TranslatedModule(CommonModule):
 
         "Return the accessor kinds for 'location'."
 
-        return self.optimiser.accessor_kinds[location]
+        return self.optimiser.accessor_kinds.get(location)
 
     def get_access_location(self, name, attrnames=None):
 
@@ -1153,6 +1147,7 @@ class TranslatedModule(CommonModule):
 
         expr = self.process_structure_node(n.node)
         objpath = expr.get_origin()
+        location = expr.access_location()
 
         # Identified target details.
 
@@ -1204,7 +1199,7 @@ class TranslatedModule(CommonModule):
                 # Test for functions and methods.
 
                 context_required = self.is_method(objpath)
-                accessor_kinds = expr.get_accessor_kinds()
+                accessor_kinds = self.get_accessor_kinds(location)
                 instance_accessor = accessor_kinds and \
                                     len(accessor_kinds) == 1 and \
                                     first(accessor_kinds) == "<instance>"
@@ -1222,7 +1217,7 @@ class TranslatedModule(CommonModule):
         # Other targets are retrieved at run-time.
 
         else:
-            unsuitable = expr.unsuitable_invocations()
+            unsuitable = self.get_referenced_attribute_invocations(location)
 
             if unsuitable:
                 for ref in unsuitable:
@@ -1511,13 +1506,12 @@ class TranslatedModule(CommonModule):
         # Find any invocation details.
 
         location = self.get_access_location(n.name)
-        unsuitable = self.get_referenced_attribute_invocations(location)
 
         # Qualified names are used for resolved static references or for
         # static namespace members. The reference should be configured to return
         # such names.
 
-        return TrResolvedNameRef(n.name, ref, expr=expr, parameter=parameter, unsuitable=unsuitable)
+        return TrResolvedNameRef(n.name, ref, expr=expr, parameter=parameter, location=location)
 
     def process_not_node(self, n):
 
