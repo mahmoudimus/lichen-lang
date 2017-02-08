@@ -288,7 +288,7 @@ class Optimiser:
 
         "Populate objects using attribute and usage information."
 
-        all_attrs = {}
+        self.all_attrs = {}
 
         # Partition attributes into separate sections so that class and instance
         # attributes are treated separately.
@@ -298,10 +298,11 @@ class Optimiser:
             (self.importer.all_instance_attrs, "<instance>"),
             (self.importer.all_module_attrs, "<module>")
             ]:
-            for name, attrs in source.items():
-                all_attrs[(objtype, name)] = attrs
 
-        self.locations = get_allocated_locations(all_attrs, get_attributes_and_sizes)
+            for name, attrnames in source.items():
+                self.all_attrs[(objtype, name)] = attrnames
+
+        self.locations = get_allocated_locations(self.all_attrs, get_attributes_and_sizes)
 
     def populate_parameters(self):
 
@@ -323,20 +324,14 @@ class Optimiser:
 
         # Record the structures.
 
-        for source, objtype in [
-            (self.importer.all_class_attrs, "<class>"),
-            (self.importer.all_instance_attrs, "<instance>"),
-            (self.importer.all_module_attrs, "<module>")
-            ]:
-
-            for name, attrnames in source.items():
-                key = Reference(objtype, name)
-                l = self.structures[key] = [None] * len(attrnames)
-                for attrname in attrnames:
-                    position = attr_locations[attrname]
-                    if position >= len(l):
-                        l.extend([None] * (position - len(l) + 1))
-                    l[position] = attrname
+        for (objtype, name), attrnames in self.all_attrs.items():
+            key = Reference(objtype, name)
+            l = self.structures[key] = [None] * len(attrnames)
+            for attrname in attrnames:
+                position = attr_locations[attrname]
+                if position >= len(l):
+                    l.extend([None] * (position - len(l) + 1))
+                l[position] = attrname
 
     def initialise_access_instructions(self):
 
