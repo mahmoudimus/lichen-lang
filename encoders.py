@@ -93,7 +93,8 @@ def encode_modifier_term(t):
     if assignment:
         return "="
     elif invocation is not None:
-        return "(%d)" % invocation
+        arguments, keywords = invocation
+        return "(%d;%s)" % (arguments, ",".join(keywords))
     else:
         return "_"
 
@@ -111,8 +112,13 @@ def decode_modifiers(s):
             modifiers.append((True, None))
             i += 1
         elif s[i] == "(":
+            j = s.index(";", i)
+            arguments = int(s[i+1:j])
+            i = j
             j = s.index(")", i)
-            modifiers.append((False, int(s[i+1:j])))
+            keywords = s[i+1:j]
+            keywords = keywords and keywords.split(",") or []
+            modifiers.append((False, (arguments, keywords)))
             i = j + 1
         else:
             modifiers.append((False, None))

@@ -1863,8 +1863,8 @@ class Deducer(CommonOutput):
         'object_type' identified by 'ref' is compatible with any arguments used.
         """
 
-        arguments = self.reference_invocations.get(location)
-        if arguments is None:
+        invocation = self.reference_invocations.get(location)
+        if invocation is None:
             return True
 
         objpath = ref.get_origin()
@@ -1876,12 +1876,15 @@ class Deducer(CommonOutput):
             return True
 
         defaults = self.importer.function_defaults.get(objpath)
+        arguments, keywords = invocation
+        names = set(parameters)
 
         # Determine whether the specified arguments are
         # compatible with the callable signature.
 
         if arguments >= len(parameters) - len(defaults) and \
-           arguments <= len(parameters):
+           arguments <= len(parameters) and \
+           names.issuperset(keywords):
 
             return True
         else:

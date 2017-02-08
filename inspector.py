@@ -438,7 +438,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Record attribute usage in the tracker, and record the branch
             # information for the access.
 
-            branches = tracker.use_attribute(name, attrname, self.in_invocation is not None, assignment)
+            branches = tracker.use_attribute(name, attrname,
+                self.in_invocation is not None, assignment)
 
             if not branches:
                 raise InspectError("Name %s is accessed using %s before an assignment." % (
@@ -742,22 +743,29 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         self.allocate_arguments(path, n.args)
 
         try:
-            # Communicate to the invocation target expression that it forms the
-            # target of an invocation, potentially affecting attribute accesses.
-
             in_invocation = self.in_invocation
-            self.in_invocation = len(n.args)
-
-            # Process the expression, obtaining any identified reference.
-
-            name_ref = self.process_structure_node(n.node)
             self.in_invocation = None
 
             # Process the arguments.
 
+            keywords = set()
+
             for arg in n.args:
                 self.process_structure_node(arg)
+                if isinstance(arg, compiler.ast.Keyword):
+                    keywords.add(arg.name)
 
+            keywords = list(keywords)
+            keywords.sort()
+
+            # Communicate to the invocation target expression that it forms the
+            # target of an invocation, potentially affecting attribute accesses.
+
+            self.in_invocation = len(n.args), keywords
+
+            # Process the expression, obtaining any identified reference.
+
+            name_ref = self.process_structure_node(n.node)
             self.in_invocation = in_invocation
 
             # Detect class invocations.
