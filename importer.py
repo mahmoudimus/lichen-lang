@@ -35,7 +35,7 @@ class Importer:
 
     special_attributes = ("__args__", "__file__", "__fn__", "__name__", "__parent__")
 
-    def __init__(self, path, cache=None, verbose=False):
+    def __init__(self, path, cache=None, verbose=False, warnings=None):
 
         """
         Initialise the importer with the given search 'path' - a list of
@@ -46,11 +46,15 @@ class Importer:
 
         The optional 'verbose' parameter causes output concerning the activities
         of the object to be produced if set to a true value (not the default).
+
+        The optional 'warnings' parameter may indicate classes of warnings to be
+        produced.
         """
 
         self.path = path
         self.cache = cache
         self.verbose = verbose
+        self.warnings = warnings
 
         # Module importing queue, required modules, removed modules and active
         # modules in the final program.
@@ -115,6 +119,12 @@ class Importer:
         self.all_constant_values = {}
 
         self.make_cache()
+
+    def give_warning(self, name):
+
+        "Return whether the indicated warning 'name' should be given."
+
+        return self.warnings and (name in self.warnings or "all" in self.warnings)
 
     def make_cache(self):
 

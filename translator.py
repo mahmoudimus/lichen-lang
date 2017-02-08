@@ -1215,9 +1215,11 @@ class TranslatedModule(CommonModule):
 
                 target_structure = "&%s" % encode_path(objpath)
 
-        # Other targets are retrieved at run-time.
+        # Other targets are retrieved at run-time. Some information about them
+        # may be available and be used to provide warnings about argument
+        # compatibility.
 
-        else:
+        elif self.importer.give_warning("args"):
             unsuitable = self.get_referenced_attribute_invocations(location)
 
             if unsuitable:

@@ -43,11 +43,58 @@ def call(tokens, verbose=False):
     stdout, stderr = cmd.communicate()
     return cmd.wait()
 
+def start_arg_list(l, arg, prefix, needed):
+
+    """
+    Add to 'l' any value given as part of 'arg' having the given option
+    'prefix'. The 'needed' number of values is provided in case no value is
+    found.
+
+    Return 'l' and 'needed' decremented by 1 together in a tuple.
+    """
+
+    s = arg[len(prefix):].strip()
+    if s:
+        l.append(s)
+        return l, needed - 1
+    else:
+        return l, needed
+
 # Main program.
 
 if __name__ == "__main__":
+    basename = split(sys.argv[0])[-1]
     args = sys.argv[1:]
     path = libdirs
+
+    if "--help" in args or not args:
+        print >>sys.stderr, """\
+Usage: %s [ <options> ] <filename>
+
+Compile the program whose principal file is given in place of <filename>.
+The following options may be specified:
+
+-c   Only partially compile the program; do not attempt to build or link it
+-g   Generate debugging information for the built executable
+-q   Silence messages produced when building an executable
+-r   Reset (discard) cached program information; inspect the whole program again
+-tb  Provide a traceback for any internal errors (development only)
+-v   Report compiler activities in a verbose fashion (development only)
+
+Some options may be followed by values, either immediately after the option
+(without any space between) or in the arguments that follow them:
+
+-o   Indicate the output executable name
+-W   Show warnings on the topics indicated
+
+Currently, the following warnings are supported:
+
+all     Show all possible warnings
+
+args    Show invocations where a callable may be involved that cannot accept the
+        arguments provided
+""" % basename
+        sys.exit(1)
 
     # Determine the options and arguments.
 
@@ -57,6 +104,7 @@ if __name__ == "__main__":
     reset = False
     traceback = False
     verbose = False
+    warnings = []
 
     filenames = []
     outputs = []
@@ -64,6 +112,7 @@ if __name__ == "__main__":
     # Obtain program filenames by default.
 
     l = filenames
+    needed = None
 
     for arg in args:
         if arg == "-c": make = False
@@ -71,26 +120,30 @@ if __name__ == "__main__":
         elif arg == "-q": make_verbose = False
         elif arg == "-r": reset = True
         elif arg == "-tb": traceback = True
-        elif arg == "-o": l = outputs
+        elif arg.startswith("-o"): l, needed = start_arg_list(outputs, arg, "-o", 1)
         elif arg == "-v": verbose = True
+        elif arg.startswith("-W"): l, needed = start_arg_list(warnings, arg, "-W", 1)
         else:
             l.append(arg)
+            if needed:
+                needed -= 1
 
-            # Revert to collecting program filenames after obtaining the output
-            # executable filename.
-
-            if l is outputs: l = filenames
+        if needed == 0:
+            l = filenames
 
     # Obtain the program filename.
 
-    if len(filenames) > 1:
-        print >>sys.stderr, "Only one main program file can be specified."
+    if len(filenames) != 1:
+        print >>sys.stderr, "One main program file must be specified."
         sys.exit(1)
 
     filename = abspath(filenames[0])
     path.append(split(filename)[0])
 
     # Obtain the output filename.
+
+    if outputs and not make:
+        print >>sys.stderr, "Output specified but building disabled."
 
     output = outputs and outputs[0] or "_main"
 
@@ -107,7 +160,7 @@ if __name__ == "__main__":
     try:
         start = now = time()
 
-        i = importer.Importer(path, cache_dir, verbose)
+        i = importer.Importer(path, cache_dir, verbose, warnings)
         m = i.initialise(filename, reset)
         success = i.finalise()
 
