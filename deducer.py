@@ -105,7 +105,6 @@ class Deducer(CommonOutput):
         self.access_constrained = set()
         self.referenced_attrs = {}
         self.referenced_objects = {}
-        self.accessor_invocation_types = {}
 
         # Details of access operations.
 
@@ -141,7 +140,6 @@ class Deducer(CommonOutput):
         self.init_aliases()
         self.modify_mutated_attributes()
         self.identify_references()
-        self.classify_invocations()
         self.classify_accessors()
         self.classify_accesses()
         self.initialise_access_plans()
@@ -444,55 +442,6 @@ class Deducer(CommonOutput):
         finally:
             f_attrs.close()
 
-    def classify_invocations(self):
-
-        """
-        Classify invocations, suggesting guard opportunities where accessors
-        providing attributes involved in invocations can be sufficiently
-        determined, recording invocation candidates that would not be suitable.
-        """
-
-        for access_location, arguments in self.reference_invocations.items():
-
-            # Obtain the possible attributes.
-
-            referenced_attrs = self.referenced_attrs[access_location]
-
-            if referenced_attrs:
-                object_types = set()
-                unsuitable = set()
-
-                for attrtype, object_type, attr in referenced_attrs:
-
-                    # Obtain identifiable callables.
-
-                    objpath = attr.get_origin()
-                    if objpath:
-                        parameters = self.importer.function_parameters.get(objpath)
-                        if parameters:
-                            defaults = self.importer.function_defaults.get(objpath)
-
-                            # Determine whether the specified arguments are
-                            # compatible with the callable signature.
-
-                            if arguments >= len(parameters) - len(defaults) and \
-                               arguments <= len(parameters):
-
-                                object_types.add(object_type)
-                            else:
-                                unsuitable.add(attr)
-
-                # Record the unsuitable candidates for the invocation.
-
-                if unsuitable:
-                    self.reference_invocations_unsuitable[access_location] = unsuitable
-
-                # Record the possible accessor types for the invocation.
-
-                for accessor_location in self.get_accessors_for_access(access_location):
-                    init_item(self.accessor_invocation_types, accessor_location, set)
-                    self.accessor_invocation_types[accessor_location].update(object_types)
-
     def classify_accessors(self):
 
         "For each program location, classify accessors."
@@ -640,8 +589,10 @@ class Deducer(CommonOutput):
 
             if guarded:
                 guard_attrs = set()
+
                 for _attrtype, object_type, attr in \
-                    self._identify_reference_attribute(attrname, guard_class_types, guard_instance_types, guard_module_types):
+                    self._identify_reference_attribute(location, attrname, guard_class_types, guard_instance_types, guard_module_types):
+
                     guard_attrs.add(attr)
             else:
                 guard_attrs = None
@@ -1849,16 +1800,17 @@ class Deducer(CommonOutput):
         # Record the referenced objects.
 
         self.referenced_attrs[location] = \
-            self._identify_reference_attribute(attrname, class_types, instance_types, module_types)
+            self._identify_reference_attribute(location, attrname, class_types, instance_types, module_types)
 
         if constrained:
             self.access_constrained.add(location)
 
-    def _identify_reference_attribute(self, attrname, class_types, instance_types, module_types):
+    def _identify_reference_attribute(self, location, attrname, class_types, instance_types, module_types):
 
         """
-        Identify the reference attribute with the given 'attrname', employing
-        the given 'class_types', 'instance_types' and 'module_types'.
+        Identify the reference attribute at the given access 'location', using
+        the given 'attrname', and employing the given 'class_types',
+        'instance_types' and 'module_types'.
         """
 
         attrs = set()
@@ -1868,14 +1820,15 @@ class Deducer(CommonOutput):
 
         for object_type in class_types:
             ref = self.importer.get_class_attribute(object_type, attrname)
-            if ref:
+            if ref and self.is_compatible_callable(location, object_type, ref):
                 attrs.add(("<class>", object_type, ref))
 
             # Add any distinct instance attributes that would be provided
             # by instances also providing indirect class attribute access.
 
             for ref in self.importer.get_instance_attributes(object_type, attrname):
-                attrs.add(("<instance>", object_type, ref))
+                if self.is_compatible_callable(location, object_type, ref):
+                    attrs.add(("<instance>", object_type, ref))
 
         # The instance-only types expose instance attributes, but although
         # classes are excluded as potential accessors (since they do not provide
@@ -1887,20 +1840,54 @@ class Deducer(CommonOutput):
 
             if instance_attrs:
                 for ref in instance_attrs:
-                    attrs.add(("<instance>", object_type, ref))
+                    if self.is_compatible_callable(location, object_type, ref):
+                        attrs.add(("<instance>", object_type, ref))
             else:
                 ref = self.importer.get_class_attribute(object_type, attrname)
-                if ref:
+                if ref and self.is_compatible_callable(location, object_type, ref):
                     attrs.add(("<class>", object_type, ref))
 
         # Module types expose module attributes for module accessors.
 
         for object_type in module_types:
             ref = self.importer.get_module_attribute(object_type, attrname)
-            if ref:
+            if ref and self.is_compatible_callable(location, object_type, ref):
                 attrs.add(("<module>", object_type, ref))
 
         return attrs
+
+    def is_compatible_callable(self, location, object_type, ref):
+
+        """
+        Return whether any invocation at 'location' involving an attribute of
+        'object_type' identified by 'ref' is compatible with any arguments used.
+        """
+
+        arguments = self.reference_invocations.get(location)
+        if arguments is None:
+            return True
+
+        objpath = ref.get_origin()
+        if not objpath:
+            return True
+
+        parameters = self.importer.function_parameters.get(objpath)
+        if not parameters:
+            return True
+
+        defaults = self.importer.function_defaults.get(objpath)
+
+        # Determine whether the specified arguments are
+        # compatible with the callable signature.
+
+        if arguments >= len(parameters) - len(defaults) and \
+           arguments <= len(parameters):
+
+            return True
+        else:
+            init_item(self.reference_invocations_unsuitable, location, set)
+            self.reference_invocations_unsuitable[location].add(ref)
+            return False
 
     # Attribute access plan formulation.
 
