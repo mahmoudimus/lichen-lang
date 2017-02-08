@@ -34,6 +34,7 @@ from referencing import Reference
 from StringIO import StringIO
 import compiler
 import results
+import sys
 
 class Translator(CommonOutput):
 
@@ -1223,7 +1224,8 @@ class TranslatedModule(CommonModule):
                 for ref in unsuitable:
                     _objpath = ref.get_origin()
                     num_parameters = len(self.importer.function_parameters[_objpath])
-                    print "In %s, at line %d, inappropriate number of " \
+                    print >>sys.stderr, \
+                        "In %s, at line %d, inappropriate number of " \
                         "arguments given. Need %d arguments to call %s." % (
                         self.get_namespace_path(), n.lineno, num_parameters,
                         _objpath)
