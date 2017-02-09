@@ -1,0 +1,81 @@
+.TH LPLC "1" "2017-02-09" "lplc 0.1" "User Commands"
+.SH NAME
+lplc \- Lichen Python-like compiler
+.SH SYNOPSIS
+.B lplc
+.RI [ options ]
+.I file
+.br
+.B lplc
+.I --help
+.br
+.B lplc
+.I --version
+.SH DESCRIPTION
+Compile the program whose principal file is given in place of
+.IR file .
+.SH OPTIONS
+The following options may be specified:
+.PP
+.TP
+.B \-c
+Only partially compile the program; do not attempt to build or link it
+.TP
+.B \-g
+Generate debugging information for the built executable
+.TP
+.B \-q
+Silence messages produced when building an executable
+.TP
+.B \-r
+Reset (discard) cached program information; inspect the whole program again
+.TP
+.B \-t
+Silence timing messages
+.TP
+.B \-tb
+Provide a traceback for any internal errors (development only)
+.TP
+.B \-v
+Report compiler activities in a verbose fashion (development only)
+.PP
+Some options may be followed by values, either immediately after the option
+(without any space between) or in the arguments that follow them:
+.PP
+.TP
+.B \-o
+Indicate the output executable name
+.TP
+.B \-W
+Show warnings on the topics indicated
+.PP
+Currently, the following warnings are supported:
+.TP
+.B all
+Show all possible warnings
+.TP
+.B args
+Show invocations where a callable may be involved that cannot accept
+the arguments provided
+.PP
+The following informational options can be specified to produce output instead
+of compiling a program:
+.PP
+.TP
+.B \-\-help
+Show a summary of the command syntax and options
+.TP
+.B \-\-version
+Show version information for this tool
+.SH COPYRIGHT
+Copyright \(co 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013,
+2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+.PP
+This program is free software; you may redistribute it under the terms of
+the GNU General Public License version 3 or (at your option) a later version.
+This program has absolutely no warranty.
+.SH SEE ALSO
+.BR cc (1),
+.BR make (1).
+.SH RESOURCES
+The project Web site: http://projects.boddie.org.uk/Lichen
