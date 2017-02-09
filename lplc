@@ -1,8 +1,29 @@
 #!/usr/bin/env python
 
+"""
+Lichen Python-like compiler tool.
+
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+details.
+
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+VERSION = "0.1"
+
 from errors import *
 from os import rename
-from os.path import abspath, exists, join, split
+from os.path import abspath, exists, isfile, join, split
 from pyparser import error
 from subprocess import Popen, PIPE
 from time import time
@@ -67,6 +88,8 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     path = libdirs
 
+    # Show help text if requested or if no arguments are given.
+
     if "--help" in args or not args:
         print >>sys.stderr, """\
 Usage: %s [ <options> ] <filename>
@@ -78,6 +101,7 @@ The following options may be specified:
 -g   Generate debugging information for the built executable
 -q   Silence messages produced when building an executable
 -r   Reset (discard) cached program information; inspect the whole program again
+-t   Silence timing messages
 -tb  Provide a traceback for any internal errors (development only)
 -v   Report compiler activities in a verbose fashion (development only)
 
@@ -89,11 +113,30 @@ Some options may be followed by values, either immediately after the option
 
 Currently, the following warnings are supported:
 
-all     Show all possible warnings
+all         Show all possible warnings
 
-args    Show invocations where a callable may be involved that cannot accept the
-        arguments provided
+args        Show invocations where a callable may be involved that cannot accept
+            the arguments provided
+
+The following informational options can be specified to produce output instead
+of compiling a program:
+
+--help      Show a summary of the command syntax and options
+--version   Show version information for this tool
 """ % basename
+        sys.exit(1)
+
+    # Show the version information if requested.
+
+    elif "--version" in args:
+        print >>sys.stderr, """\
+lplc %s
+Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013,
+              2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+This program is free software; you may redistribute it under the terms of
+the GNU General Public License version 3 or (at your option) a later version.
+This program has absolutely no warranty.
+""" % VERSION
         sys.exit(1)
 
     # Determine the options and arguments.
@@ -102,6 +145,7 @@ args    Show invocations where a callable may be involved that cannot accept the
     make = True
     make_verbose = True
     reset = False
+    timings = True
     traceback = False
     verbose = False
     warnings = []
@@ -119,6 +163,7 @@ args    Show invocations where a callable may be involved that cannot accept the
         elif arg == "-g": debug = True
         elif arg == "-q": make_verbose = False
         elif arg == "-r": reset = True
+        elif arg == "-t": timings = False
         elif arg == "-tb": traceback = True
         elif arg.startswith("-o"): l, needed = start_arg_list(outputs, arg, "-o", 1)
         elif arg == "-v": verbose = True
@@ -138,6 +183,11 @@ args    Show invocations where a callable may be involved that cannot accept the
         sys.exit(1)
 
     filename = abspath(filenames[0])
+
+    if not isfile(filename):
+        print >>sys.stderr, "Filename %s is not a valid input." % filenames[0]
+        sys.exit(1)
+
     path.append(split(filename)[0])
 
     # Obtain the output filename.
@@ -158,13 +208,13 @@ args    Show invocations where a callable may be involved that cannot accept the
     # Load the program.
 
     try:
-        start = now = time()
+        if timings: now = time()
 
         i = importer.Importer(path, cache_dir, verbose, warnings)
         m = i.initialise(filename, reset)
         success = i.finalise()
 
-        now = stopwatch("Inspection", now)
+        if timings: now = stopwatch("Inspection", now)
 
         # Check for success, indicating missing references otherwise.
 
@@ -175,22 +225,22 @@ args    Show invocations where a callable may be involved that cannot accept the
         d = deducer.Deducer(i, deduced_dir)
         d.to_output()
 
-        now = stopwatch("Deduction", now)
+        if timings: now = stopwatch("Deduction", now)
 
         o = optimiser.Optimiser(i, d, output_dir)
         o.to_output()
 
-        now = stopwatch("Optimisation", now)
+        if timings: now = stopwatch("Optimisation", now)
 
         g = generator.Generator(i, o, generated_dir)
         g.to_output(debug)
 
-        now = stopwatch("Generation", now)
+        if timings: now = stopwatch("Generation", now)
 
         t = translator.Translator(i, d, o, generated_dir)
         t.to_output()
 
-        now = stopwatch("Translation", now)
+        if timings: now = stopwatch("Translation", now)
 
         # Compile the program unless otherwise indicated.
 
@@ -203,7 +253,7 @@ args    Show invocations where a callable may be involved that cannot accept the
                 retval = call(make_cmd, make_verbose)
 
             if not retval:
-                stopwatch("Compilation", now)
+                if timings: stopwatch("Compilation", now)
             else:
                 sys.exit(retval)
 
