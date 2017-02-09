@@ -300,6 +300,10 @@ class Optimiser:
             ]:
 
             for name, attrnames in source.items():
+
+                # Remove temporary names from structures.
+
+                attrnames = filter(lambda x: not x.startswith("$t"), attrnames)
                 self.all_attrs[(objtype, name)] = attrnames
 
         self.locations = get_allocated_locations(self.all_attrs, get_attributes_and_sizes)

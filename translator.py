@@ -1476,6 +1476,11 @@ class TranslatedModule(CommonModule):
             ref, paths = self.importer.get_module(self.name).special[n.name]
             return TrResolvedNameRef(n.name, ref)
 
+        # Temporary names are output program locals.
+
+        elif n.name.startswith("$t"):
+            return TrResolvedNameRef(n.name, Reference("<var>"), expr=expr)
+
         # Get the appropriate name for the name reference, using the same method
         # as in the inspector.
 
@@ -1827,6 +1832,19 @@ class TranslatedModule(CommonModule):
         print >>self.out, "void __main_%s()" % encode_path(self.name)
         print >>self.out, "{"
         self.indent += 1
+
+        # Define temporary variables, excluded from the module structure itself.
+
+        tempnames = []
+
+        for n in self.importer.all_module_attrs[self.name]:
+            if n.startswith("$t"):
+                tempnames.append(encode_path(n))
+
+        if tempnames:
+            tempnames.sort()
+            self.writeline("__attr %s;" % ", ".join(tempnames))
+
         self.start_unit()
 
     def end_module(self):
