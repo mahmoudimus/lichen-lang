@@ -56,27 +56,33 @@ typedef struct __attr
     /* One of... */
     union
     {
-        __obj * context;        /* attribute context */
-        unsigned int min;       /* minimum number of parameters */
-        unsigned int code;      /* parameter table code for key */
-        struct __attr (*inv)(); /* unbound callable details */
-
-        size_t size;            /* size of value */
-    };
-
-    /* One of... */
-    union
-    {
-        __obj * value;          /* attribute value */
-        const __ptable * ptable;/* parameter table */
-        unsigned int pos;       /* parameter table position for key */
-        struct __attr (*fn)();  /* callable details */
-
-        int intvalue;           /* integer value */
-        double floatvalue;      /* floating point value */
-        char * strvalue;        /* string value */
-        __fragment * seqvalue;  /* sequence data */
-        void * datavalue;       /* object-specific data */
+        struct {
+            __obj * context;            /* attribute context */
+            __obj * value;              /* attribute value */
+        };
+        struct {
+            unsigned int min;           /* minimum number of parameters */
+            const __ptable * ptable;    /* parameter table */
+        };
+        struct {
+            unsigned int code;          /* parameter table code for key */
+            unsigned int pos;           /* parameter table position for key */
+        };
+        struct {
+            struct __attr (*inv)();     /* unbound callable details */
+            struct __attr (*fn)();      /* callable details */
+        };
+        struct {
+            size_t size;                /* size of value */
+            union
+            {
+                int intvalue;           /* integer value */
+                double floatvalue;      /* floating point value */
+                char * strvalue;        /* string value */
+                __fragment * seqvalue;  /* sequence data */
+                void * datavalue;       /* object-specific data */
+            };
+        };
     };
 } __attr;
 
@@ -108,7 +114,7 @@ typedef struct __fragment
 
 /* Special null values. */
 
-#define __NULL ((__attr) {{0}, {0}})
+#define __NULL ((__attr) {{.context=0, .value=0}})
 
 /* Function pointer type. */
 
