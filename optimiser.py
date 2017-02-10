@@ -293,7 +293,7 @@ class Optimiser:
         # Partition attributes into separate sections so that class and instance
         # attributes are treated separately.
 
-        for source, objtype in [
+        for source, objkind in [
             (self.importer.all_class_attrs, "<class>"),
             (self.importer.all_instance_attrs, "<instance>"),
             (self.importer.all_module_attrs, "<module>")
@@ -304,7 +304,7 @@ class Optimiser:
                 # Remove temporary names from structures.
 
                 attrnames = filter(lambda x: not x.startswith("$t"), attrnames)
-                self.all_attrs[(objtype, name)] = attrnames
+                self.all_attrs[(objkind, name)] = attrnames
 
         self.locations = get_allocated_locations(self.all_attrs, get_attributes_and_sizes)
 
@@ -328,8 +328,8 @@ class Optimiser:
 
         # Record the structures.
 
-        for (objtype, name), attrnames in self.all_attrs.items():
-            key = Reference(objtype, name)
+        for (objkind, name), attrnames in self.all_attrs.items():
+            key = Reference(objkind, name)
             l = self.structures[key] = [None] * len(attrnames)
             for attrname in attrnames:
                 position = attr_locations[attrname]
@@ -672,10 +672,10 @@ def get_attributes_and_sizes(d):
 
     attrs = {}
     sizes = {}
-    objtypes = {}
+    objkinds = {}
 
     for name, attrnames in d.items():
-        objtype, _name = name
+        objkind, _name = name
 
         for attrname in attrnames:
 
@@ -694,8 +694,8 @@ def get_attributes_and_sizes(d):
 
             # Record the object types/kinds supporting the attribute.
 
-            init_item(objtypes, attrname, set)
-            objtypes[attrname].add(objtype)
+            init_item(objkinds, attrname, set)
+            objkinds[attrname].add(objkind)
 
     # Obtain attribute details in order of size and occupancy.
 
@@ -703,7 +703,7 @@ def get_attributes_and_sizes(d):
 
     rsizes = []
     for attrname, size in sizes.items():
-        priority = "<instance>" in objtypes[attrname] and 0.5 or 1
+        priority = "<instance>" in objkinds[attrname] and 0.5 or 1
         occupied = len(attrs[attrname])
         key = (priority * size, size, len(names) - occupied, attrname)
         rsizes.append(key)
@@ -789,7 +789,7 @@ def get_allocated_locations(d, fn):
     """
     Return a list where each element corresponds to a structure location and
     contains a set of attribute names that may be stored at that location, given
-    a mapping 'd' whose keys are (object type, object name) tuples and whose
+    a mapping 'd' whose keys are (object kind, object name) tuples and whose
     values are collections of attributes.
     """
 
