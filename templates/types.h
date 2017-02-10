@@ -21,11 +21,20 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stddef.h> /* size_t */
 
+/* Define code and position types, populated by enum values defined for each
+   program specifically. */
+
+typedef unsigned short __code;
+typedef unsigned short __pos;
+typedef unsigned short __pcode;
+typedef unsigned short __ppos;
+
 /* Attribute tables are lists of codes confirming the presence of attributes. */
 
 typedef struct __table
 {
-    const unsigned int size, attrs[];
+    const __pos size;
+    const __code attrs[];
 } __table;
 
 /* Parameter tables are lists of codes confirming the presence of parameters, as
@@ -34,12 +43,13 @@ typedef struct __table
 
 typedef struct __param
 {
-    unsigned short code, pos;
+    __code code;
+    __pos pos;
 } __param;
 
 typedef struct __ptable
 {
-    const unsigned int size;
+    const __ppos size;
     const __param params[];
 } __ptable;
 
@@ -61,12 +71,12 @@ typedef struct __attr
             __obj * value;              /* attribute value */
         };
         struct {
-            unsigned int min;           /* minimum number of parameters */
+            __ppos min;                 /* minimum number of parameters */
             const __ptable * ptable;    /* parameter table */
         };
         struct {
-            unsigned int code;          /* parameter table code for key */
-            unsigned int pos;           /* parameter table position for key */
+            __pcode code;               /* parameter table code for key */
+            __ppos pos;                 /* parameter table position for key */
         };
         struct {
             struct __attr (*inv)();     /* unbound callable details */
@@ -89,7 +99,7 @@ typedef struct __attr
 typedef struct __obj
 {
     const __table * table;      /* attribute table */
-    unsigned int pos;           /* position of attribute indicating class */
+    __ppos pos;                 /* position of attribute indicating class */
     __attr attrs[];             /* attributes */
 } __obj;
 
