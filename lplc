@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 VERSION = "0.1"
 
 from errors import *
-from os import rename
+from os import environ, rename
 from os.path import abspath, exists, isfile, join, split
 from pyparser import error
 from subprocess import Popen, PIPE
@@ -32,6 +32,7 @@ import sys
 
 libdirs = [
     join(split(__file__)[0], "lib"),
+    split(__file__)[0],
     "/usr/share/lichen/lib"
     ]
 
@@ -90,7 +91,7 @@ if __name__ == "__main__":
 
     # Show help text if requested or if no arguments are given.
 
-    if "--help" in args or not args:
+    if "--help" in args or "-h" in args or "-?" in args or not args:
         print >>sys.stderr, """\
 Usage: %s [ <options> ] <filename>
 
@@ -98,7 +99,9 @@ Compile the program whose principal file is given in place of <filename>.
 The following options may be specified:
 
 -c   Only partially compile the program; do not attempt to build or link it
+-E   Ignore environment variables affecting the module search path
 -g   Generate debugging information for the built executable
+-P   Show the module search path
 -q   Silence messages produced when building an executable
 -r   Reset (discard) cached program information; inspect the whole program again
 -t   Silence timing messages
@@ -122,13 +125,16 @@ The following informational options can be specified to produce output instead
 of compiling a program:
 
 --help      Show a summary of the command syntax and options
+-h          Equivalent to --help
+-?          Equivalent to --help
 --version   Show version information for this tool
+-V          Equivalent to --version
 """ % basename
         sys.exit(1)
 
     # Show the version information if requested.
 
-    elif "--version" in args:
+    elif "--version" in args or "-V" in args:
         print >>sys.stderr, """\
 lplc %s
 Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013,
@@ -142,6 +148,7 @@ This program has absolutely no warranty.
     # Determine the options and arguments.
 
     debug = False
+    ignore_env = False
     make = True
     make_verbose = True
     reset = False
@@ -160,6 +167,7 @@ This program has absolutely no warranty.
 
     for arg in args:
         if arg == "-c": make = False
+        elif arg == "-E": ignore_env = True
         elif arg == "-g": debug = True
         elif arg == "-q": make_verbose = False
         elif arg == "-r": reset = True
@@ -175,6 +183,20 @@ This program has absolutely no warranty.
 
         if needed == 0:
             l = filenames
+
+    # Add extra components to the module search path from the environment.
+
+    if not ignore_env:
+        extra = environ.get("LICHENPATH")
+        if extra:
+            libdirs = extra.split(":") + libdirs
+
+    # Show the module search path if requested.
+
+    if "-P" in args:
+        for libdir in libdirs:
+            print libdir
+        sys.exit(0)
 
     # Obtain the program filename.
 
