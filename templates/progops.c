@@ -33,7 +33,7 @@ __attr __new(const __table * table, __ref cls, size_t size)
     __attr self = {.context=obj, .value=obj};
     __attr tmp = {.context=0, .value=cls};
     obj->table = table;
-    __store_via_object(obj, __pos___class__, tmp);
+    __store_via_object(obj, __ATTRPOS(__class__), tmp);
     return self;
 }
 
@@ -69,7 +69,7 @@ void __newdata_sequence(__attr args[], unsigned int number)
 
     /* Store a reference to the data in the object's __data__ attribute. */
 
-    __store_via_object(args[0].value, __pos___data__, attr);
+    __store_via_object(args[0].value, __ATTRPOS(__data__), attr);
 }
 
 #ifdef __HAVE___builtins___dict_dict
@@ -183,7 +183,7 @@ __attr __invoke(__attr callable, int always_callable,
 {
     /* Obtain the __args__ special member, referencing the parameter table. */
 
-    __attr minparams = __check_and_load_via_object(callable.value, __pos___args__, __code___args__);
+    __attr minparams = __check_and_load_via_object(callable.value, __ATTRPOS(__args__), __ATTRCODE(__args__));
 
     /* Refer to the table and minimum/maximum. */
 

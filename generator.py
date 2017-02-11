@@ -650,9 +650,14 @@ class Generator(CommonOutput):
 
         # Write the corresponding definition.
 
-        print >>f_defs, "const __table %s = {\n    %s,\n    {\n        %s\n        }\n    };\n" % (
-            table_name, structure_size,
-            ",\n        ".join(table))
+        print >>f_defs, """\
+const __table %s = {
+    %s,
+    {
+        %s
+    }
+};
+""" % (table_name, structure_size, ",\n        ".join(table))
 
     def write_parameter_table(self, f_decls, f_defs, table_name, structure_size, table):
 
@@ -662,13 +667,22 @@ class Generator(CommonOutput):
         with 'table' details used to populate the definition.
         """
 
+        members = []
+        for t in table:
+            members.append("{%s, %s}" % t)
+
         print >>f_decls, "extern const __ptable %s;\n" % table_name
 
         # Write the corresponding definition.
 
-        print >>f_defs, "const __ptable %s = {\n    %s,\n    {\n        %s\n        }\n    };\n" % (
-            table_name, structure_size,
-            ",\n        ".join([("{%s, %s}" % t) for t in table]))
+        print >>f_defs, """\
+const __ptable %s = {
+    %s,
+    {
+        %s
+    }
+};
+""" % (table_name, structure_size, ",\n        ".join(members))
 
     def write_instance_structure(self, f_decls, path, structure_size):
 
