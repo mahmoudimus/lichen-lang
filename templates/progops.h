@@ -76,6 +76,7 @@ int __BOOL(__attr attr);
 
 /* Convenience definitions. */
 
+#define __NEWINSTANCE(__CLS) __new(&__InstanceTable_##__CLS, &__CLS, sizeof(__obj_##__CLS))
 #define __ISINSTANCE(__ATTR, __TYPE) __BOOL(__fn_native_introspection_isinstance((__attr[]) {__NULL, __ATTR, __TYPE}))
 
 #endif /* __PROGOPS_H__ */
