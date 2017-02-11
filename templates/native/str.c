@@ -35,14 +35,15 @@ __attr __fn_native_str_str_add(__attr __args[])
     /* _data, other interpreted as string */
     char *s = _data->strvalue;
     char *o = other->strvalue;
-    int n = _data->size + other->size;
+    size_t ss = strlen(_data->strvalue), os = strlen(other->strvalue);
+    int n = ss + os;
     char *r = (char *) __ALLOCATE(n + 1, sizeof(char));
 
-    memcpy(r, s, _data->size);
-    memcpy(r + _data->size, o, other->size);
+    memcpy(r, s, ss);
+    memcpy(r + ss, o, os);
 
     /* Return a new string. */
-    return __new_str(r, n);
+    return __new_str(r);
 }
 
 __attr __fn_native_str_str_chr(__attr __args[])
@@ -53,7 +54,7 @@ __attr __fn_native_str_str_chr(__attr __args[])
     char *s = (char *) __ALLOCATE(2, sizeof(char));
 
     s[0] = (char) n;
-    return __new_str(s, 1);
+    return __new_str(s);
 }
 
 __attr __fn_native_str_str_lt(__attr __args[])
@@ -97,14 +98,14 @@ __attr __fn_native_str_str_len(__attr __args[])
     __attr * const _data = &__args[1];
 
     /* Return the new integer. */
-    return __new_int(_data->size);
+    return __new_int(strlen(_data->strvalue));
 }
 
 __attr __fn_native_str_str_nonempty(__attr __args[])
 {
     __attr * const _data = &__args[1];
 
-    return _data->size ? __builtins___boolean_True : __builtins___boolean_False;
+    return _data->strvalue[0] ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
 __attr __fn_native_str_str_ord(__attr __args[])
@@ -146,7 +147,7 @@ __attr __fn_native_str_str_substr(__attr __args[])
         for (from = istart, to = 0; from > iend; from += istep, to++)
             sub[to] = s[from];
 
-    return __new_str(sub, resultsize);
+    return __new_str(sub);
 }
 
 /* Module initialisation. */

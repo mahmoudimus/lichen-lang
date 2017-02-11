@@ -1,6 +1,6 @@
 /* Native functions for input/output.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -150,7 +150,7 @@ __attr __fn_native_io_fread(__attr __args[])
 
     s = __ALLOCATE(have_read + 1, sizeof(char));
     memcpy(s, (char *) buf, have_read); /* does not null terminate but final byte should be zero */
-    return __new_str(s, have_read);
+    return __new_str(s);
 }
 
 __attr __fn_native_io_fwrite(__attr __args[])
@@ -162,7 +162,7 @@ __attr __fn_native_io_fwrite(__attr __args[])
     /* str.__data__ interpreted as string */
     __attr sa = __load_via_object(str->value, __pos___data__);
     char *s = sa.strvalue;
-    size_t to_write = sa.size;
+    size_t to_write = strlen(sa.strvalue);
     size_t have_written = fwrite(s, sizeof(char), to_write, f);
     int error;
 
@@ -212,7 +212,7 @@ __attr __fn_native_io_read(__attr __args[])
 
     s = __ALLOCATE(have_read + 1, 1);
     memcpy(s, (char *) buf, have_read); /* does not null terminate but final byte should be zero */
-    return __new_str(s, have_read);
+    return __new_str(s);
 }
 
 __attr __fn_native_io_write(__attr __args[])
@@ -227,7 +227,7 @@ __attr __fn_native_io_write(__attr __args[])
     ssize_t have_written;
 
     errno = 0;
-    have_written = write(i, s, sizeof(char) * sa.size);
+    have_written = write(i, s, sizeof(char) * strlen(sa.strvalue));
 
     if (have_written == -1)
         __raise_io_error(__new_int(errno));

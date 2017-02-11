@@ -1,6 +1,6 @@
 /* Native functions for integer operations.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -268,7 +268,7 @@ __attr __fn_native_int_int_str(__attr __args[])
     snprintf(s, n, "%d", i);
 
     /* Return a new string. */
-    return __new_str(s, strlen(s));
+    return __new_str(s);
 }
 
 /* Module initialisation. */

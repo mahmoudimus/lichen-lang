@@ -76,7 +76,7 @@ __attr __fn_native_unicode_unicode_len(__attr __args[])
     char *s = _data->strvalue;
     unsigned int i, c = 0;
 
-    for (i = 0; i < _data->size; i++)
+    for (i = 0; s[i] != 0; i++)
         if (boundary(s[i]))
             c++;
 
@@ -91,7 +91,7 @@ __attr __fn_native_unicode_unicode_ord(__attr __args[])
     char *s = _data->strvalue;
     unsigned int i, c = 0, v;
 
-    for (i = 0; i < _data->size; i++)
+    for (i = 0; s[i] != 0; i++)
     {
         /* Evaluate the current character as a boundary. */
 
@@ -137,14 +137,14 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
     unsigned int indexes[nchar];
 
     unsigned int c, d, i, to, from, lastbyte = 0;
-    size_t resultsize = 0;
+    size_t resultsize = 0, ss = strlen(_data->strvalue);
 
     /* Find the indexes of the characters. */
     if (istep > 0)
     {
         /* Get the first byte position. */
         for (c = 0; c < istart; c++)
-            lastbyte = nextpos(s, _data->size, lastbyte);
+            lastbyte = nextpos(s, ss, lastbyte);
 
         /* Get each subsequent byte position. */
         for (c = istart, i = 0; i < nchar; c += istep, i++)
@@ -152,17 +152,17 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
             indexes[i] = lastbyte;
 
             /* Add the character size to the result size. */
-            resultsize += nextpos(s, _data->size, lastbyte) - lastbyte;
+            resultsize += nextpos(s, ss, lastbyte) - lastbyte;
 
             for (d = c; d < c + istep; d++)
-                lastbyte = nextpos(s, _data->size, lastbyte);
+                lastbyte = nextpos(s, ss, lastbyte);
         }
     }
     else
     {
         /* Get the first byte position. */
         for (c = 0; c < istart; c++)
-            lastbyte = nextpos(s, _data->size, lastbyte);
+            lastbyte = nextpos(s, ss, lastbyte);
 
         /* Get each subsequent byte position. */
         for (c = istart, i = 0; i < nchar; c += istep, i++)
@@ -170,7 +170,7 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
             indexes[i] = lastbyte;
 
             /* Add the character size to the result size. */
-            resultsize += nextpos(s, _data->size, lastbyte) - lastbyte;
+            resultsize += nextpos(s, ss, lastbyte) - lastbyte;
 
             for (d = c; d > c + istep; d--)
                 lastbyte = prevpos(s, lastbyte);
@@ -190,7 +190,7 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
         } while (!boundary(s[from]));
     }
 
-    return __new_str(sub, resultsize);
+    return __new_str(sub);
 }
 
 /* Module initialisation. */

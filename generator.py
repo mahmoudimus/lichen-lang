@@ -902,8 +902,7 @@ __obj %s = {
                 # Special internal data member.
 
                 elif attrname == "__data__":
-                    structure.append("{{.size=%d, .%s=%s}}" % (
-                                     encode_literal_constant_size(attr),
+                    structure.append("{.%s=%s}" % (
                                      encode_literal_constant_member(attr),
                                      encode_literal_constant_value(attr)))
                     continue

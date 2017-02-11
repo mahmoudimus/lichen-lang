@@ -19,8 +19,6 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
-#include <stddef.h> /* size_t */
-
 /* Define code and position types, populated by enum values defined for each
    program specifically. */
 
@@ -82,16 +80,13 @@ typedef struct __attr
             struct __attr (*inv)();     /* unbound callable details */
             struct __attr (*fn)();      /* callable details */
         };
-        struct {
-            size_t size;                /* size of value */
-            union
-            {
-                int intvalue;           /* integer value */
-                double floatvalue;      /* floating point value */
-                char * strvalue;        /* string value */
-                __fragment * seqvalue;  /* sequence data */
-                void * datavalue;       /* object-specific data */
-            };
+        union
+        {
+            int intvalue;               /* integer value */
+            double floatvalue;          /* floating point value */
+            char * strvalue;            /* string value */
+            __fragment * seqvalue;      /* sequence data */
+            void * datavalue;           /* object-specific data */
         };
     };
 } __attr;

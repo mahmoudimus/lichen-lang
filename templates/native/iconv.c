@@ -1,6 +1,6 @@
 /* Native functions for character set conversion.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -99,9 +99,9 @@ __attr __fn_native_iconv_iconv(__attr __args[])
         /* Incomplete sequence: raise the string in an OSError instead. */
 
         if (errno == EINVAL)
-            __raise_incomplete_sequence_error(__new_int(errno), __new_str(resultbuf, outbytestotal));
+            __raise_incomplete_sequence_error(__new_int(errno), __new_str(resultbuf));
 
-        return __new_str(resultbuf, outbytestotal);
+        return __new_str(resultbuf);
     }
 
     /* Invalid sequence. */
@@ -110,7 +110,7 @@ __attr __fn_native_iconv_iconv(__attr __args[])
     {
         resultbuf = __ALLOCATE(inbytesleft + 1, sizeof(char));
         memcpy(resultbuf, inbuf, inbytesleft);
-        __raise_invalid_sequence_error(__new_int(errno), __new_str(resultbuf, inbytesleft));
+        __raise_invalid_sequence_error(__new_int(errno), __new_str(resultbuf));
     }
 
     /* General failure. */

@@ -57,7 +57,7 @@ void __newdata_sequence(__attr args[], unsigned int number)
     /* Calculate the size of the fragment. */
 
     __fragment *data = __new_fragment(number);
-    __attr attr = {{.size=0, .seqvalue=data}};
+    __attr attr = {.seqvalue=data};
     unsigned int i, j;
 
     /* Copy the given number of values, starting from the second element. */
