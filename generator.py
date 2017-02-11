@@ -683,7 +683,7 @@ class Generator(CommonOutput):
         print >>f_decls, """\
 typedef struct {
     const __table * table;
-    unsigned int pos;
+    __pos pos;
     __attr attrs[%s];
 } %s;
 """ % (structure_size, encode_symbol("obj", path))
@@ -1084,7 +1084,7 @@ __attr %s(__attr __args[])
                 style = "sequence"
 
             print >>f_code, """\
-__attr %s(__attr __args[], unsigned int number)
+__attr %s(__attr __args[], __pos number)
 {
     /* Allocate the structure. */
     __args[0] = __new(&%s, &%s, sizeof(%s));
@@ -1103,7 +1103,7 @@ __attr %s(__attr __args[], unsigned int number)
     encode_literal_data_initialiser(style)
     )
 
-            print >>f_signatures, "__attr %s(__attr[], unsigned int);" % encode_literal_instantiator(path)
+            print >>f_signatures, "__attr %s(__attr[], __pos);" % encode_literal_instantiator(path)
 
     def write_main_program(self, f_code, f_signatures):
 
