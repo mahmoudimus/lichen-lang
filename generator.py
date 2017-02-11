@@ -1055,7 +1055,7 @@ __obj %s = {
 __attr %s(__attr __args[])
 {
     /* Allocate the structure. */
-    __args[0] = __new(&%s, &%s, sizeof(%s));
+    __args[0] = __NEWINSTANCE(%s);
 
     /* Call the initialiser. */
     %s(__args);
@@ -1065,9 +1065,7 @@ __attr %s(__attr __args[])
 }
 """ % (
     encode_instantiator_pointer(path),
-    encode_tablename("<instance>", path),
     encode_path(path),
-    encode_symbol("obj", path),
     encode_function_pointer(init_ref.get_origin())
     )
 
@@ -1087,7 +1085,7 @@ __attr %s(__attr __args[])
 __attr %s(__attr __args[], __pos number)
 {
     /* Allocate the structure. */
-    __args[0] = __new(&%s, &%s, sizeof(%s));
+    __args[0] = __NEWINSTANCE(%s);
 
     /* Allocate a structure for the data and set it on the __data__ attribute. */
     %s(__args, number);
@@ -1097,9 +1095,7 @@ __attr %s(__attr __args[], __pos number)
 }
 """ % (
     encode_literal_instantiator(path),
-    encode_tablename("<instance>", path),
     encode_path(path),
-    encode_symbol("obj", path),
     encode_literal_data_initialiser(style)
     )
 
