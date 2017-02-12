@@ -29,7 +29,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __new_int(int i)
 {
     /* Create a new integer and mutate the __data__ attribute. */
-    __attr attr = __new(&__InstanceTable___builtins___int_int, &__builtins___int_int, sizeof(__obj___builtins___int_int));
+    __attr attr = __NEWINSTANCE(__builtins___int_int);
     attr.value->attrs[__pos___data__].intvalue = i;
     return attr;
 }
@@ -37,7 +37,7 @@ __attr __new_int(int i)
 __attr __new_str(char *s)
 {
     /* Create a new string and mutate the __data__ and __key__ attributes. */
-    __attr attr = __new(&__InstanceTable___builtins___str_string, &__builtins___str_string, sizeof(__obj___builtins___str_string));
+    __attr attr = __NEWINSTANCE(__builtins___str_string);
     attr.value->attrs[__pos___data__].strvalue = s;
     attr.value->attrs[__pos___key__] = __NULL;
     return attr;
@@ -46,7 +46,7 @@ __attr __new_str(char *s)
 __attr __new_list(__fragment *f)
 {
     /* Create a new list and mutate the __data__ attribute. */
-    __attr attr = __new(&__InstanceTable___builtins___list_list, &__builtins___list_list, sizeof(__obj___builtins___list_list));
+    __attr attr = __NEWINSTANCE(__builtins___list_list);
     attr.value->attrs[__pos___data__].seqvalue = f;
     return attr;
 }
