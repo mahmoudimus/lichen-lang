@@ -272,26 +272,8 @@ class Generator(CommonOutput):
                 function_instance_attrs["__fn__"] = path
                 function_instance_attrs["__args__"] = encode_size("pmin", path)
 
-                # Produce two structures where a method is involved.
-
-                parent, name = path.rsplit(".", 1)
-                parent_ref = self.importer.get_object(parent)
-                parent_kind = parent_ref and parent_ref.get_kind()
-
-                # Populate and write each structure.
-
-                if parent_kind == "<class>":
-
-                    # A method.
-
-                    structure = self.populate_function(path, function_instance_attrs)
-                    self.write_structure(f_decls, f_defs, path, table_name, structure)
-
-                else:
-                    # A normal function.
-
-                    structure = self.populate_function(path, function_instance_attrs)
-                    self.write_structure(f_decls, f_defs, path, table_name, structure)
+                structure = self.populate_function(path, function_instance_attrs)
+                self.write_structure(f_decls, f_defs, path, table_name, structure)
 
                 # Functions with defaults need to declare instance structures.
 
