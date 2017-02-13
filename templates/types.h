@@ -49,7 +49,7 @@ typedef struct __param
 
 typedef struct __ptable
 {
-    const __ppos size;
+    const __ppos min, max, size;
     const __param params[];
 } __ptable;
 
@@ -65,23 +65,20 @@ typedef __obj * __ref;
 
 typedef union __attr
 {
-    __ref value;                    /* attribute value */
+    __ref value;                /* attribute value */
+    const __ptable * ptable;    /* parameter table */
     struct {
-        __ppos min;                 /* minimum number of parameters */
-        const __ptable * ptable;    /* parameter table */
+        __pcode code;           /* parameter table code for key */
+        __ppos pos;             /* parameter table position for key */
     };
     struct {
-        __pcode code;               /* parameter table code for key */
-        __ppos pos;                 /* parameter table position for key */
+        __attr (*fn)();         /* callable details */
     };
-    struct {
-        __attr (*fn)();             /* callable details */
-    };
-    int intvalue;                   /* integer value */
-    float floatvalue;               /* floating point value */
-    char * strvalue;                /* string value */
-    __fragment * seqvalue;          /* sequence data */
-    void * datavalue;               /* object-specific data */
+    int intvalue;               /* integer value */
+    float floatvalue;          	/* floating point value */
+    char * strvalue;            /* string value */
+    __fragment * seqvalue;      /* sequence data */
+    void * datavalue;           /* object-specific data */
 } __attr;
 
 typedef struct __obj

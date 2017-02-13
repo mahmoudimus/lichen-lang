@@ -189,13 +189,10 @@ __attr __invoke(__attr callable, int always_callable,
     __attr target = __unwrap_callable(callable);
 
     /* Obtain the __args__ special member, referencing the parameter table. */
-
-    __attr minparams = __check_and_load_via_object(target.value, __ATTRPOS(__args__), __ATTRCODE(__args__));
-
     /* Refer to the table and minimum/maximum. */
 
-    const __ptable *ptable = minparams.ptable;
-    const unsigned int min = minparams.min, max = ptable->size;
+    const __ptable *ptable = __check_and_load_via_object(target.value, __ATTRPOS(__args__), __ATTRCODE(__args__)).ptable;
+    const unsigned int min = ptable->min, max = ptable->max;
 
     /* Reserve enough space for the arguments. */
 

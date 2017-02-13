@@ -217,7 +217,7 @@ class Generator(CommonOutput):
                         # Define special attributes.
 
                         attrs["__fn__"] = path
-                        attrs["__args__"] = encode_size("pmin", path)
+                        attrs["__args__"] = path
 
                     self.populate_structure(Reference(kind, path), attrs, kind, structure)
 
@@ -270,7 +270,7 @@ class Generator(CommonOutput):
                 # Set a special callable attribute on the instance.
 
                 function_instance_attrs["__fn__"] = path
-                function_instance_attrs["__args__"] = encode_size("pmin", path)
+                function_instance_attrs["__args__"] = path
 
                 structure = self.populate_function(path, function_instance_attrs)
                 self.write_structure(f_decls, f_defs, path, table_name, structure)
@@ -286,22 +286,48 @@ class Generator(CommonOutput):
 
                 print >>f_signatures, "__attr %s(__attr args[]);" % encode_function_pointer(path)
 
+            # Generate parameter table size data.
+
+            min_parameters = {}
+            max_parameters = {}
+            size_parameters = {}
+
             # Consolidate parameter tables for instantiators and functions.
 
             parameter_tables = set()
 
             for path, function_path in self.callables.items():
+                argmin, argmax = self.get_argument_limits(function_path)
+
+                # Obtain the parameter table members.
+
                 parameters = self.optimiser.parameters[function_path]
                 if not parameters:
                     parameters = ()
                 else:
                     parameters = tuple(parameters)
-                parameter_tables.add(parameters)
+
+                # Define each table in terms of the members and the minimum
+                # number of arguments.
+
+                parameter_tables.add((argmin, parameters))
+                signature = self.get_parameter_signature(argmin, parameters)
+
+                # Record the minimum number of arguments, the maximum number,
+                # and the size of the table.
+
+                min_parameters[signature] = argmin
+                max_parameters[signature] = argmax
+                size_parameters[signature] = len(parameters)
+
+            self.write_size_constants(f_consts, "pmin", min_parameters, 0)
+            self.write_size_constants(f_consts, "pmax", max_parameters, 0)
+            self.write_size_constants(f_consts, "psize", size_parameters, 0)
 
             # Generate parameter tables for distinct function signatures.
 
-            for parameters in parameter_tables:
-                self.make_parameter_table(f_decls, f_defs, parameters)
+            for argmin, parameters in parameter_tables:
+                self.make_parameter_table(f_decls, f_defs, argmin, parameters)
 
             # Generate predefined constants.
 
@@ -339,27 +365,6 @@ class Generator(CommonOutput):
 
             for kind, sizes in size_tables:
                 self.write_size_constants(f_consts, kind, sizes, 0)
-
-            # Generate parameter table size data.
-
-            min_sizes = {}
-            max_sizes = {}
-
-            # Determine the minimum number of parameters for each 
-
-            for path in self.optimiser.parameters.keys():
-                argmin, argmax = self.get_argument_limits(path)
-                min_sizes[path] = argmin
-
-            # Use the parameter table details to define the maximum number.
-            # The context is already present in the collection.
-
-            for parameters in parameter_tables:
-                signature = self.get_parameter_signature(parameters)
-                max_sizes[signature] = len(parameters)
-
-            self.write_size_constants(f_consts, "pmin", min_sizes, 0)
-            self.write_size_constants(f_consts, "pmax", max_sizes, 0)
 
             # Generate parameter codes.
 
@@ -535,29 +540,32 @@ class Generator(CommonOutput):
         attr_name = encode_path(const_path)
         print >>f_decls, "#define %s ((__attr) {.value=&%s})" % (attr_name, structure_name)
 
-    def make_parameter_table(self, f_decls, f_defs, parameters):
+    def make_parameter_table(self, f_decls, f_defs, argmin, parameters):
 
         """
         Write parameter table details to 'f_decls' (to declare a table) and to
-        'f_defs' (to define the contents) for the given 'parameters'.
+        'f_defs' (to define the contents) for the given 'argmin' and
+        'parameters'.
         """
 
         # Use a signature for the table name instead of a separate name for each
         # function.
 
-        signature = self.get_parameter_signature(parameters)
+        signature = self.get_parameter_signature(argmin, parameters)
         table_name = encode_tablename("<function>", signature)
-        structure_size = encode_size("pmax", signature)
+        min_parameters = encode_size("pmin", signature)
+        max_parameters = encode_size("pmax", signature)
+        structure_size = encode_size("psize", signature)
 
         table = []
         self.populate_parameter_table(parameters, table)
-        self.write_parameter_table(f_decls, f_defs, table_name, structure_size, table)
+        self.write_parameter_table(f_decls, f_defs, table_name, min_parameters, max_parameters, structure_size, table)
 
-    def get_parameter_signature(self, parameters):
+    def get_parameter_signature(self, argmin, parameters):
 
-        "Return a signature for the given 'parameters'."
+        "Return a signature for the given 'argmin' and 'parameters'."
 
-        l = []
+        l = [str(argmin)]
         for parameter in parameters:
             if parameter is None:
                 l.append("")
@@ -571,8 +579,9 @@ class Generator(CommonOutput):
         "Return the signature for the callable with the given 'path'."
 
         function_path = self.callables[path]
+        argmin, argmax = self.get_argument_limits(function_path)
         parameters = self.optimiser.parameters[function_path]
-        return self.get_parameter_signature(parameters)
+        return self.get_parameter_signature(argmin, parameters)
 
     def write_size_constants(self, f_consts, size_prefix, sizes, padding):
 
@@ -639,19 +648,22 @@ const __table %s = {
         %s
     }
 };
-""" % (table_name, structure_size, ",\n        ".join(table))
+""" % (table_name, structure_size,
+       ",\n        ".join(table))
 
-    def write_parameter_table(self, f_decls, f_defs, table_name, structure_size, table):
+    def write_parameter_table(self, f_decls, f_defs, table_name, min_parameters,
+                              max_parameters, structure_size, table):
 
         """
         Write the declarations to 'f_decls' and definitions to 'f_defs' for
-        the object having the given 'table_name' and the given 'structure_size',
-        with 'table' details used to populate the definition.
+        the object having the given 'table_name' and the given 'min_parameters',
+        'max_parameters' and 'structure_size', with 'table' details used to
+        populate the definition.
         """
 
         members = []
         for t in table:
-            members.append("{%s, %s}" % t)
+            members.append("{.code=%s, .pos=%s}" % t)
 
         print >>f_decls, "extern const __ptable %s;\n" % table_name
 
@@ -659,12 +671,15 @@ const __table %s = {
 
         print >>f_defs, """\
 const __ptable %s = {
-    %s,
+    .min=%s,
+    .max=%s,
+    .size=%s,
     {
         %s
     }
 };
-""" % (table_name, structure_size, ",\n        ".join(members))
+""" % (table_name, min_parameters, max_parameters, structure_size,
+       ",\n        ".join(members))
 
     def write_instance_structure(self, f_decls, path, structure_size):
 
@@ -886,7 +901,7 @@ __obj %s = {
                     signature = self.get_signature_for_callable(ref.get_origin())
                     ptable = encode_tablename("<function>", signature)
 
-                    structure.append("{.min=%s, .ptable=&%s}" % (attr, ptable))
+                    structure.append("{.ptable=&%s}" % ptable)
                     continue
 
                 # Special internal data member.
