@@ -134,6 +134,14 @@ class wrapper:
         self.__context__ = context
         self.__value__ = value
 
+    def __str__(self):
+
+        "Return a string representation, referring to the wrapped object."
+
+        return self.__value__.__str__()
+
+    __repr__ = __str__
+
 class Exception:
 
     "The root of all exception types."
