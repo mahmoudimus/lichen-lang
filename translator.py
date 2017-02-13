@@ -740,6 +740,7 @@ class TranslatedModule(CommonModule):
 
         temp_subs = {
             "<context>" : "__tmp_context",
+            "<set_context>" : "__tmp_context",
             "<accessor>" : "__tmp_value",
             "<target_accessor>" : "__tmp_target_value",
             "<set_accessor>" : "__tmp_value",
@@ -747,6 +748,7 @@ class TranslatedModule(CommonModule):
             }
 
         op_subs = {
+            "<set_context>" : "__set_context",
             "<set_accessor>" : "__set_accessor",
             "<set_target_accessor>" : "__set_target_accessor",
             }
@@ -1165,6 +1167,7 @@ class TranslatedModule(CommonModule):
         # Invocation requirements.
 
         context_required = True
+        have_access_context = isinstance(expr, AttrResult)
         parameters = None
 
         # Obtain details of the callable and of its parameters.
@@ -1235,8 +1238,11 @@ class TranslatedModule(CommonModule):
         # set to null.
 
         if context_required:
-            self.record_temp("__tmp_targets")
-            args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
+            if have_access_context:
+                args = ["(__attr) {.value=__tmp_context}"]
+            else:
+                self.record_temp("__tmp_targets")
+                args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
         else:
             args = ["__NULL"]
 
@@ -1347,8 +1353,12 @@ class TranslatedModule(CommonModule):
             self.record_temp("__tmp_targets")
 
             if context_required:
-                stages.append("__get_function(__CONTEXT_AS_VALUE(__tmp_targets[%d]).value, __tmp_targets[%d])" % (
-                    self.function_target, self.function_target))
+                if have_access_context:
+                    stages.append("__get_function(__tmp_context, __tmp_targets[%d])" % (
+                        self.function_target))
+                else:
+                    stages.append("__get_function(__CONTEXT_AS_VALUE(__tmp_targets[%d]).value, __tmp_targets[%d])" % (
+                        self.function_target, self.function_target))
             else:
                 stages.append("__load_via_object(__tmp_targets[%d].value, %s).fn" % (
                     self.function_target, encode_symbol("pos", "__fn__")))

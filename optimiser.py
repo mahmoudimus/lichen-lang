@@ -371,7 +371,7 @@ class Optimiser:
             # Perform the first access explicitly if at least one operation
             # requires it.
 
-            access_first_attribute = final_method in ("access", "assign") or traversed or attrnames
+            access_first_attribute = final_method in ("access", "access-invoke", "assign") or traversed or attrnames
 
             # Determine whether the first access involves assignment.
 
@@ -388,8 +388,12 @@ class Optimiser:
                 # Prevent re-evaluation of any dynamic expression by storing it.
 
                 if original_accessor == "<expr>":
-                    emit((set_accessor, original_accessor))
-                    accessor = context_var = (stored_accessor,)
+                    if final_method in ("access-invoke", "static-invoke"):
+                        emit(("<set_context>", original_accessor))
+                        accessor = context_var = ("<context>",)
+                    else:
+                        emit((set_accessor, original_accessor))
+                        accessor = context_var = (stored_accessor,)
                 else:
                     accessor = context_var = (original_accessor,)
 
@@ -462,12 +466,12 @@ class Optimiser:
                     # Set the context, if appropriate.
 
                     if remaining == 1 and final_method != "assign" and context == "final-accessor":
-                        emit(("__set_context", accessor))
+                        emit(("<set_context>", accessor))
                         accessor = context_var = "<context>"
 
                     # Perform the access only if not achieved directly.
 
-                    if remaining > 1 or final_method in ("access", "assign"):
+                    if remaining > 1 or final_method in ("access", "access-invoke", "assign"):
 
                         if traversal_mode == "class":
                             if assigning:
@@ -489,12 +493,12 @@ class Optimiser:
                     # Set the context, if appropriate.
 
                     if remaining == 1 and final_method != "assign" and context == "final-accessor":
-                        emit(("__set_context", accessor))
+                        emit(("<set_context>", accessor))
                         accessor = context_var = "<context>"
 
                     # Perform the access only if not achieved directly.
 
-                    if remaining > 1 or final_method in ("access", "assign"):
+                    if remaining > 1 or final_method in ("access", "access-invoke", "assign"):
 
                         if assigning:
                             emit(("__check_and_store_via_any", accessor, attrname, "<assexpr>"))
@@ -505,9 +509,13 @@ class Optimiser:
 
             # Define or emit the means of accessing the actual target.
 
+            # Assignments to known attributes.
+
             if final_method == "static-assign":
                 parent, attrname = origin.rsplit(".", 1)
                 emit(("__store_via_object", parent, attrname, "<assexpr>"))
+
+            # Invoked attributes employ a separate context.
 
             elif final_method in ("static", "static-invoke"):
                 accessor = ("__load_static_ignore", origin)
@@ -521,10 +529,19 @@ class Optimiser:
                     emit(("__test_context", context_var, accessor))
 
             elif context_test == "replace":
-                if final_method in ("static", "static-invoke"):
+
+                # Produce an object with updated context.
+
+                if final_method == "static":
                     emit(("__load_static_replace", context_var, origin))
-                else:
+
+                # Only update any context if no separate context is used.
+
+                elif final_method not in ("access-invoke", "static-invoke"):
                     emit(("__update_context", context_var, accessor))
+
+                else:
+                    emit(accessor)
 
             elif final_method not in ("assign", "static-assign"):
                 emit(accessor)
