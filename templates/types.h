@@ -22,10 +22,12 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 /* Define code and position types, populated by enum values defined for each
    program specifically. */
 
-typedef unsigned short __code;
-typedef unsigned short __pos;
-typedef unsigned short __pcode;
-typedef unsigned short __ppos;
+#include <stdint.h>
+
+typedef uint16_t __code;
+typedef uint16_t __pos;
+typedef uint16_t __pcode;
+typedef uint16_t __ppos;
 
 /* Attribute tables are lists of codes confirming the presence of attributes. */
 
@@ -76,7 +78,7 @@ typedef union __attr
         __attr (*fn)();             /* callable details */
     };
     int intvalue;                   /* integer value */
-    double floatvalue;              /* floating point value */
+    float floatvalue;               /* floating point value */
     char * strvalue;                /* string value */
     __fragment * seqvalue;          /* sequence data */
     void * datavalue;               /* object-specific data */
