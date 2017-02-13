@@ -99,9 +99,9 @@ __attr __fn_native_iconv_iconv(__attr __args[])
         /* Incomplete sequence: raise the string in an OSError instead. */
 
         if (errno == EINVAL)
-            __raise_incomplete_sequence_error(__new_int(errno), __new_str(resultbuf));
+            __raise_incomplete_sequence_error(__new_int(errno), __new_str(resultbuf, outbytestotal));
 
-        return __new_str(resultbuf);
+        return __new_str(resultbuf, outbytestotal);
     }
 
     /* Invalid sequence. */
@@ -110,7 +110,7 @@ __attr __fn_native_iconv_iconv(__attr __args[])
     {
         resultbuf = __ALLOCATE(inbytesleft + 1, sizeof(char));
         memcpy(resultbuf, inbuf, inbytesleft);
-        __raise_invalid_sequence_error(__new_int(errno), __new_str(resultbuf));
+        __raise_invalid_sequence_error(__new_int(errno), __new_str(resultbuf, inbytesleft));
     }
 
     /* General failure. */

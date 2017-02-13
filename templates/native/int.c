@@ -18,8 +18,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <limits.h> /* INT_MAX, INT_MIN */
 #include <math.h>   /* ceil, log10, pow */
-#include <stdio.h>  /* fdopen, snprintf, strlen */
+#include <stdio.h>  /* fdopen, snprintf */
 #include <errno.h>  /* errno */
+#include <string.h> /* strlen */
 #include "native/common.h"
 #include "types.h"
 #include "exceptions.h"
@@ -30,6 +31,13 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "main.h"
 
 /* Integer operations. */
+
+__attr __fn_native_int_int_new(__attr __args[])
+{
+    __attr * const _data = &__args[1];
+
+    return __new_int(_data->intvalue);
+}
 
 __attr __fn_native_int_int_add(__attr __args[])
 {
@@ -268,7 +276,7 @@ __attr __fn_native_int_int_str(__attr __args[])
     snprintf(s, n, "%d", i);
 
     /* Return a new string. */
-    return __new_str(s);
+    return __new_str(s, strlen(s));
 }
 
 /* Module initialisation. */

@@ -24,7 +24,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 /* Utility functions. */
 
 __attr __new_int(int i);
-__attr __new_str(char *s);
+__attr __new_str(char *s, int size);
 __attr __new_list(__fragment *f);
 __fragment *__fragment_append(__fragment *data, __attr * const value);
 

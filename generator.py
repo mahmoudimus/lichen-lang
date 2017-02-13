@@ -505,6 +505,11 @@ class Generator(CommonOutput):
                 else:
                     attrs["__key__"] = None
 
+            # Initialise the size, if a string.
+
+            if attrs.has_key("__size__"):
+                attrs["__size__"] = len(data)
+
         # Define Unicode constant encoding details.
 
         if cls == self.unicode_type:
@@ -910,6 +915,12 @@ __obj %s = {
                     structure.append("{.%s=%s}" % (
                                      encode_literal_constant_member(attr),
                                      encode_literal_constant_value(attr)))
+                    continue
+
+                # Special internal size member.
+
+                elif attrname == "__size__":
+                    structure.append("{.intvalue=%d}" % attr)
                     continue
 
                 # Special internal key member.

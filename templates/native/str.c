@@ -32,10 +32,12 @@ __attr __fn_native_str_str_add(__attr __args[])
 {
     __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
+    __attr * const _size = &__args[3];
+    __attr * const othersize = &__args[4];
     /* _data, other interpreted as string */
     char *s = _data->strvalue;
     char *o = other->strvalue;
-    size_t ss = strlen(_data->strvalue), os = strlen(other->strvalue);
+    int ss = _size->intvalue, os = othersize->intvalue;
     int n = ss + os;
     char *r = (char *) __ALLOCATE(n + 1, sizeof(char));
 
@@ -43,7 +45,7 @@ __attr __fn_native_str_str_add(__attr __args[])
     memcpy(r + ss, o, os);
 
     /* Return a new string. */
-    return __new_str(r);
+    return __new_str(r, n);
 }
 
 __attr __fn_native_str_str_chr(__attr __args[])
@@ -54,7 +56,7 @@ __attr __fn_native_str_str_chr(__attr __args[])
     char *s = (char *) __ALLOCATE(2, sizeof(char));
 
     s[0] = (char) n;
-    return __new_str(s);
+    return __new_str(s, 1);
 }
 
 __attr __fn_native_str_str_lt(__attr __args[])
@@ -91,21 +93,6 @@ __attr __fn_native_str_str_eq(__attr __args[])
 
     /* NOTE: Using simple byte-level string operations. */
     return strcmp(s, o) == 0 ? __builtins___boolean_True : __builtins___boolean_False;
-}
-
-__attr __fn_native_str_str_len(__attr __args[])
-{
-    __attr * const _data = &__args[1];
-
-    /* Return the new integer. */
-    return __new_int(strlen(_data->strvalue));
-}
-
-__attr __fn_native_str_str_nonempty(__attr __args[])
-{
-    __attr * const _data = &__args[1];
-
-    return _data->strvalue[0] ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
 __attr __fn_native_str_str_ord(__attr __args[])
@@ -147,7 +134,7 @@ __attr __fn_native_str_str_substr(__attr __args[])
         for (from = istart, to = 0; from > iend; from += istep, to++)
             sub[to] = s[from];
 
-    return __new_str(sub);
+    return __new_str(sub, resultsize);
 }
 
 /* Module initialisation. */

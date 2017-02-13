@@ -22,8 +22,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.operator import _negate
 from __builtins__.sequence import hashable, itemaccess
 from __builtins__.types import check_int
-from native import str_add, str_lt, str_gt, str_eq, str_len, str_ord, \
-                   str_nonempty, str_substr
+from native import int_new, str_add, str_lt, str_gt, str_eq, str_ord, \
+                   str_substr
 
 WHITESPACE = (" ", "\f", "\n", "\r", "\t")
 
@@ -39,26 +39,25 @@ class basestring(hashable):
         # literals or converted using routines defined for other types, no form
         # of actual initialisation is performed here.
 
+        # Note the __key__ member. This is also initialised statically. Where
+        # a string is the same as an attribute name, the __key__ member contains
+        # attribute position and code details.
+
         # NOTE: Cannot perform "other and other.__data__ or None" since the
         # NOTE: __data__ attribute is not a normal attribute.
 
         if other:
             self.__data__ = other.__data__
+            self.__key__ = other.__key__
+            self.__size__ = other.__size__
         else:
             self.__data__ = None
-
-        # Note the __key__ member. This is also initialised statically. Where
-        # a string is the same as an attribute name, the __key__ member contains
-        # attribute position and code details.
-
-        if other:
-            self.__key__ = other.__key__
-        else:
             self.__key__ = None
+            self.__size__ = None
 
     # Internal methods.
 
-    def _binary_op(self, op, other):
+    def _binary_op(self, op, other, sizes=False):
 
         "Perform 'op' on this object and 'other' if appropriate."
 
@@ -69,10 +68,12 @@ class basestring(hashable):
 
         # Otherwise, perform the operation on the operands' data.
 
+        elif sizes:
+            return op(self.__data__, other.__data__, self.__size__, other.__size__)
         else:
             return op(self.__data__, other.__data__)
 
-    def _binary_op_rev(self, op, other):
+    def _binary_op_rev(self, op, other, sizes=False):
 
         "Perform 'op' on 'other' and this object if appropriate."
 
@@ -83,6 +84,8 @@ class basestring(hashable):
 
         # Otherwise, perform the operation on the operands' data.
 
+        elif sizes:
+            return op(other.__data__, self.__data__, other.__size__, self.__size__)
         else:
             return op(other.__data__, self.__data__)
 
@@ -154,7 +157,7 @@ class basestring(hashable):
 
         "Return the number of bytes in this string."
 
-        return str_len(self.__data__)
+        return int_new(self.__size__)
 
     # General type methods.
 
@@ -162,7 +165,7 @@ class basestring(hashable):
 
         "Return whether the string provides any data."
 
-        return str_nonempty(self.__data__)
+        return int_new(self.__size__).__bool__()
 
     def __contains__(self, value):
 
@@ -196,7 +199,7 @@ class basestring(hashable):
 
         "Return a string combining this string with 'other'."
 
-        return self._binary_op(str_add, other)
+        return self._binary_op(str_add, other, True)
 
     __add__ = __iadd__
 
@@ -204,7 +207,7 @@ class basestring(hashable):
 
         "Return a string combining this string with 'other'."
 
-        return self._binary_op_rev(str_add, other)
+        return self._binary_op_rev(str_add, other, True)
 
     def __mod__(self, other): pass
     def __rmod__(self, other): pass
