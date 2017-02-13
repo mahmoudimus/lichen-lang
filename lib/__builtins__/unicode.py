@@ -40,7 +40,7 @@ class utf8string(basestring):
         self.encoding = encoding
         self.length = None
 
-    def _binary_op(self, op, other):
+    def _binary_op(self, op, other, sizes=False):
 
         "Perform 'op' on this object and 'other' if appropriate."
 
@@ -51,16 +51,17 @@ class utf8string(basestring):
 
         # Combining text with bytes.
 
-        elif not _isinstance(other, utf8string):
+        if not _isinstance(other, utf8string):
             s = self.encode()
+        else:
+            s = self
+
+        if sizes:
+            return op(s.__data__, other.__data__, s.__size__, other.__size__)
+        else:
             return op(s.__data__, other.__data__)
 
-        # Otherwise, perform the operation on the operands' data.
-
-        else:
-            return op(self.__data__, other.__data__)
-
-    def _binary_op_rev(self, op, other):
+    def _binary_op_rev(self, op, other, sizes=False):
 
         "Perform 'op' on 'other' and this object if appropriate."
 
@@ -71,14 +72,15 @@ class utf8string(basestring):
 
         # Combining text with bytes.
 
-        elif not _isinstance(other, utf8string):
+        if not _isinstance(other, utf8string):
             s = self.encode()
-            return op(other.__data__, s.__data__)
-
-        # Otherwise, perform the operation on the operands' data.
-
         else:
-            return op(other.__data__, self.__data__)
+            s = self
+
+        if sizes:
+            return op(other.__data__, s.__data__, other.__size__, s.__size__)
+        else:
+            return op(other.__data__, s.__data__)
 
     def _convert(self, result, other):
 
@@ -118,7 +120,7 @@ class utf8string(basestring):
 
         "Return a string combining this string with 'other'."
 
-        return self._convert(self._binary_op(str_add, other), other)
+        return self._convert(self._binary_op(str_add, other, True), other)
 
     __add__ = __iadd__
 
@@ -126,7 +128,7 @@ class utf8string(basestring):
 
         "Return a string combining this string with 'other'."
 
-        return self._convert(self._binary_op_rev(str_add, other), other)
+        return self._convert(self._binary_op_rev(str_add, other, True), other)
 
     def __len__(self):
 
