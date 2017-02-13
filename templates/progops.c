@@ -158,7 +158,7 @@ __attr __ensure_instance(__attr arg)
 {
     /* Reserve space for the instance. */
 
-    __attr args[1];
+    __attr args[1] = {__NULL};
 
     /* Return instances as provided. */
 
