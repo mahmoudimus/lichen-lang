@@ -71,9 +71,7 @@ typedef union __attr
         __pcode code;           /* parameter table code for key */
         __ppos pos;             /* parameter table position for key */
     };
-    struct {
-        __attr (*fn)();         /* callable details */
-    };
+    __attr (*fn)();             /* callable details */
     int intvalue;               /* integer value */
     float floatvalue;          	/* floating point value */
     char * strvalue;            /* string value */
