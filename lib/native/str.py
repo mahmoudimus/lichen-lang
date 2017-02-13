@@ -26,13 +26,11 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # String operations.
 
-def str_add(data, other_data): pass
+def str_add(data, other_data, size, other_size): pass
 def str_chr(data): pass
 def str_eq(data, other_data): pass
 def str_gt(data, other_data): pass
 def str_lt(data, other_data): pass
-def str_len(data): pass
-def str_nonempty(data): pass
 def str_ord(data): pass
 def str_substr(data, start, end, step): pass
 

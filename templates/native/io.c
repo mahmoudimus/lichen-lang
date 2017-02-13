@@ -150,7 +150,7 @@ __attr __fn_native_io_fread(__attr __args[])
 
     s = __ALLOCATE(have_read + 1, sizeof(char));
     memcpy(s, (char *) buf, have_read); /* does not null terminate but final byte should be zero */
-    return __new_str(s);
+    return __new_str(s, have_read);
 }
 
 __attr __fn_native_io_fwrite(__attr __args[])
@@ -160,9 +160,9 @@ __attr __fn_native_io_fwrite(__attr __args[])
     /* fp interpreted as FILE reference */
     FILE *f = (FILE *) fp->datavalue;
     /* str.__data__ interpreted as string */
-    __attr sa = __load_via_object(str->value, __pos___data__);
-    char *s = sa.strvalue;
-    size_t to_write = strlen(sa.strvalue);
+    char *s = __load_via_object(str->value, __pos___data__).strvalue;
+    /* str.__size__ interpreted as int */
+    int to_write = __load_via_object(str->value, __pos___size__).intvalue;
     size_t have_written = fwrite(s, sizeof(char), to_write, f);
     int error;
 
@@ -212,7 +212,7 @@ __attr __fn_native_io_read(__attr __args[])
 
     s = __ALLOCATE(have_read + 1, 1);
     memcpy(s, (char *) buf, have_read); /* does not null terminate but final byte should be zero */
-    return __new_str(s);
+    return __new_str(s, have_read);
 }
 
 __attr __fn_native_io_write(__attr __args[])
@@ -222,12 +222,13 @@ __attr __fn_native_io_write(__attr __args[])
     /* fd.__data__ interpreted as int */
     int i = __load_via_object(fd->value, __pos___data__).intvalue;
     /* str.__data__ interpreted as string */
-    __attr sa = __load_via_object(str->value, __pos___data__);
-    char *s = sa.strvalue;
+    char *s = __load_via_object(str->value, __pos___data__).strvalue;
+    /* str.__size__ interpreted as int */
+    int size = __load_via_object(str->value, __pos___size__).intvalue;
     ssize_t have_written;
 
     errno = 0;
-    have_written = write(i, s, sizeof(char) * strlen(sa.strvalue));
+    have_written = write(i, s, sizeof(char) * size);
 
     if (have_written == -1)
         __raise_io_error(__new_int(errno));

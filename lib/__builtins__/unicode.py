@@ -133,7 +133,7 @@ class utf8string(basestring):
         "Return the length of this string in characters."
 
         if self.length is None:
-            self.length = unicode_len(self.__data__)
+            self.length = unicode_len(self.__data__, self.__size__)
 
         return self.length
 
@@ -142,7 +142,7 @@ class utf8string(basestring):
         "Return the value of the string, if only a single character."
 
         if self.__len__() == 1:
-            return unicode_ord(self.__data__)
+            return unicode_ord(self.__data__, self.__size__)
         else:
             raise ValueError, self
 
@@ -204,7 +204,7 @@ class utf8string(basestring):
         "Return the item at the normalised (positive) 'index'."
     
         self._check_index(index)
-        return utf8string(unicode_substr(self.__data__, index, index + 1, 1), self.encoding)
+        return utf8string(unicode_substr(self.__data__, self.__size__, index, index + 1, 1), self.encoding)
 
     def __get_multiple_items__(self, start, end, step):
 

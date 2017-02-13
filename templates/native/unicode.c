@@ -72,11 +72,14 @@ static unsigned int prevpos(char *s, unsigned int bytestart)
 __attr __fn_native_unicode_unicode_len(__attr __args[])
 {
     __attr * const _data = &__args[1];
+    __attr * const _size = &__args[2];
     /* _data interpreted as string */
     char *s = _data->strvalue;
+    /* _size interpreted as int */
+    int size = _size->intvalue;
     unsigned int i, c = 0;
 
-    for (i = 0; s[i] != 0; i++)
+    for (i = 0; i < size; i++)
         if (boundary(s[i]))
             c++;
 
@@ -87,11 +90,14 @@ __attr __fn_native_unicode_unicode_len(__attr __args[])
 __attr __fn_native_unicode_unicode_ord(__attr __args[])
 {
     __attr * const _data = &__args[1];
+    __attr * const _size = &__args[2];
     /* _data interpreted as string */
     char *s = _data->strvalue;
+    /* _size interpreted as int */
+    int size = _size->intvalue;
     unsigned int i, c = 0, v;
 
-    for (i = 0; s[i] != 0; i++)
+    for (i = 0; i < size; i++)
     {
         /* Evaluate the current character as a boundary. */
 
@@ -120,11 +126,14 @@ __attr __fn_native_unicode_unicode_ord(__attr __args[])
 __attr __fn_native_unicode_unicode_substr(__attr __args[])
 {
     __attr * const _data = &__args[1];
-    __attr * const start = &__args[2];
-    __attr * const end = &__args[3];
-    __attr * const step = &__args[4];
+    __attr * const _size = &__args[2];
+    __attr * const start = &__args[3];
+    __attr * const end = &__args[4];
+    __attr * const step = &__args[5];
     /* _data interpreted as string */
     char *s = _data->strvalue, *sub;
+    /* _size interpreted as int */
+    int ss = _size->intvalue;
     /* start.__data__ interpreted as int */
     int istart = __load_via_object(start->value, __pos___data__).intvalue;
     /* end.__data__ interpreted as int */
@@ -137,7 +146,7 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
     unsigned int indexes[nchar];
 
     unsigned int c, d, i, to, from, lastbyte = 0;
-    size_t resultsize = 0, ss = strlen(_data->strvalue);
+    int resultsize = 0;
 
     /* Find the indexes of the characters. */
     if (istep > 0)
@@ -190,7 +199,7 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
         } while (!boundary(s[from]));
     }
 
-    return __new_str(sub);
+    return __new_str(sub, resultsize);
 }
 
 /* Module initialisation. */
