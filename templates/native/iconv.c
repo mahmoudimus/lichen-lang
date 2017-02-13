@@ -156,7 +156,6 @@ __attr __fn_native_iconv_iconv_open(__attr __args[])
 
     /* Return the descriptor as an opaque value. */
 
-    attr.context = 0;
     attr.datavalue = (void *) result;
     return attr;
 }

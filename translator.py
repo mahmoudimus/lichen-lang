@@ -142,7 +142,7 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
         elif static_name:
             parent = ref.parent()
             context = ref.has_kind("<function>") and encode_path(parent) or None
-            return "((__attr) {{.context=%s, .value=&%s}})" % (context and "&%s" % context or "0", static_name)
+            return "((__attr) {.value=&%s})" % static_name
 
         # Qualified names must be converted into parent-relative accesses.
 
@@ -875,7 +875,7 @@ class TranslatedModule(CommonModule):
 
         if not ref.static():
             self.process_assignment_for_object(
-                n.name, make_expression("((__attr) {{.context=0, .value=&%s}})" %
+                n.name, make_expression("((__attr) {.value=&%s})" %
                     encode_path(class_name)))
 
         self.enter_namespace(n.name)
@@ -1054,9 +1054,7 @@ class TranslatedModule(CommonModule):
             context = self.is_method(objpath)
 
             self.process_assignment_for_object(original_name,
-                make_expression("((__attr) {{.context=%s, .value=&%s}})" % (
-                    context and "&%s" % encode_path(context) or "0",
-                    encode_path(objpath))))
+                make_expression("((__attr) {.value=&%s})" % encode_path(objpath)))
 
     def process_function_defaults(self, n, name, objpath, instance_name=None):
 
@@ -1349,7 +1347,8 @@ class TranslatedModule(CommonModule):
             self.record_temp("__tmp_targets")
 
             if context_required:
-                stages.append("__get_function(__tmp_targets[%d])" % self.function_target)
+                stages.append("__get_function(__CONTEXT_AS_VALUE(__tmp_targets[%d]).value, __tmp_targets[%d])" % (
+                    self.function_target, self.function_target))
             else:
                 stages.append("__load_via_object(__tmp_targets[%d].value, %s).fn" % (
                     self.function_target, encode_symbol("pos", "__fn__")))
@@ -1414,14 +1413,14 @@ class TranslatedModule(CommonModule):
         # Without defaults, produce an attribute referring to the function.
 
         if not defaults:
-            return make_expression("((__attr) {{.context=0, .value=&%s}})" % encode_path(function_name))
+            return make_expression("((__attr) {.value=&%s})" % encode_path(function_name))
 
         # With defaults, copy the function structure and set the defaults on the
         # copy.
 
         else:
             self.record_temp("__tmp_value")
-            return make_expression("(__tmp_value = __COPY(&%s, sizeof(%s)), %s, (__attr) {{.context=0, .value=__tmp_value}})" % (
+            return make_expression("(__tmp_value = __COPY(&%s, sizeof(%s)), %s, (__attr) {.value=__tmp_value})" % (
                 encode_path(function_name),
                 encode_symbol("obj", function_name),
                 ", ".join(defaults)))

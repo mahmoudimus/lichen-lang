@@ -86,6 +86,7 @@ class function:
         self.__args__ = None
         self.__name__ = None
         self.__parent__ = None
+        self.__context__ = None
 
     def __bool__(self):
 
@@ -121,6 +122,17 @@ class type:
         return str(buffer([self.__parent__, ".", self.__name__]))
 
     __repr__ = __str__
+
+class wrapper:
+
+    "A special method wrapper."
+
+    def __init__(self, context, value):
+
+        "Initialise a wrapper with the given 'context' and wrapped 'value'."
+
+        self.__context__ = context
+        self.__value__ = value
 
 class Exception:
 

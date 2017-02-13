@@ -30,11 +30,14 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __new(const __table * table, __ref cls, size_t size)
 {
     __ref obj = (__ref) __ALLOCATE(1, size);
-    __attr self = {.context=obj, .value=obj};
-    __attr tmp = {.context=0, .value=cls};
     obj->table = table;
-    __store_via_object(obj, __ATTRPOS(__class__), tmp);
-    return self;
+    __store_via_object(obj, __ATTRPOS(__class__), (__attr) {.value=cls});
+    return (__attr) {.value=obj};
+}
+
+__attr __new_wrapper(__ref context, __attr attr)
+{
+    return __new___builtins___core_wrapper((__attr[]) {__NULL, {.value=context}, attr});
 }
 
 /* Generic internal data allocation. */
@@ -181,9 +184,13 @@ __attr __invoke(__attr callable, int always_callable,
                 unsigned int nkwargs, __param kwcodes[], __attr kwargs[],
                 unsigned int nargs, __attr args[])
 {
+    /* Unwrap any wrapped function. */
+
+    __attr target = __unwrap_callable(callable);
+
     /* Obtain the __args__ special member, referencing the parameter table. */
 
-    __attr minparams = __check_and_load_via_object(callable.value, __ATTRPOS(__args__), __ATTRCODE(__args__));
+    __attr minparams = __check_and_load_via_object(target.value, __ATTRPOS(__args__), __ATTRCODE(__args__));
 
     /* Refer to the table and minimum/maximum. */
 
@@ -240,12 +247,12 @@ __attr __invoke(__attr callable, int always_callable,
     for (pos = nargs; pos < max; pos++)
     {
         if (allargs[pos].value == 0)
-            allargs[pos] = __GETDEFAULT(callable.value, pos - min);
+            allargs[pos] = __GETDEFAULT(target.value, pos - min);
     }
 
     /* Call with the prepared arguments. */
 
-    return (always_callable ? __get_function(callable) : __check_and_get_function(callable))(allargs);
+    return (always_callable ? __get_function(allargs[0].value, target) : __check_and_get_function(allargs[0].value, target))(allargs);
 }
 
 /* Error routines. */

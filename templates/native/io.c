@@ -80,7 +80,6 @@ __attr __fn_native_io_fopen(__attr __args[])
 
     else
     {
-        attr.context = 0;
         attr.datavalue = (void *) f;
         return attr;
     }
@@ -113,7 +112,6 @@ __attr __fn_native_io_fdopen(__attr __args[])
 
     else
     {
-        attr.context = 0;
         attr.datavalue = (void *) f;
         return attr;
     }

@@ -510,16 +510,21 @@ class Optimiser:
                 emit(("__store_via_object", parent, attrname, "<assexpr>"))
 
             elif final_method in ("static", "static-invoke"):
-                parent, attrname = origin.rsplit(".", 1)
-                accessor = ("__load_static", parent, origin)
+                accessor = ("__load_static_ignore", origin)
 
             # Wrap accesses in context operations.
 
             if context_test == "test":
-                emit(("__test_context", context_var, accessor))
+                if final_method in ("static", "static-invoke"):
+                    emit(("__load_static_test", context_var, origin))
+                else:
+                    emit(("__test_context", context_var, accessor))
 
             elif context_test == "replace":
-                emit(("__update_context", context_var, accessor))
+                if final_method in ("static", "static-invoke"):
+                    emit(("__load_static_replace", context_var, origin))
+                else:
+                    emit(("__update_context", context_var, accessor))
 
             elif final_method not in ("assign", "static-assign"):
                 emit(accessor)

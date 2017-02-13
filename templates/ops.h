@@ -24,7 +24,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Direct access and manipulation of static objects. */
 
-__attr __load_static(__ref parent, __ref obj);
+__attr __load_static_ignore(__ref obj);
+__attr __load_static_replace(__ref context, __ref obj);
+__attr __load_static_test(__ref context, __ref obj);
 
 /* Direct retrieval operations, returning attributes. */
 
@@ -77,8 +79,9 @@ __attr __update_context(__ref context, __attr attr);
 
 /* Context testing for invocations. */
 
-__attr (*__get_function(__attr attr))(__attr[]);
-__attr (*__check_and_get_function(__attr attr))(__attr[]);
+__attr __unwrap_callable(__attr callable);
+__attr (*__get_function(__ref context, __attr target))(__attr[]);
+__attr (*__check_and_get_function(__ref context, __attr target))(__attr[]);
 
 /* Basic structure tests. */
 

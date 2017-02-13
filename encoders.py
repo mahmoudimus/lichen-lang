@@ -207,7 +207,7 @@ type_ops = (
     )
 
 static_ops = (
-    "__load_static",
+    "__load_static_ignore", "__load_static_replace", "__load_static_test",
     )
 
 reference_acting_ops = attribute_ops + checked_ops + typename_ops
@@ -274,8 +274,7 @@ def encode_access_instruction(instruction, subs):
         # Obtain addresses of static objects.
 
         elif op in static_ops:
-            a[0] = "&%s" % a[0]
-            a[1] = "&%s" % a[1]
+            a[-1] = "&%s" % a[-1]
 
         argstr = "(%s)" % ", ".join(map(str, a))
 

@@ -533,7 +533,7 @@ class Generator(CommonOutput):
         # Define a macro for the constant.
 
         attr_name = encode_path(const_path)
-        print >>f_decls, "#define %s ((__attr) {{.context=&%s, .value=&%s}})" % (attr_name, structure_name, structure_name)
+        print >>f_decls, "#define %s ((__attr) {.value=&%s})" % (attr_name, structure_name)
 
     def make_parameter_table(self, f_decls, f_defs, parameters):
 
@@ -874,16 +874,10 @@ __obj %s = {
 
                     if kind == "<class>":
                         attr = encode_instantiator_pointer(attr)
-                        unbound_attr = attr
-
-                    # Provide bound method and unbound function pointers if
-                    # populating methods in a class.
-
                     else:
                         attr = encode_function_pointer(attr)
-                        unbound_attr = "__unbound_method"
 
-                    structure.append("{{.inv=%s, .fn=%s}}" % (unbound_attr, attr))
+                    structure.append("{.fn=%s}" % attr)
                     continue
 
                 # Special argument specification member.
@@ -892,7 +886,7 @@ __obj %s = {
                     signature = self.get_signature_for_callable(ref.get_origin())
                     ptable = encode_tablename("<function>", signature)
 
-                    structure.append("{{.min=%s, .ptable=&%s}}" % (attr, ptable))
+                    structure.append("{.min=%s, .ptable=&%s}" % (attr, ptable))
                     continue
 
                 # Special internal data member.
@@ -906,8 +900,8 @@ __obj %s = {
                 # Special internal key member.
 
                 elif attrname == "__key__":
-                    structure.append("{{.code=%s, .pos=%s}}" % (attr and encode_symbol("code", attr) or "0",
-                                                                attr and encode_symbol("pos", attr) or "0"))
+                    structure.append("{.code=%s, .pos=%s}" % (attr and encode_symbol("code", attr) or "0",
+                                                              attr and encode_symbol("pos", attr) or "0"))
                     continue
 
                 # Special cases.
@@ -950,13 +944,33 @@ __obj %s = {
                     # object paths.
 
                     value = path.rsplit(".", 1)[0]
-                    structure.append("{{.context=0, .value=&%s}}" % encode_path(value))
+                    structure.append("{.value=&%s}" % encode_path(value))
+                    continue
+
+                # Special context member.
+                # Set the context depending on the kind of attribute.
+                # For methods:          <parent>
+                # For other attributes: __NULL
+
+                elif attrname == "__context__":
+                    path = ref.get_origin()
+
+                    # Contexts of methods are derived from their object paths.
+
+                    context = "0"
+
+                    if ref.get_kind() == "<function>":
+                        parent = path.rsplit(".", 1)[0]
+                        if self.importer.classes.has_key(parent):
+                            context = "&%s" % encode_path(parent)
+
+                    structure.append("{.value=%s}" % context)
                     continue
 
                 # Special class relationship attributes.
 
                 elif is_type_attribute(attrname):
-                    structure.append("{{.context=0, .value=&%s}}" % encode_path(decode_type_attribute(attrname)))
+                    structure.append("{.value=&%s}" % encode_path(decode_type_attribute(attrname)))
                     continue
 
                 # All other kinds of members.
@@ -995,33 +1009,22 @@ __obj %s = {
 
         if kind == "<instance>" and origin == self.none_type:
             attr_path = encode_predefined_reference(self.none_value)
-            return "{{.context=&%s, .value=&%s}} /* %s */" % (attr_path, attr_path, name)
+            return "{.value=&%s} /* %s */" % (attr_path, name)
 
         # Predefined constant members.
 
         if (path, name) in self.predefined_constant_members:
             attr_path = encode_predefined_reference("%s.%s" % (path, name))
-            return "{{.context=&%s, .value=&%s}} /* %s */" % (attr_path, attr_path, name)
+            return "{.value=&%s} /* %s */" % (attr_path, name)
 
         # General undetermined members.
 
         if kind in ("<var>", "<instance>"):
             attr_path = encode_predefined_reference(self.none_value)
-            return "{{.context=&%s, .value=&%s}} /* %s */" % (attr_path, attr_path, name)
-
-        # Set the context depending on the kind of attribute.
-        # For methods:          {&<parent>, &<attr>}
-        # For other attributes: {&<attr>, &<attr>}
+            return "{.value=&%s} /* %s */" % (attr_path, name)
 
         else:
-            if kind == "<function>" and structure_type == "<class>":
-                parent = origin.rsplit(".", 1)[0]
-                context = "&%s" % encode_path(parent)
-            elif kind == "<instance>":
-                context = "&%s" % encode_path(origin)
-            else:
-                context = "0"
-            return "{{.context=%s, .value=&%s}}" % (context, encode_path(origin))
+            return "{.value=&%s}" % encode_path(origin)
 
     def append_defaults(self, path, structure):
 
@@ -1129,7 +1132,7 @@ int main(int argc, char *argv[])
     }
     __Catch(__tmp_exc)
     {
-        if (__ISINSTANCE(__tmp_exc.arg, ((__attr) {{.context=0, .value=&__builtins___exception_system_SystemExit}})))
+        if (__ISINSTANCE(__tmp_exc.arg, ((__attr) {.value=&__builtins___exception_system_SystemExit})))
             return __load_via_object(
                 __load_via_object(__tmp_exc.arg.value, %s).value,
                 %s).intvalue;
