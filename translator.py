@@ -1146,7 +1146,21 @@ class TranslatedModule(CommonModule):
 
         "Process the given invocation node 'n'."
 
+        # Any invocations in the expression will store target details in a
+        # different location.
+
+        self.function_target += 1
+
+        # Process the expression.
+
         expr = self.process_structure_node(n.node)
+
+        # Reference the current target again.
+
+        self.function_target -= 1
+
+        # Obtain details of the invocation expression.
+
         objpath = expr.get_origin()
         location = expr.access_location()
 
