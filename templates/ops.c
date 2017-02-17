@@ -21,7 +21,6 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "progops.h" /* for raising errors */
 #include "progconsts.h"
 #include "progtypes.h"
-#include <stdio.h>
 
 /* Direct access and manipulation of static objects. */
 
