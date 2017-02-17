@@ -466,8 +466,12 @@ class Optimiser:
                     # Set the context, if appropriate.
 
                     if remaining == 1 and final_method != "assign" and context == "final-accessor":
-                        emit(("<set_context>", accessor))
-                        accessor = context_var = "<context>"
+                        if final_method in ("access-invoke", "static-invoke"):
+                            emit(("<set_context>", accessor))
+                            accessor = context_var = "<context>"
+                        else:
+                            emit(("<set_private_context>", accessor))
+                            accessor = context_var = "<private_context>"
 
                     # Perform the access only if not achieved directly.
 
@@ -493,8 +497,12 @@ class Optimiser:
                     # Set the context, if appropriate.
 
                     if remaining == 1 and final_method != "assign" and context == "final-accessor":
-                        emit(("<set_context>", accessor))
-                        accessor = context_var = "<context>"
+                        if final_method in ("access-invoke", "static-invoke"):
+                            emit(("<set_context>", accessor))
+                            accessor = context_var = "<context>"
+                        else:
+                            emit(("<set_private_context>", accessor))
+                            accessor = context_var = "<private_context>"
 
                     # Perform the access only if not achieved directly.
 

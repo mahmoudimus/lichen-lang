@@ -741,6 +741,8 @@ class TranslatedModule(CommonModule):
         temp_subs = {
             "<context>" : "__tmp_contexts",
             "<set_context>" : "__tmp_contexts",
+            "<private_context>" : "__tmp_private_context",
+            "<set_private_context>" : "__tmp_private_context",
             "<accessor>" : "__tmp_value",
             "<target_accessor>" : "__tmp_target_value",
             "<set_accessor>" : "__tmp_value",
@@ -750,6 +752,7 @@ class TranslatedModule(CommonModule):
         op_subs = {
             "<context>" : "__get_context",
             "<set_context>" : "__set_context",
+            "<set_private_context>" : "__set_private_context",
             "<set_accessor>" : "__set_accessor",
             "<set_target_accessor>" : "__set_target_accessor",
             }
@@ -1374,11 +1377,11 @@ class TranslatedModule(CommonModule):
         # Methods accessed via unidentified accessors are obtained. 
 
         elif function:
-            self.record_temp("__tmp_contexts")
             self.record_temp("__tmp_targets")
 
             if context_required:
                 if have_access_context:
+                    self.record_temp("__tmp_contexts")
                     stages.append("__get_function(__tmp_contexts[%d], __tmp_targets[%d])" % (
                         self.function_target, self.function_target))
                 else:
@@ -1942,6 +1945,8 @@ class TranslatedModule(CommonModule):
 
         # Add temporary variable usage details.
 
+        if self.uses_temp(name, "__tmp_private_context"):
+            self.writeline("__ref __tmp_private_context;")
         if self.uses_temp(name, "__tmp_value"):
             self.writeline("__ref __tmp_value;")
         if self.uses_temp(name, "__tmp_target_value"):
