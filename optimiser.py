@@ -535,15 +535,24 @@ class Optimiser:
                 if final_method == "static":
                     emit(("__load_static_replace", context_var, origin))
 
+                # Omit the context update operation where the target is static
+                # and the context is recorded separately.
+
+                elif final_method == "static-invoke":
+                    pass
+
                 # Only update any context if no separate context is used.
 
-                elif final_method not in ("access-invoke", "static-invoke"):
+                elif final_method != "access-invoke":
                     emit(("__update_context", context_var, accessor))
 
                 else:
                     emit(accessor)
 
-            elif final_method not in ("assign", "static-assign"):
+            # Omit the accessor for assignments and for invocations of static
+            # targets.
+
+            elif final_method not in ("assign", "static-assign", "static-invoke"):
                 emit(accessor)
 
             self.access_instructions[access_location] = instructions

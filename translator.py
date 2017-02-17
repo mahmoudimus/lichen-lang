@@ -1339,8 +1339,11 @@ class TranslatedModule(CommonModule):
         # Without a known specific callable, the expression provides the target.
 
         if not target or context_required:
-            self.record_temp("__tmp_targets")
-            stages.append("__tmp_targets[%d] = %s" % (self.function_target, expr))
+            if target:
+                stages.append(str(expr))
+            else:
+                self.record_temp("__tmp_targets")
+                stages.append("__tmp_targets[%d] = %s" % (self.function_target, expr))
 
         # Any specific callable is then obtained.
 
