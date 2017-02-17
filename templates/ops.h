@@ -73,7 +73,8 @@ int __check_and_store_via_any(__ref obj, int pos, int code, __attr value);
 __attr __test_context(__ref context, __attr attr);
 __attr __update_context(__ref context, __attr attr);
 
-#define __set_context(__ATTR) (__tmp_context = (__ATTR).value)
+#define __get_context(__TARGET) (__tmp_contexts[__TARGET])
+#define __set_context(__TARGET, __ATTR) (__tmp_contexts[__TARGET] = (__ATTR).value)
 #define __set_accessor(__ATTR) (__tmp_value = (__ATTR).value)
 #define __set_target_accessor(__ATTR) (__tmp_target_value = (__ATTR).value)
 

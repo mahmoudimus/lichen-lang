@@ -210,10 +210,18 @@ static_ops = (
     "__load_static_ignore", "__load_static_replace", "__load_static_test",
     )
 
+context_values = (
+    "<context>",
+    )
+
+context_ops = (
+    "<context>", "<set_context>",
+    )
+
 reference_acting_ops = attribute_ops + checked_ops + typename_ops
 attribute_producing_ops = attribute_loading_ops + checked_loading_ops
 
-def encode_access_instruction(instruction, subs):
+def encode_access_instruction(instruction, subs, context_index):
 
     """
     Encode the 'instruction' - a sequence starting with an operation and
@@ -223,6 +231,9 @@ def encode_access_instruction(instruction, subs):
     The 'subs' parameter defines a mapping of substitutions for special values
     used in instructions.
 
+    The 'context_index' parameter defines the position in local context storage
+    for the referenced context or affected by a context operation.
+
     Return both the encoded instruction and a collection of substituted names.
     """
 
@@ -230,53 +241,60 @@ def encode_access_instruction(instruction, subs):
     args = instruction[1:]
     substituted = set()
 
-    if not args:
-        argstr = ""
+    # Encode the arguments.
 
-    else:
-        # Encode the arguments.
-
-        a = []
+    a = []
+    if args:
         converting_op = op
         for arg in args:
-            s, _substituted = encode_access_instruction_arg(arg, subs, converting_op)
+            s, _substituted = encode_access_instruction_arg(arg, subs, converting_op, context_index)
             substituted.update(_substituted)
             a.append(s)
             converting_op = None
 
-        # Modify certain arguments.
+    # Modify certain arguments.
 
-        # Convert attribute name arguments to position symbols.
+    # Convert attribute name arguments to position symbols.
 
-        if op in attribute_ops:
-            arg = a[1]
-            a[1] = encode_symbol("pos", arg)
+    if op in attribute_ops:
+        arg = a[1]
+        a[1] = encode_symbol("pos", arg)
 
-        # Convert attribute name arguments to position and code symbols.
+    # Convert attribute name arguments to position and code symbols.
 
-        elif op in checked_ops:
-            arg = a[1]
-            a[1] = encode_symbol("pos", arg)
-            a.insert(2, encode_symbol("code", arg))
+    elif op in checked_ops:
+        arg = a[1]
+        a[1] = encode_symbol("pos", arg)
+        a.insert(2, encode_symbol("code", arg))
 
-        # Convert type name arguments to position and code symbols.
+    # Convert type name arguments to position and code symbols.
 
-        elif op in typename_ops:
-            arg = encode_type_attribute(args[1])
-            a[1] = encode_symbol("pos", arg)
-            a.insert(2, encode_symbol("code", arg))
+    elif op in typename_ops:
+        arg = encode_type_attribute(args[1])
+        a[1] = encode_symbol("pos", arg)
+        a.insert(2, encode_symbol("code", arg))
 
-        # Obtain addresses of type arguments.
+    # Obtain addresses of type arguments.
 
-        elif op in type_ops:
-            a[1] = "&%s" % a[1]
+    elif op in type_ops:
+        a[1] = "&%s" % a[1]
 
-        # Obtain addresses of static objects.
+    # Obtain addresses of static objects.
 
-        elif op in static_ops:
-            a[-1] = "&%s" % a[-1]
+    elif op in static_ops:
+        a[-1] = "&%s" % a[-1]
 
+    # Add context storage information to certain operations.
+
+    elif op in context_ops:
+        a.insert(0, context_index)
+
+    # Define any argument string.
+
+    if a:
         argstr = "(%s)" % ", ".join(map(str, a))
+    else:
+        argstr = ""
 
     # Substitute the first element of the instruction, which may not be an
     # operation at all.
@@ -300,16 +318,19 @@ def encode_access_instruction(instruction, subs):
 
     return "%s%s" % (op, argstr), substituted
 
-def encode_access_instruction_arg(arg, subs, op):
+def encode_access_instruction_arg(arg, subs, op, context_index):
 
     """
-    Encode 'arg' using 'subs' to define substitutions, returning a tuple
-    containing the encoded form of 'arg' along with a collection of any
-    substituted values.
+    Encode 'arg' using 'subs' to define substitutions, 'op' to indicate the
+    operation to which the argument belongs, and 'context_index' to indicate any
+    affected context storage.
+
+    Return a tuple containing the encoded form of 'arg' along with a collection
+    of any substituted values.
     """
 
     if isinstance(arg, tuple):
-        encoded, substituted = encode_access_instruction(arg, subs)
+        encoded, substituted = encode_access_instruction(arg, subs, context_index)
 
         # Convert attribute results to references where required.
 
@@ -321,7 +342,13 @@ def encode_access_instruction_arg(arg, subs, op):
     # Special values only need replacing, not encoding.
 
     elif subs.has_key(arg):
-        return subs.get(arg), set([arg])
+
+        # Handle values modified by storage details.
+
+        if arg in context_values:
+            return "%s(%s)" % (subs.get(arg), context_index), set([arg])
+        else:
+            return subs.get(arg), set([arg])
 
     # Convert static references to the appropriate type.
 

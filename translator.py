@@ -739,8 +739,8 @@ class TranslatedModule(CommonModule):
             }
 
         temp_subs = {
-            "<context>" : "__tmp_context",
-            "<set_context>" : "__tmp_context",
+            "<context>" : "__tmp_contexts",
+            "<set_context>" : "__tmp_contexts",
             "<accessor>" : "__tmp_value",
             "<target_accessor>" : "__tmp_target_value",
             "<set_accessor>" : "__tmp_value",
@@ -748,6 +748,7 @@ class TranslatedModule(CommonModule):
             }
 
         op_subs = {
+            "<context>" : "__get_context",
             "<set_context>" : "__set_context",
             "<set_accessor>" : "__set_accessor",
             "<set_target_accessor>" : "__set_target_accessor",
@@ -759,11 +760,16 @@ class TranslatedModule(CommonModule):
         output = []
         substituted = set()
 
+        # The context set or retrieved will be that used by any enclosing
+        # invocation.
+
+        context_index = self.function_target - 1
+
         # Obtain encoded versions of each instruction, accumulating temporary
         # variables.
 
         for instruction in self.optimiser.access_instructions[location]:
-            encoded, _substituted = encode_access_instruction(instruction, subs)
+            encoded, _substituted = encode_access_instruction(instruction, subs, context_index)
             output.append(encoded)
             substituted.update(_substituted)
 
@@ -1253,7 +1259,8 @@ class TranslatedModule(CommonModule):
 
         if context_required:
             if have_access_context:
-                args = ["(__attr) {.value=__tmp_context}"]
+                self.record_temp("__tmp_contexts")
+                args = ["(__attr) {.value=__tmp_contexts[%d]}" % self.function_target]
             else:
                 self.record_temp("__tmp_targets")
                 args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
@@ -1367,12 +1374,13 @@ class TranslatedModule(CommonModule):
         # Methods accessed via unidentified accessors are obtained. 
 
         elif function:
+            self.record_temp("__tmp_contexts")
             self.record_temp("__tmp_targets")
 
             if context_required:
                 if have_access_context:
-                    stages.append("__get_function(__tmp_context, __tmp_targets[%d])" % (
-                        self.function_target))
+                    stages.append("__get_function(__tmp_contexts[%d], __tmp_targets[%d])" % (
+                        self.function_target, self.function_target))
                 else:
                     stages.append("__get_function(__CONTEXT_AS_VALUE(__tmp_targets[%d]).value, __tmp_targets[%d])" % (
                         self.function_target, self.function_target))
@@ -1925,14 +1933,15 @@ class TranslatedModule(CommonModule):
 
         # Provide space for the given number of targets.
 
+        targets = self.importer.function_targets.get(name)
+
         if self.uses_temp(name, "__tmp_targets"):
-            targets = self.importer.function_targets.get(name)
             self.writeline("__attr __tmp_targets[%d];" % targets)
+        if self.uses_temp(name, "__tmp_contexts"):
+            self.writeline("__ref __tmp_contexts[%d];" % targets)
 
         # Add temporary variable usage details.
 
-        if self.uses_temp(name, "__tmp_context"):
-            self.writeline("__ref __tmp_context;")
         if self.uses_temp(name, "__tmp_value"):
             self.writeline("__ref __tmp_value;")
         if self.uses_temp(name, "__tmp_target_value"):
