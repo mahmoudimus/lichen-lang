@@ -331,6 +331,10 @@ class TranslatedModule(CommonModule):
 
         self.temp_usage = {}
 
+        # Initialise some data used for attribute access generation.
+
+        self.init_substitutions()
+
     def __repr__(self):
         return "TranslatedModule(%r, %r)" % (self.name, self.importer)
 
@@ -738,27 +742,8 @@ class TranslatedModule(CommonModule):
             "<assexpr>" : self.in_assignment,
             }
 
-        temp_subs = {
-            "<context>" : "__tmp_contexts",
-            "<set_context>" : "__tmp_contexts",
-            "<private_context>" : "__tmp_private_context",
-            "<set_private_context>" : "__tmp_private_context",
-            "<accessor>" : "__tmp_value",
-            "<target_accessor>" : "__tmp_target_value",
-            "<set_accessor>" : "__tmp_value",
-            "<set_target_accessor>" : "__tmp_target_value",
-            }
-
-        op_subs = {
-            "<context>" : "__get_context",
-            "<set_context>" : "__set_context",
-            "<set_private_context>" : "__set_private_context",
-            "<set_accessor>" : "__set_accessor",
-            "<set_target_accessor>" : "__set_target_accessor",
-            }
-
-        subs.update(temp_subs)
-        subs.update(op_subs)
+        subs.update(self.temp_subs)
+        subs.update(self.op_subs)
 
         output = []
         substituted = set()
@@ -779,11 +764,44 @@ class TranslatedModule(CommonModule):
         # Record temporary name usage.
 
         for sub in substituted:
-            if temp_subs.has_key(sub):
-                self.record_temp(temp_subs[sub])
+            if self.temp_subs.has_key(sub):
+                self.record_temp(self.temp_subs[sub])
 
         del self.attrs[0]
         return AttrResult(output, refs, location)
+
+    def init_substitutions(self):
+
+        """
+        Initialise substitutions, defining temporary variable mappings, some of
+        which are also used as substitutions, together with operation mappings
+        used as substitutions in instructions defined by the optimiser.
+        """
+
+        self.temp_subs = {
+
+            # Substitutions used by instructions.
+
+            "<private_context>" : "__tmp_private_context",
+            "<accessor>" : "__tmp_value",
+            "<target_accessor>" : "__tmp_target_value",
+
+            # Mappings to be replaced by those given below.
+
+            "<context>" : "__tmp_contexts",
+            "<set_context>" : "__tmp_contexts",
+            "<set_private_context>" : "__tmp_private_context",
+            "<set_accessor>" : "__tmp_value",
+            "<set_target_accessor>" : "__tmp_target_value",
+            }
+
+        self.op_subs = {
+            "<context>" : "__get_context",
+            "<set_context>" : "__set_context",
+            "<set_private_context>" : "__set_private_context",
+            "<set_accessor>" : "__set_accessor",
+            "<set_target_accessor>" : "__set_target_accessor",
+            }
 
     def get_referenced_attributes(self, location):
 
