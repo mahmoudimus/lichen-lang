@@ -198,14 +198,16 @@ int __check_and_store_via_any(__ref obj, int pos, int code, __attr value)
 
 /* Context-related operations. */
 
-__attr __test_context(__ref context, __attr attr)
+int __test_context_update(__ref context, __attr attr)
 {
+    /* Return whether the context should be updated for the attribute. */
+
     __ref attrcontext = __CONTEXT_AS_VALUE(attr).value;
 
     /* Preserve any existing null or instance context. */
 
     if ((attrcontext == 0) || __is_instance(attrcontext))
-        return attr;
+        return 0;
 
     /* Test any instance context against the context employed by the
        attribute. */
@@ -213,7 +215,7 @@ __attr __test_context(__ref context, __attr attr)
     if (__is_instance(context))
     {
         if (__test_common_instance(context, __TYPEPOS(attrcontext), __TYPECODE(attrcontext)))
-            return __update_context(context, attr);
+            return 1;
         else
             __raise_type_error();
     }
@@ -221,11 +223,21 @@ __attr __test_context(__ref context, __attr attr)
     /* Test for access to a type class attribute using a type instance. */
 
     if (__test_specific_type(attrcontext, &__TYPE_CLASS_TYPE) && __is_type_instance(context))
-        return __update_context(context, attr);
+        return 1;
 
     /* Otherwise, preserve the attribute as retrieved. */
 
-    return attr;
+    return 0;
+}
+
+__attr __test_context(__ref context, __attr attr)
+{
+    /* Update the context or return the unchanged attribute. */
+
+    if (__test_context_update(context, attr))
+        return __update_context(context, attr);
+    else
+        return attr;
 }
 
 __attr __update_context(__ref context, __attr attr)
