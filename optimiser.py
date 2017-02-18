@@ -351,8 +351,12 @@ class Optimiser:
                 first_method, final_method, \
                 origin, accessor_kinds = access_plan
 
+            # Emit instructions by appending them to a list.
+
             instructions = []
             emit = instructions.append
+
+            # Identify any static original accessor.
 
             if base:
                 original_accessor = base
@@ -466,9 +470,17 @@ class Optimiser:
                     # Set the context, if appropriate.
 
                     if remaining == 1 and final_method != "assign" and context == "final-accessor":
+
+                        # Invoked attributes employ a separate context accessed
+                        # during invocation.
+
                         if final_method in ("access-invoke", "static-invoke"):
                             emit(("<set_context>", accessor))
                             accessor = context_var = "<context>"
+
+                        # A private context within the access is otherwise
+                        # retained.
+
                         else:
                             emit(("<set_private_context>", accessor))
                             accessor = context_var = "<private_context>"
@@ -497,9 +509,17 @@ class Optimiser:
                     # Set the context, if appropriate.
 
                     if remaining == 1 and final_method != "assign" and context == "final-accessor":
+
+                        # Invoked attributes employ a separate context accessed
+                        # during invocation.
+
                         if final_method in ("access-invoke", "static-invoke"):
                             emit(("<set_context>", accessor))
                             accessor = context_var = "<context>"
+
+                        # A private context within the access is otherwise
+                        # retained.
+
                         else:
                             emit(("<set_private_context>", accessor))
                             accessor = context_var = "<private_context>"
@@ -531,12 +551,27 @@ class Optimiser:
             # Wrap accesses in context operations.
 
             if context_test == "test":
+
+                # Test and combine the context with static attribute details.
+
                 if final_method == "static":
                     emit(("__load_static_test", context_var, origin))
+
+                # Test the context, storing it separately if required for the
+                # immediately invoked static attribute.
+
                 elif final_method == "static-invoke":
                     emit(("<test_context_static>", context_var, origin))
+
+                # Test the context, storing it separately if required for an
+                # immediately invoked attribute.
+
                 elif final_method == "access-invoke":
                     emit(("<test_context>", context_var, accessor))
+
+                # Test the context and update the attribute details if
+                # appropriate.
+
                 else:
                     emit(("__test_context", context_var, accessor))
 
@@ -553,13 +588,16 @@ class Optimiser:
                 elif final_method == "static-invoke":
                     pass
 
-                # Only update any context if no separate context is used.
+                # If a separate context is used for an immediate invocation,
+                # produce the attribute details unchanged.
 
-                elif final_method != "access-invoke":
-                    emit(("__update_context", context_var, accessor))
+                elif final_method == "access-invoke":
+                    emit(accessor)
+
+                # Update the context in the attribute details.
 
                 else:
-                    emit(accessor)
+                    emit(("__update_context", context_var, accessor))
 
             # Omit the accessor for assignments and for invocations of static
             # targets.
