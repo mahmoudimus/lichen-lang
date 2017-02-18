@@ -207,7 +207,7 @@ type_ops = (
     )
 
 static_ops = (
-    "__load_static_ignore", "__load_static_replace", "__load_static_test",
+    "__load_static_ignore", "__load_static_replace", "__load_static_test", "<test_context_static>",
     )
 
 context_values = (
@@ -215,7 +215,7 @@ context_values = (
     )
 
 context_ops = (
-    "<context>", "<set_context>", "<test_context>",
+    "<context>", "<set_context>", "<test_context>", "<test_context_static>",
     )
 
 reference_acting_ops = attribute_ops + checked_ops + typename_ops
@@ -286,7 +286,7 @@ def encode_access_instruction(instruction, subs, context_index):
 
     # Add context storage information to certain operations.
 
-    elif op in context_ops:
+    if op in context_ops:
         a.insert(0, context_index)
 
     # Define any argument string.

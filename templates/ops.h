@@ -77,6 +77,10 @@ __attr __update_context(__ref context, __attr attr);
 #define __test_context_set(__TARGET, __CONTEXT, __ATTR) \
         (__test_context_update(__CONTEXT, __ATTR) ? (__set_context(__TARGET, (__attr) {.value=__CONTEXT}), __ATTR) : __ATTR)
 
+#define __test_context_static(__TARGET, __CONTEXT, __REF) \
+        (__test_context_update(__CONTEXT, (__attr) {.value=__REF}) ? \
+         (__set_context(__TARGET, (__attr) {.value=__CONTEXT}), (__attr) {.value=__REF}) : (__attr) {.value=__REF})
+
 #define __get_context(__TARGET) (__tmp_contexts[__TARGET])
 #define __set_context(__TARGET, __ATTR) (__tmp_contexts[__TARGET] = (__ATTR).value)
 #define __set_private_context(__ATTR) (__tmp_private_context = (__ATTR).value)

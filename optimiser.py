@@ -531,8 +531,10 @@ class Optimiser:
             # Wrap accesses in context operations.
 
             if context_test == "test":
-                if final_method in ("static", "static-invoke"):
+                if final_method == "static":
                     emit(("__load_static_test", context_var, origin))
+                elif final_method == "static-invoke":
+                    emit(("<test_context_static>", context_var, origin))
                 elif final_method == "access-invoke":
                     emit(("<test_context>", context_var, accessor))
                 else:

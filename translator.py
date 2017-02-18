@@ -790,6 +790,7 @@ class TranslatedModule(CommonModule):
 
             "<context>" : "__tmp_contexts",
             "<test_context>" : "__tmp_contexts",
+            "<test_context_static>" : "__tmp_contexts",
             "<set_context>" : "__tmp_contexts",
             "<set_private_context>" : "__tmp_private_context",
             "<set_accessor>" : "__tmp_value",
@@ -799,6 +800,7 @@ class TranslatedModule(CommonModule):
         self.op_subs = {
             "<context>" : "__get_context",
             "<test_context>" : "__test_context_set",
+            "<test_context_static>" : "__test_context_static",
             "<set_context>" : "__set_context",
             "<set_private_context>" : "__set_private_context",
             "<set_accessor>" : "__set_accessor",
