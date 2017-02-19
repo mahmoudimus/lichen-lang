@@ -218,6 +218,10 @@ context_ops = (
     "<context>", "<set_context>", "<test_context_revert>", "<test_context_static>",
     )
 
+context_op_functions = (
+    "<test_context_revert>", "<test_context_static>",
+    )
+
 reference_acting_ops = attribute_ops + checked_ops + typename_ops
 attribute_producing_ops = attribute_loading_ops + checked_loading_ops
 
@@ -288,6 +292,11 @@ def encode_access_instruction(instruction, subs, context_index):
 
     if op in context_ops:
         a.insert(0, context_index)
+
+    # Add the local context array to certain operations.
+
+    if op in context_op_functions:
+        a.append("__tmp_contexts")
 
     # Define any argument string.
 

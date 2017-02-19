@@ -249,6 +249,25 @@ __attr __update_context(__ref context, __attr attr)
     return __new_wrapper(context, attr);
 }
 
+__attr __test_context_revert(int target, __ref context, __attr attr, __ref contexts[])
+{
+    /* Revert the local context to that employed by the attribute if the
+       supplied context is not appropriate. */
+
+    if (!__test_context_update(context, attr))
+        contexts[target] = __CONTEXT_AS_VALUE(attr).value;
+    return attr;
+}
+
+__attr __test_context_static(int target, __ref context, __ref value, __ref contexts[])
+{
+    /* Set the local context to the specified context if appropriate. */
+
+    if (__test_context_update(context, (__attr) {.value=value}))
+        contexts[target] = context;
+    return (__attr) {.value=value};
+}
+
 /* Context testing for invocations. */
 
 int __type_method_invocation(__ref context, __attr target)

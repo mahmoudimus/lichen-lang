@@ -73,21 +73,8 @@ int __check_and_store_via_any(__ref obj, int pos, int code, __attr value);
 int __test_context_update(__ref context, __attr attr);
 __attr __test_context(__ref context, __attr attr);
 __attr __update_context(__ref context, __attr attr);
-
-/* Revert the local context to that employed by the attribute if the supplied
-   context is not appropriate. */
-
-#define __test_context_revert(__TARGET, __CONTEXT, __ATTR) \
-        (__test_context_update(__CONTEXT, __ATTR) \
-         ? __ATTR \
-         : (__set_context(__TARGET, __CONTEXT_AS_VALUE(__ATTR)), __ATTR))
-
-/* Set the local context to the specified context if appropriate. */
-
-#define __test_context_static(__TARGET, __CONTEXT, __REF) \
-        (__test_context_update(__CONTEXT, (__attr) {.value=__REF}) \
-         ? (__set_context(__TARGET, (__attr) {.value=__CONTEXT}), (__attr) {.value=__REF}) \
-         : (__attr) {.value=__REF})
+__attr __test_context_revert(int target, __ref context, __attr attr, __ref contexts[]);
+__attr __test_context_static(int target, __ref context, __ref value, __ref contexts[]);
 
 #define __get_context(__TARGET) (__tmp_contexts[__TARGET])
 #define __set_context(__TARGET, __ATTR) (__tmp_contexts[__TARGET] = (__ATTR).value)
