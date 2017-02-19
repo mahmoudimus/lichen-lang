@@ -495,7 +495,7 @@ class CachedModule(BasicModule):
         f.readline() # "aliased names:"
         line = f.readline().rstrip()
         while line:
-            name, version, path, original_name, attrnames, number = self._get_fields(line, 5)
+            name, version, path, original_name, attrnames, number = self._get_fields(line, 6)
             init_item(self.aliased_names, name, dict)
             if number == "{}": number = None
             else: number = int(number)
