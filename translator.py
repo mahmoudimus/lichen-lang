@@ -91,8 +91,8 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
     "A reference to a name in the translation."
 
-    def __init__(self, name, ref, expr=None, parameter=None, location=None):
-        results.ResolvedNameRef.__init__(self, name, ref, expr)
+    def __init__(self, name, ref, expr=None, is_global=False, parameter=None, location=None):
+        results.ResolvedNameRef.__init__(self, name, ref, expr, is_global)
         self.parameter = parameter
         self.location = location
 
@@ -726,7 +726,7 @@ class TranslatedModule(CommonModule):
         # the complete access.
 
         name_ref = attr_expr and attr_expr.is_name() and attr_expr
-        name = name_ref and self.get_name_for_tracking(name_ref.name, name_ref and name_ref.reference()) or None
+        name = name_ref and self.get_name_for_tracking(name_ref.name, name_ref) or None
 
         location = self.get_access_location(name, self.attrs)
         refs = self.get_referenced_attributes(location)
@@ -1490,8 +1490,23 @@ class TranslatedModule(CommonModule):
         # Determine any assigned globals.
 
         globals = self.importer.get_module(self.name).scope_globals.get(path)
+
+        # Explicitly declared globals.
+
         if globals and n.name in globals:
             objpath = self.get_global_path(n.name)
+            is_global = True
+
+        # Implicitly referenced globals in functions.
+
+        elif self.in_function:
+            is_global = n.name not in self.importer.function_locals[path]
+
+        # Implicitly referenced globals elsewhere.
+
+        else:
+            namespace = self.importer.identify(path)
+            is_global = not self.importer.get_attributes(namespace, n.name)
 
         # Get the static identity of the name.
 
@@ -1520,7 +1535,7 @@ class TranslatedModule(CommonModule):
         # static namespace members. The reference should be configured to return
         # such names.
 
-        return TrResolvedNameRef(n.name, ref, expr=expr, parameter=parameter, location=location)
+        return TrResolvedNameRef(n.name, ref, expr=expr, is_global=is_global, parameter=parameter, location=location)
 
     def process_not_node(self, n):
 
