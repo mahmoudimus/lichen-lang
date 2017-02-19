@@ -495,11 +495,11 @@ class CachedModule(BasicModule):
         f.readline() # "aliased names:"
         line = f.readline().rstrip()
         while line:
-            name, version, original_name, attrnames, number = self._get_fields(line, 5)
+            name, version, path, original_name, attrnames, number = self._get_fields(line, 5)
             init_item(self.aliased_names, name, dict)
             if number == "{}": number = None
             else: number = int(number)
-            self.aliased_names[name][int(version)] = (original_name, attrnames != "{}" and attrnames or None, number)
+            self.aliased_names[name][int(version)] = (path, original_name, attrnames != "{}" and attrnames or None, number)
             line = f.readline().rstrip()
 
     def _get_function_parameters(self, f):
@@ -785,8 +785,8 @@ class CacheWritingModule:
                 versions = aliases.items()
                 versions.sort()
                 for version, alias in versions:
-                    original_name, attrnames, number = alias
-                    print >>f, name, version, original_name, attrnames or "{}", number is None and "{}" or number
+                    path, original_name, attrnames, number = alias
+                    print >>f, name, version, path, original_name, attrnames or "{}", number is None and "{}" or number
 
             print >>f
             print >>f, "function parameters:"

@@ -412,7 +412,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # if assigned in the namespace, or using an external name
             # (presently just globals within classes).
 
-            name = self.get_name_for_tracking(name_ref.name, name_ref.final())
+            name = self.get_name_for_tracking(name_ref.name, name_ref.reference())
             tracker = self.trackers[-1]
 
             immediate_access = len(self.attrs) == 1

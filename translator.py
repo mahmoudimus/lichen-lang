@@ -726,7 +726,7 @@ class TranslatedModule(CommonModule):
         # the complete access.
 
         name_ref = attr_expr and attr_expr.is_name() and attr_expr
-        name = name_ref and self.get_name_for_tracking(name_ref.name, name_ref and name_ref.final()) or None
+        name = name_ref and self.get_name_for_tracking(name_ref.name, name_ref and name_ref.reference()) or None
 
         location = self.get_access_location(name, self.attrs)
         refs = self.get_referenced_attributes(location)
