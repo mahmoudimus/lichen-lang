@@ -412,7 +412,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # if assigned in the namespace, or using an external name
             # (presently just globals within classes).
 
-            name = self.get_name_for_tracking(name_ref.name, name_ref.reference())
+            name = self.get_name_for_tracking(name_ref.name, name_ref)
             tracker = self.trackers[-1]
 
             immediate_access = len(self.attrs) == 1
@@ -420,10 +420,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
             # Record global-based chains for subsequent resolution.
 
-            is_global = self.in_function and not self.function_locals[path].has_key(name) or \
-                        not self.in_function
-
-            if is_global:
+            if name_ref.is_global_name():
                 self.record_global_access_details(name, attrnames)
 
             # Make sure the name is being tracked: global names will not
@@ -876,12 +873,12 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         ref = self.find_name(n.name)
         if ref:
-            return ResolvedNameRef(n.name, ref)
+            return ResolvedNameRef(n.name, ref, is_global=True)
 
         # Explicitly-declared global names.
 
         elif self.in_function and n.name in self.scope_globals[path]:
-            return NameRef(n.name)
+            return NameRef(n.name, is_global=True)
 
         # Examine other names.
 
@@ -902,7 +899,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Possible global or built-in name.
 
             else:
-                return NameRef(n.name)
+                return NameRef(n.name, is_global=True)
 
     def process_operator_chain(self, nodes, fn):
 

@@ -30,6 +30,9 @@ class Result:
     def is_name(self):
         return False
 
+    def is_global_name(self):
+        return False
+
     def reference(self):
         return None
 
@@ -90,25 +93,29 @@ class NameRef(Result):
 
     "A reference to a name."
 
-    def __init__(self, name, expr=None):
+    def __init__(self, name, expr=None, is_global=False):
         self.name = name
         self.expr = expr
+        self.is_global = is_global
 
     def is_name(self):
         return True
+
+    def is_global_name(self):
+        return self.is_global
 
     def final(self):
         return None
 
     def __repr__(self):
-        return "NameRef(%r, %r)" % (self.name, self.expr)
+        return "NameRef(%r, %r, %r)" % (self.name, self.expr, self.is_global)
 
 class LocalNameRef(NameRef):
 
     "A reference to a local name."
 
     def __init__(self, name, number):
-        NameRef.__init__(self, name)
+        NameRef.__init__(self, name, is_global=False)
         self.number = number
 
     def __repr__(self):
@@ -149,12 +156,12 @@ class ResolvedNameRef(ResolvedRef, NameRef):
 
     "A resolved name-based reference."
 
-    def __init__(self, name, ref, expr=None):
-        NameRef.__init__(self, name, expr)
+    def __init__(self, name, ref, expr=None, is_global=False):
+        NameRef.__init__(self, name, expr, is_global)
         ResolvedRef.__init__(self, ref)
 
     def __repr__(self):
-        return "ResolvedNameRef(%r, %r, %r)" % (self.name, self.ref, self.expr)
+        return "ResolvedNameRef(%r, %r, %r, %r)" % (self.name, self.ref, self.expr, self.is_global)
 
 class ConstantValueRef(ResolvedNameRef):
 
