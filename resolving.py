@@ -3,7 +3,7 @@
 """
 Name resolution.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -289,7 +289,13 @@ class NameResolving:
 
                         if not ref:
                             if not invocation:
-                                aliased_names[i] = name_ref.original_name, name_ref.attrnames, name_ref.number
+
+                                # Record the path used for tracking purposes
+                                # alongside original name, attribute and access
+                                # number details.
+
+                                aliased_names[i] = path, name_ref.original_name, name_ref.attrnames, name_ref.number
+
                             continue
 
                     # Attempt to resolve a plain name reference.
@@ -303,7 +309,13 @@ class NameResolving:
 
                         if not origin:
                             if not invocation:
-                                aliased_names[i] = name_ref.name, None, name_ref.number
+
+                                # Record the path used for tracking purposes
+                                # alongside original name, attribute and access
+                                # number details.
+
+                                aliased_names[i] = path, name_ref.name, None, name_ref.number
+
                             continue
 
                         ref = self.get_resolved_object(origin)
