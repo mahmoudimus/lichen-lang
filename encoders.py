@@ -215,7 +215,7 @@ context_values = (
     )
 
 context_ops = (
-    "<context>", "<set_context>", "<test_context>", "<test_context_static>",
+    "<context>", "<set_context>", "<test_context_revert>", "<test_context_static>",
     )
 
 reference_acting_ops = attribute_ops + checked_ops + typename_ops

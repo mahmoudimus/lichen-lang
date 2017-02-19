@@ -567,7 +567,7 @@ class Optimiser:
                 # immediately invoked attribute.
 
                 elif final_method == "access-invoke":
-                    emit(("<test_context>", context_var, accessor))
+                    emit(("<test_context_revert>", context_var, accessor))
 
                 # Test the context and update the attribute details if
                 # appropriate.

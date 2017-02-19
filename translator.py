@@ -789,7 +789,7 @@ class TranslatedModule(CommonModule):
             # Mappings to be replaced by those given below.
 
             "<context>" : "__tmp_contexts",
-            "<test_context>" : "__tmp_contexts",
+            "<test_context_revert>" : "__tmp_contexts",
             "<test_context_static>" : "__tmp_contexts",
             "<set_context>" : "__tmp_contexts",
             "<set_private_context>" : "__tmp_private_context",
@@ -799,7 +799,7 @@ class TranslatedModule(CommonModule):
 
         self.op_subs = {
             "<context>" : "__get_context",
-            "<test_context>" : "__test_context_set",
+            "<test_context_revert>" : "__test_context_revert",
             "<test_context_static>" : "__test_context_static",
             "<set_context>" : "__set_context",
             "<set_private_context>" : "__set_private_context",

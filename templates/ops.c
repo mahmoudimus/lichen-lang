@@ -214,6 +214,10 @@ int __test_context_update(__ref context, __attr attr)
 
     if (__is_instance(context))
     {
+        /* Obtain the special class attribute position and code identifying the
+           attribute context's class, inspecting the context instance for
+           compatibility. */
+
         if (__test_common_instance(context, __TYPEPOS(attrcontext), __TYPECODE(attrcontext)))
             return 1;
         else
