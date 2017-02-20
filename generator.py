@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import CommonOutput
+from common import CommonOutput, copy
 from encoders import encode_function_pointer, \
                      encode_instantiator_pointer, \
                      encode_literal_constant, encode_literal_constant_member, \
@@ -31,23 +31,9 @@ from encoders import encode_function_pointer, \
                      encode_symbol, encode_tablename, \
                      encode_type_attribute, decode_type_attribute, \
                      is_type_attribute
-from os import listdir, mkdir
-from os.path import exists, isdir, join, split
+from os import listdir, mkdir, remove
+from os.path import exists, isdir, join, split, splitext
 from referencing import Reference
-
-def copy(source, target):
-
-    "Copy a text file from 'source' to 'target'."
-
-    if isdir(target):
-        target = join(target, split(source)[-1])
-    infile = open(source)
-    outfile = open(target, "w")
-    try:
-        outfile.write(infile.read())
-    finally:
-        outfile.close()
-        infile.close()
 
 class Generator(CommonOutput):
 
@@ -124,8 +110,33 @@ class Generator(CommonOutput):
                 if not exists(target):
                     mkdir(target)
 
-                for filename in listdir(pathname):
+                existing = listdir(target)
+                needed = listdir(pathname)
+
+                # Determine which files are superfluous by comparing their
+                # basenames (without extensions) to those of the needed
+                # filenames. This should preserve object files for needed source
+                # files, only discarding completely superfluous files from the
+                # target directory.
+
+                needed_basenames = set()
+                for filename in needed:
+                    needed_basenames.add(splitext(filename)[0])
+
+                superfluous = []
+                for filename in existing:
+                    if splitext(filename)[0] not in needed_basenames:
+                        superfluous.append(filename)
+
+                # Copy needed files.
+
+                for filename in needed:
                     copy(join(pathname, filename), target)
+
+                # Remove superfluous files.
+
+                for filename in superfluous:
+                    remove(join(target, filename))
 
     def write_structures(self):
 
@@ -522,7 +533,7 @@ class Generator(CommonOutput):
                 # Employ a special alias that will be tested specifically in
                 # encode_member.
 
-                encoding_ref = Reference("<instance>", self.string_type, "$c%d" % n)
+                encoding_ref = Reference("<instance>", self.string_type, "$c%s" % n)
 
             # Use None where no encoding was indicated.
 
@@ -959,7 +970,7 @@ __obj %s = {
                     constant_name = "$c%d" % local_number
                     attr_path = "%s.%s" % (path, constant_name)
                     constant_number = self.optimiser.constant_numbers[attr_path]
-                    constant_value = "__const%d" % constant_number
+                    constant_value = "__const%s" % constant_number
                     structure.append("%s /* %s */" % (constant_value, attrname))
                     continue
 
@@ -1021,7 +1032,7 @@ __obj %s = {
             # Use the alias directly if appropriate.
 
             if alias.startswith("$c"):
-                constant_value = encode_literal_constant(int(alias[2:]))
+                constant_value = encode_literal_constant(alias[2:])
                 return "%s /* %s */" % (constant_value, name)
 
             # Obtain a constant value directly assigned to the attribute.

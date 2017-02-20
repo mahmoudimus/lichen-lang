@@ -21,6 +21,21 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from common import first, InstructionSequence
 
+
+
+# Value digest computation.
+
+from base64 import b64encode
+from hashlib import sha1
+
+def digest(values):
+    m = sha1()
+    for value in values:
+        m.update(str(value))
+    return b64encode(m.digest()).replace("+", "__").replace("/", "_").rstrip("=")
+
+
+
 # Output encoding and decoding for the summary files.
 
 def encode_attrnames(attrnames):
@@ -394,7 +409,7 @@ def encode_literal_constant(n):
 
     "Encode a name for the literal constant with the number 'n'."
 
-    return "__const%d" % n
+    return "__const%s" % n
 
 def encode_literal_constant_size(value):
 
@@ -454,7 +469,7 @@ def encode_literal_reference(n):
 
     "Encode a reference to a literal constant with the number 'n'."
 
-    return "__constvalue%d" % n
+    return "__constvalue%s" % n
 
 
 

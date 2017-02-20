@@ -20,7 +20,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from common import CommonModule, CommonOutput, InstructionSequence, \
-                   first, get_builtin_class, init_item, predefined_constants
+                   first, get_builtin_class, init_item, is_newer, \
+                   predefined_constants
 from encoders import encode_access_instruction, \
                      encode_function_pointer, encode_literal_constant, \
                      encode_literal_instantiator, encode_instantiator_pointer, \
@@ -45,22 +46,33 @@ class Translator(CommonOutput):
         self.deducer = deducer
         self.optimiser = optimiser
         self.output = output
-        self.modules = {}
 
     def to_output(self):
+
+        "Write a program to the configured output directory."
+
+        # Make a directory for the final sources.
+
         output = join(self.output, "src")
 
         if not exists(output):
             makedirs(output)
 
+        # Clean the output directory of irrelevant data.
+
         self.check_output()
 
         for module in self.importer.modules.values():
+            output_filename = join(output, "%s.c" % module.name)
+
+            # Do not generate modules in the native package. They are provided
+            # by native functionality source files.
+
             parts = module.name.split(".")
-            if parts[0] != "native":
+
+            if parts[0] != "native" and is_newer(module.filename, output_filename):
                 tm = TranslatedModule(module.name, self.importer, self.deducer, self.optimiser)
-                tm.translate(module.filename, join(output, "%s.c" % module.name))
-                self.modules[module.name] = tm 
+                tm.translate(module.filename, output_filename)
 
 # Classes representing intermediate translation results.
 

@@ -21,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from common import add_counter_item, get_attrname_from_location, init_item, \
                    sorted_output
-from encoders import encode_access_location, encode_instruction, get_kinds
+from encoders import digest, encode_access_location, encode_instruction, get_kinds
 from os.path import exists, join
 from os import makedirs
 from referencing import Reference
@@ -723,7 +723,7 @@ class Optimiser:
             # Each constant is actually (value, value_type, encoding).
 
             for constant, n in constants.items():
-                add_counter_item(self.constants, constant)
+                self.constants[constant] = digest(constant)
 
         self.constant_numbers = {}
 

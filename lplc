@@ -270,9 +270,7 @@ This program has absolutely no warranty.
             make_clean_cmd = ["make", "-C", generated_dir, "clean"]
             make_cmd = make_clean_cmd[:-1]
 
-            retval = call(make_clean_cmd, make_verbose)
-            if not retval:
-                retval = call(make_cmd, make_verbose)
+            retval = call(make_cmd, make_verbose)
 
             if not retval:
                 if timings: stopwatch("Compilation", now)
