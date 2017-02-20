@@ -1,6 +1,6 @@
 /* Native functions for Unicode operations.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -200,6 +200,48 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
     }
 
     return __new_str(sub, resultsize);
+}
+
+__attr __fn_native_unicode_unicode_unichr(__attr __args[])
+{
+    __attr * const value = &__args[1];
+    /* value interpreted as int */
+    int i = value->intvalue;
+    unsigned int resultsize;
+    char *s;
+
+    if (i < 128) resultsize = 1;
+    else if (i < 2048) resultsize = 2;
+    else if (i < 65536) resultsize = 3;
+    else resultsize = 4;
+
+    /* Reserve space for a new string. */
+
+    s = (char *) __ALLOCATE(resultsize + 1, sizeof(char));
+
+    /* Populate the string. */
+
+    if (i < 128) s[0] = (char) i;
+    else if (i < 2048)
+    {
+        s[0] = 0b11000000 | (i >> 6);
+        s[1] = 0b10000000 | (i & 0b00111111);
+    }
+    else if (i < 65536)
+    {
+        s[0] = 0b11100000 | (i >> 12);
+        s[1] = 0b10000000 | ((i >> 6) & 0b00111111);
+        s[2] = 0b10000000 | (i & 0b00111111);
+    }
+    else
+    {
+        s[0] = 0b11110000 | (i >> 18);
+        s[1] = 0b10000000 | ((i >> 12) & 0b00111111);
+        s[2] = 0b10000000 | ((i >> 6) & 0b00111111);
+        s[3] = 0b10000000 | (i & 0b00111111);
+    }
+
+    return __new_str(s, resultsize);
 }
 
 /* Module initialisation. */
