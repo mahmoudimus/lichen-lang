@@ -212,3 +212,5 @@ print euro                          # ¤
 print repr(euro)                    # "\u20ac"
 print ord(euro)                     # 8364
 print "\u20ac"                      # ¤
+print unichr(ord(euro))             # ¤
+print unichr(ord(euro)) == euro     # True

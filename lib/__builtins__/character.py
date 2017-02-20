@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.types import check_int, check_string
-from native import str_chr
+from native import str_chr, unicode_unichr
 
 def chr(i):
 
@@ -87,6 +87,15 @@ def ord(c):
 
     return c.__ord__()
 
-def unichr(i): pass
+def unichr(i):
+
+    "Return the given character value 'i' encoded as a character."
+
+    check_int(i)
+
+    if 0 <= i <= 2097151:
+        return utf8string(unicode_unichr(i.__data__))
+    else:
+        raise ValueError, i
 
 # vim: tabstop=4 expandtab shiftwidth=4
