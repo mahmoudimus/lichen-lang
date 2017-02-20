@@ -749,8 +749,7 @@ class CommonModule:
 
         If the name is being used outside a function, and if 'name_ref' is
         given, a path featuring the name in the global namespace is returned
-        where 'name_ref' indicates a global, or a static reference is used if
-        'name_ref' provides such a reference. Otherwise, a path computed using
+        where 'name_ref' indicates a global. Otherwise, a path computed using
         the current namespace and the given name is returned.
 
         The intention of this method is to provide a suitably-qualified name
@@ -768,11 +767,6 @@ class CommonModule:
 
         if self.in_function:
             return name
-
-        # For static references, use the reference origin.
-
-        elif name_ref and name_ref.final():
-            return name_ref.final()
 
         # For global names outside functions, use a global name.
 
