@@ -82,7 +82,35 @@ Show a summary of the command syntax and options
 .TP
 .BR \-V ", " \-\-version
 Show version information for this tool
-.SH ENVIRONMENT VARIABLES
+.SH EXAMPLES
+Compile the main program in
+.BR hello.py ,
+including all source files that the program requires:
+.IP
+lplc -o hello hello.py
+.PP
+This produces an output executable called
+.B hello
+in the current directory, assuming that
+.B hello.py
+can be compiled without errors.
+.SH FILES
+.B lplc
+produces an output executable file called
+.B _main
+unless the
+.B \-o
+option is given with a different name. Working data is stored in a directory
+whose name is derived from the output executable name. Therefore, the working
+data directory will be called
+.B _main.lplc
+unless otherwise specified. For example, an output executable called
+.B hello
+will have a working data directory called
+.BR hello.lplc .
+This is intended to allow work to proceed efficiently on multiple programs in
+the same directory, although it can also create lots of unwanted directories.
+.SH ENVIRONMENT
 .TP
 ARCH
 Indicates a prefix to be used with tool names when building an executable. This

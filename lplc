@@ -23,7 +23,7 @@ VERSION = "0.1"
 
 from errors import *
 from os import environ, listdir, remove, rename
-from os.path import abspath, exists, isdir, isfile, join, split
+from os.path import abspath, exists, extsep, isdir, isfile, join, split
 from pyparser import error
 from subprocess import Popen, PIPE
 from time import time
@@ -245,7 +245,7 @@ This program has absolutely no warranty.
 
     # Define the output data directories.
 
-    datadir = "_lplc"
+    datadir = "%s%s%s" % (output, extsep, "lplc") # _main.lplc by default
     cache_dir = join(datadir, "_cache")
     deduced_dir = join(datadir, "_deduced")
     output_dir = join(datadir, "_output")

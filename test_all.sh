@@ -3,7 +3,7 @@
 # This tool runs the toolchain for each of the tests, optionally building and
 # running the test programs.
 #
-# Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+# Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -22,7 +22,7 @@ PROGNAME=$0
 OPTION=$1
 
 LPLC="./lplc"
-DATADIR="_lplc"
+DATADIR="_main.lplc"
 TESTINPUT="_results/testinput.txt"
 
 # Expect failure from the "bad" tests.
