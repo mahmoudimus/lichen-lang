@@ -24,31 +24,34 @@ identified by the compiler and loaded as required.
 The following options may be specified:
 .PP
 .TP
-.B \-c
-Only partially compile the program; do not attempt to build or link it
+.BR \-c ", " \-\-compile
+Only partially compile the program; do not build or link it
 .TP
-.B \-E
+.BR \-E ", " \-\-no\-env
 Ignore environment variables affecting the module search path
 .TP
-.B \-g
+.BR \-g ", " \-\-debug
 Generate debugging information for the built executable
 .TP
-.B \-P
+.BR \-P ", " \-\-show\-path
 Show the module search path
 .TP
-.B \-q
+.BR \-q ", " \-\-quiet
 Silence messages produced when building an executable
 .TP
-.B \-r
-Reset (discard) cached program information; inspect the whole program again
+.BR \-r ", " \-\-reset
+Reset (discard) cached information; inspect the whole program again
 .TP
-.B \-t
+.BR \-R ", " \-\-reset\-all
+Reset (discard) all program details including translated code
+.TP
+.BR \-t ", " \-\-no\-timing
 Silence timing messages
 .TP
-.B \-tb
+.BR \-tb ", " \-\-traceback
 Provide a traceback for any internal errors (development only)
 .TP
-.B \-v
+.BR \-v ", " \-\-verbose
 Report compiler activities in a verbose fashion (development only)
 .PP
 Some options may be followed by values, either immediately after the option
@@ -93,7 +96,7 @@ LICHENPATH
 A collection of directories that are searched before those in the collection
 comprising the default "module search path". This collection, if already defined
 in the environment, may be excluded by specifying the
-.B \-E
+.BR \-E " (or " \-\-no\-env )
 option.
 .SH AUTHOR
 Paul Boddie <paul@boddie.org.uk>

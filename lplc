@@ -22,8 +22,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 VERSION = "0.1"
 
 from errors import *
-from os import environ, rename
-from os.path import abspath, exists, isfile, join, split
+from os import environ, listdir, remove, rename
+from os.path import abspath, exists, isdir, isfile, join, split
 from pyparser import error
 from subprocess import Popen, PIPE
 from time import time
@@ -82,6 +82,17 @@ def start_arg_list(l, arg, prefix, needed):
     else:
         return l, needed
 
+def remove_all(dirname):
+
+    "Remove 'dirname' and its contents."
+
+    for filename in listdir(dirname):
+        pathname = join(dirname, filename)
+        if isdir(pathname):
+            remove_all(pathname)
+        else:
+            remove(pathname)
+
 # Main program.
 
 if __name__ == "__main__":
@@ -98,21 +109,32 @@ Usage: %s [ <options> ] <filename>
 Compile the program whose principal file is given in place of <filename>.
 The following options may be specified:
 
--c   Only partially compile the program; do not attempt to build or link it
--E   Ignore environment variables affecting the module search path
--g   Generate debugging information for the built executable
--P   Show the module search path
--q   Silence messages produced when building an executable
--r   Reset (discard) cached program information; inspect the whole program again
--t   Silence timing messages
--tb  Provide a traceback for any internal errors (development only)
--v   Report compiler activities in a verbose fashion (development only)
+-c          Only partially compile the program; do not build or link it
+--compile   Equivalent to -c
+-E          Ignore environment variables affecting the module search path
+--no-env    Equivalent to -E
+-g          Generate debugging information for the built executable
+--debug     Equivalent to -g
+-P          Show the module search path
+--show-path Equivalent to -P
+-q          Silence messages produced when building an executable
+--quiet     Equivalent to -q
+-r          Reset (discard) cached information; inspect the whole program again
+--reset     Equivalent to -r
+-R          Reset (discard) all program details including translated code
+--reset-all Equivalent to -R
+-t          Silence timing messages
+--no-timing Equivalent to -t
+-tb         Provide a traceback for any internal errors (development only)
+--traceback Equivalent to -tb
+-v          Report compiler activities in a verbose fashion (development only)
+--verbose   Equivalent to -v
 
 Some options may be followed by values, either immediately after the option
 (without any space between) or in the arguments that follow them:
 
--o   Indicate the output executable name
--W   Show warnings on the topics indicated
+-o          Indicate the output executable name
+-W          Show warnings on the topics indicated
 
 Currently, the following warnings are supported:
 
@@ -152,6 +174,7 @@ This program has absolutely no warranty.
     make = True
     make_verbose = True
     reset = False
+    reset_all = False
     timings = True
     traceback = False
     verbose = False
@@ -166,15 +189,16 @@ This program has absolutely no warranty.
     needed = None
 
     for arg in args:
-        if arg == "-c": make = False
-        elif arg == "-E": ignore_env = True
-        elif arg == "-g": debug = True
-        elif arg == "-q": make_verbose = False
-        elif arg == "-r": reset = True
-        elif arg == "-t": timings = False
-        elif arg == "-tb": traceback = True
+        if arg in ("-c", "--compile"): make = False
+        elif arg in ("-E", "--no-env"): ignore_env = True
+        elif arg in ("-g", "--debug"): debug = True
+        elif arg in ("-q", "--quiet"): make_verbose = False
+        elif arg in ("-r", "--reset"): reset = True
+        elif arg in ("-R", "--reset-all"): reset_all = True
+        elif arg in ("-t", "--no-timing"): timings = False
+        elif arg in ("-tb", "--traceback"): traceback = True
         elif arg.startswith("-o"): l, needed = start_arg_list(outputs, arg, "-o", 1)
-        elif arg == "-v": verbose = True
+        elif arg == ("-v", "--verbose"): verbose = True
         elif arg.startswith("-W"): l, needed = start_arg_list(warnings, arg, "-W", 1)
         else:
             l.append(arg)
@@ -193,7 +217,7 @@ This program has absolutely no warranty.
 
     # Show the module search path if requested.
 
-    if "-P" in args:
+    if "-P" in args or "--show-path" in args:
         for libdir in libdirs:
             print libdir
         sys.exit(0)
@@ -227,6 +251,11 @@ This program has absolutely no warranty.
     output_dir = join(datadir, "_output")
     generated_dir = join(datadir, "_generated")
 
+    # Perform any full reset of the working data.
+
+    if reset_all:
+        remove_all(datadir)
+        
     # Load the program.
 
     try:
