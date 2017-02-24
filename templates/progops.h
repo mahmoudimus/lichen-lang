@@ -25,6 +25,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 /* Generic instantiation operations, defining common members. */
 
 __attr __new(const __table *table, __ref cls, size_t size);
+__attr __new_wrapper(__ref context, __attr attr);
 
 /* Generic internal data allocation. */
 

@@ -412,7 +412,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # if assigned in the namespace, or using an external name
             # (presently just globals within classes).
 
-            name = self.get_name_for_tracking(name_ref.name, name_ref.final())
+            name = self.get_name_for_tracking(name_ref.name, name_ref)
             tracker = self.trackers[-1]
 
             immediate_access = len(self.attrs) == 1
@@ -420,10 +420,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
             # Record global-based chains for subsequent resolution.
 
-            is_global = self.in_function and not self.function_locals[path].has_key(name) or \
-                        not self.in_function
-
-            if is_global:
+            if name_ref.is_global_name():
                 self.record_global_access_details(name, attrnames)
 
             # Make sure the name is being tracked: global names will not
@@ -521,14 +518,17 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # class. Function instances provide these attributes.
 
         if class_name != "__builtins__.core.function":
+
             self.set_name("__fn__") # special instantiator attribute
             self.set_name("__args__") # special instantiator attribute
 
-        # Provide leafname and parent attributes.
+        # Provide leafname, parent and context attributes.
 
         parent, leafname = class_name.rsplit(".", 1)
         self.set_name("__name__", self.get_constant("string", leafname).reference())
-        self.set_name("__parent__")
+
+        if class_name != "__builtins__.core.function":
+            self.set_name("__parent__")
 
         self.process_structure_node(n.code)
         self.exit_namespace()
@@ -873,12 +873,12 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         ref = self.find_name(n.name)
         if ref:
-            return ResolvedNameRef(n.name, ref)
+            return ResolvedNameRef(n.name, ref, is_global=True)
 
         # Explicitly-declared global names.
 
         elif self.in_function and n.name in self.scope_globals[path]:
-            return NameRef(n.name)
+            return NameRef(n.name, is_global=True)
 
         # Examine other names.
 
@@ -899,7 +899,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             # Possible global or built-in name.
 
             else:
-                return NameRef(n.name)
+                return NameRef(n.name, is_global=True)
 
     def process_operator_chain(self, nodes, fn):
 

@@ -4,7 +4,7 @@
 Track attribute usage for names.
 
 Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+              2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -75,7 +75,11 @@ class Branch:
         if name in self.assignments:
             return [self]
         else:
-            return [b for b in self.get_all_suppliers(name) if name in b.assignments]
+            sources = []
+            for b in self.get_all_suppliers(name):
+                if name in b.assignments:
+                    sources.append(b)
+            return sources
 
     def set_usage(self, name, attrname, invocation=False, assignment=False):
 
@@ -597,7 +601,10 @@ class BranchTracker:
 
         d = {}
         for name, branches in self.assignments.items():
-            d[name] = [branch.values.get(name) for branch in branches]
+            l = []
+            for branch in branches:
+                l.append(branch.values.get(name))
+            d[name] = l
         return d
 
 # Special objects.

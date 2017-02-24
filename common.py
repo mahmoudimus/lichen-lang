@@ -23,7 +23,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from compiler.transformer import Transformer
 from errors import InspectError
 from os import listdir, makedirs, remove
-from os.path import exists, isdir, join, split
+from os.path import exists, getmtime, isdir, join, split
 from results import ConstantValueRef, LiteralSequenceRef, NameRef
 import compiler.ast
 
@@ -75,6 +75,36 @@ class CommonOutput:
                 self.remove_output(path)
             else:
                 remove(path)
+
+def copy(source, target, only_if_newer=True):
+
+    "Copy a text file from 'source' to 'target'."
+
+    if isdir(target):
+        target = join(target, split(source)[-1])
+
+    if only_if_newer and not is_newer(source, target):
+        return
+
+    infile = open(source)
+    outfile = open(target, "w")
+
+    try:
+        outfile.write(infile.read())
+    finally:
+        outfile.close()
+        infile.close()
+
+def is_newer(source, target):
+
+    "Return whether 'source' is newer than 'target'."
+
+    if exists(target):
+        target_mtime = getmtime(target)
+        source_mtime = getmtime(source)
+        return source_mtime > target_mtime
+
+    return True
 
 class CommonModule:
 
@@ -741,14 +771,16 @@ class CommonModule:
 
         return isinstance(node.expr, compiler.ast.Getattr)
 
-    def get_name_for_tracking(self, name, path=None):
+    def get_name_for_tracking(self, name, name_ref=None):
 
         """
         Return the name to be used for attribute usage observations involving
-        the given 'name' in the current namespace. If 'path' is indicated and
-        the name is being used outside a function, return the path value;
-        otherwise, return a path computed using the current namespace and the
-        given name.
+        the given 'name' in the current namespace.
+
+        If the name is being used outside a function, and if 'name_ref' is
+        given, a path featuring the name in the global namespace is returned
+        where 'name_ref' indicates a global. Otherwise, a path computed using
+        the current namespace and the given name is returned.
 
         The intention of this method is to provide a suitably-qualified name
         that can be tracked across namespaces. Where globals are being
@@ -766,10 +798,10 @@ class CommonModule:
         if self.in_function:
             return name
 
-        # For static namespaces, use the given qualified name.
+        # For global names outside functions, use a global name.
 
-        elif path:
-            return path
+        elif name_ref and name_ref.is_global_name():
+            return self.get_global_path(name)
 
         # Otherwise, establish a name in the current namespace.
 

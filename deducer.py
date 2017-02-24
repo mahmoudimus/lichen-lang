@@ -917,9 +917,9 @@ class Deducer(CommonOutput):
 
             # For each version of the name, obtain the access location.
 
-            for version, (original_name, attrnames, access_number) in all_aliases.items():
+            for version, (original_path, original_name, attrnames, access_number) in all_aliases.items():
                 accessor_location = (path, name, None, version)
-                access_location = (path, original_name, attrnames, access_number)
+                access_location = (original_path, original_name, attrnames, access_number)
                 init_item(self.alias_index, accessor_location, list)
                 self.alias_index[accessor_location].append(access_location)
 
@@ -2088,7 +2088,9 @@ class Deducer(CommonOutput):
         # All other methods of access involve traversal.
 
         else:
-            final_method = is_assignment and "assign" or "access"
+            final_method = is_assignment and "assign" or \
+                           is_invocation and "access-invoke" or \
+                           "access"
             origin = None
 
         # First attribute accessed at a known position via the accessor.

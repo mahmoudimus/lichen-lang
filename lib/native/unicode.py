@@ -29,5 +29,6 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 def unicode_len(data, size): pass
 def unicode_ord(data, size): pass
 def unicode_substr(data, size, start, end, step): pass
+def unicode_unichr(value): pass
 
 # vim: tabstop=4 expandtab shiftwidth=4
