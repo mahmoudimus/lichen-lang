@@ -19,15 +19,15 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef __TYPES_H__
 #define __TYPES_H__
 
-#include <stddef.h> /* size_t */
-
 /* Define code and position types, populated by enum values defined for each
    program specifically. */
 
-typedef unsigned short __code;
-typedef unsigned short __pos;
-typedef unsigned short __pcode;
-typedef unsigned short __ppos;
+#include <stdint.h>
+
+typedef uint16_t __code;
+typedef uint16_t __pos;
+typedef uint16_t __pcode;
+typedef uint16_t __ppos;
 
 /* Attribute tables are lists of codes confirming the presence of attributes. */
 
@@ -49,51 +49,34 @@ typedef struct __param
 
 typedef struct __ptable
 {
-    const __ppos size;
+    const __ppos min, max, size;
     const __param params[];
 } __ptable;
 
-/* Attributes are context and value pairs.
+/* Attributes are values referring to objects or encoding other information.
    Objects are collections of attributes.
    Object references are references to tables and collections of attributes.
    Attribute references are references to single attributes. */
 
 typedef struct __obj __obj;
 typedef struct __fragment __fragment;
+typedef union __attr __attr;
+typedef __obj * __ref;
 
-typedef struct __attr
+typedef union __attr
 {
-    /* One of... */
-    union
-    {
-        struct {
-            __obj * context;            /* attribute context */
-            __obj * value;              /* attribute value */
-        };
-        struct {
-            __ppos min;                 /* minimum number of parameters */
-            const __ptable * ptable;    /* parameter table */
-        };
-        struct {
-            __pcode code;               /* parameter table code for key */
-            __ppos pos;                 /* parameter table position for key */
-        };
-        struct {
-            struct __attr (*inv)();     /* unbound callable details */
-            struct __attr (*fn)();      /* callable details */
-        };
-        struct {
-            size_t size;                /* size of value */
-            union
-            {
-                int intvalue;           /* integer value */
-                double floatvalue;      /* floating point value */
-                char * strvalue;        /* string value */
-                __fragment * seqvalue;  /* sequence data */
-                void * datavalue;       /* object-specific data */
-            };
-        };
+    __ref value;                /* attribute value */
+    const __ptable * ptable;    /* parameter table */
+    struct {
+        __pcode code;           /* parameter table code for key */
+        __ppos pos;             /* parameter table position for key */
     };
+    __attr (*fn)();             /* callable details */
+    int intvalue;               /* integer value */
+    float floatvalue;          	/* floating point value */
+    char * strvalue;            /* string value */
+    __fragment * seqvalue;      /* sequence data */
+    void * datavalue;           /* object-specific data */
 } __attr;
 
 typedef struct __obj
@@ -103,7 +86,7 @@ typedef struct __obj
     __attr attrs[];             /* attributes */
 } __obj;
 
-typedef __obj * __ref;
+#define __INSTANCE_SIZE(NUMBER) ((NUMBER) * sizeof(__attr) + sizeof(__table *) + sizeof(__ppos))
 
 /* Fragments are simple collections of attributes employed by sequence types.
    They provide the basis of lists and tuples. */
@@ -114,7 +97,7 @@ typedef struct __fragment
     __attr attrs[];
 } __fragment;
 
-#define __FRAGMENT_SIZE(NUMBER) (NUMBER * sizeof(__attr) + 2 * sizeof(unsigned int))
+#define __FRAGMENT_SIZE(NUMBER) ((NUMBER) * sizeof(__attr) + 2 * sizeof(unsigned int))
 
 /* Special instance position value. The pos member of __obj refers to the
    special type attribute for classes, indicating which position holds the
@@ -124,7 +107,7 @@ typedef struct __fragment
 
 /* Special null values. */
 
-#define __NULL ((__attr) {{.context=0, .value=0}})
+#define __NULL ((__attr) {.value=0})
 
 /* Function pointer type. */
 

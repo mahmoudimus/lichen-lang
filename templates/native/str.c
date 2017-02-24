@@ -32,14 +32,17 @@ __attr __fn_native_str_str_add(__attr __args[])
 {
     __attr * const _data = &__args[1];
     __attr * const other = &__args[2];
+    __attr * const _size = &__args[3];
+    __attr * const othersize = &__args[4];
     /* _data, other interpreted as string */
     char *s = _data->strvalue;
     char *o = other->strvalue;
-    int n = _data->size + other->size;
+    int ss = _size->intvalue, os = othersize->intvalue;
+    int n = ss + os;
     char *r = (char *) __ALLOCATE(n + 1, sizeof(char));
 
-    memcpy(r, s, _data->size);
-    memcpy(r + _data->size, o, other->size);
+    memcpy(r, s, ss);
+    memcpy(r + ss, o, os);
 
     /* Return a new string. */
     return __new_str(r, n);
@@ -90,21 +93,6 @@ __attr __fn_native_str_str_eq(__attr __args[])
 
     /* NOTE: Using simple byte-level string operations. */
     return strcmp(s, o) == 0 ? __builtins___boolean_True : __builtins___boolean_False;
-}
-
-__attr __fn_native_str_str_len(__attr __args[])
-{
-    __attr * const _data = &__args[1];
-
-    /* Return the new integer. */
-    return __new_int(_data->size);
-}
-
-__attr __fn_native_str_str_nonempty(__attr __args[])
-{
-    __attr * const _data = &__args[1];
-
-    return _data->size ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
 __attr __fn_native_str_str_ord(__attr __args[])

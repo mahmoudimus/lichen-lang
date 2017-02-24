@@ -23,7 +23,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from compiler.transformer import Transformer
 from errors import InspectError
 from os import listdir, makedirs, remove
-from os.path import exists, isdir, join, split
+from os.path import exists, getmtime, isdir, join, split
 from results import ConstantValueRef, LiteralSequenceRef, NameRef
 import compiler.ast
 
@@ -75,6 +75,36 @@ class CommonOutput:
                 self.remove_output(path)
             else:
                 remove(path)
+
+def copy(source, target, only_if_newer=True):
+
+    "Copy a text file from 'source' to 'target'."
+
+    if isdir(target):
+        target = join(target, split(source)[-1])
+
+    if only_if_newer and not is_newer(source, target):
+        return
+
+    infile = open(source)
+    outfile = open(target, "w")
+
+    try:
+        outfile.write(infile.read())
+    finally:
+        outfile.close()
+        infile.close()
+
+def is_newer(source, target):
+
+    "Return whether 'source' is newer than 'target'."
+
+    if exists(target):
+        target_mtime = getmtime(target)
+        source_mtime = getmtime(source)
+        return source_mtime > target_mtime
+
+    return True
 
 class CommonModule:
 

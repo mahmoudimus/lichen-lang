@@ -23,7 +23,8 @@ from native.buffer import buffer_str
 
 from native.identity import is_, is_not
 
-from native.int import int_add, int_div, int_mod, int_mul, int_neg, int_pow, \
+from native.int import int_new, \
+                       int_add, int_div, int_mod, int_mul, int_neg, int_pow, \
                        int_sub, int_and, int_not, int_or, int_xor, int_lt, \
                        int_gt, int_eq, int_ne, int_str
 
@@ -42,8 +43,8 @@ from native.locale import getlocale, setlocale
 
 from native.program import get_using
 
-from native.str import str_add, str_chr, str_eq, str_gt, str_lt, str_len, \
-                       str_nonempty, str_ord, str_substr
+from native.str import str_add, str_chr, str_eq, str_gt, str_lt, \
+                       str_ord, str_substr
 
 from native.system import exit, get_argv, get_path
 

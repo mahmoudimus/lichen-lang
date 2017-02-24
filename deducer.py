@@ -2088,7 +2088,9 @@ class Deducer(CommonOutput):
         # All other methods of access involve traversal.
 
         else:
-            final_method = is_assignment and "assign" or "access"
+            final_method = is_assignment and "assign" or \
+                           is_invocation and "access-invoke" or \
+                           "access"
             origin = None
 
         # First attribute accessed at a known position via the accessor.

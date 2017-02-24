@@ -24,31 +24,39 @@ identified by the compiler and loaded as required.
 The following options may be specified:
 .PP
 .TP
-.B \-c
-Only partially compile the program; do not attempt to build or link it
+.BR \-c ", " \-\-compile
+Only partially compile the program; do not build or link it
 .TP
-.B \-E
+.BR \-E ", " \-\-no\-env
 Ignore environment variables affecting the module search path
 .TP
-.B \-g
+.BR \-g ", " \-\-debug
 Generate debugging information for the built executable
 .TP
-.B \-P
+.BR \-G ", " \-\-gc\-sections
+Remove superfluous sections of the built executable by applying the
+.B \-\-gc\-sections
+linker option and associated compiler options
+.TP
+.BR \-P ", " \-\-show\-path
 Show the module search path
 .TP
-.B \-q
+.BR \-q ", " \-\-quiet
 Silence messages produced when building an executable
 .TP
-.B \-r
-Reset (discard) cached program information; inspect the whole program again
+.BR \-r ", " \-\-reset
+Reset (discard) cached information; inspect the whole program again
 .TP
-.B \-t
+.BR \-R ", " \-\-reset\-all
+Reset (discard) all program details including translated code
+.TP
+.BR \-t ", " \-\-no\-timing
 Silence timing messages
 .TP
-.B \-tb
+.BR \-tb ", " \-\-traceback
 Provide a traceback for any internal errors (development only)
 .TP
-.B \-v
+.BR \-v ", " \-\-verbose
 Report compiler activities in a verbose fashion (development only)
 .PP
 Some options may be followed by values, either immediately after the option
@@ -79,7 +87,35 @@ Show a summary of the command syntax and options
 .TP
 .BR \-V ", " \-\-version
 Show version information for this tool
-.SH ENVIRONMENT VARIABLES
+.SH EXAMPLES
+Compile the main program in
+.BR hello.py ,
+including all source files that the program requires:
+.IP
+lplc -o hello hello.py
+.PP
+This produces an output executable called
+.B hello
+in the current directory, assuming that
+.B hello.py
+can be compiled without errors.
+.SH FILES
+.B lplc
+produces an output executable file called
+.B _main
+unless the
+.B \-o
+option is given with a different name. Working data is stored in a directory
+whose name is derived from the output executable name. Therefore, the working
+data directory will be called
+.B _main.lplc
+unless otherwise specified. For example, an output executable called
+.B hello
+will have a working data directory called
+.BR hello.lplc .
+This is intended to allow work to proceed efficiently on multiple programs in
+the same directory, although it can also create lots of unwanted directories.
+.SH ENVIRONMENT
 .TP
 ARCH
 Indicates a prefix to be used with tool names when building an executable. This
@@ -93,7 +129,7 @@ LICHENPATH
 A collection of directories that are searched before those in the collection
 comprising the default "module search path". This collection, if already defined
 in the environment, may be excluded by specifying the
-.B \-E
+.BR \-E " (or " \-\-no\-env )
 option.
 .SH AUTHOR
 Paul Boddie <paul@boddie.org.uk>

@@ -34,12 +34,12 @@ __attr __new_int(int i)
     return attr;
 }
 
-__attr __new_str(char *s, size_t size)
+__attr __new_str(char *s, int size)
 {
-    /* Create a new string and mutate the __data__ and __key__ attributes. */
+    /* Create a new string and mutate the __data__, __size__ and __key__ attributes. */
     __attr attr = __NEWINSTANCE(__builtins___str_string);
-    attr.value->attrs[__pos___data__].size = size;
     attr.value->attrs[__pos___data__].strvalue = s;
+    attr.value->attrs[__pos___size__].intvalue = size;
     attr.value->attrs[__pos___key__] = __NULL;
     return attr;
 }

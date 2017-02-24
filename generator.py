@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import CommonOutput
+from common import CommonOutput, copy
 from encoders import encode_function_pointer, \
                      encode_instantiator_pointer, \
                      encode_literal_constant, encode_literal_constant_member, \
@@ -31,23 +31,9 @@ from encoders import encode_function_pointer, \
                      encode_symbol, encode_tablename, \
                      encode_type_attribute, decode_type_attribute, \
                      is_type_attribute
-from os import listdir, mkdir
-from os.path import exists, isdir, join, split
+from os import listdir, mkdir, remove
+from os.path import exists, isdir, join, split, splitext
 from referencing import Reference
-
-def copy(source, target):
-
-    "Copy a text file from 'source' to 'target'."
-
-    if isdir(target):
-        target = join(target, split(source)[-1])
-    infile = open(source)
-    outfile = open(target, "w")
-    try:
-        outfile.write(infile.read())
-    finally:
-        outfile.close()
-        infile.close()
 
 class Generator(CommonOutput):
 
@@ -92,13 +78,13 @@ class Generator(CommonOutput):
         self.optimiser = optimiser
         self.output = output
 
-    def to_output(self, debug=False):
+    def to_output(self, debug=False, gc_sections=False):
 
         "Write the generated code."
 
         self.check_output()
         self.write_structures()
-        self.write_scripts(debug)
+        self.write_scripts(debug, gc_sections)
         self.copy_templates()
 
     def copy_templates(self):
@@ -124,8 +110,33 @@ class Generator(CommonOutput):
                 if not exists(target):
                     mkdir(target)
 
-                for filename in listdir(pathname):
+                existing = listdir(target)
+                needed = listdir(pathname)
+
+                # Determine which files are superfluous by comparing their
+                # basenames (without extensions) to those of the needed
+                # filenames. This should preserve object files for needed source
+                # files, only discarding completely superfluous files from the
+                # target directory.
+
+                needed_basenames = set()
+                for filename in needed:
+                    needed_basenames.add(splitext(filename)[0])
+
+                superfluous = []
+                for filename in existing:
+                    if splitext(filename)[0] not in needed_basenames:
+                        superfluous.append(filename)
+
+                # Copy needed files.
+
+                for filename in needed:
                     copy(join(pathname, filename), target)
+
+                # Remove superfluous files.
+
+                for filename in superfluous:
+                    remove(join(target, filename))
 
     def write_structures(self):
 
@@ -217,7 +228,7 @@ class Generator(CommonOutput):
                         # Define special attributes.
 
                         attrs["__fn__"] = path
-                        attrs["__args__"] = encode_size("pmin", path)
+                        attrs["__args__"] = path
 
                     self.populate_structure(Reference(kind, path), attrs, kind, structure)
 
@@ -270,7 +281,7 @@ class Generator(CommonOutput):
                 # Set a special callable attribute on the instance.
 
                 function_instance_attrs["__fn__"] = path
-                function_instance_attrs["__args__"] = encode_size("pmin", path)
+                function_instance_attrs["__args__"] = path
 
                 structure = self.populate_function(path, function_instance_attrs)
                 self.write_structure(f_decls, f_defs, path, table_name, structure)
@@ -286,22 +297,48 @@ class Generator(CommonOutput):
 
                 print >>f_signatures, "__attr %s(__attr args[]);" % encode_function_pointer(path)
 
+            # Generate parameter table size data.
+
+            min_parameters = {}
+            max_parameters = {}
+            size_parameters = {}
+
             # Consolidate parameter tables for instantiators and functions.
 
             parameter_tables = set()
 
             for path, function_path in self.callables.items():
+                argmin, argmax = self.get_argument_limits(function_path)
+
+                # Obtain the parameter table members.
+
                 parameters = self.optimiser.parameters[function_path]
                 if not parameters:
                     parameters = ()
                 else:
                     parameters = tuple(parameters)
-                parameter_tables.add(parameters)
+
+                # Define each table in terms of the members and the minimum
+                # number of arguments.
+
+                parameter_tables.add((argmin, parameters))
+                signature = self.get_parameter_signature(argmin, parameters)
+
+                # Record the minimum number of arguments, the maximum number,
+                # and the size of the table.
+
+                min_parameters[signature] = argmin
+                max_parameters[signature] = argmax
+                size_parameters[signature] = len(parameters)
+
+            self.write_size_constants(f_consts, "pmin", min_parameters, 0)
+            self.write_size_constants(f_consts, "pmax", max_parameters, 0)
+            self.write_size_constants(f_consts, "psize", size_parameters, 0)
 
             # Generate parameter tables for distinct function signatures.
 
-            for parameters in parameter_tables:
-                self.make_parameter_table(f_decls, f_defs, parameters)
+            for argmin, parameters in parameter_tables:
+                self.make_parameter_table(f_decls, f_defs, argmin, parameters)
 
             # Generate predefined constants.
 
@@ -339,27 +376,6 @@ class Generator(CommonOutput):
 
             for kind, sizes in size_tables:
                 self.write_size_constants(f_consts, kind, sizes, 0)
-
-            # Generate parameter table size data.
-
-            min_sizes = {}
-            max_sizes = {}
-
-            # Determine the minimum number of parameters for each 
-
-            for path in self.optimiser.parameters.keys():
-                argmin, argmax = self.get_argument_limits(path)
-                min_sizes[path] = argmin
-
-            # Use the parameter table details to define the maximum number.
-            # The context is already present in the collection.
-
-            for parameters in parameter_tables:
-                signature = self.get_parameter_signature(parameters)
-                max_sizes[signature] = len(parameters)
-
-            self.write_size_constants(f_consts, "pmin", min_sizes, 0)
-            self.write_size_constants(f_consts, "pmax", max_sizes, 0)
 
             # Generate parameter codes.
 
@@ -402,7 +418,7 @@ class Generator(CommonOutput):
             f_signatures.close()
             f_code.close()
 
-    def write_scripts(self, debug):
+    def write_scripts(self, debug, gc_sections):
 
         "Write scripts used to build the program."
 
@@ -412,6 +428,9 @@ class Generator(CommonOutput):
         try:
             if debug:
                 print >>f_options, "CFLAGS = -g"
+
+            if gc_sections:
+                print >>f_options, "include gc_sections.mk"
 
             # Identify modules used by the program.
 
@@ -500,6 +519,11 @@ class Generator(CommonOutput):
                 else:
                     attrs["__key__"] = None
 
+            # Initialise the size, if a string.
+
+            if attrs.has_key("__size__"):
+                attrs["__size__"] = len(data)
+
         # Define Unicode constant encoding details.
 
         if cls == self.unicode_type:
@@ -512,7 +536,7 @@ class Generator(CommonOutput):
                 # Employ a special alias that will be tested specifically in
                 # encode_member.
 
-                encoding_ref = Reference("<instance>", self.string_type, "$c%d" % n)
+                encoding_ref = Reference("<instance>", self.string_type, "$c%s" % n)
 
             # Use None where no encoding was indicated.
 
@@ -533,31 +557,34 @@ class Generator(CommonOutput):
         # Define a macro for the constant.
 
         attr_name = encode_path(const_path)
-        print >>f_decls, "#define %s ((__attr) {{.context=&%s, .value=&%s}})" % (attr_name, structure_name, structure_name)
+        print >>f_decls, "#define %s ((__attr) {.value=&%s})" % (attr_name, structure_name)
 
-    def make_parameter_table(self, f_decls, f_defs, parameters):
+    def make_parameter_table(self, f_decls, f_defs, argmin, parameters):
 
         """
         Write parameter table details to 'f_decls' (to declare a table) and to
-        'f_defs' (to define the contents) for the given 'parameters'.
+        'f_defs' (to define the contents) for the given 'argmin' and
+        'parameters'.
         """
 
         # Use a signature for the table name instead of a separate name for each
         # function.
 
-        signature = self.get_parameter_signature(parameters)
+        signature = self.get_parameter_signature(argmin, parameters)
         table_name = encode_tablename("<function>", signature)
-        structure_size = encode_size("pmax", signature)
+        min_parameters = encode_size("pmin", signature)
+        max_parameters = encode_size("pmax", signature)
+        structure_size = encode_size("psize", signature)
 
         table = []
         self.populate_parameter_table(parameters, table)
-        self.write_parameter_table(f_decls, f_defs, table_name, structure_size, table)
+        self.write_parameter_table(f_decls, f_defs, table_name, min_parameters, max_parameters, structure_size, table)
 
-    def get_parameter_signature(self, parameters):
+    def get_parameter_signature(self, argmin, parameters):
 
-        "Return a signature for the given 'parameters'."
+        "Return a signature for the given 'argmin' and 'parameters'."
 
-        l = []
+        l = [str(argmin)]
         for parameter in parameters:
             if parameter is None:
                 l.append("")
@@ -571,8 +598,9 @@ class Generator(CommonOutput):
         "Return the signature for the callable with the given 'path'."
 
         function_path = self.callables[path]
+        argmin, argmax = self.get_argument_limits(function_path)
         parameters = self.optimiser.parameters[function_path]
-        return self.get_parameter_signature(parameters)
+        return self.get_parameter_signature(argmin, parameters)
 
     def write_size_constants(self, f_consts, size_prefix, sizes, padding):
 
@@ -632,25 +660,45 @@ class Generator(CommonOutput):
 
         # Write the corresponding definition.
 
-        print >>f_defs, "const __table %s = {\n    %s,\n    {\n        %s\n        }\n    };\n" % (
-            table_name, structure_size,
-            ",\n        ".join(table))
+        print >>f_defs, """\
+const __table %s = {
+    %s,
+    {
+        %s
+    }
+};
+""" % (table_name, structure_size,
+       ",\n        ".join(table))
 
-    def write_parameter_table(self, f_decls, f_defs, table_name, structure_size, table):
+    def write_parameter_table(self, f_decls, f_defs, table_name, min_parameters,
+                              max_parameters, structure_size, table):
 
         """
         Write the declarations to 'f_decls' and definitions to 'f_defs' for
-        the object having the given 'table_name' and the given 'structure_size',
-        with 'table' details used to populate the definition.
+        the object having the given 'table_name' and the given 'min_parameters',
+        'max_parameters' and 'structure_size', with 'table' details used to
+        populate the definition.
         """
+
+        members = []
+        for t in table:
+            members.append("{.code=%s, .pos=%s}" % t)
 
         print >>f_decls, "extern const __ptable %s;\n" % table_name
 
         # Write the corresponding definition.
 
-        print >>f_defs, "const __ptable %s = {\n    %s,\n    {\n        %s\n        }\n    };\n" % (
-            table_name, structure_size,
-            ",\n        ".join([("{%s, %s}" % t) for t in table]))
+        print >>f_defs, """\
+const __ptable %s = {
+    .min=%s,
+    .max=%s,
+    .size=%s,
+    {
+        %s
+    }
+};
+""" % (table_name, min_parameters, max_parameters, structure_size,
+       ",\n        ".join(members))
 
     def write_instance_structure(self, f_decls, path, structure_size):
 
@@ -860,16 +908,10 @@ __obj %s = {
 
                     if kind == "<class>":
                         attr = encode_instantiator_pointer(attr)
-                        unbound_attr = attr
-
-                    # Provide bound method and unbound function pointers if
-                    # populating methods in a class.
-
                     else:
                         attr = encode_function_pointer(attr)
-                        unbound_attr = "__unbound_method"
 
-                    structure.append("{{.inv=%s, .fn=%s}}" % (unbound_attr, attr))
+                    structure.append("{.fn=%s}" % attr)
                     continue
 
                 # Special argument specification member.
@@ -878,23 +920,28 @@ __obj %s = {
                     signature = self.get_signature_for_callable(ref.get_origin())
                     ptable = encode_tablename("<function>", signature)
 
-                    structure.append("{{.min=%s, .ptable=&%s}}" % (attr, ptable))
+                    structure.append("{.ptable=&%s}" % ptable)
                     continue
 
                 # Special internal data member.
 
                 elif attrname == "__data__":
-                    structure.append("{{.size=%d, .%s=%s}}" % (
-                                     encode_literal_constant_size(attr),
+                    structure.append("{.%s=%s}" % (
                                      encode_literal_constant_member(attr),
                                      encode_literal_constant_value(attr)))
+                    continue
+
+                # Special internal size member.
+
+                elif attrname == "__size__":
+                    structure.append("{.intvalue=%d}" % attr)
                     continue
 
                 # Special internal key member.
 
                 elif attrname == "__key__":
-                    structure.append("{{.code=%s, .pos=%s}}" % (attr and encode_symbol("code", attr) or "0",
-                                                                attr and encode_symbol("pos", attr) or "0"))
+                    structure.append("{.code=%s, .pos=%s}" % (attr and encode_symbol("code", attr) or "0",
+                                                              attr and encode_symbol("pos", attr) or "0"))
                     continue
 
                 # Special cases.
@@ -926,7 +973,7 @@ __obj %s = {
                     constant_name = "$c%d" % local_number
                     attr_path = "%s.%s" % (path, constant_name)
                     constant_number = self.optimiser.constant_numbers[attr_path]
-                    constant_value = "__const%d" % constant_number
+                    constant_value = "__const%s" % constant_number
                     structure.append("%s /* %s */" % (constant_value, attrname))
                     continue
 
@@ -937,13 +984,33 @@ __obj %s = {
                     # object paths.
 
                     value = path.rsplit(".", 1)[0]
-                    structure.append("{{.context=0, .value=&%s}}" % encode_path(value))
+                    structure.append("{.value=&%s}" % encode_path(value))
+                    continue
+
+                # Special context member.
+                # Set the context depending on the kind of attribute.
+                # For methods:          <parent>
+                # For other attributes: __NULL
+
+                elif attrname == "__context__":
+                    path = ref.get_origin()
+
+                    # Contexts of methods are derived from their object paths.
+
+                    context = "0"
+
+                    if ref.get_kind() == "<function>":
+                        parent = path.rsplit(".", 1)[0]
+                        if self.importer.classes.has_key(parent):
+                            context = "&%s" % encode_path(parent)
+
+                    structure.append("{.value=%s}" % context)
                     continue
 
                 # Special class relationship attributes.
 
                 elif is_type_attribute(attrname):
-                    structure.append("{{.context=0, .value=&%s}}" % encode_path(decode_type_attribute(attrname)))
+                    structure.append("{.value=&%s}" % encode_path(decode_type_attribute(attrname)))
                     continue
 
                 # All other kinds of members.
@@ -968,7 +1035,7 @@ __obj %s = {
             # Use the alias directly if appropriate.
 
             if alias.startswith("$c"):
-                constant_value = encode_literal_constant(int(alias[2:]))
+                constant_value = encode_literal_constant(alias[2:])
                 return "%s /* %s */" % (constant_value, name)
 
             # Obtain a constant value directly assigned to the attribute.
@@ -982,33 +1049,22 @@ __obj %s = {
 
         if kind == "<instance>" and origin == self.none_type:
             attr_path = encode_predefined_reference(self.none_value)
-            return "{{.context=&%s, .value=&%s}} /* %s */" % (attr_path, attr_path, name)
+            return "{.value=&%s} /* %s */" % (attr_path, name)
 
         # Predefined constant members.
 
         if (path, name) in self.predefined_constant_members:
             attr_path = encode_predefined_reference("%s.%s" % (path, name))
-            return "{{.context=&%s, .value=&%s}} /* %s */" % (attr_path, attr_path, name)
+            return "{.value=&%s} /* %s */" % (attr_path, name)
 
         # General undetermined members.
 
         if kind in ("<var>", "<instance>"):
             attr_path = encode_predefined_reference(self.none_value)
-            return "{{.context=&%s, .value=&%s}} /* %s */" % (attr_path, attr_path, name)
-
-        # Set the context depending on the kind of attribute.
-        # For methods:          {&<parent>, &<attr>}
-        # For other attributes: {&<attr>, &<attr>}
+            return "{.value=&%s} /* %s */" % (attr_path, name)
 
         else:
-            if kind == "<function>" and structure_type == "<class>":
-                parent = origin.rsplit(".", 1)[0]
-                context = "&%s" % encode_path(parent)
-            elif kind == "<instance>":
-                context = "&%s" % encode_path(origin)
-            else:
-                context = "0"
-            return "{{.context=%s, .value=&%s}}" % (context, encode_path(origin))
+            return "{.value=&%s}" % encode_path(origin)
 
     def append_defaults(self, path, structure):
 
@@ -1116,7 +1172,7 @@ int main(int argc, char *argv[])
     }
     __Catch(__tmp_exc)
     {
-        if (__ISINSTANCE(__tmp_exc.arg, ((__attr) {{.context=0, .value=&__builtins___exception_system_SystemExit}})))
+        if (__ISINSTANCE(__tmp_exc.arg, ((__attr) {.value=&__builtins___exception_system_SystemExit})))
             return __load_via_object(
                 __load_via_object(__tmp_exc.arg.value, %s).value,
                 %s).intvalue;

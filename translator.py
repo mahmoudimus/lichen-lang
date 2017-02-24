@@ -20,7 +20,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from common import CommonModule, CommonOutput, InstructionSequence, \
-                   first, get_builtin_class, init_item, predefined_constants
+                   first, get_builtin_class, init_item, is_newer, \
+                   predefined_constants
 from encoders import encode_access_instruction, \
                      encode_function_pointer, encode_literal_constant, \
                      encode_literal_instantiator, encode_instantiator_pointer, \
@@ -45,22 +46,33 @@ class Translator(CommonOutput):
         self.deducer = deducer
         self.optimiser = optimiser
         self.output = output
-        self.modules = {}
 
     def to_output(self):
+
+        "Write a program to the configured output directory."
+
+        # Make a directory for the final sources.
+
         output = join(self.output, "src")
 
         if not exists(output):
             makedirs(output)
 
+        # Clean the output directory of irrelevant data.
+
         self.check_output()
 
         for module in self.importer.modules.values():
+            output_filename = join(output, "%s.c" % module.name)
+
+            # Do not generate modules in the native package. They are provided
+            # by native functionality source files.
+
             parts = module.name.split(".")
-            if parts[0] != "native":
+
+            if parts[0] != "native" and is_newer(module.filename, output_filename):
                 tm = TranslatedModule(module.name, self.importer, self.deducer, self.optimiser)
-                tm.translate(module.filename, join(output, "%s.c" % module.name))
-                self.modules[module.name] = tm 
+                tm.translate(module.filename, output_filename)
 
 # Classes representing intermediate translation results.
 
@@ -142,7 +154,7 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
         elif static_name:
             parent = ref.parent()
             context = ref.has_kind("<function>") and encode_path(parent) or None
-            return "((__attr) {{.context=%s, .value=&%s}})" % (context and "&%s" % context or "0", static_name)
+            return "((__attr) {.value=&%s})" % static_name
 
         # Qualified names must be converted into parent-relative accesses.
 
@@ -330,6 +342,10 @@ class TranslatedModule(CommonModule):
         # Special variable usage.
 
         self.temp_usage = {}
+
+        # Initialise some data used for attribute access generation.
+
+        self.init_substitutions()
 
     def __repr__(self):
         return "TranslatedModule(%r, %r)" % (self.name, self.importer)
@@ -738,41 +754,70 @@ class TranslatedModule(CommonModule):
             "<assexpr>" : self.in_assignment,
             }
 
-        temp_subs = {
-            "<context>" : "__tmp_context",
-            "<accessor>" : "__tmp_value",
-            "<target_accessor>" : "__tmp_target_value",
-            "<set_accessor>" : "__tmp_value",
-            "<set_target_accessor>" : "__tmp_target_value",
-            }
-
-        op_subs = {
-            "<set_accessor>" : "__set_accessor",
-            "<set_target_accessor>" : "__set_target_accessor",
-            }
-
-        subs.update(temp_subs)
-        subs.update(op_subs)
+        subs.update(self.temp_subs)
+        subs.update(self.op_subs)
 
         output = []
         substituted = set()
+
+        # The context set or retrieved will be that used by any enclosing
+        # invocation.
+
+        context_index = self.function_target - 1
 
         # Obtain encoded versions of each instruction, accumulating temporary
         # variables.
 
         for instruction in self.optimiser.access_instructions[location]:
-            encoded, _substituted = encode_access_instruction(instruction, subs)
+            encoded, _substituted = encode_access_instruction(instruction, subs, context_index)
             output.append(encoded)
             substituted.update(_substituted)
 
         # Record temporary name usage.
 
         for sub in substituted:
-            if temp_subs.has_key(sub):
-                self.record_temp(temp_subs[sub])
+            if self.temp_subs.has_key(sub):
+                self.record_temp(self.temp_subs[sub])
 
         del self.attrs[0]
         return AttrResult(output, refs, location)
+
+    def init_substitutions(self):
+
+        """
+        Initialise substitutions, defining temporary variable mappings, some of
+        which are also used as substitutions, together with operation mappings
+        used as substitutions in instructions defined by the optimiser.
+        """
+
+        self.temp_subs = {
+
+            # Substitutions used by instructions.
+
+            "<private_context>" : "__tmp_private_context",
+            "<accessor>" : "__tmp_value",
+            "<target_accessor>" : "__tmp_target_value",
+
+            # Mappings to be replaced by those given below.
+
+            "<context>" : "__tmp_contexts",
+            "<test_context_revert>" : "__tmp_contexts",
+            "<test_context_static>" : "__tmp_contexts",
+            "<set_context>" : "__tmp_contexts",
+            "<set_private_context>" : "__tmp_private_context",
+            "<set_accessor>" : "__tmp_value",
+            "<set_target_accessor>" : "__tmp_target_value",
+            }
+
+        self.op_subs = {
+            "<context>" : "__get_context",
+            "<test_context_revert>" : "__test_context_revert",
+            "<test_context_static>" : "__test_context_static",
+            "<set_context>" : "__set_context",
+            "<set_private_context>" : "__set_private_context",
+            "<set_accessor>" : "__set_accessor",
+            "<set_target_accessor>" : "__set_target_accessor",
+            }
 
     def get_referenced_attributes(self, location):
 
@@ -875,7 +920,7 @@ class TranslatedModule(CommonModule):
 
         if not ref.static():
             self.process_assignment_for_object(
-                n.name, make_expression("((__attr) {{.context=0, .value=&%s}})" %
+                n.name, make_expression("((__attr) {.value=&%s})" %
                     encode_path(class_name)))
 
         self.enter_namespace(n.name)
@@ -1054,9 +1099,7 @@ class TranslatedModule(CommonModule):
             context = self.is_method(objpath)
 
             self.process_assignment_for_object(original_name,
-                make_expression("((__attr) {{.context=%s, .value=&%s}})" % (
-                    context and "&%s" % encode_path(context) or "0",
-                    encode_path(objpath))))
+                make_expression("((__attr) {.value=&%s})" % encode_path(objpath)))
 
     def process_function_defaults(self, n, name, objpath, instance_name=None):
 
@@ -1146,7 +1189,21 @@ class TranslatedModule(CommonModule):
 
         "Process the given invocation node 'n'."
 
+        # Any invocations in the expression will store target details in a
+        # different location.
+
+        self.function_target += 1
+
+        # Process the expression.
+
         expr = self.process_structure_node(n.node)
+
+        # Reference the current target again.
+
+        self.function_target -= 1
+
+        # Obtain details of the invocation expression.
+
         objpath = expr.get_origin()
         location = expr.access_location()
 
@@ -1167,6 +1224,7 @@ class TranslatedModule(CommonModule):
         # Invocation requirements.
 
         context_required = True
+        have_access_context = isinstance(expr, AttrResult)
         parameters = None
 
         # Obtain details of the callable and of its parameters.
@@ -1237,8 +1295,12 @@ class TranslatedModule(CommonModule):
         # set to null.
 
         if context_required:
-            self.record_temp("__tmp_targets")
-            args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
+            if have_access_context:
+                self.record_temp("__tmp_contexts")
+                args = ["(__attr) {.value=__tmp_contexts[%d]}" % self.function_target]
+            else:
+                self.record_temp("__tmp_targets")
+                args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
         else:
             args = ["__NULL"]
 
@@ -1335,8 +1397,11 @@ class TranslatedModule(CommonModule):
         # Without a known specific callable, the expression provides the target.
 
         if not target or context_required:
-            self.record_temp("__tmp_targets")
-            stages.append("__tmp_targets[%d] = %s" % (self.function_target, expr))
+            if target:
+                stages.append(str(expr))
+            else:
+                self.record_temp("__tmp_targets")
+                stages.append("__tmp_targets[%d] = %s" % (self.function_target, expr))
 
         # Any specific callable is then obtained.
 
@@ -1349,7 +1414,13 @@ class TranslatedModule(CommonModule):
             self.record_temp("__tmp_targets")
 
             if context_required:
-                stages.append("__get_function(__tmp_targets[%d])" % self.function_target)
+                if have_access_context:
+                    self.record_temp("__tmp_contexts")
+                    stages.append("__get_function(__tmp_contexts[%d], __tmp_targets[%d])" % (
+                        self.function_target, self.function_target))
+                else:
+                    stages.append("__get_function(__CONTEXT_AS_VALUE(__tmp_targets[%d]).value, __tmp_targets[%d])" % (
+                        self.function_target, self.function_target))
             else:
                 stages.append("__load_via_object(__tmp_targets[%d].value, %s).fn" % (
                     self.function_target, encode_symbol("pos", "__fn__")))
@@ -1414,14 +1485,14 @@ class TranslatedModule(CommonModule):
         # Without defaults, produce an attribute referring to the function.
 
         if not defaults:
-            return make_expression("((__attr) {{.context=0, .value=&%s}})" % encode_path(function_name))
+            return make_expression("((__attr) {.value=&%s})" % encode_path(function_name))
 
         # With defaults, copy the function structure and set the defaults on the
         # copy.
 
         else:
             self.record_temp("__tmp_value")
-            return make_expression("(__tmp_value = __COPY(&%s, sizeof(%s)), %s, (__attr) {{.context=0, .value=__tmp_value}})" % (
+            return make_expression("(__tmp_value = __COPY(&%s, sizeof(%s)), %s, (__attr) {.value=__tmp_value})" % (
                 encode_path(function_name),
                 encode_symbol("obj", function_name),
                 ", ".join(defaults)))
@@ -1914,14 +1985,17 @@ class TranslatedModule(CommonModule):
 
         # Provide space for the given number of targets.
 
+        targets = self.importer.function_targets.get(name)
+
         if self.uses_temp(name, "__tmp_targets"):
-            targets = self.importer.function_targets.get(name)
             self.writeline("__attr __tmp_targets[%d];" % targets)
+        if self.uses_temp(name, "__tmp_contexts"):
+            self.writeline("__ref __tmp_contexts[%d];" % targets)
 
         # Add temporary variable usage details.
 
-        if self.uses_temp(name, "__tmp_context"):
-            self.writeline("__ref __tmp_context;")
+        if self.uses_temp(name, "__tmp_private_context"):
+            self.writeline("__ref __tmp_private_context;")
         if self.uses_temp(name, "__tmp_value"):
             self.writeline("__ref __tmp_value;")
         if self.uses_temp(name, "__tmp_target_value"):

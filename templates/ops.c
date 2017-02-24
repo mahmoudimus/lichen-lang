@@ -21,14 +21,22 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "progops.h" /* for raising errors */
 #include "progconsts.h"
 #include "progtypes.h"
-#include <stdio.h>
 
 /* Direct access and manipulation of static objects. */
 
-__attr __load_static(__ref parent, __ref obj)
+__attr __load_static_ignore(__ref obj)
 {
-    __attr out = {.context=parent, .value=obj};
-    return out;
+    return (__attr) {.value=obj};
+}
+
+__attr __load_static_replace(__ref context, __ref obj)
+{
+    return __update_context(context, (__attr) {.value=obj});
+}
+
+__attr __load_static_test(__ref context, __ref obj)
+{
+    return __test_context(context, (__attr) {.value=obj});
 }
 
 /* Direct retrieval operations, returning and setting attributes. */
@@ -190,77 +198,122 @@ int __check_and_store_via_any(__ref obj, int pos, int code, __attr value)
 
 /* Context-related operations. */
 
-__attr __test_context(__ref context, __attr attr)
+int __test_context_update(__ref context, __attr attr)
 {
+    /* Return whether the context should be updated for the attribute. */
+
+    __ref attrcontext = __CONTEXT_AS_VALUE(attr).value;
+
     /* Preserve any existing null or instance context. */
 
-    if ((attr.context == 0) || __is_instance(attr.context))
-        return attr;
+    if ((attrcontext == 0) || __is_instance(attrcontext))
+        return 0;
 
     /* Test any instance context against the context employed by the
        attribute. */
 
     if (__is_instance(context))
     {
-        if (__test_common_instance(context, __TYPEPOS(attr.context), __TYPECODE(attr.context)))
-            return __update_context(context, attr);
+        /* Obtain the special class attribute position and code identifying the
+           attribute context's class, inspecting the context instance for
+           compatibility. */
+
+        if (__test_common_instance(context, __TYPEPOS(attrcontext), __TYPECODE(attrcontext)))
+            return 1;
         else
             __raise_type_error();
     }
 
     /* Test for access to a type class attribute using a type instance. */
 
-    if (__test_specific_type(attr.context, &__TYPE_CLASS_TYPE) && __is_type_instance(context))
-        return __update_context(context, attr);
+    if (__test_specific_type(attrcontext, &__TYPE_CLASS_TYPE) && __is_type_instance(context))
+        return 1;
 
     /* Otherwise, preserve the attribute as retrieved. */
 
-    return attr;
+    return 0;
+}
+
+__attr __test_context(__ref context, __attr attr)
+{
+    /* Update the context or return the unchanged attribute. */
+
+    if (__test_context_update(context, attr))
+        return __update_context(context, attr);
+    else
+        return attr;
 }
 
 __attr __update_context(__ref context, __attr attr)
 {
-    __attr out = {.context=context, .value=attr.value};
-    return out;
+    return __new_wrapper(context, attr);
+}
+
+__attr __test_context_revert(int target, __ref context, __attr attr, __ref contexts[])
+{
+    /* Revert the local context to that employed by the attribute if the
+       supplied context is not appropriate. */
+
+    if (!__test_context_update(context, attr))
+        contexts[target] = __CONTEXT_AS_VALUE(attr).value;
+    return attr;
+}
+
+__attr __test_context_static(int target, __ref context, __ref value, __ref contexts[])
+{
+    /* Set the local context to the specified context if appropriate. */
+
+    if (__test_context_update(context, (__attr) {.value=value}))
+        contexts[target] = context;
+    return (__attr) {.value=value};
 }
 
 /* Context testing for invocations. */
 
-int __type_method_invocation(__attr attr)
+int __type_method_invocation(__ref context, __attr target)
 {
-    __attr parent;
+    __ref targetcontext = __CONTEXT_AS_VALUE(target).value;
 
     /* Require instances, not classes, where methods are function instances. */
 
-    if (!__is_instance(attr.value))
+    if (!__is_instance(target.value))
         return 0;
 
-    /* Access the parent of the callable and test if it is the type object. */
+    /* Access the context of the callable and test if it is the type object. */
 
-    parent = __check_and_load_via_object_null(attr.value, __ATTRPOS(__parent__), __ATTRCODE(__parent__));
-    return ((parent.value != 0) && __test_specific_type(parent.value, &__TYPE_CLASS_TYPE) && __is_type_instance(attr.context));
+    return ((targetcontext != 0) && __test_specific_type(targetcontext, &__TYPE_CLASS_TYPE) && __is_type_instance(context));
 }
 
-__attr (*__get_function(__attr attr))(__attr[])
+__attr __unwrap_callable(__attr callable)
 {
+    __attr value = __check_and_load_via_object_null(callable.value, __ATTRPOS(__value__), __ATTRCODE(__value__));
+    return value.value ? value : callable;
+}
+
+__attr (*__get_function(__ref context, __attr target))(__attr[])
+{
+    target = __unwrap_callable(target);
+
     /* Require null or instance contexts for functions and methods respectively,
        or type instance contexts for type methods. */
 
-    if ((attr.context == 0) || __is_instance(attr.context) || __type_method_invocation(attr))
-        return __load_via_object(attr.value, __ATTRPOS(__fn__)).fn;
+    if ((context == 0) || __is_instance(context) || __type_method_invocation(context, target))
+        return __load_via_object(target.value, __ATTRPOS(__fn__)).fn;
     else
-        return __load_via_object(attr.value, __ATTRPOS(__fn__)).inv;
+        return __unbound_method;
 }
 
-__attr (*__check_and_get_function(__attr attr))(__attr[])
+__attr (*__check_and_get_function(__ref context, __attr target))(__attr[])
 {
+    target = __unwrap_callable(target);
+
     /* Require null or instance contexts for functions and methods respectively,
        or type instance contexts for type methods. */
 
-    if ((attr.context == 0) || __is_instance(attr.context) || __type_method_invocation(attr))
-        return __check_and_load_via_object(attr.value, __ATTRPOS(__fn__), __ATTRCODE(__fn__)).fn;
+    if ((context == 0) || __is_instance(context) || __type_method_invocation(context, target))
+        return __check_and_load_via_object(target.value, __ATTRPOS(__fn__), __ATTRCODE(__fn__)).fn;
     else
-        return __check_and_load_via_object(attr.value, __ATTRPOS(__fn__), __ATTRCODE(__fn__)).inv;
+        return __unbound_method;
 }
 
 /* Basic structure tests. */
@@ -295,10 +348,7 @@ int __HASPARAM(const __ptable *ptable, int ppos, int pcode)
 
 __attr __CONTEXT_AS_VALUE(__attr attr)
 {
-    __attr out;
-    out.context = attr.context;
-    out.value = attr.context;
-    return out;
+    return __check_and_load_via_object_null(attr.value, __ATTRPOS(__context__), __ATTRCODE(__context__));
 }
 
 /* Type testing. */
@@ -310,7 +360,6 @@ __ref __ISFUNC(__ref obj)
 
 int __ISNULL(__attr value)
 {
-    /* (value.context == __NULL.context) is superfluous */
     return (value.value == 0); /* __NULL.value */
 }
 

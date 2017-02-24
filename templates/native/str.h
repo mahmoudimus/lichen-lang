@@ -26,8 +26,6 @@ __attr __fn_native_str_str_chr(__attr __args[]);
 __attr __fn_native_str_str_lt(__attr __args[]);
 __attr __fn_native_str_str_gt(__attr __args[]);
 __attr __fn_native_str_str_eq(__attr __args[]);
-__attr __fn_native_str_str_len(__attr __args[]);
-__attr __fn_native_str_str_nonempty(__attr __args[]);
 __attr __fn_native_str_str_ord(__attr __args[]);
 __attr __fn_native_str_str_substr(__attr __args[]);
 

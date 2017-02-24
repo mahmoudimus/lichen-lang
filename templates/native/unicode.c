@@ -72,11 +72,14 @@ static unsigned int prevpos(char *s, unsigned int bytestart)
 __attr __fn_native_unicode_unicode_len(__attr __args[])
 {
     __attr * const _data = &__args[1];
+    __attr * const _size = &__args[2];
     /* _data interpreted as string */
     char *s = _data->strvalue;
+    /* _size interpreted as int */
+    int size = _size->intvalue;
     unsigned int i, c = 0;
 
-    for (i = 0; i < _data->size; i++)
+    for (i = 0; i < size; i++)
         if (boundary(s[i]))
             c++;
 
@@ -87,11 +90,14 @@ __attr __fn_native_unicode_unicode_len(__attr __args[])
 __attr __fn_native_unicode_unicode_ord(__attr __args[])
 {
     __attr * const _data = &__args[1];
+    __attr * const _size = &__args[2];
     /* _data interpreted as string */
     char *s = _data->strvalue;
+    /* _size interpreted as int */
+    int size = _size->intvalue;
     unsigned int i, c = 0, v;
 
-    for (i = 0; i < _data->size; i++)
+    for (i = 0; i < size; i++)
     {
         /* Evaluate the current character as a boundary. */
 
@@ -120,11 +126,14 @@ __attr __fn_native_unicode_unicode_ord(__attr __args[])
 __attr __fn_native_unicode_unicode_substr(__attr __args[])
 {
     __attr * const _data = &__args[1];
-    __attr * const start = &__args[2];
-    __attr * const end = &__args[3];
-    __attr * const step = &__args[4];
+    __attr * const _size = &__args[2];
+    __attr * const start = &__args[3];
+    __attr * const end = &__args[4];
+    __attr * const step = &__args[5];
     /* _data interpreted as string */
     char *s = _data->strvalue, *sub;
+    /* _size interpreted as int */
+    int ss = _size->intvalue;
     /* start.__data__ interpreted as int */
     int istart = __load_via_object(start->value, __pos___data__).intvalue;
     /* end.__data__ interpreted as int */
@@ -137,14 +146,14 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
     unsigned int indexes[nchar];
 
     unsigned int c, d, i, to, from, lastbyte = 0;
-    size_t resultsize = 0;
+    int resultsize = 0;
 
     /* Find the indexes of the characters. */
     if (istep > 0)
     {
         /* Get the first byte position. */
         for (c = 0; c < istart; c++)
-            lastbyte = nextpos(s, _data->size, lastbyte);
+            lastbyte = nextpos(s, ss, lastbyte);
 
         /* Get each subsequent byte position. */
         for (c = istart, i = 0; i < nchar; c += istep, i++)
@@ -152,17 +161,17 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
             indexes[i] = lastbyte;
 
             /* Add the character size to the result size. */
-            resultsize += nextpos(s, _data->size, lastbyte) - lastbyte;
+            resultsize += nextpos(s, ss, lastbyte) - lastbyte;
 
             for (d = c; d < c + istep; d++)
-                lastbyte = nextpos(s, _data->size, lastbyte);
+                lastbyte = nextpos(s, ss, lastbyte);
         }
     }
     else
     {
         /* Get the first byte position. */
         for (c = 0; c < istart; c++)
-            lastbyte = nextpos(s, _data->size, lastbyte);
+            lastbyte = nextpos(s, ss, lastbyte);
 
         /* Get each subsequent byte position. */
         for (c = istart, i = 0; i < nchar; c += istep, i++)
@@ -170,7 +179,7 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
             indexes[i] = lastbyte;
 
             /* Add the character size to the result size. */
-            resultsize += nextpos(s, _data->size, lastbyte) - lastbyte;
+            resultsize += nextpos(s, ss, lastbyte) - lastbyte;
 
             for (d = c; d > c + istep; d--)
                 lastbyte = prevpos(s, lastbyte);
