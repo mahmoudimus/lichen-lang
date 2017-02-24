@@ -78,13 +78,13 @@ class Generator(CommonOutput):
         self.optimiser = optimiser
         self.output = output
 
-    def to_output(self, debug=False):
+    def to_output(self, debug=False, gc_sections=False):
 
         "Write the generated code."
 
         self.check_output()
         self.write_structures()
-        self.write_scripts(debug)
+        self.write_scripts(debug, gc_sections)
         self.copy_templates()
 
     def copy_templates(self):
@@ -418,7 +418,7 @@ class Generator(CommonOutput):
             f_signatures.close()
             f_code.close()
 
-    def write_scripts(self, debug):
+    def write_scripts(self, debug, gc_sections):
 
         "Write scripts used to build the program."
 
@@ -428,6 +428,9 @@ class Generator(CommonOutput):
         try:
             if debug:
                 print >>f_options, "CFLAGS = -g"
+
+            if gc_sections:
+                print >>f_options, "include gc_sections.mk"
 
             # Identify modules used by the program.
 

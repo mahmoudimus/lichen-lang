@@ -115,6 +115,8 @@ The following options may be specified:
 --no-env    Equivalent to -E
 -g          Generate debugging information for the built executable
 --debug     Equivalent to -g
+-G          Remove superfluous sections of the built executable
+--gc-sections Equivalent to -G
 -P          Show the module search path
 --show-path Equivalent to -P
 -q          Silence messages produced when building an executable
@@ -170,6 +172,7 @@ This program has absolutely no warranty.
     # Determine the options and arguments.
 
     debug = False
+    gc_sections = False
     ignore_env = False
     make = True
     make_verbose = True
@@ -192,6 +195,7 @@ This program has absolutely no warranty.
         if arg in ("-c", "--compile"): make = False
         elif arg in ("-E", "--no-env"): ignore_env = True
         elif arg in ("-g", "--debug"): debug = True
+        elif arg in ("-G", "--gc-sections"): gc_sections = True
         elif arg in ("-q", "--quiet"): make_verbose = False
         elif arg in ("-r", "--reset"): reset = True
         elif arg in ("-R", "--reset-all"): reset_all = True
@@ -284,7 +288,7 @@ This program has absolutely no warranty.
         if timings: now = stopwatch("Optimisation", now)
 
         g = generator.Generator(i, o, generated_dir)
-        g.to_output(debug)
+        g.to_output(debug, gc_sections)
 
         if timings: now = stopwatch("Generation", now)
 
