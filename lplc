@@ -293,7 +293,7 @@ This program has absolutely no warranty.
         if timings: now = stopwatch("Generation", now)
 
         t = translator.Translator(i, d, o, generated_dir)
-        t.to_output()
+        t.to_output(debug, gc_sections)
 
         if timings: now = stopwatch("Translation", now)
 

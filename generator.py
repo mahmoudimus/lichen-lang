@@ -82,7 +82,7 @@ class Generator(CommonOutput):
 
         "Write the generated code."
 
-        self.check_output()
+        self.check_output("debug=%r gc_sections=%r" % (debug, gc_sections))
         self.write_structures()
         self.write_scripts(debug, gc_sections)
         self.copy_templates()

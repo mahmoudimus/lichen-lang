@@ -47,7 +47,7 @@ class Translator(CommonOutput):
         self.optimiser = optimiser
         self.output = output
 
-    def to_output(self):
+    def to_output(self, debug=False, gc_sections=False):
 
         "Write a program to the configured output directory."
 
@@ -60,7 +60,7 @@ class Translator(CommonOutput):
 
         # Clean the output directory of irrelevant data.
 
-        self.check_output()
+        self.check_output("debug=%r gc_sections=%r" % (debug, gc_sections))
 
         for module in self.importer.modules.values():
             output_filename = join(output, "%s.c" % module.name)

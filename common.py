@@ -31,7 +31,7 @@ class CommonOutput:
 
     "Common output functionality."
 
-    def check_output(self):
+    def check_output(self, options=None):
 
         "Check the existing output and remove it if irrelevant."
 
@@ -41,10 +41,14 @@ class CommonOutput:
         details = self.importer.get_cache_details()
         recorded_details = self.get_output_details()
 
-        if recorded_details != details:
+        # Combine cache details with any options.
+
+        full_details = options and (details + " " + options) or details
+
+        if recorded_details != full_details:
             self.remove_output()
 
-        writefile(self.get_output_details_filename(), details)
+        writefile(self.get_output_details_filename(), full_details)
 
     def get_output_details_filename(self):
 
