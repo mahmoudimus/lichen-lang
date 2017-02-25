@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from common import CommonModule, CommonOutput, InstructionSequence, \
                    first, get_builtin_class, init_item, is_newer, \
                    predefined_constants
-from encoders import encode_access_instruction, \
+from encoders import encode_access_instruction, encode_access_instruction_arg, \
                      encode_function_pointer, encode_literal_constant, \
                      encode_literal_instantiator, encode_instantiator_pointer, \
                      encode_instructions, \
@@ -205,16 +205,20 @@ class AttrResult(Expression, TranslationResult, InstructionSequence):
 
     "A translation result for an attribute access."
 
-    def __init__(self, instructions, refs, location):
+    def __init__(self, instructions, refs, location, context_identity):
         InstructionSequence.__init__(self, instructions)
         self.refs = refs
         self.location = location
+        self.context_identity = context_identity
 
     def references(self):
         return self.refs
 
     def access_location(self):
         return self.location
+
+    def context(self):
+        return self.context_identity
 
     def get_origin(self):
         return self.refs and len(self.refs) == 1 and first(self.refs).get_origin()
@@ -226,6 +230,9 @@ class AttrResult(Expression, TranslationResult, InstructionSequence):
             if ref.has_kind(kinds):
                 return True
         return False
+
+    def __nonzero__(self):
+        return bool(self.instructions)
 
     def __str__(self):
         return encode_instructions(self.instructions)
@@ -751,6 +758,7 @@ class TranslatedModule(CommonModule):
 
         subs = {
             "<expr>" : attr_expr,
+            "<name>" : "%s.value" % attr_expr,
             "<assexpr>" : self.in_assignment,
             }
 
@@ -764,11 +772,22 @@ class TranslatedModule(CommonModule):
         # invocation.
 
         context_index = self.function_target - 1
+        context_identity = None
 
         # Obtain encoded versions of each instruction, accumulating temporary
         # variables.
 
         for instruction in self.optimiser.access_instructions[location]:
+
+            # Intercept a special instruction identifying the context.
+
+            if instruction[0] == "<context_identity>":
+                context_identity, _substituted = encode_access_instruction_arg(instruction[1], subs, instruction[0], context_index)
+                continue
+
+            # Collect the encoded instruction, noting any temporary variables
+            # required by it.
+
             encoded, _substituted = encode_access_instruction(instruction, subs, context_index)
             output.append(encoded)
             substituted.update(_substituted)
@@ -780,7 +799,7 @@ class TranslatedModule(CommonModule):
                 self.record_temp(self.temp_subs[sub])
 
         del self.attrs[0]
-        return AttrResult(output, refs, location)
+        return AttrResult(output, refs, location, context_identity)
 
     def init_substitutions(self):
 
@@ -1225,6 +1244,7 @@ class TranslatedModule(CommonModule):
 
         context_required = True
         have_access_context = isinstance(expr, AttrResult)
+        context_identity = have_access_context and expr.context()
         parameters = None
 
         # Obtain details of the callable and of its parameters.
@@ -1296,8 +1316,9 @@ class TranslatedModule(CommonModule):
 
         if context_required:
             if have_access_context:
-                self.record_temp("__tmp_contexts")
-                args = ["(__attr) {.value=__tmp_contexts[%d]}" % self.function_target]
+                if context_identity.startswith("__tmp_contexts"):
+                    self.record_temp("__tmp_contexts")
+                args = ["(__attr) {.value=%s}" % context_identity]
             else:
                 self.record_temp("__tmp_targets")
                 args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
@@ -1398,7 +1419,8 @@ class TranslatedModule(CommonModule):
 
         if not target or context_required:
             if target:
-                stages.append(str(expr))
+                if expr:
+                    stages.append(str(expr))
             else:
                 self.record_temp("__tmp_targets")
                 stages.append("__tmp_targets[%d] = %s" % (self.function_target, expr))
@@ -1415,9 +1437,10 @@ class TranslatedModule(CommonModule):
 
             if context_required:
                 if have_access_context:
-                    self.record_temp("__tmp_contexts")
-                    stages.append("__get_function(__tmp_contexts[%d], __tmp_targets[%d])" % (
-                        self.function_target, self.function_target))
+                    if context_identity.startswith("__tmp_contexts"):
+                        self.record_temp("__tmp_contexts")
+                    stages.append("__get_function(%s, __tmp_targets[%d])" % (
+                        context_identity, self.function_target))
                 else:
                     stages.append("__get_function(__CONTEXT_AS_VALUE(__tmp_targets[%d]).value, __tmp_targets[%d])" % (
                         self.function_target, self.function_target))

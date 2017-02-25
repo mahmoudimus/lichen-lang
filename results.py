@@ -42,6 +42,9 @@ class Result:
     def access_location(self):
         return None
 
+    def context_identity(self):
+        return None
+
     def get_name(self):
         return None
 

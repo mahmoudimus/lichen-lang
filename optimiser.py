@@ -360,8 +360,20 @@ class Optimiser:
 
             if base:
                 original_accessor = base
+
+            # Employ names as contexts unless the context needs testing and
+            # potentially updating. In such cases, temporary context storage is
+            # used instead.
+
+            elif name and not (context_test == "test" and
+                               final_method in ("access-invoke", "static-invoke")):
+                original_accessor = "<name>" # refers to the name
+
+            # Use a generic placeholder representing the access expression in
+            # the general case.
+
             else:
-                original_accessor = "<expr>" # use a generic placeholder
+                original_accessor = "<expr>"
 
             # Prepare for any first attribute access.
 
@@ -384,6 +396,8 @@ class Optimiser:
             stored_accessor = assigning and "<target_accessor>" or "<accessor>"
 
             # Set the context if already available.
+
+            context_var = None
 
             if context == "base":
                 accessor = context_var = (base,)
@@ -604,6 +618,11 @@ class Optimiser:
 
             elif final_method not in ("assign", "static-assign", "static-invoke"):
                 emit(accessor)
+
+            # Produce an advisory instruction regarding the context.
+
+            if context_var:
+                emit(("<context_identity>", context_var))
 
             self.access_instructions[access_location] = instructions
             self.accessor_kinds[access_location] = accessor_kinds
