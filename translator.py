@@ -1310,18 +1310,26 @@ class TranslatedModule(CommonModule):
                         self.get_namespace_path(), n.lineno, num_parameters,
                         _objpath)
 
+        # Determine any readily-accessible target identity.
+
+        target_identity = target or expr.is_name() and str(expr) or None
+        target_var = target_identity or "__tmp_targets[%d]" % self.function_target
+
+        if not target_identity:
+            self.record_temp("__tmp_targets")
+
+        if context_identity and context_identity.startswith("__tmp_contexts"):
+            self.record_temp("__tmp_contexts")
+
         # Arguments are presented in a temporary frame array with any context
         # always being the first argument. Where it would be unused, it may be
         # set to null.
 
         if context_required:
             if have_access_context:
-                if context_identity.startswith("__tmp_contexts"):
-                    self.record_temp("__tmp_contexts")
                 args = ["(__attr) {.value=%s}" % context_identity]
             else:
-                self.record_temp("__tmp_targets")
-                args = ["__CONTEXT_AS_VALUE(__tmp_targets[%d])" % self.function_target]
+                args = ["__CONTEXT_AS_VALUE(%s)" % target_var]
         else:
             args = ["__NULL"]
 
@@ -1421,9 +1429,8 @@ class TranslatedModule(CommonModule):
             if target:
                 if expr:
                     stages.append(str(expr))
-            else:
-                self.record_temp("__tmp_targets")
-                stages.append("__tmp_targets[%d] = %s" % (self.function_target, expr))
+            elif not target_identity:
+                stages.append("%s = %s" % (target_var, expr))
 
         # Any specific callable is then obtained.
 
@@ -1433,20 +1440,16 @@ class TranslatedModule(CommonModule):
         # Methods accessed via unidentified accessors are obtained. 
 
         elif function:
-            self.record_temp("__tmp_targets")
-
             if context_required:
                 if have_access_context:
-                    if context_identity.startswith("__tmp_contexts"):
-                        self.record_temp("__tmp_contexts")
-                    stages.append("__get_function(%s, __tmp_targets[%d])" % (
-                        context_identity, self.function_target))
+                    stages.append("__get_function(%s, %s)" % (
+                        context_identity, target_var))
                 else:
-                    stages.append("__get_function(__CONTEXT_AS_VALUE(__tmp_targets[%d]).value, __tmp_targets[%d])" % (
-                        self.function_target, self.function_target))
+                    stages.append("__get_function(__CONTEXT_AS_VALUE(%s).value, %s)" % (
+                        target_var, target_var))
             else:
-                stages.append("__load_via_object(__tmp_targets[%d].value, %s).fn" % (
-                    self.function_target, encode_symbol("pos", "__fn__")))
+                stages.append("__load_via_object(%s.value, %s).fn" % (
+                    target_var, encode_symbol("pos", "__fn__")))
 
         # With a known target, the function is obtained directly and called.
         # By putting the invocation at the end of the final element in the
@@ -1465,9 +1468,8 @@ class TranslatedModule(CommonModule):
         # the callable and argument collections.
 
         else:
-            self.record_temp("__tmp_targets")
-            stages.append("__invoke(\n__tmp_targets[%d],\n%d, %d, %s, %s,\n%d, %s\n)" % (
-                self.function_target,
+            stages.append("__invoke(\n%s,\n%d, %d, %s, %s,\n%d, %s\n)" % (
+                target_var,
                 self.always_callable and 1 or 0,
                 len(kwargs), kwcodestr, kwargstr,
                 len(args), argstr))
