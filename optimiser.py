@@ -22,6 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from common import add_counter_item, get_attrname_from_location, init_item, \
                    sorted_output
 from encoders import digest, encode_access_location, encode_instruction, get_kinds
+from errors import OptimiseError
 from os.path import exists, join
 from os import makedirs
 from referencing import Reference
@@ -73,6 +74,7 @@ class Optimiser:
 
         self.constants = []
         self.constant_numbers = {}
+        self.digests = {}
 
         # Optimiser activities.
 
@@ -742,7 +744,21 @@ class Optimiser:
             # Each constant is actually (value, value_type, encoding).
 
             for constant, n in constants.items():
-                self.constants[constant] = digest(constant)
+                d = digest(constant)
+                self.constants[constant] = d
+
+                # Make sure the digests are really distinct for different
+                # constants.
+
+                if self.digests.has_key(d):
+                    if self.digests[d] != constant:
+                        raise OptimiseError, "Digest %s used for distinct constants %r and %r." % (
+                                             d, self.digests[d], constant)
+                else:
+                    self.digests[d] = constant
+
+        # Establish a mapping from local constant identifiers to consolidated
+        # constant identifiers.
 
         self.constant_numbers = {}
 

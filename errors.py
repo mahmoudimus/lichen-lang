@@ -4,7 +4,7 @@
 Error classes.
 
 Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012
-              2014, 2016 Paul Boddie <paul@boddie.org.uk>
+              2014, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -84,6 +84,13 @@ class DeduceError(ProgramError):
 
     def __str__(self):
         return "Error in deduction: %s" % self.message
+
+class OptimiseError(ProgramError):
+
+    "An error during optimisation."
+
+    def __str__(self):
+        return "Error in optimisation: %s" % self.message
 
 class TranslateError(NodeProcessingError):
 
