@@ -1,6 +1,6 @@
 /* Native functions for system operations.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -31,7 +31,7 @@ __attr __fn_native_system_exit(__attr __args[])
 {
     __attr * const status = &__args[1];
 
-    exit(__load_via_object(status->value, __pos___data__).intvalue);
+    exit(__load_via_object(status->value, __ATTRPOS(__data__)).intvalue);
     return __builtins___none_None;
 }
 

@@ -113,11 +113,11 @@ __attr __fn_native_str_str_substr(__attr __args[])
     /* _data interpreted as string */
     char *s = _data->strvalue, *sub;
     /* start.__data__ interpreted as int */
-    int istart = __load_via_object(start->value, __pos___data__).intvalue;
+    int istart = __load_via_object(start->value, __ATTRPOS(__data__)).intvalue;
     /* end.__data__ interpreted as int */
-    int iend = __load_via_object(end->value, __pos___data__).intvalue;
+    int iend = __load_via_object(end->value, __ATTRPOS(__data__)).intvalue;
     /* step.__data__ interpreted as int */
-    int istep = __load_via_object(step->value, __pos___data__).intvalue;
+    int istep = __load_via_object(step->value, __ATTRPOS(__data__)).intvalue;
 
     /* Calculate the size of the substring. */
     size_t resultsize = ((iend - istart - (istep > 0 ? 1 : -1)) / istep) + 1;

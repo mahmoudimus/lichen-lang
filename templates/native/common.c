@@ -30,7 +30,7 @@ __attr __new_int(int i)
 {
     /* Create a new integer and mutate the __data__ attribute. */
     __attr attr = __NEWINSTANCE(__builtins___int_int);
-    attr.value->attrs[__pos___data__].intvalue = i;
+    attr.value->attrs[__ATTRPOS(__data__)].intvalue = i;
     return attr;
 }
 
@@ -38,9 +38,9 @@ __attr __new_str(char *s, int size)
 {
     /* Create a new string and mutate the __data__, __size__ and __key__ attributes. */
     __attr attr = __NEWINSTANCE(__builtins___str_string);
-    attr.value->attrs[__pos___data__].strvalue = s;
-    attr.value->attrs[__pos___size__].intvalue = size;
-    attr.value->attrs[__pos___key__] = __NULL;
+    attr.value->attrs[__ATTRPOS(__data__)].strvalue = s;
+    attr.value->attrs[__ATTRPOS(__size__)].intvalue = size;
+    attr.value->attrs[__ATTRPOS(__key__)] = __NULL;
     return attr;
 }
 
@@ -48,7 +48,7 @@ __attr __new_list(__fragment *f)
 {
     /* Create a new list and mutate the __data__ attribute. */
     __attr attr = __NEWINSTANCE(__builtins___list_list);
-    attr.value->attrs[__pos___data__].seqvalue = f;
+    attr.value->attrs[__ATTRPOS(__data__)].seqvalue = f;
     return attr;
 }
 

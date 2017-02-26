@@ -32,7 +32,7 @@ __attr __fn_native_introspection_object_getattr(__attr __args[])
     __attr * const name = &__args[2];
     __attr * const _default = &__args[3];
     /* name.__data__ interpreted as string */
-    __attr key = __load_via_object(name->value, __pos___key__);
+    __attr key = __load_via_object(name->value, __ATTRPOS(__key__));
     __attr out;
 
     if ((key.code == 0) && (key.pos == 0))
