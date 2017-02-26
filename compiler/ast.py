@@ -1592,38 +1592,6 @@ class While(Node):
             self.else_ and "\nelse:%s" % indent("\n%s" % self.else_) or ""
             )
 
-class With(Node):
-    def __init__(self, expr, vars, body, lineno=None):
-        self.expr = expr
-        self.vars = vars
-        self.body = body
-        self.lineno = lineno
-
-    def getChildren(self):
-        children = []
-        children.append(self.expr)
-        children.append(self.vars)
-        children.append(self.body)
-        return tuple(children)
-
-    def getChildNodes(self):
-        nodelist = []
-        nodelist.append(self.expr)
-        if self.vars is not None:
-            nodelist.append(self.vars)
-        nodelist.append(self.body)
-        return tuple(nodelist)
-
-    def __repr__(self):
-        return "With(%r, %r, %r)" % (self.expr, self.vars, self.body)
-
-    def __str__(self):
-        return "with %s%s:%s" % (
-            self.expr,
-            self.vars and " as %s" % ", ".join(map(str, self.vars)),
-            indent("\n%s" % self.body),
-            )
-
 for name, obj in globals().items():
     if isinstance(obj, type) and issubclass(obj, Node):
         nodes[name.lower()] = obj

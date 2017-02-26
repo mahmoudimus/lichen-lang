@@ -468,9 +468,6 @@ class Transformer:
     def try_stmt(self, nodelist):
         return self.com_try_except_finally(nodelist)
 
-    def with_stmt(self, nodelist):
-        return self.com_with(nodelist)
-
     def suite(self, nodelist):
         # simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT
         if len(nodelist) == 1:
@@ -874,24 +871,6 @@ class Transformer:
         else:
             return try_except
 
-    def com_with(self, nodelist):
-        # with_stmt: 'with' with_item (',' with_item)* ':' suite
-        body = self.com_node(nodelist[-1])
-        for i in range(len(nodelist) - 3, 0, -2):
-            ret = self.com_with_item(nodelist[i], body, nodelist[0][2])
-            if i == 1:
-                return ret
-            body = ret
-
-    def com_with_item(self, nodelist, body, lineno):
-        # with_item: test ['as' expr]
-        if len(nodelist) == 4:
-            var = self.com_assign(nodelist[3], OP_ASSIGN)
-        else:
-            var = None
-        expr = self.com_node(nodelist[1])
-        return With(expr, var, body, lineno=lineno)
-
     def com_augassign_op(self, node):
         assert node[0] == symbol["augassign"]
         return node[1]
@@ -1268,7 +1247,6 @@ _legal_node_types = [
     symbol["while_stmt"],
     symbol["for_stmt"],
     symbol["try_stmt"],
-    symbol["with_stmt"],
     symbol["suite"],
     symbol["testlist"],
     symbol["testlist_safe"],
