@@ -113,9 +113,16 @@ typedef struct __fragment
 
 typedef __attr (*__func)();
 
-/* Convenience macros. */
+/* Argument lists. */
 
 #define __ARGS(...) ((__attr[]) {__VA_ARGS__})
 #define __KWARGS(...) ((__param[]) {__VA_ARGS__})
+
+/* Attribute codes and positions for attribute names. */
+
+#define __ATTRCODE(ATTRNAME) __code_##ATTRNAME
+#define __ATTRPOS(ATTRNAME) __pos_##ATTRNAME
+#define __PARAMCODE(PARAMNAME) __pcode_##PARAMNAME
+#define __PARAMPOS(PARAMNAME) __ppos_##PARAMNAME
 
 #endif /* __TYPES_H__ */

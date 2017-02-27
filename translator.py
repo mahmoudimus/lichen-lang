@@ -23,10 +23,10 @@ from common import CommonModule, CommonOutput, InstructionSequence, \
                    first, get_builtin_class, init_item, is_newer, \
                    predefined_constants
 from encoders import encode_access_instruction, encode_access_instruction_arg, \
-                     encode_function_pointer, encode_literal_constant, \
+                     encode_code, encode_function_pointer, encode_literal_constant, \
                      encode_literal_instantiator, encode_instantiator_pointer, \
-                     encode_instructions, \
-                     encode_path, encode_symbol, encode_type_attribute, \
+                     encode_instructions, encode_path, encode_pos, \
+                     encode_symbol, encode_type_attribute, \
                      is_type_attribute
 from errors import InspectError, TranslateError
 from os.path import exists, join
@@ -142,7 +142,7 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
             elif parent:
                 return "__store_via_object(&%s, %s, %s)" % (
-                    encode_path(parent), encode_symbol("pos", attrname), self.expr)
+                    encode_path(parent), encode_pos(attrname), self.expr)
 
             # All other assignments involve the names as they were given.
 
@@ -160,7 +160,7 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
 
         elif parent:
             return "__load_via_object(&%s, %s)" % (
-                encode_path(parent), encode_symbol("pos", attrname))
+                encode_path(parent), encode_pos(attrname))
 
         # All other accesses involve the names as they were given.
 
@@ -979,8 +979,8 @@ class TranslatedModule(CommonModule):
                 parent, attrname = path.rsplit(".", 1)
 
                 self.writestmt("__store_via_object(&%s, %s, __load_via_object(&%s, %s));" % (
-                    encode_path(class_name), encode_symbol("pos", name),
-                    encode_path(parent), encode_symbol("pos", attrname)
+                    encode_path(class_name), encode_pos(name),
+                    encode_path(parent), encode_pos(attrname)
                     ))
 
     def process_from_node(self, n):
@@ -1064,7 +1064,7 @@ class TranslatedModule(CommonModule):
             elif guard == "common":
                 ref = first(self.deducer.accessor_all_general_types[location])
                 typeattr = encode_type_attribute(ref.get_origin())
-                argstr = "%s, %s" % (encode_symbol("pos", typeattr), encode_symbol("code", typeattr))
+                argstr = "%s, %s" % (encode_pos(typeattr), encode_code(typeattr))
             else:
                 return
 
@@ -1369,8 +1369,7 @@ class TranslatedModule(CommonModule):
                 else:
                     kwargs.append(str(argexpr))
                     kwcodes.append("{%s, %s}" % (
-                        encode_symbol("ppos", arg.name),
-                        encode_symbol("pcode", arg.name)))
+                        encode_ppos(arg.name), encode_pcode(arg.name)))
 
             # Store non-keyword arguments in the argument list, rejecting
             # superfluous arguments.
@@ -1449,7 +1448,7 @@ class TranslatedModule(CommonModule):
                         target_var, target_var))
             else:
                 stages.append("__load_via_object(%s.value, %s).fn" % (
-                    target_var, encode_symbol("pos", "__fn__")))
+                    target_var, encode_pos("__fn__")))
 
         # With a known target, the function is obtained directly and called.
         # By putting the invocation at the end of the final element in the

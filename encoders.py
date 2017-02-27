@@ -277,21 +277,21 @@ def encode_access_instruction(instruction, subs, context_index):
 
     if op in attribute_ops:
         arg = a[1]
-        a[1] = encode_symbol("pos", arg)
+        a[1] = encode_pos(arg)
 
     # Convert attribute name arguments to position and code symbols.
 
     elif op in checked_ops:
         arg = a[1]
-        a[1] = encode_symbol("pos", arg)
-        a.insert(2, encode_symbol("code", arg))
+        a[1] = encode_pos(arg)
+        a.insert(2, encode_code(arg))
 
     # Convert type name arguments to position and code symbols.
 
     elif op in typename_ops:
         arg = encode_type_attribute(args[1])
-        a[1] = encode_symbol("pos", arg)
-        a.insert(2, encode_symbol("code", arg))
+        a[1] = encode_pos(arg)
+        a.insert(2, encode_code(arg))
 
     # Obtain addresses of type arguments.
 
@@ -508,6 +508,30 @@ def encode_path(path):
 
         all_encoded_paths[encoded] = path
         return encoded
+
+def encode_code(name):
+
+    "Encode 'name' as an attribute code indicator."
+
+    return "__ATTRCODE(%s)" % encode_path(name)
+
+def encode_pcode(name):
+
+    "Encode 'name' as an parameter code indicator."
+
+    return "__PARAMCODE(%s)" % encode_path(name)
+
+def encode_pos(name):
+
+    "Encode 'name' as an attribute position indicator."
+
+    return "__ATTRPOS(%s)" % encode_path(name)
+
+def encode_ppos(name):
+
+    "Encode 'name' as an parameter position indicator."
+
+    return "__PARAMPOS(%s)" % encode_path(name)
 
 def encode_predefined_reference(path):
 

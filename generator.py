@@ -20,13 +20,14 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from common import CommonOutput, copy
-from encoders import encode_function_pointer, \
+from encoders import encode_code, \
+                     encode_function_pointer, \
                      encode_instantiator_pointer, \
                      encode_literal_constant, encode_literal_constant_member, \
                      encode_literal_constant_size, encode_literal_constant_value, \
                      encode_literal_data_initialiser, \
                      encode_literal_instantiator, encode_literal_reference, \
-                     encode_path, \
+                     encode_path, encode_pcode, encode_pos, encode_ppos, \
                      encode_predefined_reference, encode_size, \
                      encode_symbol, encode_tablename, \
                      encode_type_attribute, decode_type_attribute, \
@@ -154,6 +155,8 @@ class Generator(CommonOutput):
             print >>f_consts, """\
 #ifndef __PROGCONSTS_H__
 #define __PROGCONSTS_H__
+
+#include "types.h"
 """
             print >>f_decls, """\
 #ifndef __PROGTYPES_H__
@@ -379,11 +382,15 @@ class Generator(CommonOutput):
 
             # Generate parameter codes.
 
-            self.write_code_constants(f_consts, self.optimiser.all_paramnames, self.optimiser.arg_locations, "pcode", "ppos")
+            self.write_code_constants(f_consts, self.optimiser.all_paramnames,
+                                      self.optimiser.arg_locations,
+                                      "pcode", "ppos", encode_pcode, encode_ppos)
 
             # Generate attribute codes.
 
-            self.write_code_constants(f_consts, self.optimiser.all_attrnames, self.optimiser.locations, "code", "pos")
+            self.write_code_constants(f_consts, self.optimiser.all_attrnames,
+                                      self.optimiser.locations,
+                                      "code", "pos", encode_code, encode_pos)
 
             # Output more boilerplate.
 
@@ -403,8 +410,8 @@ class Generator(CommonOutput):
     encode_path(self.function_type),
     encode_size("<instance>", self.function_type),
     encode_path(self.type_type),
-    encode_symbol("pos", encode_type_attribute(self.type_type)),
-    encode_symbol("code", encode_type_attribute(self.type_type)),
+    encode_pos(encode_type_attribute(self.type_type)),
+    encode_code(encode_type_attribute(self.type_type)),
     )
 
             print >>f_signatures, """\
@@ -620,7 +627,8 @@ class Generator(CommonOutput):
             f_consts.write("    %s = %d" % (encode_size(size_prefix, path), size + padding))
         print >>f_consts, "\n    };"
 
-    def write_code_constants(self, f_consts, attrnames, locations, code_prefix, pos_prefix):
+    def write_code_constants(self, f_consts, attrnames, locations, code_prefix,
+                             pos_prefix, code_encoder, pos_encoder):
 
         """
         Write code constants to 'f_consts' for the given 'attrnames' and
@@ -634,7 +642,7 @@ class Generator(CommonOutput):
                 print >>f_consts, ","
             else:
                 first = False
-            f_consts.write("    %s = %d" % (encode_symbol(code_prefix, attrname), i))
+            f_consts.write("    %s = %d" % (code_encoder(attrname), i))
         print >>f_consts, "\n    };"
 
         print >>f_consts, "enum %s {" % encode_symbol(pos_prefix)
@@ -645,7 +653,7 @@ class Generator(CommonOutput):
                     print >>f_consts, ","
                 else:
                     first = False
-                f_consts.write("    %s = %d" % (encode_symbol(pos_prefix, attrname), i))
+                f_consts.write("    %s = %d" % (pos_encoder(attrname), i))
         print >>f_consts, "\n    };"
 
     def write_table(self, f_decls, f_defs, table_name, structure_size, table):
@@ -730,7 +738,7 @@ typedef struct {
             print >>f_decls, "extern __obj %s;\n" % encode_path(structure_name)
 
         is_class = path and self.importer.get_object(path).has_kind("<class>")
-        pos = is_class and encode_symbol("pos", encode_type_attribute(path)) or "0"
+        pos = is_class and encode_pos(encode_type_attribute(path)) or "0"
 
         print >>f_defs, """\
 __obj %s = {
@@ -833,7 +841,7 @@ __obj %s = {
             if attrname is None:
                 table.append("0")
             else:
-                table.append(encode_symbol("code", attrname))
+                table.append(encode_code(attrname))
 
     def populate_parameter_table(self, parameters, table):
 
@@ -940,8 +948,8 @@ __obj %s = {
                 # Special internal key member.
 
                 elif attrname == "__key__":
-                    structure.append("{.code=%s, .pos=%s}" % (attr and encode_symbol("code", attr) or "0",
-                                                              attr and encode_symbol("pos", attr) or "0"))
+                    structure.append("{.code=%s, .pos=%s}" % (attr and encode_code(attr) or "0",
+                                                              attr and encode_pos(attr) or "0"))
                     continue
 
                 # Special cases.
@@ -1187,10 +1195,10 @@ int main(int argc, char *argv[])
     return 0;
 }
 """ % (
-    encode_symbol("pos", "value"),
-    encode_symbol("pos", "__data__"),
+    encode_pos("value"),
+    encode_pos("__data__"),
     encode_function_pointer("__builtins__.str.str"),
-    encode_symbol("pos", "__data__")
+    encode_pos("__data__")
     )
 
 # vim: tabstop=4 expandtab shiftwidth=4

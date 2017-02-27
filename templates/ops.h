@@ -115,11 +115,6 @@ int __ISNULL(__attr value);
 unsigned int __TYPECODE(__ref obj);
 unsigned int __TYPEPOS(__ref obj);
 
-/* Attribute codes and positions for attribute names. */
-
-#define __ATTRCODE(__ATTRNAME) (__code_##__ATTRNAME)
-#define __ATTRPOS(__ATTRNAME) (__pos_##__ATTRNAME)
-
 /* Memory allocation. */
 
 void *__ALLOCATE(size_t nmemb, size_t size);
