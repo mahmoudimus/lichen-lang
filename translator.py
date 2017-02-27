@@ -307,20 +307,90 @@ class LogicalResult(TranslationResult):
 
     "A logical expression result."
 
+    def _convert(self, expr):
+
+        "Return 'expr' converted to a testable value."
+
+        if isinstance(expr, LogicalResult):
+            return expr.apply_test()
+        else:
+            return "__BOOL(%s)" % expr
+
+class NegationResult(LogicalResult):
+
+    "A negation expression result."
+
     def __init__(self, expr):
         self.expr = expr
 
-    def apply_test(self, negate=False):
-        return "(%s__BOOL(%s))" % (negate and "" or "!", self.expr)
+    def apply_test(self):
+
+        "Return the result in a form suitable for direct testing."
+
+        expr = self._convert(self.expr)
+        return "(!(%s))" % expr
 
     def __str__(self):
-        return "(__BOOL(%s) ? %s : %s)" % (
-            self.expr,
+        return "(%s ? %s : %s)" % (
+            self._convert(self.expr),
             PredefinedConstantRef("False"),
             PredefinedConstantRef("True"))
 
     def __repr__(self):
-        return "LogicalResult(%r)" % self.expr
+        return "NegationResult(%r)" % self.expr
+
+class LogicalOperationResult(LogicalResult):
+
+    "A logical operation result."
+
+    def __init__(self, exprs, conjunction):
+        self.exprs = exprs
+        self.conjunction = conjunction
+
+    def apply_test(self):
+
+        """
+        Return the result in a form suitable for direct testing.
+
+        Convert ... to ...
+
+        <a> and <b>
+        ((__BOOL(<a>)) && (__BOOL(<b>)))
+
+        <a> or <b>
+        ((__BOOL(<a>)) || (__BOOL(<b>)))
+        """
+
+        results = []
+        for expr in self.exprs:
+            results.append(self._convert(expr))
+
+        if self.conjunction:
+            return "(%s)" % " && ".join(results)
+        else:
+            return "(%s)" % " || ".join(results)
+
+    def __str__(self):
+
+        """
+        Convert ... to ...
+
+        <a> and <b>
+        (__tmp_result = <a>, !__BOOL(__tmp_result)) ? __tmp_result : <b>
+
+        <a> or <b>
+        (__tmp_result = <a>, __BOOL(__tmp_result)) ? __tmp_result : <b>
+        """
+
+        results = []
+        for expr in self.exprs[:-1]:
+            results.append("(__tmp_result = %s, %s__BOOL(__tmp_result)) ? __tmp_result : " % (expr, self.conjunction and "!" or ""))
+        results.append(str(self.exprs[-1]))
+
+        return "(%s)" % "".join(results)
+
+    def __repr__(self):
+        return "LogicalOperationResult(%r, %r)" % (self.exprs, self.conjunction)
 
 def make_expression(expr):
 
@@ -1539,35 +1609,17 @@ class TranslatedModule(CommonModule):
 
     def process_logical_node(self, n):
 
-        """
-        Process the given operator node 'n'.
-
-        Convert ... to ...
-
-        <a> and <b>
-        (__tmp_result = <a>, !__BOOL(__tmp_result)) ? __tmp_result : <b>
-
-        <a> or <b>
-        (__tmp_result = <a>, __BOOL(__tmp_result)) ? __tmp_result : <b>
-        """
+        "Process the given operator node 'n'."
 
         self.record_temp("__tmp_result")
 
-        if isinstance(n, compiler.ast.And):
-            op = "!"
-        else:
-            op = ""
-
+        conjunction = isinstance(n, compiler.ast.And)
         results = []
 
-        for node in n.nodes[:-1]:
-            expr = self.process_structure_node(node)
-            results.append("(__tmp_result = %s, %s__BOOL(__tmp_result)) ? __tmp_result : " % (expr, op))
+        for node in n.nodes:
+            results.append(self.process_structure_node(node))
 
-        expr = self.process_structure_node(n.nodes[-1])
-        results.append(str(expr))
-
-        return make_expression("(%s)" % "".join(results))
+        return LogicalOperationResult(results, conjunction)
 
     def process_name_node(self, n, expr=None):
 
@@ -1652,7 +1704,7 @@ class TranslatedModule(CommonModule):
 
         "Process the given operator node 'n'."
 
-        return LogicalResult(self.process_structure_node(n.expr))
+        return NegationResult(self.process_structure_node(n.expr))
 
     def process_raise_node(self, n):
 
@@ -1864,7 +1916,7 @@ class TranslatedModule(CommonModule):
 
             # Emit a negated test of the continuation condition.
 
-            self.start_if(True, test, True)
+            self.start_if(True, NegationResult(test))
             if n.else_:
                 self.process_structure_node(n.else_)
             self.writestmt("break;")
@@ -2061,15 +2113,15 @@ class TranslatedModule(CommonModule):
         for i, parameter in enumerate(parameters):
             self.writeline("__attr * const %s = &__args[%d];" % (encode_path(parameter), i+1))
 
-    def start_if(self, first, test_ref, negate=False):
+    def start_if(self, first, test_ref):
         statement = "%sif" % (not first and "else " or "")
 
         # Consume logical results directly.
 
         if isinstance(test_ref, LogicalResult):
-            self.writeline("%s %s" % (statement, test_ref.apply_test(negate)))
+            self.writeline("%s %s" % (statement, test_ref.apply_test()))
         else:
-            self.writeline("%s (%s__BOOL(%s))" % (statement, negate and "!" or "", test_ref))
+            self.writeline("%s (__BOOL(%s))" % (statement, test_ref))
 
         self.writeline("{")
         self.indent += 1
