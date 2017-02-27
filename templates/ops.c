@@ -89,12 +89,12 @@ int __is_type_instance(__ref obj)
 
 __ref __get_class(__ref obj)
 {
-    return __load_via_object(obj, __pos___class__).value;
+    return __load_via_object(obj, __ATTRPOS(__class__)).value;
 }
 
 __attr __get_class_attr(__ref obj)
 {
-    return __load_via_object(obj, __pos___class__);
+    return __load_via_object(obj, __ATTRPOS(__class__));
 }
 
 /* Attribute testing operations. */
