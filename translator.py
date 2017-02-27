@@ -47,7 +47,7 @@ class Translator(CommonOutput):
         self.optimiser = optimiser
         self.output = output
 
-    def to_output(self, debug=False, gc_sections=False):
+    def to_output(self, reset=False, debug=False, gc_sections=False):
 
         "Write a program to the configured output directory."
 
@@ -70,7 +70,9 @@ class Translator(CommonOutput):
 
             parts = module.name.split(".")
 
-            if parts[0] != "native" and is_newer(module.filename, output_filename):
+            if parts[0] != "native" and \
+               (reset or is_newer(module.filename, output_filename)):
+
                 tm = TranslatedModule(module.name, self.importer, self.deducer, self.optimiser)
                 tm.translate(module.filename, output_filename)
 
