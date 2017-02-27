@@ -303,6 +303,25 @@ class BooleanResult(Expression):
     def __repr__(self):
         return "BooleanResult(%r)" % self.s
 
+class LogicalResult(TranslationResult):
+
+    "A logical expression result."
+
+    def __init__(self, expr):
+        self.expr = expr
+
+    def apply_test(self, negate=False):
+        return "(%s__BOOL(%s))" % (negate and "" or "!", self.expr)
+
+    def __str__(self):
+        return "(__BOOL(%s) ? %s : %s)" % (
+            self.expr,
+            PredefinedConstantRef("False"),
+            PredefinedConstantRef("True"))
+
+    def __repr__(self):
+        return "LogicalResult(%r)" % self.expr
+
 def make_expression(expr):
 
     "Make a new expression from the existing 'expr'."
@@ -1635,9 +1654,7 @@ class TranslatedModule(CommonModule):
 
         "Process the given operator node 'n'."
 
-        return make_expression("(__BOOL(%s) ? %s : %s)" %
-            (self.process_structure_node(n.expr), PredefinedConstantRef("False"),
-            PredefinedConstantRef("True")))
+        return LogicalResult(self.process_structure_node(n.expr))
 
     def process_raise_node(self, n):
 
@@ -1847,17 +1864,13 @@ class TranslatedModule(CommonModule):
 
         if not (isinstance(test, PredefinedConstantRef) and test.value):
 
-            # NOTE: This needs to evaluate whether the operand is true or false
-            # NOTE: according to Python rules.
+            # Emit a negated test of the continuation condition.
 
-            self.writeline("if (!__BOOL(%s))" % test)
-            self.writeline("{")
-            self.indent += 1
+            self.start_if(True, test, True)
             if n.else_:
                 self.process_structure_node(n.else_)
             self.writestmt("break;")
-            self.indent -= 1
-            self.writeline("}")
+            self.end_if()
 
         in_conditional = self.in_conditional
         self.in_conditional = True
@@ -2050,8 +2063,16 @@ class TranslatedModule(CommonModule):
         for i, parameter in enumerate(parameters):
             self.writeline("__attr * const %s = &__args[%d];" % (encode_path(parameter), i+1))
 
-    def start_if(self, first, test_ref):
-        self.writestmt("%sif (__BOOL(%s))" % (not first and "else " or "", test_ref))
+    def start_if(self, first, test_ref, negate=False):
+        statement = "%sif" % (not first and "else " or "")
+
+        # Consume logical results directly.
+
+        if isinstance(test_ref, LogicalResult):
+            self.writeline("%s %s" % (statement, test_ref.apply_test(negate)))
+        else:
+            self.writeline("%s (%s__BOOL(%s))" % (statement, negate and "!" or "", test_ref))
+
         self.writeline("{")
         self.indent += 1
 
