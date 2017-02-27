@@ -330,7 +330,7 @@ class NegationResult(LogicalResult):
         "Return the result in a form suitable for direct testing."
 
         expr = self._convert(self.expr)
-        return "(!(%s))" % expr
+        return "(!%s)" % expr
 
     def __str__(self):
         return "(%s ? %s : %s)" % (
@@ -1293,6 +1293,8 @@ class TranslatedModule(CommonModule):
             self.process_structure_node(n.else_)
             self.end_else()
 
+        print >>self.out
+
     def process_invocation_node(self, n):
 
         "Process the given invocation node 'n'."
@@ -1843,6 +1845,7 @@ class TranslatedModule(CommonModule):
 
         self.indent -= 1
         self.writeline("}")
+        print >>self.out
 
     def process_try_finally_node(self, n):
 
@@ -1878,6 +1881,7 @@ class TranslatedModule(CommonModule):
 
         self.indent -= 1
         self.writeline("}")
+        print >>self.out
 
     def process_try_completion(self):
 
@@ -1931,6 +1935,7 @@ class TranslatedModule(CommonModule):
 
         self.indent -= 1
         self.writeline("}")
+        print >>self.out
 
     # Special variable usage.
 
@@ -1993,6 +1998,7 @@ class TranslatedModule(CommonModule):
         self.out = self.out_toplevel
 
         self.write_temporaries(name)
+        print >>self.out
         out.seek(0)
         self.out.write(out.read())
 
@@ -2154,7 +2160,6 @@ class TranslatedModule(CommonModule):
         print >>self.out, "%s%s" % (self.pad(), self.indenttext(s, self.indent + 1))
 
     def writestmt(self, s):
-        print >>self.out
         self.writeline(s)
 
     def write_comment(self, s):
