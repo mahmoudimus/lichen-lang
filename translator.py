@@ -78,19 +78,13 @@ class Translator(CommonOutput):
 
 # Classes representing intermediate translation results.
 
-class TranslationResult:
-
-    "An abstract translation result mix-in."
-
-    pass
-
-class ReturnRef(TranslationResult):
+class ReturnRef:
 
     "Indicates usage of a return statement."
 
     pass
 
-class Expression(results.Result, TranslationResult):
+class Expression(results.Result):
 
     "A general expression."
 
@@ -101,7 +95,7 @@ class Expression(results.Result, TranslationResult):
     def __repr__(self):
         return "Expression(%r)" % self.s
 
-class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
+class TrResolvedNameRef(results.ResolvedNameRef):
 
     "A reference to a name in the translation."
 
@@ -169,21 +163,21 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
         else:
             return "(%s%s)" % (self.parameter and "*" or "", attrname)
 
-class TrConstantValueRef(results.ConstantValueRef, TranslationResult):
+class TrConstantValueRef(results.ConstantValueRef):
 
     "A constant value reference in the translation."
 
     def __str__(self):
         return encode_literal_constant(self.number)
 
-class TrLiteralSequenceRef(results.LiteralSequenceRef, TranslationResult):
+class TrLiteralSequenceRef(results.LiteralSequenceRef):
 
     "A reference representing a sequence of values."
 
     def __str__(self):
         return str(self.node)
 
-class TrInstanceRef(results.InstanceRef, TranslationResult):
+class TrInstanceRef(results.InstanceRef):
 
     "A reference representing instantiation of a class."
 
@@ -203,7 +197,7 @@ class TrInstanceRef(results.InstanceRef, TranslationResult):
     def __repr__(self):
         return "TrResolvedInstanceRef(%r, %r)" % (self.ref, self.expr)
 
-class AttrResult(Expression, InstructionSequence):
+class AttrResult(results.Result, InstructionSequence):
 
     "A translation result for an attribute access."
 
@@ -242,12 +236,9 @@ class AttrResult(Expression, InstructionSequence):
     def __repr__(self):
         return "AttrResult(%r, %r, %r)" % (self.instructions, self.refs, self.location)
 
-class InvocationResult(Expression, InstructionSequence):
+class InvocationResult(results.Result, InstructionSequence):
 
     "A translation result for an invocation."
-
-    def __init__(self, instructions):
-        InstructionSequence.__init__(self, instructions)
 
     def __str__(self):
         return encode_instructions(self.instructions)
@@ -266,7 +257,7 @@ class InstantiationResult(InvocationResult, TrInstanceRef):
     def __repr__(self):
         return "InstantiationResult(%r, %r)" % (self.ref, self.instructions)
 
-class PredefinedConstantRef(Expression):
+class PredefinedConstantRef(results.Result):
 
     "A predefined constant reference."
 
@@ -295,17 +286,7 @@ class PredefinedConstantRef(Expression):
     def __repr__(self):
         return "PredefinedConstantRef(%r)" % self.value
 
-class BooleanResult(Expression):
-
-    "A expression producing a boolean result."
-
-    def __str__(self):
-        return "__builtins___bool_bool(%s)" % self.s
-
-    def __repr__(self):
-        return "BooleanResult(%r)" % self.s
-
-class LogicalResult(TranslationResult):
+class LogicalResult(results.Result):
 
     "A logical expression result."
 
