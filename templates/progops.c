@@ -31,7 +31,7 @@ __attr __new(const __table * table, __ref cls, size_t size)
 {
     __ref obj = (__ref) __ALLOCATE(1, size);
     obj->table = table;
-    __store_via_object(obj, __ATTRPOS(__class__), (__attr) {.value=cls});
+    __store_via_object(obj, __class__, (__attr) {.value=cls});
     return (__attr) {.value=obj};
 }
 
@@ -72,7 +72,7 @@ void __newdata_sequence(__attr args[], unsigned int number)
 
     /* Store a reference to the data in the object's __data__ attribute. */
 
-    __store_via_object(args[0].value, __ATTRPOS(__data__), attr);
+    __store_via_object(args[0].value, __data__, attr);
 }
 
 #ifdef __HAVE___builtins___dict_dict
@@ -191,7 +191,7 @@ __attr __invoke(__attr callable, int always_callable,
     /* Obtain the __args__ special member, referencing the parameter table. */
     /* Refer to the table and minimum/maximum. */
 
-    const __ptable *ptable = __check_and_load_via_object(target.value, __ATTRPOS(__args__), __ATTRCODE(__args__)).ptable;
+    const __ptable *ptable = __check_and_load_via_object(target.value, __args__).ptable;
     const unsigned int min = ptable->min, max = ptable->max;
 
     /* Reserve enough space for the arguments. */
@@ -266,12 +266,12 @@ __attr __unbound_method(__attr args[])
 
 void __SETDEFAULT(__ref obj, int pos, __attr value)
 {
-    __store_via_object(obj, __FUNCTION_INSTANCE_SIZE + pos, value);
+    __store_via_object__(obj, __FUNCTION_INSTANCE_SIZE + pos, value);
 }
 
 __attr __GETDEFAULT(__ref obj, int pos)
 {
-    return __load_via_object(obj, __FUNCTION_INSTANCE_SIZE + pos);
+    return __load_via_object__(obj, __FUNCTION_INSTANCE_SIZE + pos);
 }
 
 int __BOOL(__attr attr)

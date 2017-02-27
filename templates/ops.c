@@ -41,33 +41,33 @@ __attr __load_static_test(__ref context, __ref obj)
 
 /* Direct retrieval operations, returning and setting attributes. */
 
-__attr __load_via_object(__ref obj, int pos)
+__attr __load_via_object__(__ref obj, int pos)
 {
     return obj->attrs[pos];
 }
 
-__attr __load_via_class(__ref obj, int pos)
+__attr __load_via_class__(__ref obj, int pos)
 {
-    return __load_via_object(__get_class(obj), pos);
+    return __load_via_object__(__get_class(obj), pos);
 }
 
-__attr __get_class_and_load(__ref obj, int pos)
+__attr __get_class_and_load__(__ref obj, int pos)
 {
     if (__is_instance(obj))
-        return __load_via_class(obj, pos);
+        return __load_via_class__(obj, pos);
     else
-        return __load_via_object(obj, pos);
+        return __load_via_object__(obj, pos);
 }
 
 /* Direct storage operations. */
 
-int __store_via_object(__ref obj, int pos, __attr value)
+int __store_via_object__(__ref obj, int pos, __attr value)
 {
     obj->attrs[pos] = value;
     return 1;
 }
 
-int __get_class_and_store(__ref obj, int pos, __attr value)
+int __get_class_and_store__(__ref obj, int pos, __attr value)
 {
     /* Forbid class-relative assignments. */
 
@@ -89,12 +89,12 @@ int __is_type_instance(__ref obj)
 
 __ref __get_class(__ref obj)
 {
-    return __load_via_object(obj, __pos___class__).value;
+    return __load_via_object(obj, __class__).value;
 }
 
 __attr __get_class_attr(__ref obj)
 {
-    return __load_via_object(obj, __pos___class__);
+    return __load_via_object(obj, __class__);
 }
 
 /* Attribute testing operations. */
@@ -114,17 +114,17 @@ __ref __test_specific_type(__ref obj, __ref type)
     return obj == type ? obj : 0;
 }
 
-__ref __test_common_instance(__ref obj, int pos, int code)
+__ref __test_common_instance__(__ref obj, int pos, int code)
 {
     return __HASATTR(__get_class(obj), pos, code) ? obj : 0;
 }
 
-__ref __test_common_object(__ref obj, int pos, int code)
+__ref __test_common_object__(__ref obj, int pos, int code)
 {
-    return __test_common_type(obj, pos, code) || __test_common_instance(obj, pos, code) ? obj : 0;
+    return __test_common_type__(obj, pos, code) || __test_common_instance__(obj, pos, code) ? obj : 0;
 }
 
-__ref __test_common_type(__ref obj, int pos, int code)
+__ref __test_common_type__(__ref obj, int pos, int code)
 {
     return __HASATTR(obj, pos, code) ? obj : 0;
 }
@@ -134,36 +134,36 @@ __ref __test_common_type(__ref obj, int pos, int code)
 __attr __check_and_load_via_object_null(__ref obj, int pos, int code)
 {
     if (__HASATTR(obj, pos, code))
-        return __load_via_object(obj, pos);
+        return __load_via_object__(obj, pos);
     else
         return __NULL;
 }
 
-__attr __check_and_load_via_class(__ref obj, int pos, int code)
+__attr __check_and_load_via_class__(__ref obj, int pos, int code)
 {
-    return __check_and_load_via_object(__get_class(obj), pos, code);
+    return __check_and_load_via_object__(__get_class(obj), pos, code);
 }
 
-__attr __check_and_load_via_object(__ref obj, int pos, int code)
+__attr __check_and_load_via_object__(__ref obj, int pos, int code)
 {
     if (__HASATTR(obj, pos, code))
-        return __load_via_object(obj, pos);
+        return __load_via_object__(obj, pos);
 
     __raise_type_error();
     return __NULL;
 }
 
-__attr __check_and_load_via_any(__ref obj, int pos, int code)
+__attr __check_and_load_via_any__(__ref obj, int pos, int code)
 {
     __attr out = __check_and_load_via_object_null(obj, pos, code);
     if (out.value == 0)
-        out = __check_and_load_via_class(obj, pos, code);
+        out = __check_and_load_via_class__(obj, pos, code);
     return out;
 }
 
 /* Attribute testing and storage operations. */
 
-int __check_and_store_via_class(__ref obj, int pos, int code, __attr value)
+int __check_and_store_via_class__(__ref obj, int pos, int code, __attr value)
 {
     /* Forbid class-relative assignments. */
 
@@ -171,11 +171,11 @@ int __check_and_store_via_class(__ref obj, int pos, int code, __attr value)
     return 0;
 }
 
-int __check_and_store_via_object(__ref obj, int pos, int code, __attr value)
+int __check_and_store_via_object__(__ref obj, int pos, int code, __attr value)
 {
     if (__HASATTR(obj, pos, code))
     {
-        __store_via_object(obj, pos, value);
+        __store_via_object__(obj, pos, value);
         return 1;
     }
 
@@ -185,9 +185,9 @@ int __check_and_store_via_object(__ref obj, int pos, int code, __attr value)
     return 0;
 }
 
-int __check_and_store_via_any(__ref obj, int pos, int code, __attr value)
+int __check_and_store_via_any__(__ref obj, int pos, int code, __attr value)
 {
-    if (__check_and_store_via_object(obj, pos, code, value))
+    if (__check_and_store_via_object__(obj, pos, code, value))
         return 1;
 
     /* Forbid class-relative assignments. */
@@ -218,7 +218,7 @@ int __test_context_update(__ref context, __attr attr)
            attribute context's class, inspecting the context instance for
            compatibility. */
 
-        if (__test_common_instance(context, __TYPEPOS(attrcontext), __TYPECODE(attrcontext)))
+        if (__test_common_instance__(context, __TYPEPOS(attrcontext), __TYPECODE(attrcontext)))
             return 1;
         else
             __raise_type_error();
@@ -298,7 +298,7 @@ __attr (*__get_function(__ref context, __attr target))(__attr[])
        or type instance contexts for type methods. */
 
     if ((context == 0) || __is_instance(context) || __type_method_invocation(context, target))
-        return __load_via_object(target.value, __ATTRPOS(__fn__)).fn;
+        return __load_via_object(target.value, __fn__).fn;
     else
         return __unbound_method;
 }
@@ -311,7 +311,7 @@ __attr (*__check_and_get_function(__ref context, __attr target))(__attr[])
        or type instance contexts for type methods. */
 
     if ((context == 0) || __is_instance(context) || __type_method_invocation(context, target))
-        return __check_and_load_via_object(target.value, __ATTRPOS(__fn__), __ATTRCODE(__fn__)).fn;
+        return __check_and_load_via_object__(target.value, __ATTRPOS(__fn__), __ATTRCODE(__fn__)).fn;
     else
         return __unbound_method;
 }

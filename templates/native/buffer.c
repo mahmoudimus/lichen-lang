@@ -37,7 +37,7 @@ __attr __fn_native_buffer_buffer_str(__attr __args[])
 
     /* Calculate the size of the string. */
     for (i = 0; i < data->size; i++)
-        size += __load_via_object(data->attrs[i].value, __ATTRPOS(__size__)).intvalue;
+        size += __load_via_object(data->attrs[i].value, __size__).intvalue;
 
     /* Reserve space for a new string. */
     s = (char *) __ALLOCATE(size + 1, sizeof(char));
@@ -45,8 +45,8 @@ __attr __fn_native_buffer_buffer_str(__attr __args[])
     /* Build a single string from the buffer contents. */
     for (i = 0, j = 0; i < data->size; i++)
     {
-        o = __load_via_object(data->attrs[i].value, __ATTRPOS(__data__));
-        n = __load_via_object(data->attrs[i].value, __ATTRPOS(__size__)).intvalue;
+        o = __load_via_object(data->attrs[i].value, __data__);
+        n = __load_via_object(data->attrs[i].value, __size__).intvalue;
         memcpy(s + j, o.strvalue, n); /* does not null terminate but final byte should be zero */
         j += n;
     }

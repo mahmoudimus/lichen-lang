@@ -33,7 +33,7 @@ __attr __fn_native_locale_getlocale(__attr __args[])
 {
     __attr * const category = &__args[1];
     /* category.__data__ interpreted as int */
-    int cat = __load_via_object(category->value, __ATTRPOS(__data__)).intvalue;
+    int cat = __load_via_object(category->value, __data__).intvalue;
     char *result, *out;
     size_t length;
 
@@ -54,9 +54,9 @@ __attr __fn_native_locale_setlocale(__attr __args[])
     __attr * const category = &__args[1];
     __attr * const value = &__args[2];
     /* category.__data__ interpreted as int */
-    int cat = __load_via_object(category->value, __ATTRPOS(__data__)).intvalue;
+    int cat = __load_via_object(category->value, __data__).intvalue;
     /* value.__data__ interpreted as string */
-    char *s = __load_via_object(value->value, __ATTRPOS(__data__)).strvalue;
+    char *s = __load_via_object(value->value, __data__).strvalue;
     char *result, *out;
     size_t length;
 

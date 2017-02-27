@@ -30,14 +30,21 @@ __attr __load_static_test(__ref context, __ref obj);
 
 /* Direct retrieval operations, returning attributes. */
 
-__attr __load_via_class(__ref obj, int pos);
-__attr __load_via_object(__ref obj, int pos);
-__attr __get_class_and_load(__ref obj, int pos);
+__attr __load_via_class__(__ref obj, int pos);
+__attr __load_via_object__(__ref obj, int pos);
+__attr __get_class_and_load__(__ref obj, int pos);
+
+#define __load_via_class(OBJ, ATTRNAME) (__load_via_class__(OBJ, __ATTRPOS(ATTRNAME)))
+#define __load_via_object(OBJ, ATTRNAME) (__load_via_object__(OBJ, __ATTRPOS(ATTRNAME)))
+#define __get_class_and_load(OBJ, ATTRNAME) (__get_class_and_load__(OBJ, __ATTRPOS(ATTRNAME)))
 
 /* Direct storage operations. */
 
-int __store_via_object(__ref obj, int pos, __attr value);
-int __get_class_and_store(__ref obj, int pos, __attr value);
+int __store_via_object__(__ref obj, int pos, __attr value);
+int __get_class_and_store__(__ref obj, int pos, __attr value);
+
+#define __store_via_object(OBJ, ATTRNAME, VALUE) (__store_via_object__(OBJ, __ATTRPOS(ATTRNAME), VALUE))
+#define __get_class_and_store(OBJ, ATTRNAME, VALUE) (__get_class_and_store__(OBJ, __ATTRPOS(ATTRNAME), VALUE))
 
 /* Introspection. */
 
@@ -51,22 +58,36 @@ __attr __get_class_attr(__ref obj);
 __ref __test_specific_instance(__ref obj, __ref type);
 __ref __test_specific_object(__ref obj, __ref type);
 __ref __test_specific_type(__ref obj, __ref type);
-__ref __test_common_instance(__ref obj, int pos, int code);
-__ref __test_common_object(__ref obj, int pos, int code);
-__ref __test_common_type(__ref obj, int pos, int code);
+
+__ref __test_common_instance__(__ref obj, int pos, int code);
+__ref __test_common_object__(__ref obj, int pos, int code);
+__ref __test_common_type__(__ref obj, int pos, int code);
+
+#define __test_common_instance(OBJ, TYPENAME) (__test_common_instance__(OBJ, __ATTRPOS(TYPENAME), __ATTRCODE(TYPENAME)))
+#define __test_common_object(OBJ, TYPENAME) (__test_common_object__(OBJ, __ATTRPOS(TYPENAME), __ATTRCODE(TYPENAME)))
+#define __test_common_type(OBJ, TYPENAME) (__test_common_type__(OBJ, __ATTRPOS(TYPENAME), __ATTRCODE(TYPENAME)))
 
 /* Attribute testing and retrieval operations. */
 
-__attr __check_and_load_via_class(__ref obj, int pos, int code);
-__attr __check_and_load_via_object(__ref obj, int pos, int code);
 __attr __check_and_load_via_object_null(__ref obj, int pos, int code);
-__attr __check_and_load_via_any(__ref obj, int pos, int code);
+
+__attr __check_and_load_via_class__(__ref obj, int pos, int code);
+__attr __check_and_load_via_object__(__ref obj, int pos, int code);
+__attr __check_and_load_via_any__(__ref obj, int pos, int code);
+
+#define __check_and_load_via_class(OBJ, ATTRNAME) (__check_and_load_via_class__(OBJ, __ATTRPOS(ATTRNAME), __ATTRCODE(ATTRNAME)))
+#define __check_and_load_via_object(OBJ, ATTRNAME) (__check_and_load_via_object__(OBJ, __ATTRPOS(ATTRNAME), __ATTRCODE(ATTRNAME)))
+#define __check_and_load_via_any(OBJ, ATTRNAME) (__check_and_load_via_any__(OBJ, __ATTRPOS(ATTRNAME), __ATTRCODE(ATTRNAME)))
 
 /* Attribute testing and storage operations. */
 
-int __check_and_store_via_class(__ref obj, int pos, int code, __attr value);
-int __check_and_store_via_object(__ref obj, int pos, int code, __attr value);
-int __check_and_store_via_any(__ref obj, int pos, int code, __attr value);
+int __check_and_store_via_class__(__ref obj, int pos, int code, __attr value);
+int __check_and_store_via_object__(__ref obj, int pos, int code, __attr value);
+int __check_and_store_via_any__(__ref obj, int pos, int code, __attr value);
+
+#define __check_and_store_via_class(OBJ, ATTRNAME, VALUE) (__check_and_store_via_class__(OBJ, __ATTRPOS(ATTRNAME), __ATTRCODE(ATTRNAME), VALUE))
+#define __check_and_store_via_object(OBJ, ATTRNAME, VALUE) (__check_and_store_via_object__(OBJ, __ATTRPOS(ATTRNAME), __ATTRCODE(ATTRNAME), VALUE))
+#define __check_and_store_via_any(OBJ, ATTRNAME, VALUE) (__check_and_store_via_any__(OBJ, __ATTRPOS(ATTRNAME), __ATTRCODE(ATTRNAME), VALUE))
 
 /* Context-related operations. */
 

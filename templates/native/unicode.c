@@ -135,11 +135,11 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
     /* _size interpreted as int */
     int ss = _size->intvalue;
     /* start.__data__ interpreted as int */
-    int istart = __load_via_object(start->value, __ATTRPOS(__data__)).intvalue;
+    int istart = __load_via_object(start->value, __data__).intvalue;
     /* end.__data__ interpreted as int */
-    int iend = __load_via_object(end->value, __ATTRPOS(__data__)).intvalue;
+    int iend = __load_via_object(end->value, __data__).intvalue;
     /* step.__data__ interpreted as int */
-    int istep = __load_via_object(step->value, __ATTRPOS(__data__)).intvalue;
+    int istep = __load_via_object(step->value, __data__).intvalue;
 
     /* Calculate the number of characters. */
     size_t nchar = ((iend - istart - (istep > 0 ? 1 : -1)) / istep) + 1;

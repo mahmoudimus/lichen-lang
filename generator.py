@@ -1182,23 +1182,18 @@ int main(int argc, char *argv[])
     {
         if (__ISINSTANCE(__tmp_exc.arg, ((__attr) {.value=&__builtins___exception_system_SystemExit})))
             return __load_via_object(
-                __load_via_object(__tmp_exc.arg.value, %s).value,
-                %s).intvalue;
+                __load_via_object(__tmp_exc.arg.value, __data__).value,
+                value).intvalue;
 
         fprintf(stderr, "Program terminated due to exception: %%s.\\n",
                 __load_via_object(
                     %s((__attr[]) {__NULL, __tmp_exc.arg}).value,
-                    %s).strvalue);
+                    __data__).strvalue);
         return 1;
     }
 
     return 0;
 }
-""" % (
-    encode_pos("value"),
-    encode_pos("__data__"),
-    encode_function_pointer("__builtins__.str.str"),
-    encode_pos("__data__")
-    )
+""" % encode_function_pointer("__builtins__.str.str")
 
 # vim: tabstop=4 expandtab shiftwidth=4

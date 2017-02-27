@@ -273,25 +273,10 @@ def encode_access_instruction(instruction, subs, context_index):
 
     # Modify certain arguments.
 
-    # Convert attribute name arguments to position symbols.
+    # Convert type name arguments.
 
-    if op in attribute_ops:
-        arg = a[1]
-        a[1] = encode_pos(arg)
-
-    # Convert attribute name arguments to position and code symbols.
-
-    elif op in checked_ops:
-        arg = a[1]
-        a[1] = encode_pos(arg)
-        a.insert(2, encode_code(arg))
-
-    # Convert type name arguments to position and code symbols.
-
-    elif op in typename_ops:
-        arg = encode_type_attribute(args[1])
-        a[1] = encode_pos(arg)
-        a.insert(2, encode_code(arg))
+    if op in typename_ops:
+        a[1] = encode_path(encode_type_attribute(args[1]))
 
     # Obtain addresses of type arguments.
 
