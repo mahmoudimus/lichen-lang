@@ -201,7 +201,7 @@ class TrInstanceRef(results.InstanceRef, TranslationResult):
     def __repr__(self):
         return "TrResolvedInstanceRef(%r, %r)" % (self.ref, self.expr)
 
-class AttrResult(Expression, TranslationResult, InstructionSequence):
+class AttrResult(Expression, InstructionSequence):
 
     "A translation result for an attribute access."
 
@@ -240,7 +240,7 @@ class AttrResult(Expression, TranslationResult, InstructionSequence):
     def __repr__(self):
         return "AttrResult(%r, %r, %r)" % (self.instructions, self.refs, self.location)
 
-class InvocationResult(Expression, TranslationResult, InstructionSequence):
+class InvocationResult(Expression, InstructionSequence):
 
     "A translation result for an invocation."
 
@@ -264,7 +264,7 @@ class InstantiationResult(InvocationResult, TrInstanceRef):
     def __repr__(self):
         return "InstantiationResult(%r, %r)" % (self.ref, self.instructions)
 
-class PredefinedConstantRef(Expression, TranslationResult):
+class PredefinedConstantRef(Expression):
 
     "A predefined constant reference."
 
@@ -293,7 +293,7 @@ class PredefinedConstantRef(Expression, TranslationResult):
     def __repr__(self):
         return "PredefinedConstantRef(%r)" % self.value
 
-class BooleanResult(Expression, TranslationResult):
+class BooleanResult(Expression):
 
     "A expression producing a boolean result."
 
