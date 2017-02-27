@@ -564,7 +564,7 @@ class Generator(CommonOutput):
         # Define a macro for the constant.
 
         attr_name = encode_path(const_path)
-        print >>f_decls, "#define %s ((__attr) {.value=&%s})" % (attr_name, structure_name)
+        print >>f_decls, "#define %s __ATTRVALUE(&%s)" % (attr_name, structure_name)
 
     def make_parameter_table(self, f_decls, f_defs, argmin, parameters):
 
@@ -1180,14 +1180,14 @@ int main(int argc, char *argv[])
     }
     __Catch(__tmp_exc)
     {
-        if (__ISINSTANCE(__tmp_exc.arg, ((__attr) {.value=&__builtins___exception_system_SystemExit})))
+        if (__ISINSTANCE(__tmp_exc.arg, __ATTRVALUE(&__builtins___exception_system_SystemExit)))
             return __load_via_object(
                 __load_via_object(__tmp_exc.arg.value, %s).value,
                 %s).intvalue;
 
         fprintf(stderr, "Program terminated due to exception: %%s.\\n",
                 __load_via_object(
-                    %s((__attr[]) {__NULL, __tmp_exc.arg}).value,
+                    %s(__ARGS(__NULL, __tmp_exc.arg)).value,
                     %s).strvalue);
         return 1;
     }

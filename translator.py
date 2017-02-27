@@ -154,7 +154,7 @@ class TrResolvedNameRef(results.ResolvedNameRef, TranslationResult):
         elif static_name:
             parent = ref.parent()
             context = ref.has_kind("<function>") and encode_path(parent) or None
-            return "((__attr) {.value=&%s})" % static_name
+            return "__ATTRVALUE(&%s)" % static_name
 
         # Qualified names must be converted into parent-relative accesses.
 
@@ -938,9 +938,8 @@ class TranslatedModule(CommonModule):
         ref = self.importer.identify(class_name)
 
         if not ref.static():
-            self.process_assignment_for_object(
-                n.name, make_expression("((__attr) {.value=&%s})" %
-                    encode_path(class_name)))
+            self.process_assignment_for_object(n.name,
+                make_expression("__ATTRVALUE(&%s)" % encode_path(class_name)))
 
         self.enter_namespace(n.name)
 
@@ -1118,7 +1117,7 @@ class TranslatedModule(CommonModule):
             context = self.is_method(objpath)
 
             self.process_assignment_for_object(original_name,
-                make_expression("((__attr) {.value=&%s})" % encode_path(objpath)))
+                make_expression("__ATTRVALUE(&%s)" % encode_path(objpath)))
 
     def process_function_defaults(self, n, name, objpath, instance_name=None):
 
@@ -1327,7 +1326,7 @@ class TranslatedModule(CommonModule):
 
         if context_required:
             if have_access_context:
-                args = ["(__attr) {.value=%s}" % context_identity]
+                args = ["__ATTRVALUE(%s)" % context_identity]
             else:
                 args = ["__CONTEXT_AS_VALUE(%s)" % target_var]
         else:
@@ -1509,14 +1508,14 @@ class TranslatedModule(CommonModule):
         # Without defaults, produce an attribute referring to the function.
 
         if not defaults:
-            return make_expression("((__attr) {.value=&%s})" % encode_path(function_name))
+            return make_expression("__ATTRVALUE(&%s)" % encode_path(function_name))
 
         # With defaults, copy the function structure and set the defaults on the
         # copy.
 
         else:
             self.record_temp("__tmp_value")
-            return make_expression("(__tmp_value = __COPY(&%s, sizeof(%s)), %s, (__attr) {.value=__tmp_value})" % (
+            return make_expression("(__tmp_value = __COPY(&%s, sizeof(%s)), %s, __ATTRVALUE(__tmp_value))" % (
                 encode_path(function_name),
                 encode_symbol("obj", function_name),
                 ", ".join(defaults)))
