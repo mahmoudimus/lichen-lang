@@ -105,13 +105,10 @@ typedef struct __fragment
 
 #define __INSTANCEPOS 0
 
-/* Special null values. */
+/* Attribute value setting. */
 
-#define __NULL ((__attr) {.value=0})
-
-/* Function pointer type. */
-
-typedef __attr (*__func)();
+#define __ATTRVALUE(VALUE) ((__attr) {.value=VALUE})
+#define __NULL __ATTRVALUE(0)
 
 /* Argument lists. */
 
