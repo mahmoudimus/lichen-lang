@@ -1396,7 +1396,7 @@ class TranslatedModule(CommonModule):
 
         "Process the given operator node 'n'."
 
-        return NegationResult(self.process_structure_node(n.expr))
+        return self.make_negation(self.process_structure_node(n.expr))
 
     def process_raise_node(self, n):
 
@@ -1610,7 +1610,7 @@ class TranslatedModule(CommonModule):
 
             # Emit a negated test of the continuation condition.
 
-            self.start_if(True, NegationResult(test))
+            self.start_if(True, self.make_negation(test))
             if n.else_:
                 self.process_structure_node(n.else_)
             self.writestmt("break;")
@@ -1675,6 +1675,20 @@ class TranslatedModule(CommonModule):
         """
 
         return self.temp_usage.has_key(path) and name in self.temp_usage[path]
+
+    def make_negation(self, expr):
+
+        "Return a negated form of 'expr'."
+
+        result = NegationResult(expr)
+
+        # Negation discards the temporary results of its operand.
+
+        temps = expr.discards_temporary()
+        if temps:
+            self.remove_temps(temps)
+
+        return result
 
     # Output generation.
 

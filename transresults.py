@@ -280,11 +280,11 @@ class NegationResult(LogicalResult):
     def discards_temporary(self, test=True):
 
         """
-        Return a list of temporary names that can be discarded if 'test' is
-        specified as a true value (or omitted).
+        Negations should have discarded their operand's temporary names when
+        being instantiated.
         """
 
-        return self.expr.discards_temporary(test)
+        return None
 
     def __str__(self):
         return "(%s ? %s : %s)" % (

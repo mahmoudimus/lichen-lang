@@ -1,3 +1,6 @@
+def no_temp(a, b):
+    return not (a and b)
+
 a = 1
 b = 2
 c = a and b
@@ -10,6 +13,9 @@ e = not a
 print e                             # False
 
 f = 0
+
+g = no_temp(a, b)
+print g                             # False
 
 if a and b:
     print "a and b"                 # a and b
