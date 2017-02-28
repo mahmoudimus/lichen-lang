@@ -308,13 +308,15 @@ class Optimiser:
                 attrnames = filter(lambda x: not x.startswith("$t"), attrnames)
                 self.all_attrs[(objkind, name)] = attrnames
 
-        self.locations = get_allocated_locations(self.all_attrs, get_attributes_and_sizes)
+        self.locations = get_allocated_locations(self.all_attrs,
+            get_attributes_and_sizes)
 
     def populate_parameters(self):
 
         "Populate parameter tables using parameter information."
 
-        self.arg_locations = [set()] + get_allocated_locations(self.importer.function_parameters, get_parameters_and_sizes)
+        self.arg_locations = [set()] + get_allocated_locations(
+            self.importer.function_parameters, get_parameters_and_sizes)
 
     def position_attributes(self):
 
@@ -777,8 +779,13 @@ def combine_rows(a, b):
 def get_attributes_and_sizes(d):
 
     """
-    Return a matrix of attributes, a list of type names corresponding to columns
-    in the matrix, and a list of ranked sizes each indicating...
+    Get attribute and size information for the object attributes defined by 'd'
+    providing a mapping from (object kind, type name) to attribute names.
+
+    Return a matrix of attributes (each row entry consisting of column values
+    providing attribute names, with value positions corresponding to types
+    providing such attributes), a list of the type names corresponding to the
+    columns in the matrix, and a list of ranked sizes each indicating...
 
      * a weighted size depending on the kind of object
      * the minimum size of an object employing an attribute
@@ -790,15 +797,15 @@ def get_attributes_and_sizes(d):
     sizes = {}
     objkinds = {}
 
-    for name, attrnames in d.items():
-        objkind, _name = name
+    for objtype, attrnames in d.items():
+        objkind, _name = objtype
 
         for attrname in attrnames:
 
             # Record each type supporting the attribute.
 
             init_item(attrs, attrname, set)
-            attrs[attrname].add(name)
+            attrs[attrname].add(objtype)
 
             # Maintain a record of the smallest object size supporting the given
             # attribute.
@@ -815,13 +822,13 @@ def get_attributes_and_sizes(d):
 
     # Obtain attribute details in order of size and occupancy.
 
-    names = d.keys()
+    all_objtypes = d.keys()
 
     rsizes = []
     for attrname, size in sizes.items():
         priority = "<instance>" in objkinds[attrname] and 0.5 or 1
         occupied = len(attrs[attrname])
-        key = (priority * size, size, len(names) - occupied, attrname)
+        key = (priority * size, size, len(all_objtypes) - occupied, attrname)
         rsizes.append(key)
 
     rsizes.sort()
@@ -829,16 +836,20 @@ def get_attributes_and_sizes(d):
     # Make a matrix of attributes.
 
     matrix = {}
-    for attrname, types in attrs.items():
+    for attrname, objtypes in attrs.items():
+
+        # Traverse the object types, adding the attribute name if the object
+        # type supports the attribute, adding None otherwise.
+
         row = []
-        for name in names:
-            if name in types:
+        for objtype in all_objtypes:
+            if objtype in objtypes:
                 row.append(attrname)
             else:
                 row.append(None)
         matrix[attrname] = row
 
-    return matrix, names, rsizes
+    return matrix, all_objtypes, rsizes
 
 def get_parameters_and_sizes(d):
 
@@ -912,26 +923,52 @@ def get_allocated_locations(d, fn):
     matrix, names, rsizes = fn(d)
     allocated = []
 
-    x = 0
-    while x < len(rsizes):
-        weight, size, free, attrname = rsizes[x]
+    # Try to allocate each attribute name in turn.
+
+    pos = 0
+
+    while pos < len(rsizes):
+        weight, size, free, attrname = rsizes[pos]
+
+        # Obtain the object information for the attribute name.
+
         base = matrix[attrname]
-        y = x + 1
+
+        # Examine attribute names that follow in the ranking, attempting to
+        # accumulate compatible attributes that can co-exist in the same
+        # position within structures.
+
+        y = pos + 1
         while y < len(rsizes):
             _weight, _size, _free, _attrname = rsizes[y]
+
+            # Determine whether this attribute is supported by too many types
+            # to co-exist.
+
             occupied = len(names) - _free
             if occupied > free:
                 break
+
+            # Merge the attribute support for both this and the currently
+            # considered attribute, testing for conflicts. Adopt the merged row
+            # details if they do not conflict.
+
             new = combine_rows(base, matrix[_attrname])
             if new:
                 del matrix[_attrname]
                 del rsizes[y]
                 base = new
                 free -= occupied
+
+            # Otherwise, look for other compatible attributes.
+
             else:
                 y += 1
+
+        # Allocate the merged details at the current position.
+
         allocated.append(base)
-        x += 1
+        pos += 1
 
     # Return the list of attribute names from each row of the allocated
     # attributes table.
