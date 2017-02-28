@@ -49,11 +49,17 @@ class Optimiser:
         self.attr_locations = None
         self.all_attrnames = None
 
+        self.existing_locations = []
+        self.existing_attrnames = []
+
         # Locations of parameters in parameter tables.
 
         self.arg_locations = None
         self.param_locations = None
         self.all_paramnames = None
+
+        self.existing_arg_locations = []
+        self.existing_paramnames = []
 
         # Specific attribute access information.
 
@@ -78,6 +84,10 @@ class Optimiser:
 
         # Optimiser activities.
 
+        self.from_output()
+
+        # Define or redefine structure information.
+
         self.populate_objects()
         self.position_attributes()
         self.populate_parameters()
@@ -85,6 +95,45 @@ class Optimiser:
         self.populate_tables()
         self.populate_constants()
         self.initialise_access_instructions()
+
+    def from_output(self):
+
+        "Read input files that influence optimisation."
+
+        self.read_locations("locations", self.existing_locations, self._line_to_list, list)
+        self.read_locations("parameter_locations", self.existing_arg_locations, self._line_to_list, list)
+        self.read_locations("attrnames", self.existing_attrnames, lambda x: x, lambda x: None)
+        self.read_locations("paramnames", self.existing_paramnames, lambda x: x, lambda x: None)
+
+    def _line_to_list(self, line):
+
+        "Convert comma-separated values in 'line' to a list of values."
+
+        return line.split(", ")
+
+    def read_locations(self, filename, collection, decode, empty):
+
+        """
+        Read location details from 'filename' into 'collection', using 'decode'
+        to convert each line and 'empty' to produce an empty result where no
+        data is given on a line.
+        """
+
+        filename = join(self.output, filename)
+
+        if exists(filename):
+            f = open(filename)
+            try:
+                for line in f.readlines():
+                    line = line.rstrip()
+                    if line:
+                        attrnames = decode(line)
+                    else:
+                        attrnames = empty()
+
+                    collection.append(attrnames)
+            finally:
+                f.close()
 
     def to_output(self):
 
@@ -309,26 +358,34 @@ class Optimiser:
                 self.all_attrs[(objkind, name)] = attrnames
 
         self.locations = get_allocated_locations(self.all_attrs,
-            get_attributes_and_sizes)
+            get_attributes_and_sizes, self.existing_locations)
 
     def populate_parameters(self):
 
         "Populate parameter tables using parameter information."
 
+        # Allocate positions from 1 onwards, ignoring the context argument.
+
         self.arg_locations = [set()] + get_allocated_locations(
-            self.importer.function_parameters, get_parameters_and_sizes)
+            self.importer.function_parameters, get_parameters_and_sizes,
+            self.existing_arg_locations[1:])
 
     def position_attributes(self):
 
         "Position specific attribute references."
 
-        # Reverse the location mappings.
+        # Reverse the location mappings, producing a mapping from attribute
+        # names to positions.
 
         attr_locations = self.attr_locations = {}
+        self._position_attributes(attr_locations, self.locations)
 
-        for i, attrnames in enumerate(self.locations):
-            for attrname in attrnames:
-                attr_locations[attrname] = i
+        # Add any previously-known attribute locations. This prevents attributes
+        # from being assigned different identifying codes by preserving obsolete
+        # attribute codes.
+
+        if self.existing_locations:
+            self._position_attributes(attr_locations, self.existing_locations)
 
         # Record the structures.
 
@@ -340,6 +397,18 @@ class Optimiser:
                 if position >= len(l):
                     l.extend([None] * (position - len(l) + 1))
                 l[position] = attrname
+
+    def _position_attributes(self, d, l):
+
+        """
+        For each attribute, store a mapping in 'd' to the index in 'l' at which
+        it can be found.
+        """
+
+        for i, attrnames in enumerate(l):
+            for attrname in attrnames:
+                if not d.has_key(attrname):
+                    d[attrname] = i
 
     def initialise_access_instructions(self):
 
@@ -650,16 +719,11 @@ class Optimiser:
 
         "Position the parameters for each function's parameter table."
 
-        # Reverse the location mappings.
+        # Reverse the location mappings, producing a mapping from parameter
+        # names to positions.
 
         param_locations = self.param_locations = {}
-
-        for i, argnames in enumerate(self.arg_locations):
-
-            # Position the arguments.
-
-            for argname in argnames:
-                param_locations[argname] = i
+        self._position_attributes(param_locations, self.arg_locations)
 
         for name, argnames in self.importer.function_parameters.items():
 
@@ -690,7 +754,7 @@ class Optimiser:
         these identifiers.
         """
 
-        self.all_attrnames, d = self._get_name_mapping(self.attr_locations)
+        self.all_attrnames, d = self._get_name_mapping(self.attr_locations, self.existing_attrnames)
 
         # Record the numbers indicating the locations of the names.
 
@@ -702,7 +766,7 @@ class Optimiser:
                 else:
                     l.append(d[attrname])
 
-        self.all_paramnames, d = self._get_name_mapping(self.param_locations)
+        self.all_paramnames, d = self._get_name_mapping(self.param_locations, self.existing_paramnames)
 
         # Record the numbers indicating the locations of the names.
 
@@ -715,19 +779,42 @@ class Optimiser:
                     name, pos = value
                     l.append((d[name], pos))
 
-    def _get_name_mapping(self, locations):
+    def _get_name_mapping(self, locations, existing=None):
 
         """
         Get a sorted list of names from 'locations', then map them to
-        identifying numbers. Return the list and the mapping.
+        identifying numbers. Preserve the identifiers from the 'existing' list,
+        if specified. Return the list and the mapping.
         """
 
-        all_names = locations.keys()
-        all_names.sort()
         d = {}
-        for i, name in enumerate(all_names):
-            d[name] = i
-        return all_names, d
+        l = []
+
+        i = 0
+        all_names = set(locations.keys())
+
+        # Preserve the existing identifiers, if available.
+
+        if existing:
+            for name in existing:
+                d[name] = i
+                l.append(name)
+                if name in all_names:
+                    all_names.remove(name)
+                i += 1
+
+        # Include all remaining names in order.
+
+        all_names = list(all_names)
+        all_names.sort()
+
+        for name in all_names:
+            if not d.has_key(name):
+                d[name] = i
+                l.append(name)
+                i += 1
+
+        return l, d
 
     def populate_constants(self):
 
@@ -911,7 +998,7 @@ def get_parameters_and_sizes(d):
 
     return matrix, names, rsizes
 
-def get_allocated_locations(d, fn):
+def get_allocated_locations(d, fn, existing=None):
 
     """
     Return a list where each element corresponds to a structure location and
@@ -923,12 +1010,60 @@ def get_allocated_locations(d, fn):
     matrix, names, rsizes = fn(d)
     allocated = []
 
+    # Verify any existing allocation.
+
+    allocated_attrnames = set()
+
+    if existing:
+        for attrnames in existing:
+
+            # Handle empty positions.
+
+            if not attrnames:
+                allocated.append([])
+                continue
+
+            base = None
+
+            for attrname in attrnames:
+
+                # Skip presumably-removed attribute names.
+
+                if not matrix.has_key(attrname):
+                    continue
+
+                # Handle the first attribute name.
+
+                if base is None:
+                    base = matrix[attrname]
+                    allocated_attrnames.add(attrname)
+                    continue
+
+                # Combine existing and new attribute positioning.
+
+                new = combine_rows(base, matrix[attrname])
+
+                if new:
+                    base = new
+                    allocated_attrnames.add(attrname)
+                else:
+                    # NOTE: Signal an error or perform output reset.
+                    print "Attribute", attrname, "must be moved."
+
+            allocated.append(base)
+
     # Try to allocate each attribute name in turn.
 
     pos = 0
 
     while pos < len(rsizes):
         weight, size, free, attrname = rsizes[pos]
+
+        # Ignore allocated attribute names.
+
+        if attrname in allocated_attrnames:
+            pos += 1
+            continue
 
         # Obtain the object information for the attribute name.
 
@@ -941,6 +1076,12 @@ def get_allocated_locations(d, fn):
         y = pos + 1
         while y < len(rsizes):
             _weight, _size, _free, _attrname = rsizes[y]
+
+            # Ignore allocated attribute names.
+
+            if _attrname in allocated_attrnames:
+                y += 1
+                continue
 
             # Determine whether this attribute is supported by too many types
             # to co-exist.
@@ -970,16 +1111,29 @@ def get_allocated_locations(d, fn):
         allocated.append(base)
         pos += 1
 
-    # Return the list of attribute names from each row of the allocated
-    # attributes table.
+    return allocations_to_sets(allocated)
+
+def allocations_to_sets(allocated):
+
+    """
+    Return the list of attribute names from each row of the 'allocated'
+    attributes table.
+    """
 
     locations = []
+
     for attrnames in allocated:
         l = set()
-        for attrname in attrnames:
-            if attrname:
-                l.add(attrname)
+
+        # Convert populated allocations.
+
+        if attrnames:
+            for attrname in attrnames:
+                if attrname:
+                    l.add(attrname)
+
         locations.append(l)
+
     return locations
 
 # vim: tabstop=4 expandtab shiftwidth=4
