@@ -1627,6 +1627,18 @@ class TranslatedModule(CommonModule):
 
     # Special variable usage.
 
+    def get_temp_path(self):
+
+        """
+        Return the appropriate namespace path for temporary names in the current
+        namespace.
+        """
+
+        if self.in_function:
+            return self.get_namespace_path()
+        else:
+            return self.name
+
     def record_temp(self, name):
 
         """
@@ -1636,13 +1648,23 @@ class TranslatedModule(CommonModule):
         program.
         """
 
-        if self.in_function:
-            path = self.get_namespace_path()
-        else:
-            path = self.name
+        path = self.get_temp_path()
 
-        init_item(self.temp_usage, path, set)
-        self.temp_usage[path].add(name)
+        init_item(self.temp_usage, path, list)
+        self.temp_usage[path].append(name)
+
+    def remove_temps(self, names):
+
+        """
+        Remove 'names' from temporary storage allocations, each instance
+        removing each request for storage.
+        """
+
+        path = self.get_temp_path()
+
+        for name in names:
+            if self.uses_temp(path, name):
+                self.temp_usage[path].remove(name)
 
     def uses_temp(self, path, name):
 
@@ -1816,6 +1838,9 @@ class TranslatedModule(CommonModule):
 
         if isinstance(test_ref, LogicalResult):
             self.writeline("%s %s" % (statement, test_ref.apply_test()))
+            temps = test_ref.discards_temporary()
+            if temps:
+                self.remove_temps(temps)
         else:
             self.writeline("%s (__BOOL(%s))" % (statement, test_ref))
 

@@ -45,6 +45,9 @@ class Result:
     def context_identity(self):
         return None
 
+    def discards_temporary(self, test=True):
+        return None
+
     def get_name(self):
         return None
 

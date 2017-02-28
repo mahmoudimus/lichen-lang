@@ -37,9 +37,25 @@ class Expression(Result):
     "A general expression."
 
     def __init__(self, s):
-        self.s = s
+        if isinstance(s, Result):
+            self.s = str(s)
+            self.expr = s
+        else:
+            self.s = s
+            self.expr = None
+
+    def discards_temporary(self, test=True):
+
+        """
+        Return a list of temporary names that can be discarded if 'test' is
+        specified as a true value (or omitted).
+        """
+
+        return self.expr and self.expr.discards_temporary(False)
+
     def __str__(self):
         return self.s
+
     def __repr__(self):
         return "Expression(%r)" % self.s
 
@@ -261,6 +277,15 @@ class NegationResult(LogicalResult):
         expr = self._convert(self.expr)
         return "(!%s)" % expr
 
+    def discards_temporary(self, test=True):
+
+        """
+        Return a list of temporary names that can be discarded if 'test' is
+        specified as a true value (or omitted).
+        """
+
+        return self.expr.discards_temporary(test)
+
     def __str__(self):
         return "(%s ? %s : %s)" % (
             self._convert(self.expr),
@@ -300,6 +325,25 @@ class LogicalOperationResult(LogicalResult):
             return "(%s)" % " && ".join(results)
         else:
             return "(%s)" % " || ".join(results)
+
+    def discards_temporary(self, test=True):
+
+        """
+        Return a list of temporary names that can be discarded if 'test' is
+        specified as a true value (or omitted).
+        """
+
+        if not test:
+            return None
+
+        temps = ["__tmp_result"]
+
+        for expr in self.exprs:
+            t = expr.discards_temporary(test)
+            if t:
+                temps += t
+
+        return temps
 
     def __str__(self):
 
