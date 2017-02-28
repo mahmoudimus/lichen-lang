@@ -1,12 +1,18 @@
 def no_temp(a, b):
     return not (a and b)
 
+def uses_temp(a, b):
+    return a and b
+
+def also_uses_temp(a, b):
+    return a or b
+
 a = 1
 b = 2
-c = a and b
+c = uses_temp(a, b)
 print c                             # 2
 
-d = a or b
+d = also_uses_temp(a, b)
 print d                             # 1
 
 e = not a
