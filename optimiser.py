@@ -280,7 +280,10 @@ class Optimiser:
             parameters.sort()
 
             for name, argnames in parameters:
-                print >>f, name, ", ".join([s and ("%s:%d" % s) or "-" for s in argnames])
+                l = []
+                for s in argnames:
+                    l.append(s and ("%s:%d" % s) or "-")
+                print >>f, name, ", ".join(l)
 
         finally:
             f.close()
@@ -291,7 +294,10 @@ class Optimiser:
             attr_table.sort()
 
             for name, attrcodes in attr_table:
-                print >>f, name, ", ".join([i is not None and str(i) or "-" for i in attrcodes])
+                l = []
+                for i in attrcodes:
+                    l.append(i is not None and str(i) or "-")
+                print >>f, name, ", ".join(l)
 
         finally:
             f.close()
@@ -302,7 +308,10 @@ class Optimiser:
             param_table.sort()
 
             for name, paramcodes in param_table:
-                print >>f, name, ", ".join([s and ("%d:%d" % s) or "-" for s in paramcodes])
+                l = []
+                for s in paramcodes:
+                    l.append(s and ("%d:%d" % s) or "-")
+                print >>f, name, ", ".join(l)
 
         finally:
             f.close()
