@@ -183,6 +183,7 @@ This program has absolutely no warranty.
     verbose = False
     warnings = []
 
+    unrecognised = []
     filenames = []
     outputs = []
 
@@ -204,6 +205,7 @@ This program has absolutely no warranty.
         elif arg.startswith("-o"): l, needed = start_arg_list(outputs, arg, "-o", 1)
         elif arg == ("-v", "--verbose"): verbose = True
         elif arg.startswith("-W"): l, needed = start_arg_list(warnings, arg, "-W", 1)
+        elif arg.startswith("-"): unrecognised.append(arg)
         else:
             l.append(arg)
             if needed:
@@ -211,6 +213,12 @@ This program has absolutely no warranty.
 
         if needed == 0:
             l = filenames
+
+    # Report unrecognised options.
+
+    if unrecognised:
+        print >>sys.stderr, "The following options were not recognised: %s" % ", ".join(unrecognised)
+        sys.exit(1)
 
     # Add extra components to the module search path from the environment.
 
