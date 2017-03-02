@@ -87,6 +87,17 @@ Show a summary of the command syntax and options
 .TP
 .BR \-V ", " \-\-version
 Show version information for this tool
+.SH INCREMENTAL COMPILATION
+Invocations of
+.B lplc
+without the reset options
+.BR \-r ", " \-\-reset ", " \-R " or " \-\-reset\-all
+will cause incremental translation and compilation to be attempted. Where
+existing translated sources exist and where no changes to the object structures
+or callable signatures are made, only updated sources will be generated and
+compiled. Otherwise, where structures or signatures change in a way that is
+incompatible with already-compiled code, the entire program will be generated
+and compiled again.
 .SH EXAMPLES
 Compile the main program in
 .BR hello.py ,
