@@ -203,7 +203,7 @@ This program has absolutely no warranty.
         elif arg in ("-t", "--no-timing"): timings = False
         elif arg in ("-tb", "--traceback"): traceback = True
         elif arg.startswith("-o"): l, needed = start_arg_list(outputs, arg, "-o", 1)
-        elif arg == ("-v", "--verbose"): verbose = True
+        elif arg in ("-v", "--verbose"): verbose = True
         elif arg.startswith("-W"): l, needed = start_arg_list(warnings, arg, "-W", 1)
         elif arg.startswith("-"): unrecognised.append(arg)
         else:
