@@ -148,7 +148,7 @@ for FILENAME in tests/* ; do
         continue
     fi
 
-    # Run tests without an existing cache.
+    # Compile tests without an existing cache.
 
     echo "$FILENAME..." 1>&2
     if ! "$LPLC" -c -r "$FILENAME" ; then
@@ -176,7 +176,7 @@ for FILENAME in tests/* ; do
     echo " (warnings)..." 1>&2
     if ! check_type_warnings ; then exit 1 ; fi
 
-    # Run tests with an existing cache.
+    # Compile tests with an existing cache.
 
     echo " (cached)..." 1>&2
     if ! "$LPLC" -c "$FILENAME" ; then exit 1 ; fi
