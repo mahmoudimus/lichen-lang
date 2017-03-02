@@ -1131,31 +1131,47 @@ def get_allocated_locations(d, fn, existing=None):
                 if new:
                     base = new
                     allocated_attrnames.add(attrname)
+                else:
+                    raise OptimiseError, "Attribute %s cannot be explicitly positioned at %d." % \
+                                         (attrname, len(allocated))
 
             allocated.append(base)
 
     # Try to allocate each attribute name in turn.
 
+    x = 0
     pos = 0
 
-    while pos < len(rsizes):
-        weight, size, free, attrname = rsizes[pos]
+    while x < len(rsizes):
 
-        # Ignore allocated attribute names.
+        # Obtain any previous allocation at the current position. Start at the
+        # current attribute looking for allocations to combine.
 
-        if attrname in allocated_attrnames:
-            pos += 1
-            continue
+        if pos < len(allocated):
+            base = allocated[pos]
+            free = base.count(None)
+            y = x
 
         # Obtain the object information for the attribute name.
 
-        base = matrix[attrname]
+        else:
+            weight, size, free, attrname = rsizes[x]
+
+            # Ignore allocated attribute names.
+
+            if attrname in allocated_attrnames:
+                x += 1
+                continue
+
+            # Start at the next attribute looking for allocations to combine.
+
+            base = matrix[attrname]
+            y = x + 1
 
         # Examine attribute names that follow in the ranking, attempting to
         # accumulate compatible attributes that can co-exist in the same
         # position within structures.
 
-        y = pos + 1
         while y < len(rsizes):
             _weight, _size, _free, _attrname = rsizes[y]
 
@@ -1190,8 +1206,12 @@ def get_allocated_locations(d, fn, existing=None):
 
         # Allocate the merged details at the current position.
 
-        allocated.append(base)
-        pos += 1
+        if pos < len(allocated):
+            allocated[pos] = base
+            pos += 1
+        else:
+            x += 1
+            allocated.append(base)
 
     return allocations_to_sets(allocated)
 
