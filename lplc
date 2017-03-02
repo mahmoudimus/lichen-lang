@@ -285,6 +285,11 @@ This program has absolutely no warranty.
         o = optimiser.Optimiser(i, d, output_dir)
         o.to_output()
 
+        # Detect structure or signature changes demanding a reset of the
+        # generated sources.
+
+        reset = reset or o.need_reset()
+
         if timings: now = stopwatch("Optimisation", now)
 
         g = generator.Generator(i, o, generated_dir)

@@ -20,14 +20,14 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from common import add_counter_item, get_attrname_from_location, init_item, \
-                   sorted_output
+                   sorted_output, CommonOutput
 from encoders import digest, encode_access_location, encode_instruction, get_kinds
 from errors import OptimiseError
 from os.path import exists, join
 from os import makedirs
-from referencing import Reference
+from referencing import decode_reference, Reference
 
-class Optimiser:
+class Optimiser(CommonOutput):
 
     "Optimise objects in a program."
 
@@ -43,23 +43,35 @@ class Optimiser:
         self.deducer = deducer
         self.output = output
 
+        # Detection of differences between any existing structure or signature
+        # information and the generated information.
+
+        self.differing_structures = []
+        self.differing_parameters = []
+
         # Locations/offsets of attributes in objects.
 
         self.locations = None
-        self.attr_locations = None
-        self.all_attrnames = None
+        self.existing_locations = None
 
-        self.existing_locations = []
-        self.existing_attrnames = []
+        self.attr_locations = None
+
+        # Attribute code assignments.
+
+        self.all_attrnames = None
+        self.existing_attrnames = None
 
         # Locations of parameters in parameter tables.
 
         self.arg_locations = None
-        self.param_locations = None
-        self.all_paramnames = None
+        self.existing_arg_locations = None
 
-        self.existing_arg_locations = []
-        self.existing_paramnames = []
+        self.param_locations = None
+
+        # Parameter code assignments.
+
+        self.all_paramnames = None
+        self.existing_paramnames = None
 
         # Specific attribute access information.
 
@@ -69,11 +81,13 @@ class Optimiser:
         # Object structure information.
 
         self.structures = {}
+        self.existing_structures = None
         self.attr_table = {}
 
         # Parameter list information.
 
         self.parameters = {}
+        self.existing_parameters = None
         self.param_table = {}
 
         # Constant literal information.
@@ -96,14 +110,37 @@ class Optimiser:
         self.populate_constants()
         self.initialise_access_instructions()
 
+    def need_reset(self):
+
+        """
+        Return whether attribute or parameter information has changed, requiring
+        the reset/recompilation of all source files.
+        """
+
+        return self.differing_structures or self.differing_parameters
+
     def from_output(self):
 
         "Read input files that influence optimisation."
 
-        self.read_locations("locations", self.existing_locations, self._line_to_list, list)
-        self.read_locations("parameter_locations", self.existing_arg_locations, self._line_to_list, list)
-        self.read_locations("attrnames", self.existing_attrnames, lambda x: x, lambda x: None)
-        self.read_locations("paramnames", self.existing_paramnames, lambda x: x, lambda x: None)
+        # Remove any output for a different program.
+
+        self.check_output()
+
+        # Existing attribute and parameter positioning information.
+
+        self.existing_locations = self.read_locations("locations", self._line_to_list, list)
+        self.existing_arg_locations = self.read_locations("parameter_locations", self._line_to_list, list)
+
+        # Existing attribute and parameter code information.
+
+        self.existing_attrnames = self.read_locations("attrnames", lambda x: x, lambda x: None)
+        self.existing_paramnames = self.read_locations("paramnames", lambda x: x, lambda x: None)
+
+        # Existing structure and signature information.
+
+        self.existing_structures = dict(self.read_locations("structures", self._line_to_structure_pairs, list))
+        self.existing_parameters = dict(self.read_locations("parameters", self._line_to_signature_pairs, list))
 
     def _line_to_list(self, line):
 
@@ -111,15 +148,39 @@ class Optimiser:
 
         return line.split(", ")
 
-    def read_locations(self, filename, collection, decode, empty):
+    def _line_to_signature_pairs(self, line):
+
+        "Convert comma-separated values in 'line' to a list of pairs of values."
+
+        l = []
+        objpath, line = line.split(" ", 1)
+        for values in line.split(", "):
+            if values != "-":
+                name, pos = values.split(":")
+                l.append((name, int(pos)))
+            else:
+                l.append(None)
+        return (objpath, l)
+
+    def _line_to_structure_pairs(self, line):
+
+        "Convert comma-separated values in 'line' to a list of pairs of values."
+
+        l = []
+        ref, line = line.split(" ", 1)
+        values = map(lambda x: x != '-' and x or None, line.split(", "))
+        return (decode_reference(ref), values)
+
+    def read_locations(self, filename, decode, empty):
 
         """
-        Read location details from 'filename' into 'collection', using 'decode'
-        to convert each line and 'empty' to produce an empty result where no
-        data is given on a line.
+        Read location details from 'filename', using 'decode' to convert each
+        line and 'empty' to produce an empty result where no data is given on a
+        line, returning a collection.
         """
 
         filename = join(self.output, filename)
+        collection = []
 
         if exists(filename):
             f = open(filename)
@@ -134,6 +195,8 @@ class Optimiser:
                     collection.append(attrnames)
             finally:
                 f.close()
+
+        return collection
 
     def to_output(self):
 
@@ -401,11 +464,18 @@ class Optimiser:
         for (objkind, name), attrnames in self.all_attrs.items():
             key = Reference(objkind, name)
             l = self.structures[key] = [None] * len(attrnames)
+
             for attrname in attrnames:
                 position = attr_locations[attrname]
                 if position >= len(l):
                     l.extend([None] * (position - len(l) + 1))
                 l[position] = attrname
+
+            # Test the structure against any existing attributes.
+
+            if self.existing_structures:
+                if self.existing_structures.has_key(key) and self.existing_structures[key] != l:
+                    self.differing_structures.append(key)
 
     def _position_attributes(self, d, l):
 
@@ -756,6 +826,12 @@ class Optimiser:
 
                 l[position] = (argname, pos + 1)
 
+            # Test the structure against any existing parameters.
+
+            if self.existing_parameters:
+                if self.existing_parameters.has_key(name) and self.existing_parameters[name] != l:
+                    self.differing_parameters.append(name)
+
     def populate_tables(self):
 
         """
@@ -1055,9 +1131,6 @@ def get_allocated_locations(d, fn, existing=None):
                 if new:
                     base = new
                     allocated_attrnames.add(attrname)
-                else:
-                    # NOTE: Signal an error or perform output reset.
-                    print "Attribute", attrname, "must be moved."
 
             allocated.append(base)
 
