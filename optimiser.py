@@ -1105,7 +1105,7 @@ def get_allocated_locations(d, fn, existing=None):
             # Handle empty positions.
 
             if not attrnames:
-                allocated.append([])
+                allocated.append([None] * len(names))
                 continue
 
             base = None
@@ -1135,7 +1135,12 @@ def get_allocated_locations(d, fn, existing=None):
                     raise OptimiseError, "Attribute %s cannot be explicitly positioned at %d." % \
                                          (attrname, len(allocated))
 
-            allocated.append(base)
+            # Handle empty positions.
+
+            if base:
+                allocated.append(base)
+            else:
+                allocated.append([None] * len(names))
 
     # Try to allocate each attribute name in turn.
 
