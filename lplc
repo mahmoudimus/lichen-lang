@@ -82,6 +82,12 @@ def start_arg_list(l, arg, prefix, needed):
     else:
         return l, needed
 
+def getvalue(l, i):
+    if l and len(l) > i:
+        return l[i]
+    else:
+        return None
+
 def remove_all(dirname):
 
     "Remove 'dirname' and its contents."
@@ -145,6 +151,15 @@ all         Show all possible warnings
 args        Show invocations where a callable may be involved that cannot accept
             the arguments provided
 
+Control over program organisation can be exercised using the following options
+with each requiring an input filename providing a particular form of
+information:
+
+--attr-codes        Attribute codes identifying named object attributes
+--attr-locations    Attribute locations in objects
+--param-codes       Parameter codes identifying named parameters
+--param-locations   Parameter locations in signatures
+
 The following informational options can be specified to produce output instead
 of compiling a program:
 
@@ -171,11 +186,16 @@ This program has absolutely no warranty.
 
     # Determine the options and arguments.
 
+    attrnames = []
+    attrlocations = []
     debug = False
     gc_sections = False
     ignore_env = False
     make = True
     make_verbose = True
+    outputs = []
+    paramnames = []
+    paramlocations = []
     reset = False
     reset_all = False
     timings = True
@@ -185,7 +205,6 @@ This program has absolutely no warranty.
 
     unrecognised = []
     filenames = []
-    outputs = []
 
     # Obtain program filenames by default.
 
@@ -193,10 +212,15 @@ This program has absolutely no warranty.
     needed = None
 
     for arg in args:
-        if arg in ("-c", "--compile"): make = False
+        if arg == "--attr-codes": l = attrnames; needed = 1
+        elif arg == "--attr-locations": l = attrlocations; needed = 1
+        elif arg in ("-c", "--compile"): make = False
         elif arg in ("-E", "--no-env"): ignore_env = True
         elif arg in ("-g", "--debug"): debug = True
         elif arg in ("-G", "--gc-sections"): gc_sections = True
+        # "P" handled below.
+        elif arg == "--param-codes": l = paramnames; needed = 1
+        elif arg == "--param-locations": l = paramlocations; needed = 1
         elif arg in ("-q", "--quiet"): make_verbose = False
         elif arg in ("-r", "--reset"): reset = True
         elif arg in ("-R", "--reset-all"): reset_all = True
@@ -290,18 +314,20 @@ This program has absolutely no warranty.
 
         if timings: now = stopwatch("Deduction", now)
 
-        o = optimiser.Optimiser(i, d, output_dir)
+        o = optimiser.Optimiser(i, d, output_dir,
+                                getvalue(attrnames, 0), getvalue(attrlocations, 0),
+                                getvalue(paramnames, 0), getvalue(paramlocations, 0))
         o.to_output()
+
+        if timings: now = stopwatch("Optimisation", now)
 
         # Detect structure or signature changes demanding a reset of the
         # generated sources.
 
         reset = reset or o.need_reset()
 
-        if timings: now = stopwatch("Optimisation", now)
-
         g = generator.Generator(i, o, generated_dir)
-        g.to_output(debug, gc_sections)
+        g.to_output(reset, debug, gc_sections)
 
         if timings: now = stopwatch("Generation", now)
 

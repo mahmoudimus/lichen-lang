@@ -78,6 +78,22 @@ Show all possible warnings
 Show invocations where a callable may be involved that cannot accept
 the arguments provided
 .PP
+Control over program organisation can be exercised using the following options
+with each requiring an input filename providing a particular form of
+information:
+.TP
+.B \-\-attr\-codes
+Attribute codes identifying named object attributes
+.TP
+.B \-\-attr\-locations
+Attribute locations in objects
+.TP
+.B \-\-param\-codes
+Parameter codes identifying named parameters
+.TP
+.B \-\-param\-locations
+Parameter locations in signatures
+.PP
 The following informational options can be specified to produce output instead
 of compiling a program:
 .PP
@@ -98,6 +114,28 @@ or callable signatures are made, only updated sources will be generated and
 compiled. Otherwise, where structures or signatures change in a way that is
 incompatible with already-compiled code, the entire program will be generated
 and compiled again.
+.PP
+The
+.BR \-r " and " \-\-reset
+options force inspection and compilation to occur again but will still attempt
+to preserve structure and signature information. Meanwhile, the
+.BR \-R " and " \-\-reset\-all
+options remove all traces of previous program information, requiring that all
+such information be generated again.
+.SH PROGRAM CONFIGURATION
+Use of the
+.BR \-\-attr\-codes " and " \-\-param\-codes
+options is intended to allow common catalogues of identifying codes to be
+maintained. Similarly, use of the
+.BR \-\-attr\-locations " and " \-\-param\-locations
+options is intended to allow common representations to be maintained.
+.PP
+Beyond incremental compilation, these features would allow already-compiled
+programs and libraries to exchange information in a compatible way, although
+this is not yet supported in any significant way. However, the
+.B \-\-attr\-locations
+option can be useful in directing the attribute allocation process and
+potentially making program representations more efficient.
 .SH EXAMPLES
 Compile the main program in
 .BR hello.py ,

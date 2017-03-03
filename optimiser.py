@@ -31,17 +31,31 @@ class Optimiser(CommonOutput):
 
     "Optimise objects in a program."
 
-    def __init__(self, importer, deducer, output):
+    def __init__(self, importer, deducer, output,
+        attrnames_filename=None, locations_filename=None,
+        paramnames_filename=None, parameter_locations_filename=None):
 
         """
         Initialise an instance using the given 'importer' and 'deducer' that
         will perform the arrangement of attributes for program objects, writing
         the results to the given 'output' directory.
+
+        If 'attrnames_filename', 'locations_filename', 'paramnames_filename', or
+        'parameter_locations_filename' are given, they will be used to
+        explicitly indicate existing attribute code, attribute position,
+        parameter code, and parameter position information respectively.
         """
 
         self.importer = importer
         self.deducer = deducer
         self.output = output
+
+        # Explicitly-specified attribute and parameter sources.
+
+        self.attrnames_filename = attrnames_filename
+        self.locations_filename = locations_filename
+        self.paramnames_filename = paramnames_filename
+        self.parameter_locations_filename = parameter_locations_filename
 
         # Detection of differences between any existing structure or signature
         # information and the generated information.
@@ -60,6 +74,7 @@ class Optimiser(CommonOutput):
 
         self.all_attrnames = None
         self.existing_attrnames = None
+        self.indicated_attrnames = None
 
         # Locations of parameters in parameter tables.
 
@@ -72,6 +87,7 @@ class Optimiser(CommonOutput):
 
         self.all_paramnames = None
         self.existing_paramnames = None
+        self.indicated_paramnames = None
 
         # Specific attribute access information.
 
@@ -127,20 +143,49 @@ class Optimiser(CommonOutput):
 
         self.check_output()
 
-        # Existing attribute and parameter positioning information.
+        # Existing attribute and parameter positioning information. This
+        # influences the positions of attributes and parameters found in the
+        # program.
 
-        self.existing_locations = self.read_locations("locations", self._line_to_list, list)
-        self.existing_arg_locations = self.read_locations("parameter_locations", self._line_to_list, list)
+        locations_filename = self.locations_filename or \
+                             join(self.output, "locations")
 
-        # Existing attribute and parameter code information.
+        parameter_locations_filename = self.parameter_locations_filename or \
+                                       join(self.output, "parameter_locations")
 
-        self.existing_attrnames = self.read_locations("attrnames", lambda x: x, lambda x: None)
-        self.existing_paramnames = self.read_locations("paramnames", lambda x: x, lambda x: None)
+        self.existing_locations = self.read_data(locations_filename, self._line_to_list, list)
+        self.existing_arg_locations = self.read_data(parameter_locations_filename, self._line_to_list, list)
 
-        # Existing structure and signature information.
+        # Existing attribute and parameter code information. This is used to
+        # check the compatibility of the output against any assignments
+        # previously made.
 
-        self.existing_structures = dict(self.read_locations("structures", self._line_to_structure_pairs, list))
-        self.existing_parameters = dict(self.read_locations("parameters", self._line_to_signature_pairs, list))
+        identity = lambda x: x
+        none = lambda x: None
+
+        attrnames_filename = join(self.output, "attrnames")
+        paramnames_filename = join(self.output, "paramnames")
+
+        self.existing_attrnames = self.read_data(attrnames_filename, identity, none)
+        self.existing_paramnames = self.read_data(paramnames_filename, identity, none)
+
+        # Explicitly-specified attribute name and parameter name codes. These
+        # direct assignment of codes in the program.
+
+        self.indicated_attrnames = self.attrnames_filename and \
+                                   self.read_data(self.attrnames_filename, identity, none)
+
+        self.indicated_paramnames = self.paramnames_filename and \
+                                    self.read_data(self.paramnames_filename, identity, none)
+
+        # Existing structure and signature information. This is used to check
+        # the output and detect whether structures or signatures have changed.
+
+        structures_filename = join(self.output, "structures")
+        parameters_filename = join(self.output, "parameters")
+
+        self.existing_structures = dict(self.read_data(structures_filename, self._line_to_structure_pairs, list))
+        self.existing_parameters = dict(self.read_data(parameters_filename, self._line_to_signature_pairs, list))
 
     def _line_to_list(self, line):
 
@@ -171,7 +216,7 @@ class Optimiser(CommonOutput):
         values = map(lambda x: x != '-' and x or None, line.split(", "))
         return (decode_reference(ref), values)
 
-    def read_locations(self, filename, decode, empty):
+    def read_data(self, filename, decode, empty):
 
         """
         Read location details from 'filename', using 'decode' to convert each
@@ -179,7 +224,6 @@ class Optimiser(CommonOutput):
         line, returning a collection.
         """
 
-        filename = join(self.output, filename)
         collection = []
 
         if exists(filename):
@@ -839,7 +883,13 @@ class Optimiser(CommonOutput):
         these identifiers.
         """
 
-        self.all_attrnames, d = self._get_name_mapping(self.attr_locations, self.existing_attrnames)
+        # Initialise the mapping from attribute names to codes.
+
+        l = self.all_attrnames = []; d = {}
+        self._init_name_mapping(l, d, self.existing_attrnames)
+        if self.indicated_attrnames:
+            self._init_name_mapping(l, d, self.indicated_attrnames)
+        self._update_name_mapping(l, d, self.attr_locations)
 
         # Record the numbers indicating the locations of the names.
 
@@ -851,7 +901,13 @@ class Optimiser(CommonOutput):
                 else:
                     l.append(d[attrname])
 
-        self.all_paramnames, d = self._get_name_mapping(self.param_locations, self.existing_paramnames)
+        # Initialise the mapping from parameter names to codes.
+
+        l = self.all_paramnames = []; d = {}
+        self._init_name_mapping(l, d, self.existing_paramnames)
+        if self.indicated_paramnames:
+            self._init_name_mapping(l, d, self.indicated_paramnames)
+        self._update_name_mapping(l, d, self.param_locations)
 
         # Record the numbers indicating the locations of the names.
 
@@ -864,42 +920,56 @@ class Optimiser(CommonOutput):
                     name, pos = value
                     l.append((d[name], pos))
 
-    def _get_name_mapping(self, locations, existing=None):
+    def _init_name_mapping(self, l, d, existing):
 
         """
-        Get a sorted list of names from 'locations', then map them to
-        identifying numbers. Preserve the identifiers from the 'existing' list,
-        if specified. Return the list and the mapping.
+        Initialise the name collection 'l', with mapping 'd', using the
+        'existing' mapping.
         """
-
-        d = {}
-        l = []
 
         i = 0
-        all_names = set(locations.keys())
 
-        # Preserve the existing identifiers, if available.
+        for name in existing:
 
-        if existing:
-            for name in existing:
+            # Test for the name in another position.
+
+            if d.has_key(name):
+                if d[name] != i:
+                    raise OptimiseError, "Name %s has conflicting codes: %d and %d." % \
+                                         (name, d[name], i)
+            else:
+
+                # Test for other usage of the position.
+
+                if i < len(l):
+                    if l[i] != name:
+                        raise OptimiseError, "Position %d has conflicting names: %s and %s." % \
+                                             (i, name, d[name])
+                    l[i] = name
+                else:
+                    l.append(name)
+
                 d[name] = i
-                l.append(name)
-                if name in all_names:
-                    all_names.remove(name)
-                i += 1
 
-        # Include all remaining names in order.
+            i += 1
 
-        all_names = list(all_names)
+    def _update_name_mapping(self, l, d, locations):
+
+        """
+        Using any existing identifiers supplied by 'l' and 'd', update the
+        identifiers using a sorted list of names from 'locations'.
+        """
+
+        all_names = list(locations.keys())
         all_names.sort()
+
+        i = len(l)
 
         for name in all_names:
             if not d.has_key(name):
                 d[name] = i
                 l.append(name)
                 i += 1
-
-        return l, d
 
     def populate_constants(self):
 
