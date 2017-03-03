@@ -982,31 +982,28 @@ class Optimiser(CommonOutput):
 
         self.constants = {}
 
-        for path, constants in self.importer.all_constants.items():
-
-            # Record constants and obtain a number for them.
-            # Each constant is actually (value, value_type, encoding).
-
-            for constant, n in constants.items():
-                d = digest(constant)
-                self.constants[constant] = d
-
-                # Make sure the digests are really distinct for different
-                # constants.
-
-                if self.digests.has_key(d):
-                    if self.digests[d] != constant:
-                        raise OptimiseError, "Digest %s used for distinct constants %r and %r." % (
-                                             d, self.digests[d], constant)
-                else:
-                    self.digests[d] = constant
-
         # Establish a mapping from local constant identifiers to consolidated
         # constant identifiers.
 
         self.constant_numbers = {}
 
         for name, constant in self.importer.all_constant_values.items():
+
+            # Each constant is actually (value, value_type, encoding).
+
+            d = digest(constant)
+            self.constants[constant] = d
+
+            # Make sure the digests are really distinct for different
+            # constants.
+
+            if self.digests.has_key(d):
+                if self.digests[d] != constant:
+                    raise OptimiseError, "Digest %s used for distinct constants %r and %r." % (
+                                         d, self.digests[d], constant)
+            else:
+                self.digests[d] = constant
+
             self.constant_numbers[name] = self.constants[constant]
 
 def combine_rows(a, b):
