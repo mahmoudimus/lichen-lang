@@ -23,8 +23,8 @@ from common import first, get_assigned_attributes, \
                    get_attrname_from_location, get_attrnames, \
                    get_invoked_attributes, get_name_path, init_item, \
                    sorted_output, CommonOutput
-from encoders import encode_access_location, \
-                     encode_constrained, encode_location, encode_usage, \
+from encoders import encode_access_location, encode_constrained, \
+                     encode_instruction, encode_location, encode_usage, \
                      get_kinds, test_label_for_kind, test_label_for_type
 from errors import DeduceError
 from os.path import join
@@ -110,6 +110,11 @@ class Deducer(CommonOutput):
 
         self.access_plans = {}
 
+        # Specific attribute access information.
+
+        self.access_instructions = {}
+        self.accessor_kinds = {}
+
         # Accumulated information about accessors and providers.
 
         self.accessor_general_class_types = {}
@@ -143,6 +148,7 @@ class Deducer(CommonOutput):
         self.classify_accessors()
         self.classify_accesses()
         self.initialise_access_plans()
+        self.initialise_access_instructions()
         self.identify_dependencies()
 
     def to_output(self):
@@ -407,11 +413,21 @@ class Deducer(CommonOutput):
     def write_access_plans(self):
 
         """
+        Write access and instruction plans.
+
         Each attribute access is written out as a plan of the following form:
 
         location " " name " " test " " test type " " base " " traversed attributes
-                 " " attributes to traverse " " context " " access method
-                 " " static attribute " " accessor kinds
+                 " " traversal access modes " " attributes to traverse
+                 " " context " " context test " " first access method
+                 " " final access method " " static attribute " " accessor kinds
+
+        Locations have the following format:
+
+        qualified name of scope "." local name ":" name version
+
+        Traversal access modes are either "class" (obtain accessor class to
+        access attribute) or "object" (obtain attribute directly from accessor).
         """
 
         f_attrs = open(join(self.output, "attribute_plans"), "w")
@@ -441,6 +457,20 @@ class Deducer(CommonOutput):
 
         finally:
             f_attrs.close()
+
+        f = open(join(self.output, "instruction_plans"), "w")
+        try:
+            access_instructions = self.access_instructions.items()
+            access_instructions.sort()
+
+            for location, instructions in access_instructions:
+                print >>f, encode_access_location(location), "..."
+                for instruction in instructions:
+                    print >>f, encode_instruction(instruction)
+                print >>f
+
+        finally:
+            f.close()
 
     def classify_accessors(self):
 
@@ -1919,6 +1949,7 @@ class Deducer(CommonOutput):
          * remaining attributes needing to be tested and traversed
          * details of the context
          * any test to apply to the context
+         * the method of obtaining the first attribute
          * the method of obtaining the final attribute
          * any static final attribute
          * the kinds of objects providing the final attribute
@@ -2222,5 +2253,295 @@ class Deducer(CommonOutput):
                context, context_test, \
                first_method, final_method, \
                origin, accessor_kinds
+
+    def initialise_access_instructions(self):
+
+        "Expand access plans into instruction sequences."
+
+        for access_location, access_plan in self.access_plans.items():
+
+            # Obtain the access details.
+
+            name, test, test_type, base, \
+                traversed, traversal_modes, attrnames, \
+                context, context_test, \
+                first_method, final_method, \
+                origin, accessor_kinds = access_plan
+
+            # Emit instructions by appending them to a list.
+
+            instructions = []
+            emit = instructions.append
+
+            # Identify any static original accessor.
+
+            if base:
+                original_accessor = base
+
+            # Employ names as contexts unless the context needs testing and
+            # potentially updating. In such cases, temporary context storage is
+            # used instead.
+
+            elif name and not (context_test == "test" and
+                               final_method in ("access-invoke", "static-invoke")):
+                original_accessor = "<name>" # refers to the name
+
+            # Use a generic placeholder representing the access expression in
+            # the general case.
+
+            else:
+                original_accessor = "<expr>"
+
+            # Prepare for any first attribute access.
+
+            if traversed:
+                attrname = traversed[0]
+                del traversed[0]
+            elif attrnames:
+                attrname = attrnames[0]
+                del attrnames[0]
+
+            # Perform the first access explicitly if at least one operation
+            # requires it.
+
+            access_first_attribute = final_method in ("access", "access-invoke", "assign") or traversed or attrnames
+
+            # Determine whether the first access involves assignment.
+
+            assigning = not traversed and not attrnames and final_method == "assign"
+            set_accessor = assigning and "<set_target_accessor>" or "<set_accessor>"
+            stored_accessor = assigning and "<target_accessor>" or "<accessor>"
+
+            # Set the context if already available.
+
+            context_var = None
+
+            if context == "base":
+                accessor = context_var = (base,)
+            elif context == "original-accessor":
+
+                # Prevent re-evaluation of any dynamic expression by storing it.
+
+                if original_accessor == "<expr>":
+                    if final_method in ("access-invoke", "static-invoke"):
+                        emit(("<set_context>", original_accessor))
+                        accessor = context_var = ("<context>",)
+                    else:
+                        emit((set_accessor, original_accessor))
+                        accessor = context_var = (stored_accessor,)
+                else:
+                    accessor = context_var = (original_accessor,)
+
+            # Assigning does not set the context.
+
+            elif context in ("final-accessor", "unset") and access_first_attribute:
+
+                # Prevent re-evaluation of any dynamic expression by storing it.
+
+                if original_accessor == "<expr>":
+                    emit((set_accessor, original_accessor))
+                    accessor = (stored_accessor,)
+                else:
+                    accessor = (original_accessor,)
+
+            # Apply any test.
+
+            if test[0] == "test":
+                accessor = ("__%s_%s_%s" % test, accessor, test_type)
+
+            # Perform the first or final access.
+            # The access only needs performing if the resulting accessor is used.
+
+            remaining = len(traversed + attrnames)
+
+            if access_first_attribute:
+
+                if first_method == "relative-class":
+                    if assigning:
+                        emit(("__store_via_class", accessor, attrname, "<assexpr>"))
+                    else:
+                        accessor = ("__load_via_class", accessor, attrname)
+
+                elif first_method == "relative-object":
+                    if assigning:
+                        emit(("__store_via_object", accessor, attrname, "<assexpr>"))
+                    else:
+                        accessor = ("__load_via_object", accessor, attrname)
+
+                elif first_method == "relative-object-class":
+                    if assigning:
+                        emit(("__get_class_and_store", accessor, attrname, "<assexpr>"))
+                    else:
+                        accessor = ("__get_class_and_load", accessor, attrname)
+
+                elif first_method == "check-class":
+                    if assigning:
+                        emit(("__check_and_store_via_class", accessor, attrname, "<assexpr>"))
+                    else:
+                        accessor = ("__check_and_load_via_class", accessor, attrname)
+
+                elif first_method == "check-object":
+                    if assigning:
+                        emit(("__check_and_store_via_object", accessor, attrname, "<assexpr>"))
+                    else:
+                        accessor = ("__check_and_load_via_object", accessor, attrname)
+
+                elif first_method == "check-object-class":
+                    if assigning:
+                        emit(("__check_and_store_via_any", accessor, attrname, "<assexpr>"))
+                    else:
+                        accessor = ("__check_and_load_via_any", accessor, attrname)
+
+            # Traverse attributes using the accessor.
+
+            if traversed:
+                for attrname, traversal_mode in zip(traversed, traversal_modes):
+                    assigning = remaining == 1 and final_method == "assign"
+
+                    # Set the context, if appropriate.
+
+                    if remaining == 1 and final_method != "assign" and context == "final-accessor":
+
+                        # Invoked attributes employ a separate context accessed
+                        # during invocation.
+
+                        if final_method in ("access-invoke", "static-invoke"):
+                            emit(("<set_context>", accessor))
+                            accessor = context_var = "<context>"
+
+                        # A private context within the access is otherwise
+                        # retained.
+
+                        else:
+                            emit(("<set_private_context>", accessor))
+                            accessor = context_var = "<private_context>"
+
+                    # Perform the access only if not achieved directly.
+
+                    if remaining > 1 or final_method in ("access", "access-invoke", "assign"):
+
+                        if traversal_mode == "class":
+                            if assigning:
+                                emit(("__store_via_class", accessor, attrname, "<assexpr>"))
+                            else:
+                                accessor = ("__load_via_class", accessor, attrname)
+                        else:
+                            if assigning:
+                                emit(("__store_via_object", accessor, attrname, "<assexpr>"))
+                            else:
+                                accessor = ("__load_via_object", accessor, attrname)
+
+                    remaining -= 1
+
+            if attrnames:
+                for attrname in attrnames:
+                    assigning = remaining == 1 and final_method == "assign"
+
+                    # Set the context, if appropriate.
+
+                    if remaining == 1 and final_method != "assign" and context == "final-accessor":
+
+                        # Invoked attributes employ a separate context accessed
+                        # during invocation.
+
+                        if final_method in ("access-invoke", "static-invoke"):
+                            emit(("<set_context>", accessor))
+                            accessor = context_var = "<context>"
+
+                        # A private context within the access is otherwise
+                        # retained.
+
+                        else:
+                            emit(("<set_private_context>", accessor))
+                            accessor = context_var = "<private_context>"
+
+                    # Perform the access only if not achieved directly.
+
+                    if remaining > 1 or final_method in ("access", "access-invoke", "assign"):
+
+                        if assigning:
+                            emit(("__check_and_store_via_any", accessor, attrname, "<assexpr>"))
+                        else:
+                            accessor = ("__check_and_load_via_any", accessor, attrname)
+
+                    remaining -= 1
+
+            # Define or emit the means of accessing the actual target.
+
+            # Assignments to known attributes.
+
+            if final_method == "static-assign":
+                parent, attrname = origin.rsplit(".", 1)
+                emit(("__store_via_object", parent, attrname, "<assexpr>"))
+
+            # Invoked attributes employ a separate context.
+
+            elif final_method in ("static", "static-invoke"):
+                accessor = ("__load_static_ignore", origin)
+
+            # Wrap accesses in context operations.
+
+            if context_test == "test":
+
+                # Test and combine the context with static attribute details.
+
+                if final_method == "static":
+                    emit(("__load_static_test", context_var, origin))
+
+                # Test the context, storing it separately if required for the
+                # immediately invoked static attribute.
+
+                elif final_method == "static-invoke":
+                    emit(("<test_context_static>", context_var, origin))
+
+                # Test the context, storing it separately if required for an
+                # immediately invoked attribute.
+
+                elif final_method == "access-invoke":
+                    emit(("<test_context_revert>", context_var, accessor))
+
+                # Test the context and update the attribute details if
+                # appropriate.
+
+                else:
+                    emit(("__test_context", context_var, accessor))
+
+            elif context_test == "replace":
+
+                # Produce an object with updated context.
+
+                if final_method == "static":
+                    emit(("__load_static_replace", context_var, origin))
+
+                # Omit the context update operation where the target is static
+                # and the context is recorded separately.
+
+                elif final_method == "static-invoke":
+                    pass
+
+                # If a separate context is used for an immediate invocation,
+                # produce the attribute details unchanged.
+
+                elif final_method == "access-invoke":
+                    emit(accessor)
+
+                # Update the context in the attribute details.
+
+                else:
+                    emit(("__update_context", context_var, accessor))
+
+            # Omit the accessor for assignments and for invocations of static
+            # targets.
+
+            elif final_method not in ("assign", "static-assign", "static-invoke"):
+                emit(accessor)
+
+            # Produce an advisory instruction regarding the context.
+
+            if context_var:
+                emit(("<context_identity>", context_var))
+
+            self.access_instructions[access_location] = instructions
+            self.accessor_kinds[access_location] = accessor_kinds
 
 # vim: tabstop=4 expandtab shiftwidth=4

@@ -556,7 +556,7 @@ class TranslatedModule(CommonModule):
         # Obtain encoded versions of each instruction, accumulating temporary
         # variables.
 
-        for instruction in self.optimiser.access_instructions[location]:
+        for instruction in self.deducer.access_instructions[location]:
 
             # Intercept a special instruction identifying the context.
 
@@ -644,7 +644,7 @@ class TranslatedModule(CommonModule):
 
         "Return the accessor kinds for 'location'."
 
-        return self.optimiser.accessor_kinds.get(location)
+        return self.deducer.accessor_kinds.get(location)
 
     def get_access_location(self, name, attrnames=None):
 
