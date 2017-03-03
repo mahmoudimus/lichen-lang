@@ -31,6 +31,7 @@ __attr __new(const __table * table, __ref cls, size_t size)
 {
     __ref obj = (__ref) __ALLOCATE(1, size);
     obj->table = table;
+    obj->pos = __INSTANCEPOS;
     __store_via_object(obj, __class__, (__attr) {.value=cls});
     return (__attr) {.value=obj};
 }

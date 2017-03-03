@@ -79,20 +79,26 @@ class Generator(CommonOutput):
         self.optimiser = optimiser
         self.output = output
 
-    def to_output(self, debug=False, gc_sections=False):
+        # The special instance indicator.
+
+        self.instancepos = self.optimiser.attr_locations["__class__"]
+
+    def to_output(self, reset=False, debug=False, gc_sections=False):
 
         "Write the generated code."
 
         self.check_output("debug=%r gc_sections=%r" % (debug, gc_sections))
         self.write_structures()
         self.write_scripts(debug, gc_sections)
-        self.copy_templates()
+        self.copy_templates(reset)
 
-    def copy_templates(self):
+    def copy_templates(self, reset=False):
 
         "Copy template files to the generated output directory."
 
         templates = join(split(__file__)[0], "templates")
+
+        only_if_newer = not reset
 
         for filename in listdir(templates):
             target = self.output
@@ -101,7 +107,7 @@ class Generator(CommonOutput):
             # Copy files into the target directory.
 
             if not isdir(pathname):
-                copy(pathname, target)
+                copy(pathname, target, only_if_newer)
 
             # Copy directories (such as the native code directory).
 
@@ -132,7 +138,7 @@ class Generator(CommonOutput):
                 # Copy needed files.
 
                 for filename in needed:
-                    copy(join(pathname, filename), target)
+                    copy(join(pathname, filename), target, only_if_newer)
 
                 # Remove superfluous files.
 
@@ -429,8 +435,8 @@ class Generator(CommonOutput):
 
         "Write scripts used to build the program."
 
-        f_native = open(join(self.output, "native.mk"), "w")
-        f_modules = open(join(self.output, "modules.mk"), "w")
+        # Options affect compiling and linking.
+
         f_options = open(join(self.output, "options.mk"), "w")
         try:
             if debug:
@@ -439,6 +445,15 @@ class Generator(CommonOutput):
             if gc_sections:
                 print >>f_options, "include gc_sections.mk"
 
+        finally:
+            f_options.close()
+
+        # Native and module definitions divide the program modules into native
+        # and generated code.
+
+        f_native = open(join(self.output, "native.mk"), "w")
+        f_modules = open(join(self.output, "modules.mk"), "w")
+        try:
             # Identify modules used by the program.
 
             native_modules = [join("native", "common.c")]
@@ -460,7 +475,22 @@ class Generator(CommonOutput):
         finally:
             f_native.close()
             f_modules.close()
-            f_options.close()
+
+        # Instance position configuration uses the position of the ubiquitous
+        # __class__ attribute as a means of indicating that an object is an
+        # instance. Classes employ special identifying attributes that are
+        # positioned elsewhere and thus cannot be in the same location as the
+        # __class__ attribute.
+
+        f_instancepos = open(join(self.output, "instancepos.h"), "w")
+        try:
+            print >>f_instancepos, """\
+#ifndef __INSTANCEPOS
+#define __INSTANCEPOS %d
+#endif
+""" % self.instancepos
+        finally:
+            f_instancepos.close()
 
     def make_literal_constant(self, f_decls, f_defs, n, constant):
 
@@ -738,7 +768,7 @@ typedef struct {
             print >>f_decls, "extern __obj %s;\n" % encode_path(structure_name)
 
         is_class = path and self.importer.get_object(path).has_kind("<class>")
-        pos = is_class and encode_pos(encode_type_attribute(path)) or "0"
+        pos = is_class and encode_pos(encode_type_attribute(path)) or str(self.instancepos)
 
         print >>f_defs, """\
 __obj %s = {

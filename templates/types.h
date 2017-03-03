@@ -24,6 +24,13 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdint.h>
 
+/* Include the special instance position value. The pos member of __obj refers
+   to the special type attribute for classes, indicating which position holds
+   the attribute describing the class type. For instances, it is set to the same
+   attribute position as __class__ and is defined in the following file. */
+
+#include "instancepos.h"
+
 typedef uint16_t __code;
 typedef uint16_t __pos;
 typedef uint16_t __pcode;
@@ -98,12 +105,6 @@ typedef struct __fragment
 } __fragment;
 
 #define __FRAGMENT_SIZE(NUMBER) ((NUMBER) * sizeof(__attr) + 2 * sizeof(unsigned int))
-
-/* Special instance position value. The pos member of __obj refers to the
-   special type attribute for classes, indicating which position holds the
-   attribute describing the class type. For instances, it is set to zero. */
-
-#define __INSTANCEPOS 0
 
 /* Attribute value setting. */
 

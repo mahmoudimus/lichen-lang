@@ -17,6 +17,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "gc.h" /* GC_MALLOC, GC_REALLOC */
+#include "types.h"
 #include "ops.h"
 #include "progops.h" /* for raising errors */
 #include "progconsts.h"
