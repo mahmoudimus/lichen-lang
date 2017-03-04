@@ -35,6 +35,8 @@ class Deducer(CommonOutput):
 
     "Deduce types in a program."
 
+    root_class_type = "__builtins__.object"
+
     def __init__(self, importer, output):
 
         """
@@ -612,6 +614,7 @@ class Deducer(CommonOutput):
                 all_accessed_attrs.add(attr)
                 all_providers.add(object_type)
 
+            self.reference_all_attrs[location] = all_accessed_attrs
             all_general_providers = self.get_most_general_types(all_providers)
 
             # Determine which attributes would be provided by the
@@ -626,8 +629,6 @@ class Deducer(CommonOutput):
                     guard_attrs.add(attr)
             else:
                 guard_attrs = None
-
-            self.reference_all_attrs[location] = all_accessed_attrs
 
             # Constrained accesses guarantee the nature of the accessor.
             # However, there may still be many types involved.
@@ -664,7 +665,7 @@ class Deducer(CommonOutput):
 
             elif len(all_providers) == 1:
                 provider = first(all_providers)
-                if provider != '__builtins__.object':
+                if provider != self.root_class_type:
                     all_accessor_kinds = set(get_kinds(all_accessor_types))
                     if len(all_accessor_kinds) == 1:
                         test_type = ("test", "specific", test_label_for_kind(first(all_accessor_kinds)))
@@ -675,7 +676,7 @@ class Deducer(CommonOutput):
 
             elif len(all_general_providers) == 1:
                 provider = first(all_general_providers)
-                if provider != '__builtins__.object':
+                if provider != self.root_class_type:
                     all_accessor_kinds = set(get_kinds(all_accessor_general_types))
                     if len(all_accessor_kinds) == 1:
                         test_type = ("test", "common", test_label_for_kind(first(all_accessor_kinds)))
@@ -1096,7 +1097,7 @@ class Deducer(CommonOutput):
         # attributes.
 
         if len(module_types) == len(self.importer.modules):
-            return ["__builtins__.object"]
+            return [self.root_class_type]
         else:
             return module_types
 
