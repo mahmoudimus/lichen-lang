@@ -197,7 +197,7 @@ __attr __invoke(__attr callable, int always_callable,
 
     /* Reserve enough space for the arguments. */
 
-    __attr allargs[max];
+    __attr *allargs = args, moreargs[max];
 
     /* Traverse the arguments. */
 
@@ -211,39 +211,44 @@ __attr __invoke(__attr callable, int always_callable,
 
     /* Copy the arguments. */
 
-    for (pos = 0; pos < nargs; pos++)
-        allargs[pos] = args[pos];
-
-    /* Erase the remaining arguments. */
-
-    for (pos = nargs; pos < max; pos++)
-        allargs[pos].value = 0;
-
-    /* Fill keyword arguments. */
-
-    for (kwpos = 0; kwpos < nkwargs; kwpos++)
+    if (nargs < max)
     {
-        pos = __HASPARAM(ptable, kwcodes[kwpos].pos, kwcodes[kwpos].code);
+        allargs = moreargs;
 
-        /* Check the table entry against the supplied argument details.
-           Set the argument but only if it does not overwrite positional
-           arguments. */
-        /* NOTE: Should use a more specific exception. */
+        for (pos = 0; pos < nargs; pos++)
+            allargs[pos] = args[pos];
 
-        if ((pos == -1) || (pos < nargs))
-            __raise_type_error();
+        /* Erase the remaining arguments. */
 
-        /* Set the argument using the appropriate position. */
+        for (pos = nargs; pos < max; pos++)
+            allargs[pos].value = 0;
 
-        allargs[pos] = kwargs[kwpos];
-    }
+        /* Fill keyword arguments. */
 
-    /* Fill the defaults. */
+        for (kwpos = 0; kwpos < nkwargs; kwpos++)
+        {
+            pos = __HASPARAM(ptable, kwcodes[kwpos].pos, kwcodes[kwpos].code);
 
-    for (pos = nargs; pos < max; pos++)
-    {
-        if (allargs[pos].value == 0)
-            allargs[pos] = __GETDEFAULT(target.value, pos - min);
+            /* Check the table entry against the supplied argument details.
+               Set the argument but only if it does not overwrite positional
+               arguments. */
+            /* NOTE: Should use a more specific exception. */
+
+            if ((pos == -1) || (pos < nargs))
+                __raise_type_error();
+
+            /* Set the argument using the appropriate position. */
+
+            allargs[pos] = kwargs[kwpos];
+        }
+
+        /* Fill the defaults. */
+
+        for (pos = nargs; pos < max; pos++)
+        {
+            if (allargs[pos].value == 0)
+                allargs[pos] = __GETDEFAULT(target.value, pos - min);
+        }
     }
 
     /* Call with the prepared arguments. */
