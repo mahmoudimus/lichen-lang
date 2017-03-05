@@ -4,7 +4,7 @@ include options.mk
 
 SRC += exceptions.c main.c ops.c progops.c progtypes.c
 OBJ = $(SRC:.c=.o)
-CFLAGS += -Wall -I. -finput-charset=UTF-8
+CFLAGS += -Wall -I. -finput-charset=UTF-8 -O2
 LDFLAGS += -lm -lgc
 
 ifdef ARCH
