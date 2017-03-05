@@ -49,6 +49,8 @@ int __get_class_and_store__(__ref obj, int pos, __attr value);
 /* Introspection. */
 
 int __is_instance(__ref obj);
+int __is_subclass(__ref obj, __attr cls);
+int __is_instance_subclass(__ref obj, __attr cls);
 int __is_type_instance(__ref obj);
 __ref __get_class(__ref obj);
 __attr __get_class_attr(__ref obj);
@@ -108,11 +110,6 @@ __attr __test_context_static(int target, __ref context, __ref value, __ref conte
 __attr __unwrap_callable(__attr callable);
 __attr (*__get_function(__ref context, __attr target))(__attr[]);
 __attr (*__check_and_get_function(__ref context, __attr target))(__attr[]);
-
-/* Basic structure tests. */
-
-int __WITHIN(__ref obj, int pos);
-int __HASATTR(__ref obj, int pos, int code);
 
 /* Parameter position operations. */
 

@@ -23,6 +23,18 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "progconsts.h"
 #include "progtypes.h"
 
+/* Basic structure tests. */
+
+static inline int __WITHIN(__ref obj, int pos)
+{
+    return pos < obj->table->size;
+}
+
+static inline int __HASATTR(__ref obj, int pos, int code)
+{
+    return __WITHIN(obj, pos) && (obj->table->attrs[pos] == code);
+}
+
 /* Direct access and manipulation of static objects. */
 
 __attr __load_static_ignore(__ref obj)
@@ -81,6 +93,16 @@ int __get_class_and_store__(__ref obj, int pos, __attr value)
 int __is_instance(__ref obj)
 {
     return obj->pos == __INSTANCEPOS;
+}
+
+int __is_subclass(__ref obj, __attr cls)
+{
+    return __HASATTR(obj, __TYPEPOS(cls.value), __TYPECODE(cls.value));
+}
+
+int __is_instance_subclass(__ref obj, __attr cls)
+{
+    return __is_instance(obj) && __HASATTR(__get_class(obj), __TYPEPOS(cls.value), __TYPECODE(cls.value));
 }
 
 int __is_type_instance(__ref obj)
@@ -315,18 +337,6 @@ __attr (*__check_and_get_function(__ref context, __attr target))(__attr[])
         return __check_and_load_via_object__(target.value, __ATTRPOS(__fn__), __ATTRCODE(__fn__)).fn;
     else
         return __unbound_method;
-}
-
-/* Basic structure tests. */
-
-int __WITHIN(__ref obj, int pos)
-{
-    return pos < obj->table->size;
-}
-
-int __HASATTR(__ref obj, int pos, int code)
-{
-    return __WITHIN(obj, pos) && (obj->table->attrs[pos] == code);
 }
 
 /* Parameter position operations. */

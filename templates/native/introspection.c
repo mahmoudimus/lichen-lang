@@ -57,18 +57,13 @@ __attr __fn_native_introspection_object_getattr(__attr __args[])
     return out;
 }
 
-static int __issubclass(__ref obj, __attr cls)
-{
-    return (__HASATTR(obj, __TYPEPOS(cls.value), __TYPECODE(cls.value)));
-}
-
 __attr __fn_native_introspection_isinstance(__attr __args[])
 {
     __attr * const obj = &__args[1];
     __attr * const cls = &__args[2];
 
     /* cls must be a class. */
-    if (__is_instance(obj->value) && __issubclass(__get_class(obj->value), *cls))
+    if (__is_instance_subclass(obj->value, *cls))
         return __builtins___boolean_True;
     else
         return __builtins___boolean_False;
@@ -80,7 +75,7 @@ __attr __fn_native_introspection_issubclass(__attr __args[])
     __attr * const cls = &__args[2];
 
     /* obj and cls must be classes. */
-    if (__issubclass(obj->value, *cls))
+    if (__is_subclass(obj->value, *cls))
         return __builtins___boolean_True;
     else
         return __builtins___boolean_False;
