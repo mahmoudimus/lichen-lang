@@ -281,5 +281,6 @@ int __BOOL(__attr attr)
 
     /* Invoke the bool function with the object and test against True. */
 
-    return __fn___builtins___boolean_bool(args).value == __builtins___boolean_True.value;
+    return (attr.value == __builtins___boolean_True.value) ||
+           (__fn___builtins___boolean_bool(args).value == __builtins___boolean_True.value);
 }
