@@ -217,9 +217,7 @@ __attr __invoke(__attr callable, int always_callable,
     /* Erase the remaining arguments. */
 
     for (pos = nargs; pos < max; pos++)
-    {
         allargs[pos].value = 0;
-    }
 
     /* Fill keyword arguments. */
 

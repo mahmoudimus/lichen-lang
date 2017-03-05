@@ -315,8 +315,6 @@ __attr __unwrap_callable(__attr callable)
 
 __attr (*__get_function(__ref context, __attr target))(__attr[])
 {
-    target = __unwrap_callable(target);
-
     /* Require null or instance contexts for functions and methods respectively,
        or type instance contexts for type methods. */
 
@@ -328,8 +326,6 @@ __attr (*__get_function(__ref context, __attr target))(__attr[])
 
 __attr (*__check_and_get_function(__ref context, __attr target))(__attr[])
 {
-    target = __unwrap_callable(target);
-
     /* Require null or instance contexts for functions and methods respectively,
        or type instance contexts for type methods. */
 
