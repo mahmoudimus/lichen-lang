@@ -75,12 +75,11 @@ __attr __fn_native_list_list_concat(__attr __args[])
     __fragment *newdata = data;
     unsigned int size = data->size, capacity = data->capacity;
     unsigned int other_size = other_data->size;
-    unsigned int i, j, n;
+    unsigned int i, j, n = size + other_size;
 
     /* Re-allocate the fragment if the capacity has been reached. */
-    if (size + other_size >= capacity)
+    if (n >= capacity)
     {
-        n = size + other_size;
         newdata = (__fragment *) __REALLOCATE(data, __FRAGMENT_SIZE(n));
         newdata->capacity = n;
     }
