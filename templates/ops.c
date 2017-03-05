@@ -25,14 +25,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Basic structure tests. */
 
-static inline int __WITHIN(__ref obj, int pos)
-{
-    return pos < obj->table->size;
-}
-
 static inline int __HASATTR(__ref obj, int pos, int code)
 {
-    return __WITHIN(obj, pos) && (obj->table->attrs[pos] == code);
+    return (pos < obj->table->size) && (obj->table->attrs[pos] == code);
 }
 
 /* Direct access and manipulation of static objects. */
