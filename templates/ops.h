@@ -124,10 +124,6 @@ __attr __CONTEXT_AS_VALUE(__attr attr);
 __ref __ISFUNC(__ref obj);
 int __ISNULL(__attr value);
 
-/* __TEST(obj, __A) -> test obj for the special type attribute __A */
-
-#define __TEST(__OBJ, __TYPE) (__test_common_instance(__OBJ, __pos_##__TYPE, __code_##__TYPE))
-
 /* Attribute codes and positions for type objects. */
 
 unsigned int __TYPECODE(__ref obj);
