@@ -28,16 +28,13 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* String operations. */
 
-__attr __fn_native_str_str_add(__attr __args[])
+__attr __fn_native_str_str_add(__attr __self, __attr _data, __attr other, __attr _size, __attr othersize)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    __attr * const _size = &__args[3];
-    __attr * const othersize = &__args[4];
-    /* _data, other interpreted as string */
-    char *s = _data->strvalue;
-    char *o = other->strvalue;
-    int ss = _size->intvalue, os = othersize->intvalue;
+    /* _data, other interpreted as string.__data__ */
+    char *s = _data.strvalue;
+    char *o = other.strvalue;
+    /* _size, othersize interpreted as int.__data__ */
+    int ss = _size.intvalue, os = othersize.intvalue;
     int n = ss + os;
     char *r = (char *) __ALLOCATE(n + 1, sizeof(char));
 
@@ -48,76 +45,64 @@ __attr __fn_native_str_str_add(__attr __args[])
     return __new_str(r, n);
 }
 
-__attr __fn_native_str_str_chr(__attr __args[])
+__attr __fn_native_str_str_chr(__attr __self, __attr _data)
 {
-    __attr * const _data = &__args[1];
-    /* _data interpreted as int */
-    int n = _data->intvalue;
+    /* _data interpreted as int.__data__ */
+    int n = _data.intvalue;
     char *s = (char *) __ALLOCATE(2, sizeof(char));
 
     s[0] = (char) n;
     return __new_str(s, 1);
 }
 
-__attr __fn_native_str_str_lt(__attr __args[])
+__attr __fn_native_str_str_lt(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data, other interpreted as string */
-    char *s = _data->strvalue;
-    char *o = other->strvalue;
+    /* _data, other interpreted as string.__data__ */
+    char *s = _data.strvalue;
+    char *o = other.strvalue;
 
     /* NOTE: Using simple byte-level string operations. */
     return strcmp(s, o) < 0 ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
-__attr __fn_native_str_str_gt(__attr __args[])
+__attr __fn_native_str_str_gt(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data, other interpreted as string */
-    char *s = _data->strvalue;
-    char *o = other->strvalue;
+    /* _data, other interpreted as string.__data__ */
+    char *s = _data.strvalue;
+    char *o = other.strvalue;
 
     /* NOTE: Using simple byte-level string operations. */
     return strcmp(s, o) > 0 ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
-__attr __fn_native_str_str_eq(__attr __args[])
+__attr __fn_native_str_str_eq(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data, other interpreted as string */
-    char *s = _data->strvalue;
-    char *o = other->strvalue;
+    /* _data, other interpreted as string.__data__ */
+    char *s = _data.strvalue;
+    char *o = other.strvalue;
 
     /* NOTE: Using simple byte-level string operations. */
     return strcmp(s, o) == 0 ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
-__attr __fn_native_str_str_ord(__attr __args[])
+__attr __fn_native_str_str_ord(__attr __self, __attr _data)
 {
-    __attr * const _data = &__args[1];
-    /* _data interpreted as string */
-    char *s = _data->strvalue;
+    /* _data interpreted as string.__data__ */
+    char *s = _data.strvalue;
 
     return __new_int((unsigned int) s[0]);
 }
 
-__attr __fn_native_str_str_substr(__attr __args[])
+__attr __fn_native_str_str_substr(__attr __self, __attr _data, __attr start, __attr end, __attr step)
 {
-    __attr * const _data = &__args[1];
-    __attr * const start = &__args[2];
-    __attr * const end = &__args[3];
-    __attr * const step = &__args[4];
-    /* _data interpreted as string */
-    char *s = _data->strvalue, *sub;
-    /* start.__data__ interpreted as int */
-    int istart = __load_via_object(start->value, __data__).intvalue;
-    /* end.__data__ interpreted as int */
-    int iend = __load_via_object(end->value, __data__).intvalue;
-    /* step.__data__ interpreted as int */
-    int istep = __load_via_object(step->value, __data__).intvalue;
+    /* _data interpreted as string.__data__ */
+    char *s = _data.strvalue, *sub;
+    /* start interpreted as int */
+    int istart = __load_via_object(start.value, __data__).intvalue;
+    /* end interpreted as int */
+    int iend = __load_via_object(end.value, __data__).intvalue;
+    /* step interpreted as int */
+    int istep = __load_via_object(step.value, __data__).intvalue;
 
     /* Calculate the size of the substring. */
     size_t resultsize = ((iend - istart - (istep > 0 ? 1 : -1)) / istep) + 1;

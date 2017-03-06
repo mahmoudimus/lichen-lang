@@ -26,11 +26,10 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "progtypes.h"
 #include "main.h"
 
-__attr __fn_native_buffer_buffer_str(__attr __args[])
+__attr __fn_native_buffer_buffer_str(__attr __self, __attr _data)
 {
-    __attr * const _data = &__args[1];
-    /* _data interpreted as buffer */
-    __fragment *data = _data->seqvalue;
+    /* _data interpreted as buffer.__data__ */
+    __fragment *data = _data.seqvalue;
     unsigned int size = 0, i, j, n;
     char *s;
     __attr o;

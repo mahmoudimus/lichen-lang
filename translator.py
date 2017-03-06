@@ -848,10 +848,7 @@ class TranslatedModule(CommonModule):
             # Produce an appropriate access to an attribute's value.
 
             parameters = self.importer.function_parameters.get(self.get_namespace_path())
-            if parameters and name in parameters:
-                name_to_value = "%s->value" % name
-            else:
-                name_to_value = "%s.value" % name
+            name_to_value = "%s.value" % name
 
             # Write a test that raises a TypeError upon failure.
 
@@ -1187,7 +1184,7 @@ class TranslatedModule(CommonModule):
 
         # Encode the arguments.
 
-        argstr = "__ARGS(%s)" % ", ".join(args)
+        argstr = ", ".join(args)
         kwargstr = kwargs and ("__ARGS(%s)" % ", ".join(kwargs)) or "0"
         kwcodestr = kwcodes and ("__KWARGS(%s)" % ", ".join(kwcodes)) or "0"
 
@@ -1195,7 +1192,9 @@ class TranslatedModule(CommonModule):
         # the number of values.
 
         if literal_instantiation:
-            argstr += ", %d" % (len(args) - 1)
+            argstr = "__ARGS(%s), %d" % (argstr, len(args) - 1)
+        elif instantiation:
+            argstr = "__ARGS(%s)" % argstr
 
         # First, the invocation expression is presented.
 
@@ -1249,7 +1248,7 @@ class TranslatedModule(CommonModule):
                 target_var,
                 self.always_callable and 1 or 0,
                 len(kwargs), kwcodestr, kwargstr,
-                len(args), argstr))
+                len(args), "__ARGS(%s)" % argstr))
             return InvocationResult(stages)
 
     def always_callable(self, refs):
@@ -1390,7 +1389,7 @@ class TranslatedModule(CommonModule):
         # static namespace members. The reference should be configured to return
         # such names.
 
-        return TrResolvedNameRef(n.name, ref, expr=expr, is_global=is_global, parameter=parameter, location=location)
+        return TrResolvedNameRef(n.name, ref, expr=expr, is_global=is_global, location=location)
 
     def process_not_node(self, n):
 
@@ -1761,7 +1760,8 @@ class TranslatedModule(CommonModule):
 
         "Start the function having the given 'name'."
 
-        print >>self.out, "__attr %s(__attr __args[])" % encode_function_pointer(name)
+        self.write_parameters(name)
+
         print >>self.out, "{"
         self.indent += 1
 
@@ -1787,7 +1787,6 @@ class TranslatedModule(CommonModule):
             names.sort()
             self.writeline("__attr %s;" % ", ".join(names))
 
-        self.write_parameters(name)
         self.start_unit()
 
     def end_function(self, name):
@@ -1796,6 +1795,30 @@ class TranslatedModule(CommonModule):
 
         self.end_unit(name)
         print >>self.out
+
+    def write_parameters(self, name):
+
+        """
+        For the function having the given 'name', write definitions of
+        parameters found in the arguments array.
+        """
+
+        # Generate any self reference.
+
+        l = []
+
+        if self.is_method(name):
+            l.append("__attr self")
+        else:
+            l.append("__attr __self")
+
+        # Generate aliases for the parameters.
+
+        for parameter in self.importer.function_parameters[name]:
+            l.append("__attr %s" % encode_path(parameter))
+
+        self.writeline("__attr %s(%s)" % (
+            encode_function_pointer(name), ", ".join(l)))
 
     def write_temporaries(self, name):
 
@@ -1825,25 +1848,6 @@ class TranslatedModule(CommonModule):
 
         if name in module.exception_namespaces:
             self.writeline("__exc __tmp_exc;")
-
-    def write_parameters(self, name):
-
-        """
-        For the function having the given 'name', write definitions of
-        parameters found in the arguments array.
-        """
-
-        parameters = self.importer.function_parameters[name]
-
-        # Generate any self reference.
-
-        if self.is_method(name):
-            self.writeline("__attr * const self = &__args[0];")
-
-        # Generate aliases for the parameters.
-
-        for i, parameter in enumerate(parameters):
-            self.writeline("__attr * const %s = &__args[%d];" % (encode_path(parameter), i+1))
 
     def start_if(self, first, test_ref):
         statement = "%sif" % (not first and "else " or "")

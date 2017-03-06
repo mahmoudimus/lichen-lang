@@ -32,20 +32,16 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Integer operations. */
 
-__attr __fn_native_int_int_new(__attr __args[])
+__attr __fn_native_int_int_new(__attr __self, __attr _data)
 {
-    __attr * const _data = &__args[1];
-
-    return __new_int(_data->intvalue);
+    return __new_int(_data.intvalue);
 }
 
-__attr __fn_native_int_int_add(__attr __args[])
+__attr __fn_native_int_int_add(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data__ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Test for overflow. */
     if (((i > 0) && (j > 0) && (i > INT_MAX - j)) ||
@@ -57,13 +53,11 @@ __attr __fn_native_int_int_add(__attr __args[])
     return __new_int(i + j);
 }
 
-__attr __fn_native_int_int_sub(__attr __args[])
+__attr __fn_native_int_int_sub(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data__ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Test for overflow. */
     if (((i < 0) && (j > 0) && (i < INT_MIN + j)) ||
@@ -75,13 +69,11 @@ __attr __fn_native_int_int_sub(__attr __args[])
     return __new_int(i - j);
 }
 
-__attr __fn_native_int_int_mul(__attr __args[])
+__attr __fn_native_int_int_mul(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data__ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Test for overflow. */
     if (((i > 0) && (j > 0) && (i > INT_MAX / j)) ||
@@ -95,13 +87,11 @@ __attr __fn_native_int_int_mul(__attr __args[])
     return __new_int(i * j);
 }
 
-__attr __fn_native_int_int_div(__attr __args[])
+__attr __fn_native_int_int_div(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data__ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Test for division by zero or overflow. */
     if (j == 0)
@@ -113,13 +103,11 @@ __attr __fn_native_int_int_div(__attr __args[])
     return __new_int(i / j);
 }
 
-__attr __fn_native_int_int_mod(__attr __args[])
+__attr __fn_native_int_int_mod(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data_ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Test for division by zero or overflow. */
     if (j == 0)
@@ -131,11 +119,10 @@ __attr __fn_native_int_int_mod(__attr __args[])
     return __new_int(i % j);
 }
 
-__attr __fn_native_int_int_neg(__attr __args[])
+__attr __fn_native_int_int_neg(__attr __self, __attr _data)
 {
-    __attr * const _data = &__args[1];
-    /* _data interpreted as int */
-    int i = _data->intvalue;
+    /* _data interpreted as int.__data_ */
+    int i = _data.intvalue;
 
     /* Test for overflow. */
     if (i == INT_MIN)
@@ -145,13 +132,11 @@ __attr __fn_native_int_int_neg(__attr __args[])
     return __new_int(-i);
 }
 
-__attr __fn_native_int_int_pow(__attr __args[])
+__attr __fn_native_int_int_pow(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data_ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
     int k;
 
     errno = 0;
@@ -166,108 +151,92 @@ __attr __fn_native_int_int_pow(__attr __args[])
     return __new_int(k);
 }
 
-__attr __fn_native_int_int_and(__attr __args[])
+__attr __fn_native_int_int_and(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data_ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
     return __new_int(i & j);
 }
 
-__attr __fn_native_int_int_not(__attr __args[])
+__attr __fn_native_int_int_not(__attr __self, __attr _data)
 {
-    __attr * const _data = &__args[1];
-    /* _data interpreted as int */
-    int i = _data->intvalue;
+    /* _data interpreted as int.__data_ */
+    int i = _data.intvalue;
 
     /* Return the new integer. */
     return __new_int(~i);
 }
 
-__attr __fn_native_int_int_or(__attr __args[])
+__attr __fn_native_int_int_or(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data_ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
     return __new_int(i | j);
 }
 
-__attr __fn_native_int_int_xor(__attr __args[])
+__attr __fn_native_int_int_xor(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data_ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
     return __new_int(i ^ j);
 }
 
-__attr __fn_native_int_int_lt(__attr __args[])
+__attr __fn_native_int_int_lt(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data_ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Return a boolean result. */
     return i < j ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
-__attr __fn_native_int_int_gt(__attr __args[])
+__attr __fn_native_int_int_gt(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data_ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Return a boolean result. */
     return i > j ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
-__attr __fn_native_int_int_eq(__attr __args[])
+__attr __fn_native_int_int_eq(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data_ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Return a boolean result. */
     return i == j ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
-__attr __fn_native_int_int_ne(__attr __args[])
+__attr __fn_native_int_int_ne(__attr __self, __attr _data, __attr other)
 {
-    __attr * const _data = &__args[1];
-    __attr * const other = &__args[2];
-    /* _data and other interpreted as int */
-    int i = _data->intvalue;
-    int j = other->intvalue;
+    /* _data and other interpreted as int.__data_ */
+    int i = _data.intvalue;
+    int j = other.intvalue;
 
     /* Return a boolean result. */
     return i != j ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
-__attr __fn_native_int_int_str(__attr __args[])
+__attr __fn_native_int_int_str(__attr __self, __attr _data)
 {
-    __attr * const _data = &__args[1];
-    /* _data interpreted as int */
-    int i = _data->intvalue;
+    /* _data interpreted as int.__data_ */
+    int i = _data.intvalue;
     /* Employ a buffer big enough to fit the largest integer plus an extra
        character, a minus sign, and the null terminator. */
     unsigned int n = (int) log10(INT_MAX) + 3;

@@ -154,6 +154,8 @@ class Generator(CommonOutput):
         f_decls = open(join(self.output, "progtypes.h"), "w")
         f_signatures = open(join(self.output, "main.h"), "w")
         f_code = open(join(self.output, "main.c"), "w")
+        f_calls = open(join(self.output, "calls.c"), "w")
+        f_call_macros = open(join(self.output, "calls.h"), "w")
 
         try:
             # Output boilerplate.
@@ -193,6 +195,14 @@ class Generator(CommonOutput):
 #include "progtypes.h"
 #include "main.h"
 #include "progops.h"
+#include "calls.h"
+"""
+
+            print >>f_call_macros, """\
+#ifndef __CALLS_H__
+#define __CALLS_H__
+
+#include "types.h"
 """
 
             # Generate table and structure data.
@@ -302,15 +312,18 @@ class Generator(CommonOutput):
                     extra_function_instances.append(path)
 
                 # Write function declarations.
-                # Signature: __attr <name>(__attr[]);
+                # Signature: __attr <name>(...);
 
-                print >>f_signatures, "__attr %s(__attr args[]);" % encode_function_pointer(path)
+                parameters = self.importer.function_parameters[path]
+                l = ["__attr"] * (len(parameters) + 1)
+                print >>f_signatures, "__attr %s(%s);" % (encode_function_pointer(path), ", ".join(l))
 
             # Generate parameter table size data.
 
             min_parameters = {}
             max_parameters = {}
             size_parameters = {}
+            all_max_parameters = set()
 
             # Consolidate parameter tables for instantiators and functions.
 
@@ -339,6 +352,7 @@ class Generator(CommonOutput):
                 min_parameters[signature] = argmin
                 max_parameters[signature] = argmax
                 size_parameters[signature] = len(parameters)
+                all_max_parameters.add(argmax)
 
             self.write_size_constants(f_consts, "pmin", min_parameters, 0)
             self.write_size_constants(f_consts, "pmax", max_parameters, 0)
@@ -398,6 +412,42 @@ class Generator(CommonOutput):
                                       self.optimiser.locations,
                                       "code", "pos", encode_code, encode_pos)
 
+            # Generate macros for calls.
+
+            all_max_parameters = list(all_max_parameters)
+            all_max_parameters.sort()
+
+            for argmax in all_max_parameters:
+                l = []
+                argnum = 0
+                while argnum < argmax:
+                    l.append("ARGS[%d]" % argnum)
+                    argnum += 1
+
+                print >>f_call_macros, "#define __CALL%d(FN, ARGS) (FN(%s))" % (argmax, ", ".join(l))
+
+            # Generate a generic invocation function.
+
+            print >>f_call_macros, "__attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n);"
+
+            print >>f_calls, """\
+#include "types.h"
+#include "calls.h"
+
+__attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n)
+{
+    switch (n)
+    {"""
+
+            for argmax in all_max_parameters:
+                print >>f_calls, """\
+        case %d: return __CALL%d(fn, args);""" % (argmax, argmax)
+
+            print >>f_calls, """\
+        default: return __NULL;
+    }
+}"""
+
             # Output more boilerplate.
 
             print >>f_consts, """\
@@ -424,12 +474,18 @@ class Generator(CommonOutput):
 
 #endif /* __MAIN_H__ */"""
 
+            print >>f_call_macros, """\
+
+#endif /* __CALLS_H__ */"""
+
         finally:
             f_consts.close()
             f_defs.close()
             f_decls.close()
             f_signatures.close()
             f_code.close()
+            f_calls.close()
+            f_call_macros.close()
 
     def write_scripts(self, debug, gc_sections):
 
@@ -1126,6 +1182,8 @@ __obj %s = {
         """
 
         parameters = self.importer.function_parameters[init_ref.get_origin()]
+        initialiser = init_ref.get_origin()
+        argmin, argmax = self.get_argument_limits(initialiser)
 
         print >>f_code, """\
 __attr %s(__attr __args[])
@@ -1134,7 +1192,7 @@ __attr %s(__attr __args[])
     __args[0] = __NEWINSTANCE(%s);
 
     /* Call the initialiser. */
-    %s(__args);
+    %s(%s, __args);
 
     /* Return the allocated object details. */
     return __args[0];
@@ -1142,7 +1200,8 @@ __attr %s(__attr __args[])
 """ % (
     encode_instantiator_pointer(path),
     encode_path(path),
-    encode_function_pointer(init_ref.get_origin())
+    "__CALL%d" % argmax,
+    encode_function_pointer(initialiser)
     )
 
         print >>f_signatures, "#define __HAVE_%s" % encode_path(path)
@@ -1217,7 +1276,7 @@ int main(int argc, char *argv[])
 
         fprintf(stderr, "Program terminated due to exception: %%s.\\n",
                 __load_via_object(
-                    %s(__ARGS(__NULL, __tmp_exc.arg)).value,
+                    %s(__NULL, __tmp_exc.arg).value,
                     __data__).strvalue);
         return 1;
     }

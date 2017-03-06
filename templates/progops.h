@@ -60,12 +60,12 @@ __attr __ensure_instance(__attr arg);
 /* Generic invocation operations. */
 
 __attr __invoke(__attr callable, int always_callable,
-                unsigned int nkwargs, __param kwcodes[], __attr kwargs[],
-                unsigned int nargs, __attr args[]);
+                   unsigned int nkwargs, __param kwcodes[], __attr kwargs[],
+                   unsigned int nargs, __attr args[]);
 
 /* Error routines. */
 
-__attr __unbound_method(__attr args[]);
+__attr __unbound_method(__attr __self);
 
 /* Generic operations depending on specific program details. */
 
@@ -78,6 +78,6 @@ int __BOOL(__attr attr);
 /* Convenience definitions. */
 
 #define __NEWINSTANCE(__CLS) __new(&__InstanceTable_##__CLS, &__CLS, sizeof(__obj_##__CLS))
-#define __ISINSTANCE(__ATTR, __TYPE) __BOOL(__fn_native_introspection_isinstance((__attr[]) {__NULL, __ATTR, __TYPE}))
+#define __ISINSTANCE(__ATTR, __TYPE) __BOOL(__fn_native_introspection_isinstance(__NULL, __ATTR, __TYPE))
 
 #endif /* __PROGOPS_H__ */

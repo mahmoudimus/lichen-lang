@@ -50,14 +50,12 @@ static void __raise_invalid_sequence_error(__attr value, __attr arg)
 
 /* Character set conversion. */
 
-__attr __fn_native_iconv_iconv(__attr __args[])
+__attr __fn_native_iconv_iconv(__attr __self, __attr cd, __attr state)
 {
-    __attr * const cd = &__args[1];
-    __attr * const state = &__args[2];
     /* cd interpreted as iconv_t */
-    iconv_t c = (iconv_t) cd->datavalue;
+    iconv_t c = (iconv_t) cd.datavalue;
     /* state.__data__ interpreted as list */
-    __fragment *f = __load_via_object(state->value, __data__).seqvalue;
+    __fragment *f = __load_via_object(state.value, __data__).seqvalue;
 
     /* Obtain the string, start position, and remaining bytes from the state. */
 
@@ -123,11 +121,10 @@ __attr __fn_native_iconv_iconv(__attr __args[])
     return __builtins___none_None;
 }
 
-__attr __fn_native_iconv_iconv_close(__attr __args[])
+__attr __fn_native_iconv_iconv_close(__attr __self, __attr cd)
 {
-    __attr * const cd = &__args[1];
     /* cd interpreted as iconv_t */
-    iconv_t c = (iconv_t) cd->datavalue;
+    iconv_t c = (iconv_t) cd.datavalue;
 
     errno = 0;
 
@@ -137,14 +134,12 @@ __attr __fn_native_iconv_iconv_close(__attr __args[])
     return __builtins___none_None;
 }
 
-__attr __fn_native_iconv_iconv_open(__attr __args[])
+__attr __fn_native_iconv_iconv_open(__attr __self, __attr tocode, __attr fromcode)
 {
-    __attr * const tocode = &__args[1];
-    __attr * const fromcode = &__args[2];
     /* tocode.__data__ interpreted as string */
-    char *t = __load_via_object(tocode->value, __data__).strvalue;
+    char *t = __load_via_object(tocode.value, __data__).strvalue;
     /* fromcode.__data__ interpreted as string */
-    char *f = __load_via_object(fromcode->value, __data__).strvalue;
+    char *f = __load_via_object(fromcode.value, __data__).strvalue;
     iconv_t result;
     __attr attr;
 
@@ -160,11 +155,10 @@ __attr __fn_native_iconv_iconv_open(__attr __args[])
     return attr;
 }
 
-__attr __fn_native_iconv_iconv_reset(__attr __args[])
+__attr __fn_native_iconv_iconv_reset(__attr __self, __attr cd)
 {
-    __attr * const cd = &__args[1];
     /* cd interpreted as iconv_t */
-    iconv_t c = (iconv_t) cd->datavalue;
+    iconv_t c = (iconv_t) cd.datavalue;
 
     iconv(c, NULL, NULL, NULL, NULL);
     return __builtins___none_None;

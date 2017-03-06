@@ -24,6 +24,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "progtypes.h"
 #include "main.h"
 #include "exceptions.h"
+#include "calls.h"
 
 /* Generic instantiation operations, defining common members. */
 
@@ -251,14 +252,19 @@ __attr __invoke(__attr callable, int always_callable,
         }
     }
 
-    /* Call with the prepared arguments. */
+    /* Call with the prepared arguments via a special adaptor function that
+       converts the array to an argument list. */
 
-    return (always_callable ? __get_function(allargs[0].value, target) : __check_and_get_function(allargs[0].value, target))(allargs);
+    return __call_with_args(
+        always_callable ?
+        __get_function(allargs[0].value, target) :
+        __check_and_get_function(allargs[0].value, target),
+        allargs, max);
 }
 
 /* Error routines. */
 
-__attr __unbound_method(__attr args[])
+__attr __unbound_method(__attr __self)
 {
     __attr excargs[1];
     __attr exc = __new___builtins___core_UnboundMethodInvocation(excargs);
@@ -280,10 +286,8 @@ __attr __GETDEFAULT(__ref obj, int pos)
 
 int __BOOL(__attr attr)
 {
-    __attr args[2] = {__NULL, attr};
-
     /* Invoke the bool function with the object and test against True. */
 
     return (attr.value == __builtins___boolean_True.value) ||
-           (__fn___builtins___boolean_bool(args).value == __builtins___boolean_True.value);
+           (__fn___builtins___boolean_bool(__NULL, attr).value == __builtins___boolean_True.value);
 }

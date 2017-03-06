@@ -308,7 +308,7 @@ __attr __unwrap_callable(__attr callable)
     return value.value ? value : callable;
 }
 
-__attr (*__get_function(__ref context, __attr target))(__attr[])
+__attr (*__get_function(__ref context, __attr target))()
 {
     target = __unwrap_callable(target);
 
@@ -321,7 +321,7 @@ __attr (*__get_function(__ref context, __attr target))(__attr[])
         return __unbound_method;
 }
 
-__attr (*__check_and_get_function(__ref context, __attr target))(__attr[])
+__attr (*__check_and_get_function(__ref context, __attr target))()
 {
     target = __unwrap_callable(target);
 

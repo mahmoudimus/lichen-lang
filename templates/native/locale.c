@@ -29,11 +29,10 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Locales. */
 
-__attr __fn_native_locale_getlocale(__attr __args[])
+__attr __fn_native_locale_getlocale(__attr __self, __attr category)
 {
-    __attr * const category = &__args[1];
-    /* category.__data__ interpreted as int */
-    int cat = __load_via_object(category->value, __data__).intvalue;
+    /* category interpreted as int */
+    int cat = __load_via_object(category.value, __data__).intvalue;
     char *result, *out;
     size_t length;
 
@@ -49,14 +48,12 @@ __attr __fn_native_locale_getlocale(__attr __args[])
     return __new_str(result, length);
 }
 
-__attr __fn_native_locale_setlocale(__attr __args[])
+__attr __fn_native_locale_setlocale(__attr __self, __attr category, __attr value)
 {
-    __attr * const category = &__args[1];
-    __attr * const value = &__args[2];
-    /* category.__data__ interpreted as int */
-    int cat = __load_via_object(category->value, __data__).intvalue;
-    /* value.__data__ interpreted as string */
-    char *s = __load_via_object(value->value, __data__).strvalue;
+    /* category interpreted as int */
+    int cat = __load_via_object(category.value, __data__).intvalue;
+    /* value interpreted as string */
+    char *s = __load_via_object(value.value, __data__).strvalue;
     char *result, *out;
     size_t length;
 

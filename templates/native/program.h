@@ -1,6 +1,6 @@
 /* Native functions for program operations.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -21,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Method binding. */
 
-__attr __fn_native_program_get_using(__attr __args[]);
+__attr __fn_native_program_get_using(__attr __self, __attr callable, __attr instance);
 
 /* Module initialisation. */
 

@@ -23,32 +23,27 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Integer operations. */
 
-__attr __fn_native_int_int_new(__attr __args[]);
+__attr __fn_native_int_int_new(__attr __self, __attr _data);
 
-__attr __fn_native_int_int_add(__attr __args[]);
-__attr __fn_native_int_int_div(__attr __args[]);
-__attr __fn_native_int_int_mod(__attr __args[]);
-__attr __fn_native_int_int_mul(__attr __args[]);
-__attr __fn_native_int_int_neg(__attr __args[]);
-__attr __fn_native_int_int_pow(__attr __args[]);
-__attr __fn_native_int_int_sub(__attr __args[]);
+__attr __fn_native_int_int_add(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_sub(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_mul(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_div(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_mod(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_neg(__attr __self, __attr _data);
+__attr __fn_native_int_int_pow(__attr __self, __attr _data, __attr other);
 
-__attr __fn_native_int_int_and(__attr __args[]);
-__attr __fn_native_int_int_not(__attr __args[]);
-__attr __fn_native_int_int_or(__attr __args[]);
-__attr __fn_native_int_int_xor(__attr __args[]);
+__attr __fn_native_int_int_and(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_not(__attr __self, __attr _data);
+__attr __fn_native_int_int_or(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_xor(__attr __self, __attr _data, __attr other);
 
-__attr __fn_native_int_int_rdiv(__attr __args[]);
-__attr __fn_native_int_int_rmod(__attr __args[]);
-__attr __fn_native_int_int_rpow(__attr __args[]);
-__attr __fn_native_int_int_rsub(__attr __args[]);
+__attr __fn_native_int_int_lt(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_gt(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_eq(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_ne(__attr __self, __attr _data, __attr other);
 
-__attr __fn_native_int_int_lt(__attr __args[]);
-__attr __fn_native_int_int_gt(__attr __args[]);
-__attr __fn_native_int_int_eq(__attr __args[]);
-__attr __fn_native_int_int_ne(__attr __args[]);
-
-__attr __fn_native_int_int_str(__attr __args[]);
+__attr __fn_native_int_int_str(__attr __self, __attr _data);
 
 /* Module initialisation. */
 

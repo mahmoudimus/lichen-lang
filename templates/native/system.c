@@ -27,21 +27,19 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Environment support. */
 
-__attr __fn_native_system_exit(__attr __args[])
+__attr __fn_native_system_exit(__attr __self, __attr status)
 {
-    __attr * const status = &__args[1];
-
-    exit(__load_via_object(status->value, __data__).intvalue);
+    exit(__load_via_object(status.value, __data__).intvalue);
     return __builtins___none_None;
 }
 
-__attr __fn_native_system_get_argv(__attr __args[])
+__attr __fn_native_system_get_argv(__attr __self)
 {
     /* NOTE: To be written. */
     return __builtins___none_None;
 }
 
-__attr __fn_native_system_get_path(__attr __args[])
+__attr __fn_native_system_get_path(__attr __self)
 {
     /* NOTE: To be written. */
     return __builtins___none_None;

@@ -52,7 +52,7 @@ __attr __new_list(__fragment *f)
     return attr;
 }
 
-__fragment *__fragment_append(__fragment *data, __attr * const value)
+__fragment *__fragment_append(__fragment *data, __attr value)
 {
     __fragment *newdata = data;
     unsigned int size = data->size, capacity = data->capacity;
@@ -68,7 +68,7 @@ __fragment *__fragment_append(__fragment *data, __attr * const value)
     }
 
     /* Insert the new element and increment the list size. */
-    newdata->attrs[size] = *value;
+    newdata->attrs[size] = value;
     newdata->size = size + 1;
 
     return newdata;

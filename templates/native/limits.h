@@ -1,6 +1,6 @@
 /* Native functions for limit definition.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -23,8 +23,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Limit definition. */
 
-__attr __fn_native_limits_get_maxint(__attr __args[]);
-__attr __fn_native_limits_get_minint(__attr __args[]);
+__attr __fn_native_limits_get_maxint(__attr __self);
+__attr __fn_native_limits_get_minint(__attr __self);
 
 /* Module initialisation. */
 
