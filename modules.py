@@ -67,11 +67,6 @@ class BasicModule(CommonModule):
         self.function_locals = {}
         self.scope_globals = {}
 
-        # Invocation details.
-
-        self.function_targets = {}
-        self.function_arguments = {}
-
         # Exception handler details.
 
         self.exception_namespaces = set()
@@ -395,8 +390,6 @@ class CachedModule(BasicModule):
             self._get_function_defaults(f)
             self._get_function_locals(f)
             self.from_lines(f, self.scope_globals)  # "scope globals:"
-            self._get_function_targets(f)
-            self._get_function_arguments(f)
             self._get_attribute_usage(f)
             self._get_attr_accesses(f)
             self._get_const_accesses(f)
@@ -535,24 +528,6 @@ class CachedModule(BasicModule):
             if name != "{}":
                 self.importer.function_locals[function][name] = \
                     self.function_locals[function][name] = decode_reference(value)
-            line = f.readline().rstrip()
-
-    def _get_function_targets(self, f):
-        f.readline() # "function targets:"
-        line = f.readline().rstrip()
-        while line:
-            function, n = self._get_fields(line)
-            self.importer.function_targets[function] = \
-                self.function_targets[function] = int(n)
-            line = f.readline().rstrip()
-
-    def _get_function_arguments(self, f):
-        f.readline() # "function arguments:"
-        line = f.readline().rstrip()
-        while line:
-            function, n = self._get_fields(line)
-            self.importer.function_arguments[function] = \
-                self.function_arguments[function] = int(n)
             line = f.readline().rstrip()
 
     def _get_attribute_usage(self, f):
@@ -824,20 +799,6 @@ class CacheWritingModule:
                     print >>f, function, "{}"
 
             self.to_lines(f, "scope globals:", self.scope_globals)
-
-            print >>f
-            print >>f, "function targets:"
-            functions = self.function_targets.keys()
-            functions.sort()
-            for function in functions:
-                print >>f, function, self.function_targets[function]
-
-            print >>f
-            print >>f, "function arguments:"
-            functions = self.function_arguments.keys()
-            functions.sort()
-            for function in functions:
-                print >>f, function, self.function_arguments[function]
 
             print >>f
             print >>f, "attribute usage:"

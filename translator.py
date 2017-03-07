@@ -120,6 +120,10 @@ class TranslatedModule(CommonModule):
         self.in_try_finally = False
         self.in_try_except = False
 
+        # Invocation adjustments.
+
+        self.in_argument_list = False
+
         # Attribute access and accessor counting.
 
         self.attr_accesses = {}
@@ -313,6 +317,7 @@ class TranslatedModule(CommonModule):
         else:
             self.in_function = False
             self.function_target = 0
+            self.max_function_targets = 0
             self.start_module()
             self.process_structure(node)
             self.end_module()
@@ -803,6 +808,7 @@ class TranslatedModule(CommonModule):
         in_conditional = self.in_conditional
         self.in_conditional = False
         self.function_target = 0
+        self.max_function_targets = 0
 
         # Volatile locals for exception handling.
 
@@ -994,7 +1000,10 @@ class TranslatedModule(CommonModule):
         # Any invocations in the expression will store target details in a
         # different location.
 
-        self.function_target += 1
+        self.next_target()
+
+        in_argument_list = self.in_argument_list
+        self.in_argument_list = False
 
         # Process the expression.
 
@@ -1002,6 +1011,7 @@ class TranslatedModule(CommonModule):
 
         # Reference the current target again.
 
+        self.in_argument_list = in_argument_list
         self.function_target -= 1
 
         # Obtain details of the invocation expression.
@@ -1126,7 +1136,13 @@ class TranslatedModule(CommonModule):
         # Any invocations in the arguments will store target details in a
         # different location.
 
-        self.function_target += 1
+        function_target = self.function_target
+
+        if not target_identity:
+            self.next_target()
+
+        in_argument_list = self.in_argument_list
+        self.in_argument_list = True
 
         for i, arg in enumerate(n.args):
             argexpr = self.process_structure_node(arg)
@@ -1166,7 +1182,10 @@ class TranslatedModule(CommonModule):
 
         # Reference the current target again.
 
-        self.function_target -= 1
+        self.in_argument_list = in_argument_list
+
+        if not self.in_argument_list:
+            self.function_target = function_target
 
         # Defaults are added to the frame where arguments are missing.
 
@@ -1255,6 +1274,13 @@ class TranslatedModule(CommonModule):
                 len(kwargs), kwcodestr, kwargstr,
                 len(args), argstr))
             return InvocationResult(stages)
+
+    def next_target(self):
+
+        "Allocate the next function target storage."
+
+        self.function_target += 1
+        self.max_function_targets = max(self.function_target, self.max_function_targets)
 
     def always_callable(self, refs):
 
@@ -1836,7 +1862,7 @@ class TranslatedModule(CommonModule):
 
         # Provide space for the given number of targets.
 
-        targets = self.importer.function_targets.get(name)
+        targets = self.max_function_targets
 
         if self.uses_temp(name, "__tmp_targets"):
             self.writeline("__attr __tmp_targets[%d];" % targets)
