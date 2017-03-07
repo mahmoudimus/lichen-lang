@@ -33,18 +33,14 @@ static const size_t OUTBUFSIZE_MIN = 16;
 static void __raise_incomplete_sequence_error(__attr value, __attr arg)
 {
 #ifdef __HAVE_posix_iconv_IncompleteSequenceError
-    __attr args[3] = {__NULL, value, arg};
-    __attr exc = __new_posix_iconv_IncompleteSequenceError(args);
-    __Raise(exc);
+    __Raise(__new_posix_iconv_IncompleteSequenceError(__NULL, value, arg));
 #endif /* __HAVE_posix_iconv_IncompleteSequenceError */
 }
 
 static void __raise_invalid_sequence_error(__attr value, __attr arg)
 {
 #ifdef __HAVE_posix_iconv_InvalidSequenceError
-    __attr args[3] = {__NULL, value, arg};
-    __attr exc = __new_posix_iconv_InvalidSequenceError(args);
-    __Raise(exc);
+    __Raise(__new_posix_iconv_InvalidSequenceError(__NULL, value, arg));
 #endif /* __HAVE_posix_iconv_InvalidSequenceError */
 }
 

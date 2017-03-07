@@ -33,13 +33,13 @@ __attr __new(const __table * table, __ref cls, size_t size)
     __ref obj = (__ref) __ALLOCATE(1, size);
     obj->table = table;
     obj->pos = __INSTANCEPOS;
-    __store_via_object(obj, __class__, (__attr) {.value=cls});
+    __store_via_object(obj, __class__, __ATTRVALUE(cls));
     return (__attr) {.value=obj};
 }
 
 __attr __new_wrapper(__ref context, __attr attr)
 {
-    return __new___builtins___core_wrapper((__attr[]) {__NULL, {.value=context}, attr});
+    return __new___builtins___core_wrapper(__NULL, __ATTRVALUE(context), attr);
 }
 
 /* Generic internal data allocation. */
@@ -57,43 +57,40 @@ __fragment *__new_fragment(unsigned int n)
     return data;
 }
 
-void __newdata_sequence(__attr args[], unsigned int number)
+__attr __newdata_sequence(__attr self, __attr args[], unsigned int number)
 {
     /* Calculate the size of the fragment. */
 
     __fragment *data = __new_fragment(number);
     __attr attr = {.seqvalue=data};
-    unsigned int i, j;
+    unsigned int i;
 
-    /* Copy the given number of values, starting from the second element. */
+    /* Copy the given number of values. */
 
-    for (i = 1, j = 0; i <= number; i++, j++)
-        data->attrs[j] = args[i];
+    for (i = 0; i <= number; i++)
+        data->attrs[i] = args[i];
 
     data->size = number;
 
     /* Store a reference to the data in the object's __data__ attribute. */
 
-    __store_via_object(args[0].value, __data__, attr);
+    __store_via_object(self.value, __data__, attr);
+    return self;
 }
 
 #ifdef __HAVE___builtins___dict_dict
-void __newdata_mapping(__attr args[], unsigned int number)
+__attr __newdata_mapping(__attr self, __attr args[], unsigned int number)
 {
-    __attr dict = args[0];
     __attr callargs[2];
 
     /* Create a temporary list using the arguments. */
 
-    __newliteral___builtins___list_list(args, number);
+    __attr tmp = __newliteral___builtins___list_list(args, number);
 
     /* Call __init__ with the dict object and list argument. */
 
-    callargs[0] = dict;
-    callargs[1] = args[0];
-
-    __fn___builtins___dict_dict___init__(callargs);
-    args[0] = dict;
+    __fn___builtins___dict_dict___init__(self, tmp);
+    return self;
 }
 #endif /* __HAVE___builtins___dict_dict */
 
@@ -102,56 +99,42 @@ void __newdata_mapping(__attr args[], unsigned int number)
 void __raise_eof_error()
 {
 #ifdef __HAVE___builtins___exception_io_EOFError
-    __attr args[1];
-    __attr exc = __new___builtins___exception_io_EOFError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___exception_io_EOFError(__NULL));
 #endif /* __HAVE___builtins___exception_io_EOFError */
 }
 
 void __raise_io_error(__attr value)
 {
 #ifdef __HAVE___builtins___exception_io_IOError
-    __attr args[2] = {__NULL, value};
-    __attr exc = __new___builtins___exception_io_IOError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___exception_io_IOError(__NULL, value));
 #endif /* __HAVE___builtins___exception_io_IOError */
 }
 
 void __raise_memory_error()
 {
-    __attr args[1];
-    __attr exc = __new___builtins___core_MemoryError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___core_MemoryError(__NULL));
 }
 
 void __raise_os_error(__attr value, __attr arg)
 {
 #ifdef __HAVE___builtins___exception_system_OSError
-    __attr args[3] = {__NULL, value, arg};
-    __attr exc = __new___builtins___exception_system_OSError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___exception_system_OSError(__NULL, value, arg));
 #endif /* __HAVE___builtins___exception_system_OSError */
 }
 
 void __raise_overflow_error()
 {
-    __attr args[1];
-    __attr exc = __new___builtins___core_OverflowError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___core_OverflowError(__NULL));
 }
 
 void __raise_type_error()
 {
-    __attr args[1];
-    __attr exc = __new___builtins___core_TypeError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___core_TypeError(__NULL));
 }
 
 void __raise_zero_division_error()
 {
-    __attr args[1];
-    __attr exc = __new___builtins___core_ZeroDivisionError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___core_ZeroDivisionError(__NULL));
 }
 
 /* Helper for raising exception instances. */
@@ -266,9 +249,7 @@ __attr __invoke(__attr callable, int always_callable,
 
 __attr __unbound_method(__attr __self)
 {
-    __attr excargs[1];
-    __attr exc = __new___builtins___core_UnboundMethodInvocation(excargs);
-    __Raise(exc);
+    __Raise(__new___builtins___core_UnboundMethodInvocation(__NULL));
     return __builtins___none_None; /* superfluous */
 }
 

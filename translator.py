@@ -811,7 +811,12 @@ class TranslatedModule(CommonModule):
 
         # Produce the body and any additional return statement.
 
-        expr = self.process_structure_node(n.code) or PredefinedConstantRef("None")
+        expr = self.process_structure_node(n.code) or \
+               self.in_method() and \
+                   function_name.rsplit(".", 1)[-1] == "__init__" and \
+                   TrResolvedNameRef("self", self.importer.function_locals[function_name]["self"]) or \
+               PredefinedConstantRef("None")
+
         if not isinstance(expr, ReturnRef):
             self.writestmt("return %s;" % expr)
 
@@ -847,7 +852,6 @@ class TranslatedModule(CommonModule):
 
             # Produce an appropriate access to an attribute's value.
 
-            parameters = self.importer.function_parameters.get(self.get_namespace_path())
             name_to_value = "%s.value" % name
 
             # Write a test that raises a TypeError upon failure.
@@ -1184,17 +1188,16 @@ class TranslatedModule(CommonModule):
 
         # Encode the arguments.
 
-        argstr = ", ".join(args)
-        kwargstr = kwargs and ("__ARGS(%s)" % ", ".join(kwargs)) or "0"
-        kwcodestr = kwcodes and ("__KWARGS(%s)" % ", ".join(kwcodes)) or "0"
-
         # Where literal instantiation is occurring, add an argument indicating
-        # the number of values.
+        # the number of values. The context is excluded.
 
         if literal_instantiation:
-            argstr = "__ARGS(%s), %d" % (argstr, len(args) - 1)
-        elif instantiation:
-            argstr = "__ARGS(%s)" % argstr
+            argstr = "__ARGS(%s), %d" % (", ".join(args[1:]), len(args) - 1)
+        else:
+            argstr = ", ".join(args)
+
+        kwargstr = kwargs and ("__ARGS(%s)" % ", ".join(kwargs)) or "0"
+        kwcodestr = kwcodes and ("__KWARGS(%s)" % ", ".join(kwcodes)) or "0"
 
         # First, the invocation expression is presented.
 

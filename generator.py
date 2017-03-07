@@ -1183,34 +1183,40 @@ __obj %s = {
         NOTE: where __call__ is provided by the class.
         """
 
-        parameters = self.importer.function_parameters[init_ref.get_origin()]
         initialiser = init_ref.get_origin()
+        parameters = self.importer.function_parameters[initialiser]
         argmin, argmax = self.get_argument_limits(initialiser)
 
+        l = []
+        for name in parameters:
+            l.append("__attr %s" % name)
+
         print >>f_code, """\
-__attr %s(__attr __args[])
+__attr %s(__attr __self%s)
 {
-    /* Allocate the structure. */
-    __args[0] = __NEWINSTANCE(%s);
-
-    /* Call the initialiser. */
-    %s(%s, __args);
-
-    /* Return the allocated object details. */
-    return __args[0];
+    return %s(__NEWINSTANCE(%s)%s);
 }
 """ % (
-    encode_instantiator_pointer(path),
-    encode_path(path),
-    "__CALL%d" % argmax,
-    encode_function_pointer(initialiser)
-    )
+            encode_instantiator_pointer(path),
+            l and ", %s" % ",".join(l) or "",
+            encode_function_pointer(initialiser),
+            encode_path(path),
+            parameters and ", %s" % ", ".join(parameters) or ""
+            )
+
+        # Signature: __new_typename(__attr __self, ...)
+
+        print >>f_signatures, "__attr %s(__attr __self%s);" % (
+            encode_instantiator_pointer(path),
+            l and ", %s" % ", ".join(l) or ""
+            )
 
         print >>f_signatures, "#define __HAVE_%s" % encode_path(path)
-        print >>f_signatures, "__attr %s(__attr[]);" % encode_instantiator_pointer(path)
 
         # Write additional literal instantiators. These do not call the
         # initialisers but instead populate the structures directly.
+
+        # Signature: __newliteral_sequence(ARGS, NUM)
 
         if path in self.literal_instantiator_types:
             if path in self.literal_mapping_types:
@@ -1218,25 +1224,11 @@ __attr %s(__attr __args[])
             else:
                 style = "sequence"
 
-            print >>f_code, """\
-__attr %s(__attr __args[], __pos number)
-{
-    /* Allocate the structure. */
-    __args[0] = __NEWINSTANCE(%s);
-
-    /* Allocate a structure for the data and set it on the __data__ attribute. */
-    %s(__args, number);
-
-    /* Return the allocated object details. */
-    return __args[0];
-}
-""" % (
-    encode_literal_instantiator(path),
-    encode_path(path),
-    encode_literal_data_initialiser(style)
-    )
-
-            print >>f_signatures, "__attr %s(__attr[], __pos);" % encode_literal_instantiator(path)
+            print >>f_signatures, "#define %s(ARGS, NUM) (%s(__NEWINSTANCE(%s), ARGS, NUM))" % (
+                encode_literal_instantiator(path),
+                encode_literal_data_initialiser(style),
+                encode_path(path)
+                )
 
     def write_main_program(self, f_code, f_signatures):
 

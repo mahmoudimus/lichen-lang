@@ -31,10 +31,10 @@ __attr __new_wrapper(__ref context, __attr attr);
 
 __fragment *__new_fragment(unsigned int n);
 
-void __newdata_sequence(__attr args[], unsigned int number);
+__attr __newdata_sequence(__attr self, __attr args[], unsigned int number);
 
 #ifdef __HAVE___builtins___dict_dict
-void __newdata_mapping(__attr args[], unsigned int number);
+__attr __newdata_mapping(__attr self, __attr args[], unsigned int number);
 #endif /* __HAVE___builtins___dict_dict */
 
 /* Helpers for raising errors within common operations. */
