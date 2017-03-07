@@ -1112,7 +1112,7 @@ class TranslatedModule(CommonModule):
         # Complete the array with null values, permitting tests for a complete
         # set of arguments.
 
-        args += [None] * (not parameters and len(n.args) or parameters and len(parameters) or 0)
+        args += [None] * (parameters is None and len(n.args) or parameters is not None and len(parameters) or 0)
         kwcodes = []
         kwargs = []
 
