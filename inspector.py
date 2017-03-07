@@ -100,10 +100,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         self.resolve()
 
-        # Define the invocation requirements in each namespace.
-
-        self.set_invocation_usage()
-
         # Propagate to the importer information needed in subsequent activities.
 
         self.propagate()
@@ -740,50 +736,44 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         path = self.get_namespace_path()
 
-        self.allocate_arguments(path, n.args)
+        in_invocation = self.in_invocation
+        self.in_invocation = None
 
-        try:
-            in_invocation = self.in_invocation
-            self.in_invocation = None
+        # Process the arguments.
 
-            # Process the arguments.
+        keywords = set()
 
-            keywords = set()
+        for arg in n.args:
+            self.process_structure_node(arg)
+            if isinstance(arg, compiler.ast.Keyword):
+                keywords.add(arg.name)
 
-            for arg in n.args:
-                self.process_structure_node(arg)
-                if isinstance(arg, compiler.ast.Keyword):
-                    keywords.add(arg.name)
+        keywords = list(keywords)
+        keywords.sort()
 
-            keywords = list(keywords)
-            keywords.sort()
+        # Communicate to the invocation target expression that it forms the
+        # target of an invocation, potentially affecting attribute accesses.
 
-            # Communicate to the invocation target expression that it forms the
-            # target of an invocation, potentially affecting attribute accesses.
+        self.in_invocation = len(n.args), keywords
 
-            self.in_invocation = len(n.args), keywords
+        # Process the expression, obtaining any identified reference.
 
-            # Process the expression, obtaining any identified reference.
+        name_ref = self.process_structure_node(n.node)
+        self.in_invocation = in_invocation
 
-            name_ref = self.process_structure_node(n.node)
-            self.in_invocation = in_invocation
+        # Detect class invocations.
 
-            # Detect class invocations.
+        if isinstance(name_ref, ResolvedNameRef) and name_ref.has_kind("<class>"):
+            return InstanceRef(name_ref.reference().instance_of())
 
-            if isinstance(name_ref, ResolvedNameRef) and name_ref.has_kind("<class>"):
-                return InstanceRef(name_ref.reference().instance_of())
+        elif isinstance(name_ref, NameRef):
+            return InvocationRef(name_ref)
 
-            elif isinstance(name_ref, NameRef):
-                return InvocationRef(name_ref)
+        # Provide a general reference to indicate that something is produced
+        # by the invocation, useful for retaining assignment expression
+        # details.
 
-            # Provide a general reference to indicate that something is produced
-            # by the invocation, useful for retaining assignment expression
-            # details.
-
-            return VariableRef()
-
-        finally:
-            self.deallocate_arguments(path, n.args)
+        return VariableRef()
 
     def process_lambda_node(self, n):
 
@@ -1456,55 +1446,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         literal_name = "$L%s" % name
         value = ResolvedNameRef(literal_name, ref)
         self.set_special(literal_name, value)
-
-    # Functions and invocations.
-
-    def set_invocation_usage(self):
-
-        """
-        Discard the current invocation storage figures, retaining the maximum
-        values.
-        """
-
-        for path, (current, maximum) in self.function_targets.items():
-            self.importer.function_targets[path] = self.function_targets[path] = maximum
-
-        for path, (current, maximum) in self.function_arguments.items():
-            self.importer.function_arguments[path] = self.function_arguments[path] = maximum
-
-    def allocate_arguments(self, path, args):
-
-        """
-        Allocate temporary argument storage using current and maximum
-        requirements for the given 'path' and 'args'.
-        """
-
-        # Class and module initialisation is ultimately combined.
-
-        if not self.in_function:
-            path = self.name
-
-        init_item(self.function_targets, path, lambda: [0, 0])
-        t = self.function_targets[path]
-        t[0] += 1
-        t[1] = max(t[0], t[1])
-
-        init_item(self.function_arguments, path, lambda: [0, 0])
-        t = self.function_arguments[path]
-        t[0] += len(args) + 1
-        t[1] = max(t[0], t[1])
-
-    def deallocate_arguments(self, path, args):
-
-        "Deallocate temporary argument storage for the given 'path' and 'args'."
-
-        # Class and module initialisation is ultimately combined.
-
-        if not self.in_function:
-            path = self.name
-
-        self.function_targets[path][0] -= 1
-        self.function_arguments[path][0] -= len(args) + 1
 
     # Exceptions.
 
