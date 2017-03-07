@@ -1331,6 +1331,9 @@ class Deducer(CommonOutput):
                     self.identify_reference_attributes(access_location, attrname, class_types, instance_types, module_types, True)
                     self.record_reference_types(accessor_location, class_types, instance_types, module_types, True, True)
 
+                # Define mappings between the original and access locations
+                # so that translation can work from the source details.
+
                 original_location = (location, original_name, original_attrnames, 0)
 
                 if original_location != access_location:
