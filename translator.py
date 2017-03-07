@@ -1873,7 +1873,9 @@ class TranslatedModule(CommonModule):
         # Generate aliases for the parameters.
 
         for i, parameter in enumerate(parameters):
-            self.writeline("__attr * const %s = &__args[%d];" % (encode_path(parameter), i+1))
+            self.writeline("%s__attr * const %s = &__args[%d];" % (
+                parameter in self.volatile_locals and "volatile " or "",
+                encode_path(parameter), i+1))
 
     def start_if(self, first, test_ref):
         statement = "%sif" % (not first and "else " or "")
