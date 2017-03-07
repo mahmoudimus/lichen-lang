@@ -81,8 +81,6 @@ __attr __newdata_sequence(__attr self, __attr args[], unsigned int number)
 #ifdef __HAVE___builtins___dict_dict
 __attr __newdata_mapping(__attr self, __attr args[], unsigned int number)
 {
-    __attr callargs[2];
-
     /* Create a temporary list using the arguments. */
 
     __attr tmp = __newliteral___builtins___list_list(args, number);
