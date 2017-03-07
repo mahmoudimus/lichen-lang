@@ -1744,9 +1744,6 @@ class TranslatedModule(CommonModule):
         out.seek(0)
         self.out.write(out.read())
 
-        self.indent -= 1
-        print >>self.out, "}"
-
     def start_module(self):
 
         "Write the start of each module's main function."
@@ -1775,6 +1772,9 @@ class TranslatedModule(CommonModule):
 
         out = self.end_unit()
         self.flush_unit(self.name, out)
+
+        self.indent -= 1
+        print >>self.out, "}"
 
     def start_function(self, name):
 
@@ -1825,6 +1825,9 @@ class TranslatedModule(CommonModule):
         self.write_parameters(name)
 
         self.flush_unit(name, out)
+
+        self.indent -= 1
+        print >>self.out, "}"
         print >>self.out
 
     def write_temporaries(self, name):
