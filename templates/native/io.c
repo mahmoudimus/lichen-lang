@@ -149,7 +149,7 @@ __attr __fn_native_io_fwrite(__attr __self, __attr fp, __attr str)
     FILE *f = (FILE *) fp.datavalue;
     /* str interpreted as string */
     char *s = __load_via_object(str.value, __data__).strvalue;
-    int to_write = __load_via_object(str->value, __size__).intvalue;
+    int to_write = __load_via_object(str.value, __size__).intvalue;
     size_t have_written = fwrite(s, sizeof(char), to_write, f);
     int error;
 
