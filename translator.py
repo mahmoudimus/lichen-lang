@@ -1414,7 +1414,8 @@ class TranslatedModule(CommonModule):
 
         # Find any invocation details.
 
-        location = self.get_access_location(n.name)
+        name = self.get_name_for_tracking(n.name, is_global=is_global)
+        location = self.get_access_location(name)
 
         # Mark any local assignments as volatile in exception blocks.
 

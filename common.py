@@ -775,16 +775,17 @@ class CommonModule:
 
         return isinstance(node.expr, compiler.ast.Getattr)
 
-    def get_name_for_tracking(self, name, name_ref=None):
+    def get_name_for_tracking(self, name, name_ref=None, is_global=False):
 
         """
         Return the name to be used for attribute usage observations involving
         the given 'name' in the current namespace.
 
         If the name is being used outside a function, and if 'name_ref' is
-        given, a path featuring the name in the global namespace is returned
-        where 'name_ref' indicates a global. Otherwise, a path computed using
-        the current namespace and the given name is returned.
+        given and indicates a global or if 'is_global' is specified as a true
+        value, a path featuring the name in the global namespace is returned.
+        Otherwise, a path computed using the current namespace and the given
+        name is returned.
 
         The intention of this method is to provide a suitably-qualified name
         that can be tracked across namespaces. Where globals are being
@@ -804,7 +805,7 @@ class CommonModule:
 
         # For global names outside functions, use a global name.
 
-        elif name_ref and name_ref.is_global_name():
+        elif is_global or name_ref and name_ref.is_global_name():
             return self.get_global_path(name)
 
         # Otherwise, establish a name in the current namespace.
