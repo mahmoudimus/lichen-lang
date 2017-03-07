@@ -21,6 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h> /* size_t */
 #include "types.h"
+#include "main.h"
 
 /* Generic instantiation operations, defining common members. */
 
