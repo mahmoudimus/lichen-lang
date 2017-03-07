@@ -804,6 +804,10 @@ class TranslatedModule(CommonModule):
         self.in_conditional = False
         self.function_target = 0
 
+        # Volatile locals for exception handling.
+
+        self.volatile_locals = set()
+
         # Process any guards defined for the parameters.
 
         for name in self.importer.function_parameters.get(function_name):
@@ -1386,11 +1390,22 @@ class TranslatedModule(CommonModule):
 
         location = self.get_access_location(n.name)
 
+        # Mark any local assignments as volatile in exception blocks.
+
+        if expr and self.in_function and not is_global and self.in_try_except:
+            self.make_volatile(n.name)
+
         # Qualified names are used for resolved static references or for
         # static namespace members. The reference should be configured to return
         # such names.
 
         return TrResolvedNameRef(n.name, ref, expr=expr, is_global=is_global, parameter=parameter, location=location)
+
+    def make_volatile(self, name):
+
+        "Record 'name' as volatile in the current namespace."
+
+        self.volatile_locals.add(name)
 
     def process_not_node(self, n):
 
@@ -1712,14 +1727,17 @@ class TranslatedModule(CommonModule):
 
         self.out = StringIO()
 
-    def end_unit(self, name):
+    def end_unit(self):
 
-        "Add declarations and generated code."
-
-        # Restore the output stream.
+        "Restore the output stream."
 
         out = self.out
         self.out = self.out_toplevel
+        return out
+
+    def flush_unit(self, name, out):
+
+        "Add declarations and generated code."
 
         self.write_temporaries(name)
         print >>self.out
@@ -1755,7 +1773,8 @@ class TranslatedModule(CommonModule):
 
         "End each module by closing its main function."
 
-        self.end_unit(self.name)
+        out = self.end_unit()
+        self.flush_unit(self.name, out)
 
     def start_function(self, name):
 
@@ -1765,11 +1784,20 @@ class TranslatedModule(CommonModule):
         print >>self.out, "{"
         self.indent += 1
 
+        self.start_unit()
+
+    def end_function(self, name):
+
+        "End the function having the given 'name'."
+
+        out = self.end_unit()
+
         # Obtain local names from parameters.
 
         parameters = self.importer.function_parameters[name]
         locals = self.importer.function_locals[name].keys()
         names = []
+        volatile_names = []
 
         for n in locals:
 
@@ -1779,7 +1807,10 @@ class TranslatedModule(CommonModule):
 
             if n.startswith("$l") or n in parameters or n == "self":
                 continue
-            names.append(encode_path(n))
+            if n in self.volatile_locals:
+                volatile_names.append(encode_path(n))
+            else:
+                names.append(encode_path(n))
 
         # Emit required local names.
 
@@ -1787,14 +1818,13 @@ class TranslatedModule(CommonModule):
             names.sort()
             self.writeline("__attr %s;" % ", ".join(names))
 
+        if volatile_names:
+            volatile_names.sort()
+            self.writeline("volatile __attr %s;" % ", ".join(volatile_names))
+
         self.write_parameters(name)
-        self.start_unit()
 
-    def end_function(self, name):
-
-        "End the function having the given 'name'."
-
-        self.end_unit(name)
+        self.flush_unit(name, out)
         print >>self.out
 
     def write_temporaries(self, name):
