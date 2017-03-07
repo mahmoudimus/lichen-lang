@@ -441,6 +441,8 @@ class Generator(CommonOutput):
         try:
             if debug:
                 print >>f_options, "CFLAGS = -g"
+            else:
+                print >>f_options, "CFLAGS = -O2"
 
             if gc_sections:
                 print >>f_options, "include gc_sections.mk"
