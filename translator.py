@@ -804,6 +804,10 @@ class TranslatedModule(CommonModule):
         self.in_conditional = False
         self.function_target = 0
 
+        # Volatile locals for exception handling.
+
+        self.volatile_locals = set()
+
         # Process any guards defined for the parameters.
 
         for name in self.importer.function_parameters.get(function_name):
@@ -1388,11 +1392,22 @@ class TranslatedModule(CommonModule):
 
         location = self.get_access_location(n.name)
 
+        # Mark any local assignments as volatile in exception blocks.
+
+        if expr and self.in_function and not is_global and self.in_try_except:
+            self.make_volatile(n.name)
+
         # Qualified names are used for resolved static references or for
         # static namespace members. The reference should be configured to return
         # such names.
 
         return TrResolvedNameRef(n.name, ref, expr=expr, is_global=is_global, location=location)
+
+    def make_volatile(self, name):
+
+        "Record 'name' as volatile in the current namespace."
+
+        self.volatile_locals.add(name)
 
     def process_not_node(self, n):
 
@@ -1714,22 +1729,22 @@ class TranslatedModule(CommonModule):
 
         self.out = StringIO()
 
-    def end_unit(self, name):
+    def end_unit(self):
 
-        "Add declarations and generated code."
-
-        # Restore the output stream.
+        "Restore the output stream."
 
         out = self.out
         self.out = self.out_toplevel
+        return out
+
+    def flush_unit(self, name, out):
+
+        "Add declarations and generated code."
 
         self.write_temporaries(name)
         print >>self.out
         out.seek(0)
         self.out.write(out.read())
-
-        self.indent -= 1
-        print >>self.out, "}"
 
     def start_module(self):
 
@@ -1757,22 +1772,38 @@ class TranslatedModule(CommonModule):
 
         "End each module by closing its main function."
 
-        self.end_unit(self.name)
+        out = self.end_unit()
+        self.flush_unit(self.name, out)
+
+        self.indent -= 1
+        print >>self.out, "}"
 
     def start_function(self, name):
 
         "Start the function having the given 'name'."
 
-        self.write_parameters(name)
-
-        print >>self.out, "{"
         self.indent += 1
+
+        self.start_unit()
+
+    def end_function(self, name):
+
+        "End the function having the given 'name'."
+
+        out = self.end_unit()
+
+        # Write the signature at the top indentation level.
+
+        self.indent -= 1
+        self.write_parameters(name)
+        print >>self.out, "{"
 
         # Obtain local names from parameters.
 
         parameters = self.importer.function_parameters[name]
         locals = self.importer.function_locals[name].keys()
         names = []
+        volatile_names = []
 
         for n in locals:
 
@@ -1782,21 +1813,27 @@ class TranslatedModule(CommonModule):
 
             if n.startswith("$l") or n in parameters or n == "self":
                 continue
-            names.append(encode_path(n))
+            if n in self.volatile_locals:
+                volatile_names.append(encode_path(n))
+            else:
+                names.append(encode_path(n))
 
-        # Emit required local names.
+        # Emit required local names at the function indentation level.
+
+        self.indent += 1
 
         if names:
             names.sort()
             self.writeline("__attr %s;" % ", ".join(names))
 
-        self.start_unit()
+        if volatile_names:
+            volatile_names.sort()
+            self.writeline("volatile __attr %s;" % ", ".join(volatile_names))
 
-    def end_function(self, name):
+        self.flush_unit(name, out)
 
-        "End the function having the given 'name'."
-
-        self.end_unit(name)
+        self.indent -= 1
+        print >>self.out, "}"
         print >>self.out
 
     def write_parameters(self, name):
@@ -1818,7 +1855,9 @@ class TranslatedModule(CommonModule):
         # Generate aliases for the parameters.
 
         for parameter in self.importer.function_parameters[name]:
-            l.append("__attr %s" % encode_path(parameter))
+            l.append("%s__attr %s" % (
+                parameter in self.volatile_locals and "volatile " or "",
+                encode_path(parameter)))
 
         self.writeline("__attr %s(%s)" % (
             encode_function_pointer(name), ", ".join(l)))
