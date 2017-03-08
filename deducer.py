@@ -943,8 +943,7 @@ class Deducer(CommonOutput):
 
         # Get aliased names with details of their accesses.
 
-        for name_path, all_aliases in self.importer.all_aliased_names.items():
-            path, name = name_path.rsplit(".", 1)
+        for (path, name), all_aliases in self.importer.all_aliased_names.items():
 
             # For each version of the name, obtain the access location.
 
@@ -1714,12 +1713,11 @@ class Deducer(CommonOutput):
         None if no such references exist.
         """
 
-        location, name, attrnames, version = access_location
-        path = get_name_path(location, name)
+        path, name, attrnames, version = access_location
 
         # Use initialiser information, if available.
 
-        refs = self.importer.all_initialised_names.get(path)
+        refs = self.importer.all_initialised_names.get((path, name))
         if refs and refs.has_key(version):
             return refs[version]
         else:

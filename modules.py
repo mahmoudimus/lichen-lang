@@ -479,20 +479,20 @@ class CachedModule(BasicModule):
         f.readline() # "initialised names:"
         line = f.readline().rstrip()
         while line:
-            name, version, value = self._get_fields(line, 3)
-            init_item(self.initialised_names, name, dict)
-            self.initialised_names[name][int(version)] = decode_reference(value)
+            path, name, version, value = self._get_fields(line, 4)
+            init_item(self.initialised_names, (path, name), dict)
+            self.initialised_names[(path, name)][int(version)] = decode_reference(value)
             line = f.readline().rstrip()
 
     def _get_aliased_names(self, f):
         f.readline() # "aliased names:"
         line = f.readline().rstrip()
         while line:
-            name, version, path, original_name, attrnames, number = self._get_fields(line, 6)
-            init_item(self.aliased_names, name, dict)
+            path, name, version, original_path, original_name, attrnames, number = self._get_fields(line, 7)
+            init_item(self.aliased_names, (path, name), dict)
             if number == "{}": number = None
             else: number = int(number)
-            self.aliased_names[name][int(version)] = (path, original_name, attrnames != "{}" and attrnames or None, number)
+            self.aliased_names[(path, name)][int(version)] = (original_path, original_name, attrnames != "{}" and attrnames or None, number)
             line = f.readline().rstrip()
 
     def _get_function_parameters(self, f):
@@ -746,22 +746,22 @@ class CacheWritingModule:
             print >>f, "initialised names:"
             assignments = self.initialised_names.items()
             assignments.sort()
-            for name, refs in assignments:
+            for (path, name), refs in assignments:
                 versions = refs.items()
                 versions.sort()
                 for version, ref in versions:
-                    print >>f, name, version, ref
+                    print >>f, path, name, version, ref
 
             print >>f
             print >>f, "aliased names:"
             assignments = self.aliased_names.items()
             assignments.sort()
-            for name, aliases in assignments:
+            for (path, name), aliases in assignments:
                 versions = aliases.items()
                 versions.sort()
                 for version, alias in versions:
-                    path, original_name, attrnames, number = alias
-                    print >>f, name, version, path, original_name, attrnames or "{}", number is None and "{}" or number
+                    original_path, original_name, attrnames, number = alias
+                    print >>f, path, name, version, original_path, original_name, attrnames or "{}", number is None and "{}" or number
 
             print >>f
             print >>f, "function parameters:"
