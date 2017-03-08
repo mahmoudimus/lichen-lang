@@ -240,11 +240,6 @@ class NameResolving:
             # Resolve values for each name in a scope.
 
             for name, values in name_initialisers.items():
-                if path == self.name:
-                    assigned_path = name
-                else:
-                    assigned_path = "%s.%s" % (path, name)
-
                 initialised_names = {}
                 aliased_names = {}
 
@@ -350,9 +345,9 @@ class NameResolving:
                         initialised_names[i] = ref
 
                 if initialised_names:
-                    self.initialised_names[assigned_path] = initialised_names
+                    self.initialised_names[(path, name)] = initialised_names
                 if aliased_names:
-                    self.aliased_names[assigned_path] = aliased_names
+                    self.aliased_names[(path, name)] = aliased_names
 
     def resolve_literals(self):
 
@@ -364,7 +359,7 @@ class NameResolving:
             for constant, n in constants.items():
                 objpath = "%s.$c%d" % (path, n)
                 _constant, value_type, encoding = self.constant_values[objpath]
-                self.initialised_names[objpath] = {0 : Reference("<instance>", value_type)}
+                self.initialised_names[(path, objpath)] = {0 : Reference("<instance>", value_type)}
 
         # Get the literals defined in each namespace.
 
@@ -372,7 +367,7 @@ class NameResolving:
             for n in range(0, literals):
                 objpath = "%s.$C%d" % (path, n)
                 value_type = self.literal_types[objpath]
-                self.initialised_names[objpath] = {0 : Reference("<instance>", value_type)}
+                self.initialised_names[(path, objpath)] = {0 : Reference("<instance>", value_type)}
 
     # Object resolution.
 
