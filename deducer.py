@@ -1680,10 +1680,21 @@ class Deducer(CommonOutput):
                     access_location = self.const_accesses[access_location]
 
                 location, name, attrnames, access_number = access_location
+                attrnames = attrnames and attrnames.split(".")
+                remaining = attrnames and len(attrnames) > 1
+
+                # Alias has remaining attributes: reference details do not
+                # correspond to the accessor; the remaining attributes would
+                # need to be traversed first.
+
+                if remaining:
+                    return
 
                 # Alias references an attribute access.
 
-                if attrnames:
+                attrname = attrnames and attrnames[0]
+
+                if attrname:
                     attrs = []
                     for attrtype, object_type, attr in self.referenced_attrs[access_location]:
                         attrs.append(attr)
