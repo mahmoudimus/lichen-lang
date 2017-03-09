@@ -131,7 +131,8 @@ class Deducer(CommonOutput):
         # access/attribute-specific accessor tests.
 
         self.reference_all_attrs = {}
-        self.reference_all_attrtypes = {}
+        self.reference_all_providers = {}
+        self.reference_all_provider_kinds = {}
         self.reference_all_accessor_types = {}
         self.reference_all_accessor_general_types = {}
         self.reference_test_types = {}
@@ -604,17 +605,24 @@ class Deducer(CommonOutput):
 
             attrname = get_attrname_from_location(location)
 
-            all_accessed_attrs = set()
-            all_providers = set()
+            self.reference_all_attrs[location] = all_accessed_attrs = []
+            self.reference_all_providers[location] = all_providers = []
+            self.reference_all_provider_kinds[location] = all_provider_kinds = set()
 
             # Obtain provider and attribute details for this kind of
             # object.
 
             for attrtype, object_type, attr in referenced_attrs:
-                all_accessed_attrs.add(attr)
-                all_providers.add(object_type)
+                all_accessed_attrs.append(attr)
+                all_providers.append(object_type)
+                all_provider_kinds.add(attrtype)
 
-            self.reference_all_attrs[location] = all_accessed_attrs
+            # Obtain reference and provider information as sets for the
+            # operations below, retaining the list forms for use with
+            # instruction plan preparation.
+
+            all_accessed_attrs = set(all_accessed_attrs)
+            all_providers = set(all_providers)
             all_general_providers = self.get_most_general_types(all_providers)
 
             # Determine which attributes would be provided by the
@@ -1974,17 +1982,11 @@ class Deducer(CommonOutput):
         remaining = attrnames.split(".")
         attrname = remaining[0]
 
-        # Obtain reference and accessor information, retaining also distinct
-        # provider kind details.
+        # Obtain reference, provider and provider kind information.
 
-        attrs = []
-        objtypes = []
-        provider_kinds = set()
-
-        for attrtype, objtype, attr in self.referenced_attrs[location]:
-            attrs.append(attr)
-            objtypes.append(objtype)
-            provider_kinds.add(attrtype)
+        attrs = self.reference_all_attrs[location]
+        provider_types = self.reference_all_providers[location]
+        provider_kinds = self.reference_all_provider_kinds[location]
 
         # Obtain accessor type and kind information.
 
@@ -2016,10 +2018,10 @@ class Deducer(CommonOutput):
         base = None
         dynamic_base = None
 
-        # Constant accesses have static accessors.
+        # Constant accesses have static providers.
 
         if const_access:
-            base = len(objtypes) == 1 and first(objtypes)
+            base = len(provider_types) == 1 and first(provider_types)
 
         # Name-based accesses.
 
