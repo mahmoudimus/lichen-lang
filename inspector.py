@@ -863,33 +863,47 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         ref = self.find_name(n.name)
         if ref:
+            self.record_name_access(n.name, True)
             return ResolvedNameRef(n.name, ref, is_global=True)
 
         # Explicitly-declared global names.
 
         elif self.in_function and n.name in self.scope_globals[path]:
+            self.record_name_access(n.name, True)
             return NameRef(n.name, is_global=True)
 
         # Examine other names.
 
         else:
-            tracker = self.trackers[-1]
 
             # Check local names.
 
-            branches = tracker.tracking_name(n.name)
+            access_number = self.record_name_access(n.name)
 
             # Local name.
 
-            if branches:
-                self.record_branches_for_access(branches, n.name, None)
-                access_number = self.record_access_details(n.name, None, None, None)
+            if access_number is not None:
                 return LocalNameRef(n.name, access_number)
 
             # Possible global or built-in name.
 
             else:
+                self.record_name_access(n.name, True)
                 return NameRef(n.name, is_global=True)
+
+    def record_name_access(self, name, is_global=False):
+
+        """
+        Record an access involving 'name' if the name is being tracked, using
+        'is_global' to indicate whether the name is global.
+        """
+
+        name = self.get_name_for_tracking(name, is_global=is_global)
+        branches = self.trackers[-1].tracking_name(name)
+        if branches:
+            self.record_branches_for_access(branches, name, None)
+            return self.record_access_details(name, None, None, None)
+        return None
 
     def process_operator_chain(self, nodes, fn):
 
