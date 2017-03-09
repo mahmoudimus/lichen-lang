@@ -33,7 +33,7 @@ from referencing import Reference
 from results import Result
 from transresults import TrConstantValueRef, TrInstanceRef, \
                          TrLiteralSequenceRef, TrResolvedNameRef, \
-                         AttrResult, Expression, InstantiationResult, \
+                         AliasResult, AttrResult, Expression, InstantiationResult, \
                          InvocationResult, LogicalOperationResult, \
                          LogicalResult, NegationResult, PredefinedConstantRef, \
                          ReturnRef
@@ -631,8 +631,10 @@ class TranslatedModule(CommonModule):
 
         access_location = self.deducer.const_accesses.get(location)
         refs = []
-        for attrtype, objpath, attr in self.deducer.referenced_attrs[access_location or location]:
-            refs.append(attr)
+        l = self.deducer.referenced_attrs.get(access_location or location)
+        if l:
+            for attrtype, objpath, attr in l:
+                refs.append(attr)
         return refs
 
     def get_referenced_attribute_invocations(self, location):
@@ -645,11 +647,16 @@ class TranslatedModule(CommonModule):
         access_location = self.deducer.const_accesses.get(location)
         return self.deducer.reference_invocations_unsuitable.get(access_location or location)
 
-    def get_accessor_kinds(self, location):
+    def get_accessor_kinds(self, locations):
 
-        "Return the accessor kinds for 'location'."
+        "Return the accessor kinds for 'locations'."
 
-        return self.deducer.accessor_kinds.get(location)
+        accessor_kinds = set()
+        for location in locations:
+            kinds = self.deducer.accessor_kinds.get(location)
+            if kinds:
+                accessor_kinds.update(kinds)
+        return accessor_kinds
 
     def get_access_location(self, name, attrnames=None):
 
@@ -1018,6 +1025,7 @@ class TranslatedModule(CommonModule):
 
         objpath = expr.get_origin()
         location = expr.access_location()
+        locations = expr.access_locations()
 
         # Identified target details.
 
@@ -1071,7 +1079,10 @@ class TranslatedModule(CommonModule):
                 # Test for functions and methods.
 
                 context_required = self.is_method(objpath)
-                accessor_kinds = self.get_accessor_kinds(location)
+
+                accessor_kinds = location and self.get_accessor_kinds([location]) or \
+                                 locations and self.get_accessor_kinds(locations)
+
                 instance_accessor = accessor_kinds and \
                                     len(accessor_kinds) == 1 and \
                                     first(accessor_kinds) == "<instance>"
@@ -1105,8 +1116,12 @@ class TranslatedModule(CommonModule):
 
         # Determine any readily-accessible target identity.
 
-        target_identity = target or expr.is_name() and str(expr) or None
-        target_var = target_identity or "__tmp_targets[%d]" % self.function_target
+        target_named = expr.is_name() and str(expr) or None
+        target_stored = "__tmp_targets[%d]" % self.function_target
+
+        target_identity = target or target_named
+        target_var = target_identity or target_stored
+        context_var = target_named or target_stored
 
         if not target_identity:
             self.record_temp("__tmp_targets")
@@ -1122,7 +1137,7 @@ class TranslatedModule(CommonModule):
             if have_access_context:
                 args = ["__ATTRVALUE(%s)" % context_identity]
             else:
-                args = ["__CONTEXT_AS_VALUE(%s)" % target_var]
+                args = ["__CONTEXT_AS_VALUE(%s)" % context_var]
         else:
             args = ["__NULL"]
 
@@ -1227,18 +1242,26 @@ class TranslatedModule(CommonModule):
         # Without a known specific callable, the expression provides the target.
 
         if not target or context_required:
-            if target:
+
+            # The context is set in the expression.
+
+            if target and not target_named:
+
+                # Test whether the expression provides anything.
+
                 if expr:
                     stages.append(str(expr))
+
             elif not target_identity:
                 stages.append("%s = %s" % (target_var, expr))
 
-        # Any specific callable is then obtained.
+        # Any specific callable is then obtained for invocation.
 
         if target:
             stages.append(target)
 
-        # Methods accessed via unidentified accessors are obtained. 
+        # Methods accessed via unidentified accessors are obtained for
+        # invocation.
 
         elif function:
             if context_required:
@@ -1247,7 +1270,7 @@ class TranslatedModule(CommonModule):
                         context_identity, target_var))
                 else:
                     stages.append("__get_function(__CONTEXT_AS_VALUE(%s).value, %s)" % (
-                        target_var, target_var))
+                        context_var, target_var))
             else:
                 stages.append("__load_via_object(%s.value, __fn__).fn" % target_var)
 
@@ -1412,10 +1435,10 @@ class TranslatedModule(CommonModule):
         parameter = n.name == "self" and self.in_method() or \
                     parameters and n.name in parameters
 
-        # Find any invocation details.
+        # Find any invocation or alias details.
 
         name = self.get_name_for_tracking(n.name, is_global=is_global)
-        location = self.get_access_location(name)
+        location = not expr and self.get_access_location(name)
 
         # Mark any local assignments as volatile in exception blocks.
 
@@ -1426,7 +1449,32 @@ class TranslatedModule(CommonModule):
         # static namespace members. The reference should be configured to return
         # such names.
 
-        return TrResolvedNameRef(n.name, ref, expr=expr, is_global=is_global, parameter=parameter, location=location)
+        name_ref = TrResolvedNameRef(n.name, ref, expr=expr, is_global=is_global,
+                                     parameter=parameter, location=location)
+        result = self.get_aliases(name_ref)
+        return result or name_ref
+
+    def get_aliases(self, name_ref):
+
+        "Return alias references for the given 'name_ref'."
+
+        location = name_ref.access_location()
+
+        accessor_locations = location and self.deducer.get_accessors_for_access(location)
+        alias_refs = set()
+        access_locations = set()
+
+        if accessor_locations:
+            for accessor_location in accessor_locations:
+                aliased_accesses = self.deducer.alias_index.get(accessor_location)
+                if not aliased_accesses:
+                    continue
+                access_locations.update(aliased_accesses)
+                refs = self.deducer.referenced_objects.get(accessor_location)
+                if refs:
+                    alias_refs.update(refs)
+
+        return AliasResult(name_ref, alias_refs, access_locations)
 
     def make_volatile(self, name):
 

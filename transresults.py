@@ -21,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from common import first, InstructionSequence
 from encoders import encode_instructions, encode_literal_constant, encode_path
-from results import ConstantValueRef, InstanceRef, LiteralSequenceRef, \
+from results import ConstantValueRef, InstanceRef, LiteralSequenceRef, NameRef, \
                     ResolvedNameRef, Result
 
 # Classes representing intermediate translation results.
@@ -71,6 +71,9 @@ class TrResolvedNameRef(ResolvedNameRef):
     def access_location(self):
         return self.location
 
+    def access_locations(self):
+        return self.location and [self.location]
+
     def __str__(self):
 
         "Return an output representation of the referenced name."
@@ -95,7 +98,7 @@ class TrResolvedNameRef(ResolvedNameRef):
 
             # Eliminate assignments between constants.
 
-            if ref and isinstance(self.expr, ResolvedNameRef) and self.expr.static():
+            if ref and self.expr.static():
                 return ""
 
             # Qualified names must be converted into parent-relative assignments.
@@ -177,6 +180,9 @@ class AttrResult(Result, InstructionSequence):
     def access_location(self):
         return self.location
 
+    def access_locations(self):
+        return self.location and [self.location]
+
     def context(self):
         return self.context_identity
 
@@ -199,6 +205,62 @@ class AttrResult(Result, InstructionSequence):
 
     def __repr__(self):
         return "AttrResult(%r, %r, %r)" % (self.instructions, self.refs, self.location)
+
+class AliasResult(NameRef, Result):
+
+    "An alias for other values."
+
+    def __init__(self, name_ref, refs, locations):
+        NameRef.__init__(self, name_ref.name, is_global=name_ref.is_global_name())
+        self.name_ref = name_ref
+        self.refs = refs
+        self.locations = locations
+
+    def references(self):
+        ref = self.name_ref.reference()
+        return self.refs or ref and [ref] or None
+
+    def reference(self):
+        refs = self.references()
+        return len(refs) == 1 and first(refs) or None
+
+    def access_location(self):
+        return len(self.locations) == 1 and first(self.locations) or None
+
+    def access_locations(self):
+        return self.locations
+
+    def get_name(self):
+        ref = self.reference()
+        return ref and ref.get_name()
+
+    def get_origin(self):
+        ref = self.reference()
+        return ref and ref.get_origin()
+
+    def static(self):
+        ref = self.reference()
+        return ref and ref.static()
+
+    def final(self):
+        ref = self.reference()
+        return ref and ref.final()
+
+    def has_kind(self, kinds):
+        if not self.refs:
+            return self.name_ref.has_kind(kinds)
+
+        for ref in self.refs:
+            if ref.has_kind(kinds):
+                return True
+
+        return False
+
+    def __str__(self):
+        return str(self.name_ref)
+
+    def __repr__(self):
+        return "AliasResult(%r, %r)" % (self.name_ref, self.refs)
 
 class InvocationResult(Result, InstructionSequence):
 

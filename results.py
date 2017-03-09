@@ -42,6 +42,9 @@ class Result:
     def access_location(self):
         return None
 
+    def access_locations(self):
+        return None
+
     def context_identity(self):
         return None
 
