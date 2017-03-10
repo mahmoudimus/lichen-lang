@@ -2474,10 +2474,15 @@ class Deducer(CommonOutput):
 
                     if remaining > 1 or final_method in ("access", "access-invoke", "assign"):
 
+                        # Constrain instructions involving certain special
+                        # attribute names.
+
+                        to_search = attrname == "__data__" and "object" or "any"
+
                         if assigning:
-                            emit(("__check_and_store_via_any", accessor, attrname, "<assexpr>"))
+                            emit(("__check_and_store_via_%s" % to_search, accessor, attrname, "<assexpr>"))
                         else:
-                            accessor = ("__check_and_load_via_any", accessor, attrname)
+                            accessor = ("__check_and_load_via_%s" % to_search, accessor, attrname)
 
                     remaining -= 1
 

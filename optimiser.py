@@ -435,8 +435,22 @@ class Optimiser(CommonOutput):
                 attrnames = filter(lambda x: not x.startswith("$t"), attrnames)
                 self.all_attrs[(objkind, name)] = attrnames
 
-        self.locations = get_allocated_locations(self.all_attrs,
-            get_attributes_and_sizes, self.existing_locations)
+        try:
+            self.locations = get_allocated_locations(self.all_attrs,
+                get_attributes_and_sizes, self.existing_locations)
+
+        # Uphold positioning conflicts only if the existing locations were
+        # explicitly specified.
+
+        except OptimiseError:
+            if self.locations_filename:
+                raise
+
+            # Otherwise, reposition attributes, causing the program to be
+            # regenerated.
+
+            self.locations = get_allocated_locations(self.all_attrs,
+                get_attributes_and_sizes)
 
     def populate_parameters(self):
 
