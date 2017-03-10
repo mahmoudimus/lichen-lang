@@ -90,7 +90,7 @@ class xrangeiterator:
         "Initialise the iterator with the given 'obj'."
 
         self.start = obj.start
-        self.end = obj.end
+        self.count = obj.__len__()
         self.step = obj.step
         self.current = obj.start
 
@@ -98,11 +98,12 @@ class xrangeiterator:
 
         "Return the next item or raise a StopIteration exception."
 
-        if self.step < 0 and self.current <= self.end or self.step > 0 and self.current >= self.end:
+        if not self.count:
             raise StopIteration
 
         current = self.current
         self.current += self.step
+        self.count -= 1
         return current
 
 def range(start_or_end, end=None, step=1):
