@@ -79,20 +79,19 @@ class xrange(slice):
 
         "Return an iterator, currently self."
 
-        return xrangeiterator(self)
+        return xrangeiterator(self.start, self.step, self.__len__())
 
 class xrangeiterator:
 
     "An iterator over an xrange."
 
-    def __init__(self, obj):
+    def __init__(self, start, step, count):
 
         "Initialise the iterator with the given 'obj'."
 
-        self.start = obj.start
-        self.count = obj.__len__()
-        self.step = obj.step
-        self.current = obj.start
+        self.current = start
+        self.step = step
+        self.count = count
 
     def next(self):
 
@@ -102,8 +101,8 @@ class xrangeiterator:
             raise StopIteration
 
         current = self.current
-        self.current += self.step
-        self.count -= 1
+        self.current = self.current.__add__(self.step)
+        self.count = self.count.__sub__(1)
         return current
 
 def range(start_or_end, end=None, step=1):
