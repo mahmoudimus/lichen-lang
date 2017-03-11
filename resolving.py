@@ -339,7 +339,7 @@ class NameResolving:
 
                     aliased_name = path, name_ref.original_name, name_ref.attrnames, name_ref.number
 
-                return no_reference
+                return None, aliased_name
 
         # Attempt to resolve a plain name reference.
 
@@ -359,7 +359,7 @@ class NameResolving:
 
                     aliased_name = path, name_ref.name, None, name_ref.number
 
-                return no_reference
+                return None, aliased_name
 
             ref = self.get_resolved_object(ref.get_origin())
             if not ref:
