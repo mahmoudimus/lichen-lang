@@ -551,20 +551,32 @@ class CommonModule:
         the iterator, producing a replacement node for the original.
         """
 
+        t0 = self.get_temporary_name()
+        self.next_temporary()
+        t1 = self.get_temporary_name()
+        self.next_temporary()
         i0 = self.get_temporary_name()
         self.next_temporary()
 
         node = compiler.ast.Stmt([
 
-            # <next> = {n.list}.__iter__().next
+            # <t0> = {n.list}
+            # <t1> = <t0>.__iter__()
+            # <i0> = <t1>.next
+
+            compiler.ast.Assign(
+                [compiler.ast.AssName(t0, "OP_ASSIGN")],
+                n.list),
+
+            compiler.ast.Assign(
+                [compiler.ast.AssName(t1, "OP_ASSIGN")],
+                compiler.ast.CallFunc(
+                    compiler.ast.Getattr(compiler.ast.Name(t0), "__iter__"),
+                    [])),
 
             compiler.ast.Assign(
                 [compiler.ast.AssName(i0, "OP_ASSIGN")],
-                compiler.ast.Getattr(
-                    compiler.ast.CallFunc(
-                        compiler.ast.Getattr(n.list, "__iter__"),
-                        []
-                        ), "next")),
+                compiler.ast.Getattr(compiler.ast.Name(t1), "next")),
 
             # try:
             #     while True:
