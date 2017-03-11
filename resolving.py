@@ -297,12 +297,12 @@ class NameResolving:
 
                     elif isinstance(name_ref, LocalNameRef):
                         key = "%s.%s" % (path, name_ref.name)
-                        origin = self.name_references.get(key)
+                        ref = self.name_references.get(key)
 
                         # Accesses that do not refer to known static objects
                         # cannot be resolved, but they may be resolvable later.
 
-                        if not origin:
+                        if not ref:
                             if not invocation:
 
                                 # Record the path used for tracking purposes
@@ -313,17 +313,15 @@ class NameResolving:
 
                             continue
 
-                        ref = self.get_resolved_object(origin)
+                        ref = self.get_resolved_object(ref.get_origin())
                         if not ref:
                             continue
 
                     elif isinstance(name_ref, NameRef):
                         key = "%s.%s" % (path, name_ref.name)
-                        origin = self.name_references.get(key)
-                        if not origin:
-                            continue
+                        ref = self.name_references.get(key)
 
-                        ref = self.get_resolved_object(origin)
+                        ref = ref and self.get_resolved_object(ref.get_origin())
                         if not ref:
                             continue
 
