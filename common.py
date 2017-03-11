@@ -129,7 +129,6 @@ class CommonModule:
 
         self.astnode = None
         self.encoding = None
-        self.iterators = {}
         self.temp = {}
         self.lambdas = {}
 
@@ -229,19 +228,6 @@ class CommonModule:
 
     def next_literal(self):
         self.literals[self.get_namespace_path()] += 1
-
-    # Temporary iterator naming.
-
-    def get_iterator_path(self):
-        return self.in_function and self.get_namespace_path() or self.name
-
-    def get_iterator_name(self):
-        path = self.get_iterator_path()
-        init_item(self.iterators, path, lambda: 0)
-        return "$i%d" % self.iterators[path]
-
-    def next_iterator(self):
-        self.iterators[self.get_iterator_path()] += 1
 
     # Temporary variable naming.
 
@@ -565,12 +551,15 @@ class CommonModule:
         the iterator, producing a replacement node for the original.
         """
 
+        i0 = self.get_temporary_name()
+        self.next_temporary()
+
         node = compiler.ast.Stmt([
 
             # <next> = {n.list}.__iter__().next
 
             compiler.ast.Assign(
-                [compiler.ast.AssName(self.get_iterator_name(), "OP_ASSIGN")],
+                [compiler.ast.AssName(i0, "OP_ASSIGN")],
                 compiler.ast.Getattr(
                     compiler.ast.CallFunc(
                         compiler.ast.Getattr(n.list, "__iter__"),
@@ -591,7 +580,7 @@ class CommonModule:
                         compiler.ast.Assign(
                             [n.assign],
                             compiler.ast.CallFunc(
-                                compiler.ast.Name(self.get_iterator_name()),
+                                compiler.ast.Name(i0),
                                 []
                                 )),
                         n.body]),
@@ -600,7 +589,6 @@ class CommonModule:
                 None)
             ])
 
-        self.next_iterator()
         self.process_structure_node(node)
 
     def process_literal_sequence_node(self, n, name, ref, cls):
