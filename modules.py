@@ -71,6 +71,10 @@ class BasicModule(CommonModule):
 
         self.exception_namespaces = set()
 
+        # Return value details.
+
+        self.return_values = {}
+
         # Attribute usage at module and function levels.
 
         self.attr_usage = {}
@@ -398,6 +402,7 @@ class CachedModule(BasicModule):
             self._get_constant_literals(f)
             self._get_constant_values(f)
             self._get_exception_namespaces(f)
+            self._get_return_values(f)
 
         finally:
             f.close()
@@ -617,6 +622,15 @@ class CachedModule(BasicModule):
         value = f.readline().rstrip()
         self.exception_namespaces = value and set(value.split(", ")) or set()
         f.readline()
+
+    def _get_return_values(self, f):
+        f.readline() # "return values:"
+        line = f.readline().rstrip()
+        while line:
+            path, values = self._get_fields(line)
+            values = values.split(", ")
+            self.return_values[path] = map(decode_reference, values)
+            line = f.readline().rstrip()
 
     # Generic parsing methods.
 
@@ -874,6 +888,13 @@ class CacheWritingModule:
             paths = list(self.exception_namespaces)
             paths.sort()
             print >>f, ", ".join(paths)
+
+            print >>f
+            print >>f, "return values:"
+            paths = self.return_values.keys()
+            paths.sort()
+            for path in paths:
+                print >>f, path, ", ".join(map(str, self.return_values[path]))
 
         finally:
             f.close()

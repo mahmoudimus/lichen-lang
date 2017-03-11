@@ -40,6 +40,7 @@ class NameResolving:
         self.check_names_used()
         self.check_invocations()
         self.resolve_initialisers()
+        self.resolve_return_values()
         self.resolve_literals()
 
     def resolve_class_bases(self):
@@ -235,7 +236,6 @@ class NameResolving:
         # Get the initialisers in each namespace.
 
         for path, name_initialisers in self.name_initialisers.items():
-            const_accesses = self.const_accesses.get(path)
 
             # Resolve values for each name in a scope.
 
@@ -244,108 +244,153 @@ class NameResolving:
                 aliased_names = {}
 
                 for i, name_ref in enumerate(values):
-
-                    # Unwrap invocations.
-
-                    if isinstance(name_ref, InvocationRef):
-                        invocation = True
-                        name_ref = name_ref.name_ref
-                    else:
-                        invocation = False
-
-                    # Obtain a usable reference from names or constants.
-
-                    if isinstance(name_ref, ResolvedNameRef):
-                        if not name_ref.reference():
-                            continue
-                        ref = name_ref.reference()
-
-                    # Obtain a reference from instances.
-
-                    elif isinstance(name_ref, InstanceRef):
-                        if not name_ref.reference():
-                            continue
-                        ref = name_ref.reference()
-
-                    # Resolve accesses that employ constants.
-
-                    elif isinstance(name_ref, AccessRef):
-                        ref = None
-
-                        if const_accesses:
-                            resolved_access = const_accesses.get((name_ref.original_name, name_ref.attrnames))
-                            if resolved_access:
-                                objpath, ref, remaining_attrnames = resolved_access
-                                if remaining_attrnames:
-                                    ref = None
-
-                        # Accesses that do not employ constants cannot be resolved,
-                        # but they may be resolvable later.
-
-                        if not ref:
-                            if not invocation:
-
-                                # Record the path used for tracking purposes
-                                # alongside original name, attribute and access
-                                # number details.
-
-                                aliased_names[i] = path, name_ref.original_name, name_ref.attrnames, name_ref.number
-
-                            continue
-
-                    # Attempt to resolve a plain name reference.
-
-                    elif isinstance(name_ref, LocalNameRef):
-                        key = "%s.%s" % (path, name_ref.name)
-                        ref = self.name_references.get(key)
-
-                        # Accesses that do not refer to known static objects
-                        # cannot be resolved, but they may be resolvable later.
-
-                        if not ref:
-                            if not invocation:
-
-                                # Record the path used for tracking purposes
-                                # alongside original name, attribute and access
-                                # number details.
-
-                                aliased_names[i] = path, name_ref.name, None, name_ref.number
-
-                            continue
-
-                        ref = self.get_resolved_object(ref.get_origin())
-                        if not ref:
-                            continue
-
-                    elif isinstance(name_ref, NameRef):
-                        key = "%s.%s" % (path, name_ref.name)
-                        ref = self.name_references.get(key)
-
-                        ref = ref and self.get_resolved_object(ref.get_origin())
-                        if not ref:
-                            continue
-
-                    else:
-                        continue
-
-                    # Resolve any hidden dependencies involving external objects
-                    # or unresolved names referring to globals or built-ins.
-
-                    if ref.has_kind("<depends>"):
-                        ref = self.importer.identify(ref.get_origin())
-
-                    # Convert class invocations to instances.
-
-                    if ref and invocation:
-                        ref = self.convert_invocation(ref)
-
-                    if ref and not ref.has_kind("<var>"):
-                        initialised_names[i] = ref
+                    initialised_ref, aliased_name = self.resolve_reference(path, name_ref)
+                    if initialised_ref:
+                        initialised_names[i] = initialised_ref
+                    if aliased_name:
+                        aliased_names[i] = aliased_name
 
                 if initialised_names:
                     self.initialised_names[(path, name)] = initialised_names
                 if aliased_names:
                     self.aliased_names[(path, name)] = aliased_names
+
+    def resolve_return_values(self):
+
+        "Resolve return values using name references."
+
+        return_values = {}
+
+        # Get the return values from each namespace.
+
+        for path, values in self.return_values.items():
+            l = set()
+
+            for value in values:
+                if not value:
+                    ref = None
+                else:
+                    ref, aliased_name = self.resolve_reference(path, value)
+
+                l.add(ref or Reference("<var>"))
+
+            return_values[path] = l
+
+        # Replace the original values.
+
+        self.return_values = return_values
+
+    def resolve_reference(self, path, name_ref):
+
+        """
+        Within the namespace 'path', resolve the given 'name_ref', returning any
+        initialised reference, along with any aliased name information.
+        """
+
+        const_accesses = self.const_accesses.get(path)
+
+        initialised_ref = None
+        aliased_name = None
+        no_reference = None, None
+
+        # Unwrap invocations.
+
+        if isinstance(name_ref, InvocationRef):
+            invocation = True
+            name_ref = name_ref.name_ref
+        else:
+            invocation = False
+
+        # Obtain a usable reference from names or constants.
+
+        if isinstance(name_ref, ResolvedNameRef):
+            if not name_ref.reference():
+                return no_reference
+            ref = name_ref.reference()
+
+        # Obtain a reference from instances.
+
+        elif isinstance(name_ref, InstanceRef):
+            if not name_ref.reference():
+                return no_reference
+            ref = name_ref.reference()
+
+        # Resolve accesses that employ constants.
+
+        elif isinstance(name_ref, AccessRef):
+            ref = None
+
+            if const_accesses:
+                resolved_access = const_accesses.get((name_ref.original_name, name_ref.attrnames))
+                if resolved_access:
+                    objpath, ref, remaining_attrnames = resolved_access
+                    if remaining_attrnames:
+                        ref = None
+
+            # Accesses that do not employ constants cannot be resolved,
+            # but they may be resolvable later.
+
+            if not ref:
+                if not invocation:
+
+                    # Record the path used for tracking purposes
+                    # alongside original name, attribute and access
+                    # number details.
+
+                    aliased_name = path, name_ref.original_name, name_ref.attrnames, name_ref.number
+
+                return no_reference
+
+        # Attempt to resolve a plain name reference.
+
+        elif isinstance(name_ref, LocalNameRef):
+            key = "%s.%s" % (path, name_ref.name)
+            ref = self.name_references.get(key)
+
+            # Accesses that do not refer to known static objects
+            # cannot be resolved, but they may be resolvable later.
+
+            if not ref:
+                if not invocation:
+
+                    # Record the path used for tracking purposes
+                    # alongside original name, attribute and access
+                    # number details.
+
+                    aliased_name = path, name_ref.name, None, name_ref.number
+
+                return no_reference
+
+            ref = self.get_resolved_object(ref.get_origin())
+            if not ref:
+                return no_reference
+
+        elif isinstance(name_ref, NameRef):
+            key = "%s.%s" % (path, name_ref.name)
+            ref = self.name_references.get(key)
+
+            ref = ref and self.get_resolved_object(ref.get_origin())
+            if not ref:
+                return no_reference
+
+        else:
+            return no_reference
+
+        # Resolve any hidden dependencies involving external objects
+        # or unresolved names referring to globals or built-ins.
+
+        if ref.has_kind("<depends>"):
+            ref = self.importer.identify(ref.get_origin())
+
+        # Convert class invocations to instances.
+
+        if ref and invocation:
+            ref = self.convert_invocation(ref)
+
+        if ref and not ref.has_kind("<var>"):
+            initialised_ref = ref
+
+        return initialised_ref, aliased_name
 
     def resolve_literals(self):
 
