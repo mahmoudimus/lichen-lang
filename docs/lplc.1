@@ -94,6 +94,10 @@ Parameter codes identifying named parameters
 .B \-\-param\-locations
 Parameter locations in signatures
 .PP
+A filename can immediately follow such an option, separated from the option by
+an equals sign, or it can appear as the next argument after the option
+(separated by a space).
+.PP
 The following informational options can be specified to produce output instead
 of compiling a program:
 .PP
@@ -148,6 +152,17 @@ This produces an output executable called
 in the current directory, assuming that
 .B hello.py
 can be compiled without errors.
+.PP
+To configure a program using existing attribute codes in
+.B attrnames
+and existing attribute positions in
+.BR locations :
+.IP
+lplc -o hello hello.py --attr-codes=attrnames --attr-locations=locations
+.PP
+If attributes cannot be positioned in a way compatible with the given
+.B locations
+file, an error will be reported.
 .SH FILES
 .B lplc
 produces an output executable file called

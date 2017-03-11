@@ -65,17 +65,24 @@ def call(tokens, verbose=False):
     stdout, stderr = cmd.communicate()
     return cmd.wait()
 
-def start_arg_list(l, arg, prefix, needed):
+def start_arg_list(l, arg, needed):
 
     """
-    Add to 'l' any value given as part of 'arg' having the given option
-    'prefix'. The 'needed' number of values is provided in case no value is
-    found.
+    Add to 'l' any value given as part of 'arg'. The 'needed' number of values
+    is provided in case no value is found.
 
     Return 'l' and 'needed' decremented by 1 together in a tuple.
     """
 
-    s = arg[len(prefix):].strip()
+    if arg.startswith("--"):
+        try:
+            prefix_length = arg.index("=") + 1
+        except ValueError:
+            prefix_length = len(arg)
+    else:
+        prefix_length = 2
+
+    s = arg[prefix_length:].strip()
     if s:
         l.append(s)
         return l, needed - 1
@@ -160,6 +167,10 @@ information:
 --param-codes       Parameter codes identifying named parameters
 --param-locations   Parameter locations in signatures
 
+A filename can immediately follow such an option, separated from the option by
+an equals sign, or it can appear as the next argument after the option
+(separated by a space).
+
 The following informational options can be specified to produce output instead
 of compiling a program:
 
@@ -212,23 +223,23 @@ This program has absolutely no warranty.
     needed = None
 
     for arg in args:
-        if arg == "--attr-codes": l = attrnames; needed = 1
-        elif arg == "--attr-locations": l = attrlocations; needed = 1
+        if arg.startswith("--attr-codes"): l, needed = start_arg_list(attrnames, arg, 1)
+        elif arg.startswith("--attr-locations"): l, needed = start_arg_list(attrlocations, arg, 1)
         elif arg in ("-c", "--compile"): make = False
         elif arg in ("-E", "--no-env"): ignore_env = True
         elif arg in ("-g", "--debug"): debug = True
         elif arg in ("-G", "--gc-sections"): gc_sections = True
         # "P" handled below.
-        elif arg == "--param-codes": l = paramnames; needed = 1
-        elif arg == "--param-locations": l = paramlocations; needed = 1
+        elif arg.startswith("--param-codes"): l, needed = start_arg_list(paramnames, arg, 1)
+        elif arg.startswith("--param-locations"): l, needed = start_arg_list(paramlocations, arg, 1)
         elif arg in ("-q", "--quiet"): make_verbose = False
         elif arg in ("-r", "--reset"): reset = True
         elif arg in ("-R", "--reset-all"): reset_all = True
         elif arg in ("-t", "--no-timing"): timings = False
         elif arg in ("-tb", "--traceback"): traceback = True
-        elif arg.startswith("-o"): l, needed = start_arg_list(outputs, arg, "-o", 1)
+        elif arg.startswith("-o"): l, needed = start_arg_list(outputs, arg, 1)
         elif arg in ("-v", "--verbose"): verbose = True
-        elif arg.startswith("-W"): l, needed = start_arg_list(warnings, arg, "-W", 1)
+        elif arg.startswith("-W"): l, needed = start_arg_list(warnings, arg, 1)
         elif arg.startswith("-"): unrecognised.append(arg)
         else:
             l.append(arg)
