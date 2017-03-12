@@ -903,9 +903,11 @@ class Deducer(CommonOutput):
                         access_location = (path, None, attrname_str, 0)
 
                     # Plain name accesses do not employ attributes and are
-                    # ignored.
+                    # ignored. Whether they are invoked is of interest, however.
 
                     if not attrname_str:
+                        if invocation:
+                            self.reference_invocations[access_location] = invocation
                         continue
 
                     attrnames = get_attrnames(attrname_str)
