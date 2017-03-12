@@ -115,6 +115,7 @@ class BasicModule(CommonModule):
         self.propagate_name_references()
         self.propagate_attr_accesses()
         self.propagate_constants()
+        self.propagate_return_values()
 
     def unpropagate(self):
 
@@ -151,6 +152,7 @@ class BasicModule(CommonModule):
         remove_items(self.importer.all_attr_access_modifiers, self.attr_access_modifiers)
         remove_items(self.importer.all_constants, self.constants)
         remove_items(self.importer.all_constant_values, self.constant_values)
+        remove_items(self.importer.all_return_values, self.return_values)
 
         # Remove this module's objects from the importer. Objects are
         # automatically propagated when defined.
@@ -219,6 +221,12 @@ class BasicModule(CommonModule):
         for name in self.classes.keys():
             self.importer.all_instance_attrs[name] = self.instance_attrs.get(name) or {}
             self.importer.all_instance_attr_constants[name] = self.instance_attr_constants.get(name) or {}
+
+    def propagate_return_values(self):
+
+        "Propagate return values for the module."
+
+        self.importer.all_return_values.update(self.return_values)
 
     def set_object(self, name, value=None):
 

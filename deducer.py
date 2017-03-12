@@ -1775,8 +1775,13 @@ class Deducer(CommonOutput):
 
         "Convert 'ref' to a provider appropriate to its invocation result."
 
-        if ref and ref.has_kind("<class>"):
-            return ref
+        if ref:
+            if ref.has_kind("<class>"):
+                return ref
+            elif ref.has_kind("<function>"):
+                refs = self.importer.all_return_values.get(ref.get_origin())
+                if refs and len(refs) == 1:
+                    return first(refs)
 
         return Reference("<var>")
 
@@ -1793,8 +1798,13 @@ class Deducer(CommonOutput):
 
         "Convert 'ref' to its invocation result."
 
-        if ref and ref.has_kind("<class>"):
-            return ref.instance_of()
+        if ref:
+            if ref.has_kind("<class>"):
+                return ref.instance_of()
+            elif ref.has_kind("<function>"):
+                refs = self.importer.all_return_values.get(ref.get_origin())
+                if refs and len(refs) == 1:
+                    return first(refs)
 
         return Reference("<var>")
 
