@@ -331,13 +331,12 @@ class NameResolving:
             # but they may be resolvable later.
 
             if not ref:
-                if not invocation:
 
-                    # Record the path used for tracking purposes
-                    # alongside original name, attribute and access
-                    # number details.
+                # Record the path used for tracking purposes
+                # alongside original name, attribute and access
+                # number details.
 
-                    aliased_name = path, name_ref.original_name, name_ref.attrnames, name_ref.number
+                aliased_name = path, name_ref.original_name, name_ref.attrnames, name_ref.number
 
                 return None, aliased_name
 
@@ -351,13 +350,12 @@ class NameResolving:
             # cannot be resolved, but they may be resolvable later.
 
             if not ref:
-                if not invocation:
 
-                    # Record the path used for tracking purposes
-                    # alongside original name, attribute and access
-                    # number details.
+                # Record the path used for tracking purposes
+                # alongside original name, attribute and access
+                # number details.
 
-                    aliased_name = path, name_ref.name, None, name_ref.number
+                aliased_name = path, name_ref.name, None, name_ref.number
 
                 return None, aliased_name
 
