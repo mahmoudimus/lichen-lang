@@ -34,17 +34,17 @@ static inline int __HASATTR(__ref obj, int pos, int code)
 
 __attr __load_static_ignore(__ref obj)
 {
-    return (__attr) {.value=obj};
+    return __ATTRVALUE(obj);
 }
 
 __attr __load_static_replace(__ref context, __ref obj)
 {
-    return __update_context(context, (__attr) {.value=obj});
+    return __update_context(context, __ATTRVALUE(obj));
 }
 
 __attr __load_static_test(__ref context, __ref obj)
 {
-    return __test_context(context, (__attr) {.value=obj});
+    return __test_context(context, __ATTRVALUE(obj));
 }
 
 /* Direct retrieval operations, returning and setting attributes. */
@@ -281,9 +281,9 @@ __attr __test_context_static(int target, __ref context, __ref value, __ref conte
 {
     /* Set the local context to the specified context if appropriate. */
 
-    if (__test_context_update(context, (__attr) {.value=value}))
+    if (__test_context_update(context, __ATTRVALUE(value)))
         contexts[target] = context;
-    return (__attr) {.value=value};
+    return __ATTRVALUE(value);
 }
 
 /* Context testing for invocations. */
