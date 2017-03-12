@@ -773,7 +773,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         if isinstance(name_ref, ResolvedNameRef) and name_ref.has_kind("<class>"):
             return InstanceRef(name_ref.reference().instance_of())
 
-        elif isinstance(name_ref, NameRef):
+        elif isinstance(name_ref, (NameRef, AccessRef)):
             return InvocationRef(name_ref)
 
         # Provide a general reference to indicate that something is produced

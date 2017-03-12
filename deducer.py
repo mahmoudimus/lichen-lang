@@ -1609,7 +1609,9 @@ class Deducer(CommonOutput):
         have_access = self.provider_class_types.has_key(accessor_location)
 
         # With an access, attempt to narrow the existing selection of provider
-        # types.
+        # types. Invocations attempt to find return value information, with
+        # instance return values also yielding class providers (since attributes
+        # on instances could be provided by classes).
 
         if have_access:
             provider_class_types = self.provider_class_types[accessor_location]
@@ -1624,27 +1626,28 @@ class Deducer(CommonOutput):
 
             for access_location in self.alias_index[accessor_location]:
                 location, name, attrnames, access_number = access_location
+                invocation = self.reference_invocations.get(access_location)
 
                 # Alias references an attribute access.
 
                 if attrnames:
 
-                    # Obtain attribute references for the access.
+                    # Obtain references and attribute types for the access.
 
-                    attrs = []
-                    for _attrtype, object_type, attr in self.referenced_attrs[access_location]:
-                        attrs.append(attr)
+                    attrs = self.get_references_for_access(access_location)
+                    attrs = self.convert_invocation_providers(attrs, invocation)
 
-                    # Separate the different attribute types.
-
-                    (class_types, instance_types, module_types,
-                        function_types, var_types) = separate_types(attrs)
+                    (class_types, instance_types, module_types, function_types,
+                        var_types) = separate_types(attrs)
 
                     # Where non-accessor types are found, do not attempt to refine
                     # the defined accessor types.
 
                     if function_types or var_types:
                         return
+
+                    # Invocations converting class accessors to instances do not
+                    # change the nature of class providers.
 
                     class_types = set(provider_class_types).intersection(class_types)
                     instance_types = set(provider_instance_types).intersection(instance_types)
@@ -1657,8 +1660,10 @@ class Deducer(CommonOutput):
 
                     attr = self.get_initialised_name(access_location)
                     if attr:
-                        (class_types, instance_types, module_types,
-                            _function_types, _var_types) = separate_types([attr])
+                        attrs = self.convert_invocation_providers([attr], invocation)
+
+                        (class_types, instance_types, module_types, function_types,
+                            var_types) = separate_types(attrs)
 
                     # Where no further information is found, do not attempt to
                     # refine the defined accessor types.
@@ -1676,6 +1681,8 @@ class Deducer(CommonOutput):
             self.record_reference_types(accessor_location, all_class_types, all_instance_types, all_module_types, False)
 
         # Without an access, attempt to identify references for the alias.
+        # Invocations convert classes to instances and also attempt to find
+        # return value information.
 
         else:
             refs = set()
@@ -1688,6 +1695,8 @@ class Deducer(CommonOutput):
                     access_location = self.const_accesses[access_location]
 
                 location, name, attrnames, access_number = access_location
+                invocation = self.reference_invocations.get(access_location)
+
                 attrnames = attrnames and attrnames.split(".")
                 remaining = attrnames and len(attrnames) > 1
 
@@ -1703,27 +1712,91 @@ class Deducer(CommonOutput):
                 attrname = attrnames and attrnames[0]
 
                 if attrname:
-                    attrs = []
-                    for attrtype, object_type, attr in self.referenced_attrs[access_location]:
-                        attrs.append(attr)
+
+                    # Obtain references and attribute types for the access.
+
+                    attrs = self.get_references_for_access(access_location)
+                    attrs = self.convert_invocations(attrs, invocation)
                     refs.update(attrs)
 
                 # Alias references a name, not an access.
 
                 else:
+
+                    # Obtain initialiser information.
+
                     attr = self.get_initialised_name(access_location)
-                    attrs = attr and [attr] or []
-                    if not attrs and self.provider_class_types.has_key(access_location):
+                    if attr:
+                        refs.update(self.convert_invocations([attr], invocation))
+
+                    # Obtain provider information.
+
+                    elif self.provider_class_types.has_key(access_location):
                         class_types = self.provider_class_types[access_location]
                         instance_types = self.provider_instance_types[access_location]
                         module_types = self.provider_module_types[access_location]
-                        attrs = combine_types(class_types, instance_types, module_types)
-                    if attrs:
-                        refs.update(attrs)
+
+                        refs.update(combine_types(class_types, instance_types, module_types))
 
             # Record reference details for the alias separately from accessors.
 
             self.referenced_objects[accessor_location] = refs
+
+    def get_references_for_access(self, access_location):
+
+        "Return the references identified for 'access_location'."
+
+        attrs = []
+        for attrtype, object_type, attr in self.referenced_attrs[access_location]:
+            attrs.append(attr)
+        return attrs
+
+    def convert_invocation_providers(self, refs, invocation):
+
+        """
+        Convert 'refs' to providers corresponding to the results of invoking
+        each of the given references, if 'invocation' is set to a true value.
+        """
+
+        if not invocation:
+            return refs
+
+        providers = set()
+
+        for ref in refs:
+            ref = self.convert_invocation_provider(ref)
+            if ref.has_kind("<instance>"):
+                providers.add(Reference("<class>", ref.get_origin()))
+            providers.add(ref)
+
+        return providers
+
+    def convert_invocation_provider(self, ref):
+
+        "Convert 'ref' to a provider appropriate to its invocation result."
+
+        if ref and ref.has_kind("<class>"):
+            return ref
+
+        return Reference("<var>")
+
+    def convert_invocations(self, refs, invocation):
+
+        """
+        Convert 'refs' to invocation results if 'invocation' is set to a true
+        value.
+        """
+
+        return invocation and map(self.convert_invocation, refs) or refs
+
+    def convert_invocation(self, ref):
+
+        "Convert 'ref' to its invocation result."
+
+        if ref and ref.has_kind("<class>"):
+            return ref.instance_of()
+
+        return Reference("<var>")
 
     def get_initialised_name(self, access_location):
 
