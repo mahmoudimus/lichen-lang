@@ -1631,9 +1631,7 @@ class Deducer(CommonOutput):
 
                     # Obtain attribute references for the access.
 
-                    attrs = []
-                    for _attrtype, object_type, attr in self.referenced_attrs[access_location]:
-                        attrs.append(attr)
+                    attrs = self.get_references_for_access(access_location)
 
                     # Separate the different attribute types.
 
@@ -1703,9 +1701,7 @@ class Deducer(CommonOutput):
                 attrname = attrnames and attrnames[0]
 
                 if attrname:
-                    attrs = []
-                    for attrtype, object_type, attr in self.referenced_attrs[access_location]:
-                        attrs.append(attr)
+                    attrs = self.get_references_for_access(access_location)
                     refs.update(attrs)
 
                 # Alias references a name, not an access.
@@ -1724,6 +1720,15 @@ class Deducer(CommonOutput):
             # Record reference details for the alias separately from accessors.
 
             self.referenced_objects[accessor_location] = refs
+
+    def get_references_for_access(self, access_location):
+
+        "Return the references identified for 'access_location'."
+
+        attrs = []
+        for attrtype, object_type, attr in self.referenced_attrs[access_location]:
+            attrs.append(attr)
+        return attrs
 
     def get_initialised_name(self, access_location):
 
