@@ -1628,6 +1628,16 @@ class Deducer(CommonOutput):
                 location, name, attrnames, access_number = access_location
                 invocation = self.reference_invocations.get(access_location)
 
+                attrnames = attrnames and attrnames.split(".")
+                remaining = attrnames and len(attrnames) > 1
+
+                # Alias has remaining attributes: reference details do not
+                # correspond to the accessor; the remaining attributes would
+                # need to be traversed first.
+
+                if remaining:
+                    return
+
                 # Alias references an attribute access.
 
                 if attrnames:
