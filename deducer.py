@@ -1520,6 +1520,9 @@ class Deducer(CommonOutput):
         if not attrname:
             return
 
+        invocation = access_location in self.reference_invocations
+        assignment = access_location in self.reference_assignments
+
         # Collect all suggested types for the accessors. Accesses may
         # require accessors from of a subset of the complete set of types.
 
@@ -1549,7 +1552,7 @@ class Deducer(CommonOutput):
 
             else:
                 self.init_definition_details(location)
-                self.record_types_for_usage(location, [(attrname, False, False)])
+                self.record_types_for_usage(location, [(attrname, invocation, assignment)])
 
             constrained = location in self.accessor_constrained and constrained
 
