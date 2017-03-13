@@ -987,6 +987,56 @@ def first(s):
 def same(s1, s2):
     return set(s1) == set(s2)
 
+def order_dependencies(all_depends):
+
+    """
+    Produce a dependency ordering for the 'all_depends' mapping. This mapping
+    has the form "A depends on B, C...". The result will order A, B, C, and so
+    on.
+    """
+
+    # Record the reverse dependencies, making a mapping of the form
+    # "B is needed by A", "C is needed by A", and so on.
+
+    usage = {}
+
+    # Record path-based dependencies.
+
+    for key in all_depends.keys():
+        usage[key] = set()
+
+    for key, depends in all_depends.items():
+        for depend in depends:
+            init_item(usage, depend, set)
+            usage[depend].add(key)
+
+    # Produce an ordering by obtaining exposed items (required by items already
+    # processed) and putting them at the start of the list.
+
+    ordered = []
+
+    while usage:
+        have_next = False
+
+        for path, n in usage.items():
+            if not n:
+                ordered.insert(0, path)
+                depends = all_depends.get(path)
+
+                # Reduce usage of the referenced items.
+
+                if depends:
+                    for depend in depends:
+                        usage[depend].remove(path)
+
+                del usage[path]
+                have_next = True
+
+        if not have_next:
+            raise ValueError, usage
+
+    return ordered
+
 # General input/output.
 
 def readfile(filename):
