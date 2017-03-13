@@ -866,9 +866,9 @@ class TranslatedModule(CommonModule):
 
             parameters = self.importer.function_parameters.get(self.get_namespace_path())
             if parameters and name in parameters:
-                name_to_value = "%s->value" % name
+                name_to_value = "%s->value" % encode_path(name)
             else:
-                name_to_value = "%s.value" % name
+                name_to_value = "%s.value" % encode_path(name)
 
             # Write a test that raises a TypeError upon failure.
 

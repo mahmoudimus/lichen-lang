@@ -909,7 +909,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         branches = self.trackers[-1].tracking_name(name)
         if branches:
             self.record_branches_for_access(branches, name, None)
-            return self.record_access_details(name, None, None, None)
+            return self.record_access_details(name, None, self.in_assignment,
+                                              self.in_invocation)
         return None
 
     def process_operator_chain(self, nodes, fn):
