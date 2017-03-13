@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from common import first, get_assigned_attributes, \
                    get_attrname_from_location, get_attrnames, \
                    get_invoked_attributes, get_name_path, init_item, \
-                   sorted_output, CommonOutput
+                   order_dependencies_partial, sorted_output, CommonOutput
 from encoders import encode_access_location, encode_constrained, \
                      encode_instruction, encode_location, encode_usage, \
                      get_kinds, test_label_for_kind, test_label_for_type
@@ -146,6 +146,7 @@ class Deducer(CommonOutput):
         self.init_accessors()
         self.init_accesses()
         self.init_aliases()
+        self.init_alias_network()
         self.modify_mutated_attributes()
         self.identify_references()
         self.classify_accessors()
@@ -1018,6 +1019,21 @@ class Deducer(CommonOutput):
         self.alias_index[accessor_location] = updated_locations
         return updated_locations
 
+    def init_alias_network(self):
+
+        """
+        Initialise a network of aliases, their initialising accesses, and the
+        accessors supporting those accesses.
+        """
+
+        self.alias_network = {}
+        self.alias_network.update(self.alias_index)
+
+        for accessor_location, access_locations in self.alias_index.items():
+            for access_location in access_locations:
+                if not self.alias_network.has_key(access_location):
+                    self.alias_network[access_location] = self.get_accessors_for_access(access_location)
+
     # Attribute mutation for types.
 
     def modify_mutated_attributes(self):
@@ -1352,8 +1368,9 @@ class Deducer(CommonOutput):
         # Aliased name definitions. All aliases with usage will have been
         # defined, but they may be refined according to referenced accesses.
 
-        for accessor_location in self.alias_index.keys():
-            self.record_types_for_alias(accessor_location)
+        for location in order_dependencies_partial(self.alias_network):
+            if self.alias_index.has_key(location):
+                self.record_types_for_alias(location)
 
         # Update accesses employing aliases.
 

@@ -995,8 +995,82 @@ def order_dependencies(all_depends):
     on.
     """
 
-    # Record the reverse dependencies, making a mapping of the form
-    # "B is needed by A", "C is needed by A", and so on.
+    usage = init_reverse_dependencies(all_depends)
+
+    # Produce an ordering by obtaining exposed items (required by items already
+    # processed) and putting them at the start of the list.
+
+    ordered = []
+
+    while usage:
+        have_next = False
+
+        for key, n in usage.items():
+
+            # Add items needed by no other items to the ordering.
+
+            if not n:
+                remove_dependency(key, all_depends, usage, ordered)
+                have_next = True
+
+        if not have_next:
+            raise ValueError, usage
+
+    return ordered
+
+def order_dependencies_partial(all_depends):
+
+    """
+    Produce a dependency ordering for the 'all_depends' mapping. This mapping
+    has the form "A depends on B, C...". The result will order A, B, C, and so
+    on. Where cycles exist, they will be broken and a partial ordering returned.
+    """
+
+    usage = init_reverse_dependencies(all_depends)
+
+    # Duplicate the dependencies for subsequent modification.
+
+    new_depends = {}
+    for key, values in all_depends.items():
+        new_depends[key] = set(values)
+
+    all_depends = new_depends
+
+    # Produce an ordering by obtaining exposed items (required by items already
+    # processed) and putting them at the start of the list.
+
+    ordered = []
+
+    while usage:
+        least = None
+        least_key = None
+
+        for key, n in usage.items():
+
+            # Add items needed by no other items to the ordering.
+
+            if not n:
+                remove_dependency(key, all_depends, usage, ordered)
+                least = 0
+
+            # When breaking cycles, note the least used items.
+
+            elif least is None or len(n) < least:
+                least_key = key
+                least = len(n)
+
+        if least:
+            transfer_dependencies(least_key, all_depends, usage, ordered)
+
+    return ordered
+
+def init_reverse_dependencies(all_depends):
+
+    """
+    From 'all_depends', providing a mapping of the form "A depends on B, C...",
+    record the reverse dependencies, making a mapping of the form
+    "B is needed by A", "C is needed by A", and so on.
+    """
 
     usage = {}
 
@@ -1010,32 +1084,87 @@ def order_dependencies(all_depends):
             init_item(usage, depend, set)
             usage[depend].add(key)
 
-    # Produce an ordering by obtaining exposed items (required by items already
-    # processed) and putting them at the start of the list.
+    return usage
 
-    ordered = []
+def transfer_dependencies(key, all_depends, usage, ordered):
 
-    while usage:
-        have_next = False
+    """
+    Transfer items needed by 'key' to those items needing 'key', found using
+    'all_depends', and updating 'usage'. Insert 'key' into the 'ordered'
+    collection of dependencies.
 
-        for path, n in usage.items():
-            if not n:
-                ordered.insert(0, path)
-                depends = all_depends.get(path)
+    If "A is needed by X" and "B is needed by A", then transferring items needed
+    by A will cause "B is needed by X" to be recorded as a consequence.
 
-                # Reduce usage of the referenced items.
+    Transferring items also needs to occur in the reverse mapping, so that
+    "A needs B" and "X needs A", then the consequence must be recorded as
+    "X needs B".
+    """
 
-                if depends:
-                    for depend in depends:
-                        usage[depend].remove(path)
+    ordered.insert(0, key)
 
-                del usage[path]
-                have_next = True
+    needing = usage[key]                        # A is needed by X
+    needed = all_depends.get(key)               # A needs B
 
-        if not have_next:
-            raise ValueError, usage
+    if needing:
+        for depend in needing:
+            l = all_depends.get(depend)
+            if not l:
+                continue
 
-    return ordered
+            l.remove(key)                       # X needs (A)
+
+            if needed:
+                l.update(needed)                # X needs B...
+
+                # Prevent self references.
+
+                if depend in needed:
+                    l.remove(depend)
+
+    if needed:
+        for depend in needed:
+            l = usage.get(depend)
+            if not l:
+                continue
+
+            l.remove(key)                       # B is needed by (A)
+            l.update(needing)                   # B is needed by X...
+
+            # Prevent self references.
+
+            if depend in needing:
+                l.remove(depend)
+
+    if needed:
+        del all_depends[key]
+    del usage[key]
+
+def remove_dependency(key, all_depends, usage, ordered):
+
+    """
+    Remove 'key', found in 'all_depends', from 'usage', inserting it into the
+    'ordered' collection of dependencies.
+
+    Given that 'usage' for a given key A would indicate that "A needs <nothing>"
+    upon removing A from 'usage', the outcome is that all keys needing A will
+    have A removed from their 'usage' records.
+
+    So, if "B needs A", removing A will cause "B needs <nothing>" to be recorded
+    as a consequence.
+    """
+
+    ordered.insert(0, key)
+
+    depends = all_depends.get(key)
+
+    # Reduce usage of the referenced items.
+
+    if depends:
+        for depend in depends:
+            usage[depend].remove(key)
+
+    del usage[key]
 
 # General input/output.
 
