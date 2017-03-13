@@ -271,7 +271,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             self.trackers[-1].abandon_branch()
 
         elif isinstance(n, compiler.ast.Return):
-            self.process_structure(n)
+            self.record_return_value(self.process_structure_node(n.value))
             self.trackers[-1].abandon_returning_branch()
 
         # Print statements.
@@ -654,7 +654,14 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         self.start_tracking(locals)
         self.process_structure_node(n.code)
-        self.stop_tracking()
+        returns_value = self.stop_tracking()
+
+        # Record any null result.
+
+        is_initialiser = is_method and name == "__init__"
+
+        if not returns_value and not is_initialiser:
+            self.record_return_value(ResolvedNameRef("None", self.get_builtin("None")))
 
         # Exit to the parent.
 
@@ -1076,6 +1083,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         """
         Stop tracking attribute usage, recording computed usage for the current
+        namespace. Indicate whether a value is always returned from the
         namespace.
         """
 
@@ -1085,6 +1093,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         self.attr_usage[path] = tracker.get_all_usage()
         self.name_initialisers[path] = tracker.get_all_values()
+
+        return tracker.returns_value()
 
     def start_tracking_in_module(self):
 
@@ -1469,5 +1479,15 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         "Record the current namespace as employing an exception handler."
 
         self.exception_namespaces.add(self.get_namespace_path())
+
+    # Return values.
+
+    def record_return_value(self, expr):
+
+        "Record the given return 'expr'."
+
+        path = self.get_namespace_path()
+        init_item(self.return_values, path, set)
+        self.return_values[path].add(expr)
 
 # vim: tabstop=4 expandtab shiftwidth=4

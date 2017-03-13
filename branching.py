@@ -607,6 +607,12 @@ class BranchTracker:
             d[name] = l
         return d
 
+    def returns_value(self):
+
+        "Indicate whether a value is always being returned."
+
+        return isinstance(self.attribute_branches[-1], AbandonedDict)
+
 # Special objects.
 
 class AbandonedDict(dict):
