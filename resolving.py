@@ -283,13 +283,12 @@ class NameResolving:
                         # but they may be resolvable later.
 
                         if not ref:
-                            if not invocation:
 
-                                # Record the path used for tracking purposes
-                                # alongside original name, attribute and access
-                                # number details.
+                            # Record the path used for tracking purposes
+                            # alongside original name, attribute and access
+                            # number details.
 
-                                aliased_names[i] = path, name_ref.original_name, name_ref.attrnames, name_ref.number
+                            aliased_names[i] = path, name_ref.original_name, name_ref.attrnames, name_ref.number
 
                             continue
 
@@ -297,33 +296,30 @@ class NameResolving:
 
                     elif isinstance(name_ref, LocalNameRef):
                         key = "%s.%s" % (path, name_ref.name)
-                        origin = self.name_references.get(key)
+                        ref = self.name_references.get(key)
 
                         # Accesses that do not refer to known static objects
                         # cannot be resolved, but they may be resolvable later.
 
-                        if not origin:
-                            if not invocation:
+                        if not ref:
 
-                                # Record the path used for tracking purposes
-                                # alongside original name, attribute and access
-                                # number details.
+                            # Record the path used for tracking purposes
+                            # alongside original name, attribute and access
+                            # number details.
 
-                                aliased_names[i] = path, name_ref.name, None, name_ref.number
+                            aliased_names[i] = path, name_ref.name, None, name_ref.number
 
                             continue
 
-                        ref = self.get_resolved_object(origin)
+                        ref = self.get_resolved_object(ref.get_origin())
                         if not ref:
                             continue
 
                     elif isinstance(name_ref, NameRef):
                         key = "%s.%s" % (path, name_ref.name)
-                        origin = self.name_references.get(key)
-                        if not origin:
-                            continue
+                        ref = self.name_references.get(key)
 
-                        ref = self.get_resolved_object(origin)
+                        ref = ref and self.get_resolved_object(ref.get_origin())
                         if not ref:
                             continue
 
@@ -338,7 +334,7 @@ class NameResolving:
 
                     # Convert class invocations to instances.
 
-                    if ref and invocation:
+                    if ref and invocation or ref.has_kind("<invoke>"):
                         ref = self.convert_invocation(ref)
 
                     if ref and not ref.has_kind("<var>"):

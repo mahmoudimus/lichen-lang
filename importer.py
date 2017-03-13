@@ -23,7 +23,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from errors import ProgramError
 from os.path import exists, extsep, getmtime, join
 from os import listdir, makedirs, remove
-from common import init_item, readfile, writefile
+from common import init_item, order_dependencies, readfile, writefile
 from modules import CachedModule
 from referencing import Reference
 import inspector
@@ -673,44 +673,10 @@ class Importer:
 
         self.condense_dependencies()
 
-        # Record the number of modules using or depending on each module.
-
-        usage = {}
-
-        # Record path-based dependencies.
-
-        for path in self.depends.keys():
-            usage[path] = set()
-
-        for path, depends in self.depends.items():
-            for origin in depends:
-                init_item(usage, origin, set)
-                usage[origin].add(path)
-
-        # Produce an ordering by obtaining exposed modules (required by modules
-        # already processed) and putting them at the start of the list.
-
-        ordered = []
-
-        while usage:
-            have_next = False
-
-            for path, n in usage.items():
-                if not n:
-                    ordered.insert(0, path)
-                    depends = self.depends.get(path)
-
-                    # Reduce usage of the referenced objects.
-
-                    if depends:
-                        for origin in depends:
-                            usage[origin].remove(path)
-
-                    del usage[path]
-                    have_next = True
-
-            if not have_next:
-                raise ProgramError("Modules with unresolvable dependencies exist: %s" % ", ".join(usage.keys()))
+        try:
+            ordered = order_dependencies(self.depends)
+        except ValueError, exc:
+            raise ProgramError("Modules with unresolvable dependencies exist: %s" % ", ".join(exc.args[0].keys()))
 
         if "__main__" in ordered:
             ordered.remove("__main__")

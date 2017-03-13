@@ -129,7 +129,6 @@ class CommonModule:
 
         self.astnode = None
         self.encoding = None
-        self.iterators = {}
         self.temp = {}
         self.lambdas = {}
 
@@ -229,19 +228,6 @@ class CommonModule:
 
     def next_literal(self):
         self.literals[self.get_namespace_path()] += 1
-
-    # Temporary iterator naming.
-
-    def get_iterator_path(self):
-        return self.in_function and self.get_namespace_path() or self.name
-
-    def get_iterator_name(self):
-        path = self.get_iterator_path()
-        init_item(self.iterators, path, lambda: 0)
-        return "$i%d" % self.iterators[path]
-
-    def next_iterator(self):
-        self.iterators[self.get_iterator_path()] += 1
 
     # Temporary variable naming.
 
@@ -565,17 +551,32 @@ class CommonModule:
         the iterator, producing a replacement node for the original.
         """
 
+        t0 = self.get_temporary_name()
+        self.next_temporary()
+        t1 = self.get_temporary_name()
+        self.next_temporary()
+        i0 = self.get_temporary_name()
+        self.next_temporary()
+
         node = compiler.ast.Stmt([
 
-            # <next> = {n.list}.__iter__().next
+            # <t0> = {n.list}
+            # <t1> = <t0>.__iter__()
+            # <i0> = <t1>.next
 
             compiler.ast.Assign(
-                [compiler.ast.AssName(self.get_iterator_name(), "OP_ASSIGN")],
-                compiler.ast.Getattr(
-                    compiler.ast.CallFunc(
-                        compiler.ast.Getattr(n.list, "__iter__"),
-                        []
-                        ), "next")),
+                [compiler.ast.AssName(t0, "OP_ASSIGN")],
+                n.list),
+
+            compiler.ast.Assign(
+                [compiler.ast.AssName(t1, "OP_ASSIGN")],
+                compiler.ast.CallFunc(
+                    compiler.ast.Getattr(compiler.ast.Name(t0), "__iter__"),
+                    [])),
+
+            compiler.ast.Assign(
+                [compiler.ast.AssName(i0, "OP_ASSIGN")],
+                compiler.ast.Getattr(compiler.ast.Name(t1), "next")),
 
             # try:
             #     while True:
@@ -591,7 +592,7 @@ class CommonModule:
                         compiler.ast.Assign(
                             [n.assign],
                             compiler.ast.CallFunc(
-                                compiler.ast.Name(self.get_iterator_name()),
+                                compiler.ast.Name(i0),
                                 []
                                 )),
                         n.body]),
@@ -600,7 +601,6 @@ class CommonModule:
                 None)
             ])
 
-        self.next_iterator()
         self.process_structure_node(node)
 
     def process_literal_sequence_node(self, n, name, ref, cls):
@@ -986,6 +986,185 @@ def first(s):
 
 def same(s1, s2):
     return set(s1) == set(s2)
+
+def order_dependencies(all_depends):
+
+    """
+    Produce a dependency ordering for the 'all_depends' mapping. This mapping
+    has the form "A depends on B, C...". The result will order A, B, C, and so
+    on.
+    """
+
+    usage = init_reverse_dependencies(all_depends)
+
+    # Produce an ordering by obtaining exposed items (required by items already
+    # processed) and putting them at the start of the list.
+
+    ordered = []
+
+    while usage:
+        have_next = False
+
+        for key, n in usage.items():
+
+            # Add items needed by no other items to the ordering.
+
+            if not n:
+                remove_dependency(key, all_depends, usage, ordered)
+                have_next = True
+
+        if not have_next:
+            raise ValueError, usage
+
+    return ordered
+
+def order_dependencies_partial(all_depends):
+
+    """
+    Produce a dependency ordering for the 'all_depends' mapping. This mapping
+    has the form "A depends on B, C...". The result will order A, B, C, and so
+    on. Where cycles exist, they will be broken and a partial ordering returned.
+    """
+
+    usage = init_reverse_dependencies(all_depends)
+
+    # Duplicate the dependencies for subsequent modification.
+
+    new_depends = {}
+    for key, values in all_depends.items():
+        new_depends[key] = set(values)
+
+    all_depends = new_depends
+
+    # Produce an ordering by obtaining exposed items (required by items already
+    # processed) and putting them at the start of the list.
+
+    ordered = []
+
+    while usage:
+        least = None
+        least_key = None
+
+        for key, n in usage.items():
+
+            # Add items needed by no other items to the ordering.
+
+            if not n:
+                remove_dependency(key, all_depends, usage, ordered)
+                least = 0
+
+            # When breaking cycles, note the least used items.
+
+            elif least is None or len(n) < least:
+                least_key = key
+                least = len(n)
+
+        if least:
+            transfer_dependencies(least_key, all_depends, usage, ordered)
+
+    return ordered
+
+def init_reverse_dependencies(all_depends):
+
+    """
+    From 'all_depends', providing a mapping of the form "A depends on B, C...",
+    record the reverse dependencies, making a mapping of the form
+    "B is needed by A", "C is needed by A", and so on.
+    """
+
+    usage = {}
+
+    # Record path-based dependencies.
+
+    for key in all_depends.keys():
+        usage[key] = set()
+
+    for key, depends in all_depends.items():
+        for depend in depends:
+            init_item(usage, depend, set)
+            usage[depend].add(key)
+
+    return usage
+
+def transfer_dependencies(key, all_depends, usage, ordered):
+
+    """
+    Transfer items needed by 'key' to those items needing 'key', found using
+    'all_depends', and updating 'usage'. Insert 'key' into the 'ordered'
+    collection of dependencies.
+
+    If "A is needed by X" and "B is needed by A", then transferring items needed
+    by A will cause "B is needed by X" to be recorded as a consequence.
+
+    Transferring items also needs to occur in the reverse mapping, so that
+    "A needs B" and "X needs A", then the consequence must be recorded as
+    "X needs B".
+    """
+
+    ordered.insert(0, key)
+
+    needing = usage[key]                        # A is needed by X
+    needed = all_depends.get(key)               # A needs B
+
+    if needing:
+        for depend in needing:
+            l = all_depends.get(depend)
+            if not l:
+                continue
+
+            l.remove(key)                       # X needs (A)
+
+            if needed:
+                l.update(needed)                # X needs B...
+
+                # Prevent self references.
+
+                if depend in needed:
+                    l.remove(depend)
+
+    if needed:
+        for depend in needed:
+            l = usage.get(depend)
+            if not l:
+                continue
+
+            l.remove(key)                       # B is needed by (A)
+            l.update(needing)                   # B is needed by X...
+
+            # Prevent self references.
+
+            if depend in needing:
+                l.remove(depend)
+
+    if needed:
+        del all_depends[key]
+    del usage[key]
+
+def remove_dependency(key, all_depends, usage, ordered):
+
+    """
+    Remove 'key', found in 'all_depends', from 'usage', inserting it into the
+    'ordered' collection of dependencies.
+
+    Given that 'usage' for a given key A would indicate that "A needs <nothing>"
+    upon removing A from 'usage', the outcome is that all keys needing A will
+    have A removed from their 'usage' records.
+
+    So, if "B needs A", removing A will cause "B needs <nothing>" to be recorded
+    as a consequence.
+    """
+
+    ordered.insert(0, key)
+
+    depends = all_depends.get(key)
+
+    # Reduce usage of the referenced items.
+
+    if depends:
+        for depend in depends:
+            usage[depend].remove(key)
+
+    del usage[key]
 
 # General input/output.
 

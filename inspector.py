@@ -766,7 +766,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         if isinstance(name_ref, ResolvedNameRef) and name_ref.has_kind("<class>"):
             return InstanceRef(name_ref.reference().instance_of())
 
-        elif isinstance(name_ref, NameRef):
+        elif isinstance(name_ref, (NameRef, AccessRef)):
             return InvocationRef(name_ref)
 
         # Provide a general reference to indicate that something is produced
@@ -902,7 +902,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         branches = self.trackers[-1].tracking_name(name)
         if branches:
             self.record_branches_for_access(branches, name, None)
-            return self.record_access_details(name, None, None, None)
+            return self.record_access_details(name, None, self.in_assignment,
+                                              self.in_invocation)
         return None
 
     def process_operator_chain(self, nodes, fn):
