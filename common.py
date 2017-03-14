@@ -562,7 +562,7 @@ class CommonModule:
 
             # <t0> = {n.list}
             # <t1> = <t0>.__iter__()
-            # <i0> = <t1>.next
+            # <next> = <t1>.next
 
             compiler.ast.Assign(
                 [compiler.ast.AssName(t0, "OP_ASSIGN")],
