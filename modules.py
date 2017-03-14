@@ -115,7 +115,6 @@ class BasicModule(CommonModule):
         self.propagate_name_references()
         self.propagate_attr_accesses()
         self.propagate_constants()
-        self.propagate_return_values()
 
     def unpropagate(self):
 
@@ -152,7 +151,6 @@ class BasicModule(CommonModule):
         remove_items(self.importer.all_attr_access_modifiers, self.attr_access_modifiers)
         remove_items(self.importer.all_constants, self.constants)
         remove_items(self.importer.all_constant_values, self.constant_values)
-        remove_items(self.importer.all_return_values, self.return_values)
 
         # Remove this module's objects from the importer. Objects are
         # automatically propagated when defined.
@@ -221,12 +219,6 @@ class BasicModule(CommonModule):
         for name in self.classes.keys():
             self.importer.all_instance_attrs[name] = self.instance_attrs.get(name) or {}
             self.importer.all_instance_attr_constants[name] = self.instance_attr_constants.get(name) or {}
-
-    def propagate_return_values(self):
-
-        "Propagate return values for the module."
-
-        self.importer.all_return_values.update(self.return_values)
 
     def set_object(self, name, value=None):
 
@@ -410,7 +402,6 @@ class CachedModule(BasicModule):
             self._get_constant_literals(f)
             self._get_constant_values(f)
             self._get_exception_namespaces(f)
-            self._get_return_values(f)
 
         finally:
             f.close()
@@ -630,15 +621,6 @@ class CachedModule(BasicModule):
         value = f.readline().rstrip()
         self.exception_namespaces = value and set(value.split(", ")) or set()
         f.readline()
-
-    def _get_return_values(self, f):
-        f.readline() # "return values:"
-        line = f.readline().rstrip()
-        while line:
-            path, values = self._get_fields(line)
-            values = values.split(", ")
-            self.return_values[path] = map(decode_reference, values)
-            line = f.readline().rstrip()
 
     # Generic parsing methods.
 
@@ -896,13 +878,6 @@ class CacheWritingModule:
             paths = list(self.exception_namespaces)
             paths.sort()
             print >>f, ", ".join(paths)
-
-            print >>f
-            print >>f, "return values:"
-            paths = self.return_values.keys()
-            paths.sort()
-            for path in paths:
-                print >>f, path, ", ".join(map(str, self.return_values[path]))
 
         finally:
             f.close()

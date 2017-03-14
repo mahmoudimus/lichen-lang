@@ -1487,7 +1487,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         "Record the given return 'expr'."
 
         path = self.get_namespace_path()
-        init_item(self.return_values, path, set)
-        self.return_values[path].add(expr)
+        init_item(self.return_values, path, list)
+        self.return_values[path].append(expr)
 
 # vim: tabstop=4 expandtab shiftwidth=4

@@ -259,26 +259,26 @@ class NameResolving:
 
         "Resolve return values using name references."
 
-        return_values = {}
-
         # Get the return values from each namespace.
 
         for path, values in self.return_values.items():
-            l = set()
 
-            for value in values:
-                if not value:
-                    ref = None
-                else:
-                    ref, aliased_name = self.resolve_reference(path, value)
+            # Resolve each return value provided by the scope.
 
-                l.add(ref or Reference("<var>"))
+            initialised_names = {}
+            aliased_names = {}
 
-            return_values[path] = l
+            for i, name_ref in enumerate(values):
+                initialised_ref, aliased_name = self.resolve_reference(path, name_ref)
+                if initialised_ref:
+                    initialised_names[i] = initialised_ref
+                if aliased_name:
+                    aliased_names[i] = aliased_name
 
-        # Replace the original values.
-
-        self.return_values = return_values
+            if initialised_names:
+                self.initialised_names[(path, "$return")] = initialised_names
+            if aliased_names:
+                self.aliased_names[(path, "$return")] = aliased_names
 
     def resolve_reference(self, path, name_ref):
 

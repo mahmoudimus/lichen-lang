@@ -1864,9 +1864,7 @@ class Deducer(CommonOutput):
             if ref.has_kind("<class>"):
                 return ref
             elif ref.has_kind("<function>"):
-                refs = self.importer.all_return_values.get(ref.get_origin())
-                if refs and len(refs) == 1:
-                    return first(refs)
+                return self.convert_function_invocation(ref)
 
         return Reference("<var>")
 
@@ -1887,9 +1885,19 @@ class Deducer(CommonOutput):
             if ref.has_kind("<class>"):
                 return ref.instance_of()
             elif ref.has_kind("<function>"):
-                refs = self.importer.all_return_values.get(ref.get_origin())
-                if refs and len(refs) == 1:
-                    return first(refs)
+                return self.convert_function_invocation(ref)
+
+        return Reference("<var>")
+
+    def convert_function_invocation(self, ref):
+
+        "Convert the function 'ref' to its return value reference."
+
+        initialised_names = self.importer.all_initialised_names.get((ref.get_origin(), "$return"))
+        if initialised_names:
+            refs = set(initialised_names.values())
+            if len(refs) == 1:
+                return first(refs)
 
         return Reference("<var>")
 
