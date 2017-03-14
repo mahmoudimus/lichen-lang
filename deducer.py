@@ -146,7 +146,6 @@ class Deducer(CommonOutput):
         self.init_accessors()
         self.init_accesses()
         self.init_aliases()
-        self.init_alias_network()
         self.modify_mutated_attributes()
         self.identify_references()
         self.classify_accessors()
@@ -969,6 +968,15 @@ class Deducer(CommonOutput):
         for accessor_location, access_locations in self.alias_index.items():
             self.update_aliases(accessor_location, access_locations)
 
+        # Get accesses affected by aliases.
+
+        self.alias_index_rev = {}
+
+        for accessor_location, access_locations in self.alias_index.items():
+            for access_location in access_locations:
+                init_item(self.alias_index_rev, access_location, set)
+                self.alias_index_rev[access_location].add(accessor_location)
+
     def update_aliases(self, accessor_location, access_locations, visited=None):
 
         """
@@ -1018,21 +1026,6 @@ class Deducer(CommonOutput):
 
         self.alias_index[accessor_location] = updated_locations
         return updated_locations
-
-    def init_alias_network(self):
-
-        """
-        Initialise a network of aliases, their initialising accesses, and the
-        accessors supporting those accesses.
-        """
-
-        self.alias_network = {}
-        self.alias_network.update(self.alias_index)
-
-        for accessor_location, access_locations in self.alias_index.items():
-            for access_location in access_locations:
-                if not self.alias_network.has_key(access_location):
-                    self.alias_network[access_location] = self.get_accessors_for_access(access_location)
 
     # Attribute mutation for types.
 
@@ -1365,17 +1358,39 @@ class Deducer(CommonOutput):
                     self.const_accesses[original_location] = access_location
                     self.const_accesses_rev[access_location] = original_location
 
-        # Aliased name definitions. All aliases with usage will have been
-        # defined, but they may be refined according to referenced accesses.
+        # Propagate alias-related information.
 
-        for location in order_dependencies_partial(self.alias_network):
-            if self.alias_index.has_key(location):
-                self.record_types_for_alias(location)
+        affected_aliases = set(self.alias_index.keys())
 
-        # Update accesses employing aliases.
+        while True:
 
-        for access_location in alias_accesses:
-            self.record_types_for_access(access_location, self.access_index[access_location])
+            # Aliased name definitions. All aliases with usage will have been
+            # defined, but they may be refined according to referenced accesses.
+
+            updated_aliases = set()
+
+            for location in affected_aliases:
+                if self.record_types_for_alias(location):
+                    updated_aliases.add(location)
+
+            # Update accesses employing aliases.
+
+            updated_accesses = set()
+
+            for access_location in alias_accesses:
+                if self.record_types_for_access(access_location, self.access_index[access_location]):
+                    updated_accesses.add(access_location)
+
+            # Update aliases for updated accesses.
+
+            affected_aliases = set()
+
+            for access_location in updated_accesses:
+                if self.alias_index_rev.has_key(access_location):
+                    affected_aliases.update(self.alias_index_rev[access_location])
+
+            if not affected_aliases:
+                break
 
     def constrain_types(self, path, class_types, instance_types, module_types):
 
@@ -1530,12 +1545,12 @@ class Deducer(CommonOutput):
 
         """
         Define types for the 'access_location' associated with the given
-        'accessor_locations'.
+        'accessor_locations'. Return whether referenced attributes were updated.
         """
 
         attrname = get_attrname_from_location(access_location)
         if not attrname:
-            return
+            return False
 
         invocation = access_location in self.reference_invocations
         assignment = access_location in self.reference_assignments
@@ -1548,6 +1563,8 @@ class Deducer(CommonOutput):
         instance_types = set()
 
         constrained = True
+
+        old_referenced_attrs = self.referenced_attrs.get(access_location)
 
         for location in accessor_locations:
 
@@ -1575,6 +1592,10 @@ class Deducer(CommonOutput):
 
         self.init_access_details(access_location)
         self.identify_reference_attributes(access_location, attrname, class_types, instance_types, module_types, constrained)
+
+        # Return whether the referenced attributes have changed.
+
+        return old_referenced_attrs != self.referenced_attrs.get(access_location)
 
     def record_types_for_usage(self, accessor_location, usage):
 
@@ -1626,6 +1647,7 @@ class Deducer(CommonOutput):
 
         """
         Define types for the 'accessor_location' not having associated usage.
+        Return whether the types were updated.
         """
 
         have_access = self.provider_class_types.has_key(accessor_location)
@@ -1666,7 +1688,7 @@ class Deducer(CommonOutput):
                 # need to be traversed first.
 
                 if remaining:
-                    return
+                    return False
 
                 # Alias references an attribute access.
 
@@ -1680,7 +1702,7 @@ class Deducer(CommonOutput):
                     # to refine the alias's types.
 
                     if not attrs:
-                        return
+                        return False
 
                     # Invocations converting class accessors to instances do not
                     # change the nature of class providers.
@@ -1694,7 +1716,7 @@ class Deducer(CommonOutput):
                     # the defined accessor types.
 
                     if function_types or var_types:
-                        return
+                        return False
 
                     class_types = set(provider_class_types).intersection(class_types)
                     instance_types = set(provider_instance_types).intersection(instance_types)
@@ -1758,7 +1780,7 @@ class Deducer(CommonOutput):
                     # refine the defined accessor types.
 
                     else:
-                        return
+                        return False
 
             # Record refined type details for the alias as an accessor.
 
@@ -1766,11 +1788,16 @@ class Deducer(CommonOutput):
             self.update_provider_types(accessor_location, new_provider_class_types, new_provider_instance_types, new_provider_module_types)
             self.update_accessor_types(accessor_location, new_accessor_class_types, new_accessor_instance_types, new_accessor_module_types)
 
+            return new_accessor_class_types != accessor_class_types or \
+                   new_accessor_instance_types != accessor_instance_types or \
+                   new_accessor_module_types != accessor_module_types
+
         # Without an access, attempt to identify references for the alias.
         # Invocations convert classes to instances and also attempt to find
         # return value information.
 
         else:
+            old_refs = self.referenced_objects.get(accessor_location)
             refs = set()
 
             for access_location in self.alias_index[accessor_location]:
@@ -1791,7 +1818,7 @@ class Deducer(CommonOutput):
                 # need to be traversed first.
 
                 if remaining:
-                    return
+                    return False
 
                 # Alias references an attribute access.
 
@@ -1826,6 +1853,8 @@ class Deducer(CommonOutput):
             # Record reference details for the alias separately from accessors.
 
             self.referenced_objects[accessor_location] = refs
+
+            return old_refs != refs
 
     def get_references_for_access(self, access_location):
 
