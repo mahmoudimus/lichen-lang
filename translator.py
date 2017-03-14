@@ -1446,8 +1446,7 @@ class TranslatedModule(CommonModule):
 
         name_ref = TrResolvedNameRef(n.name, ref, expr=expr, is_global=is_global,
                                      parameter=parameter, location=location)
-        result = self.get_aliases(name_ref)
-        return result or name_ref
+        return not expr and self.get_aliases(name_ref) or name_ref
 
     def get_aliases(self, name_ref):
 
@@ -1455,21 +1454,9 @@ class TranslatedModule(CommonModule):
 
         location = name_ref.access_location()
 
-        accessor_locations = location and self.deducer.get_accessors_for_access(location)
-        alias_refs = set()
-        access_locations = set()
-
-        if accessor_locations:
-            for accessor_location in accessor_locations:
-                aliased_accesses = self.deducer.alias_index.get(accessor_location)
-                if not aliased_accesses:
-                    continue
-                access_locations.update(aliased_accesses)
-                refs = self.deducer.referenced_objects.get(accessor_location)
-                if refs:
-                    alias_refs.update(refs)
-
-        return AliasResult(name_ref, alias_refs, access_locations)
+        refs = self.deducer.referenced_objects.get(location)
+        refs = refs or self.deducer.accessor_all_types.get(location)
+        return AliasResult(name_ref, refs or set(), [location])
 
     def make_volatile(self, name):
 
