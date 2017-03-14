@@ -78,6 +78,14 @@ class TrResolvedNameRef(ResolvedNameRef):
 
         "Return an output representation of the referenced name."
 
+        # Temporary names are output program locals.
+
+        if self.name.startswith("$t"):
+            if self.expr:
+                return "%s = %s" % (encode_path(self.name), self.expr)
+            else:
+                return encode_path(self.name)
+
         # For sources, any identified static origin will be constant and thus
         # usable directly. For targets, no constant should be assigned and thus
         # the alias (or any plain name) will be used.

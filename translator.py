@@ -1384,11 +1384,6 @@ class TranslatedModule(CommonModule):
             ref, paths = self.importer.get_module(self.name).special[n.name]
             return TrResolvedNameRef(n.name, ref)
 
-        # Temporary names are output program locals.
-
-        elif n.name.startswith("$t"):
-            return TrResolvedNameRef(n.name, Reference("<var>"), expr=expr)
-
         # Get the appropriate name for the name reference, using the same method
         # as in the inspector.
 
