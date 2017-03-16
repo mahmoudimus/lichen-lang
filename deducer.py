@@ -1802,12 +1802,6 @@ class Deducer(CommonOutput):
             refs = set()
 
             for access_location in self.alias_index[accessor_location]:
-
-                # Obtain any redefined constant access location.
-
-                if self.const_accesses.has_key(access_location):
-                    access_location = self.const_accesses[access_location]
-
                 location, name, attrnames, access_number = access_location
                 invocation = self.reference_invocations.get(access_location)
 
