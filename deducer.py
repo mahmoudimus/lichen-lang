@@ -1835,16 +1835,6 @@ class Deducer(CommonOutput):
                     if attr:
                         refs.update(self.convert_invocations([attr], invocation))
 
-                    # Obtain provider information.
-
-                    elif self.provider_class_types.has_key(access_location):
-                        class_types = self.provider_class_types[access_location]
-                        instance_types = self.provider_instance_types[access_location]
-                        module_types = self.provider_module_types[access_location]
-
-                        types = combine_types(class_types, instance_types, module_types)
-                        refs.update(self.convert_invocation_providers(types, invocation))
-
             # Record reference details for the alias separately from accessors.
 
             self.referenced_objects[accessor_location] = refs
