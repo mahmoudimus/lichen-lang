@@ -1879,10 +1879,10 @@ class Deducer(CommonOutput):
         providers = set()
 
         for ref in refs:
-            ref = self.convert_invocation_provider(ref)
-            if ref.has_kind("<instance>"):
-                providers.add(Reference("<class>", ref.get_origin()))
-            providers.add(ref)
+            for invocation_ref in self.convert_invocation_provider(ref):
+                if invocation_ref.has_kind("<instance>"):
+                    providers.add(Reference("<class>", invocation_ref.get_origin()))
+                providers.add(invocation_ref)
 
         return providers
 
@@ -1905,7 +1905,15 @@ class Deducer(CommonOutput):
         value.
         """
 
-        return invocation and map(self.convert_invocation, refs) or refs
+        if not invocation:
+            return refs
+
+        invocation_refs = set()
+
+        for ref in refs:
+            invocation_refs.update(self.convert_invocation(ref))
+
+        return invocation_refs
 
     def convert_invocation(self, ref):
 
@@ -1913,11 +1921,11 @@ class Deducer(CommonOutput):
 
         if ref:
             if ref.has_kind("<class>"):
-                return ref.instance_of()
+                return [ref.instance_of()]
             elif ref.has_kind("<function>"):
                 return self.convert_function_invocation(ref)
 
-        return Reference("<var>")
+        return [Reference("<var>")]
 
     def convert_function_invocation(self, ref):
 
@@ -1925,11 +1933,9 @@ class Deducer(CommonOutput):
 
         initialised_names = self.importer.all_initialised_names.get((ref.get_origin(), "$return"))
         if initialised_names:
-            refs = set(initialised_names.values())
-            if len(refs) == 1:
-                return first(refs)
+            return set(initialised_names.values())
 
-        return Reference("<var>")
+        return [Reference("<var>")]
 
     def get_initialised_name(self, access_location):
 
