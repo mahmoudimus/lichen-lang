@@ -70,12 +70,17 @@ class TrResolvedNameRef(ResolvedNameRef):
     def access_location(self):
         return self.location
 
-    def access_locations(self):
-        return self.location and [self.location]
-
     def __str__(self):
 
         "Return an output representation of the referenced name."
+
+        # Temporary names are output program locals.
+
+        if self.name.startswith("$t"):
+            if self.expr:
+                return "%s = %s" % (encode_path(self.name), self.expr)
+            else:
+                return encode_path(self.name)
 
         # For sources, any identified static origin will be constant and thus
         # usable directly. For targets, no constant should be assigned and thus
@@ -179,9 +184,6 @@ class AttrResult(Result, InstructionSequence):
     def access_location(self):
         return self.location
 
-    def access_locations(self):
-        return self.location and [self.location]
-
     def context(self):
         return self.context_identity
 
@@ -209,11 +211,11 @@ class AliasResult(NameRef, Result):
 
     "An alias for other values."
 
-    def __init__(self, name_ref, refs, locations):
+    def __init__(self, name_ref, refs, location):
         NameRef.__init__(self, name_ref.name, is_global=name_ref.is_global_name())
         self.name_ref = name_ref
         self.refs = refs
-        self.locations = locations
+        self.location = location
 
     def references(self):
         ref = self.name_ref.reference()
@@ -224,10 +226,7 @@ class AliasResult(NameRef, Result):
         return len(refs) == 1 and first(refs) or None
 
     def access_location(self):
-        return len(self.locations) == 1 and first(self.locations) or None
-
-    def access_locations(self):
-        return self.locations
+        return self.location
 
     def get_name(self):
         ref = self.reference()

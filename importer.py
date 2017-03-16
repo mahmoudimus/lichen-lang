@@ -116,10 +116,6 @@ class Importer:
         self.all_constants = {}
         self.all_constant_values = {}
 
-        # Return values.
-
-        self.all_return_values = {}
-
         self.make_cache()
 
     def give_warning(self, name):

@@ -647,16 +647,11 @@ class TranslatedModule(CommonModule):
         access_location = self.deducer.const_accesses.get(location)
         return self.deducer.reference_invocations_unsuitable.get(access_location or location)
 
-    def get_accessor_kinds(self, locations):
+    def get_accessor_kinds(self, location):
 
-        "Return the accessor kinds for 'locations'."
+        "Return the accessor kinds for 'location'."
 
-        accessor_kinds = set()
-        for location in locations:
-            kinds = self.deducer.accessor_kinds.get(location)
-            if kinds:
-                accessor_kinds.update(kinds)
-        return accessor_kinds
+        return self.deducer.accessor_kinds.get(location)
 
     def get_access_location(self, name, attrnames=None):
 
@@ -1026,7 +1021,6 @@ class TranslatedModule(CommonModule):
 
         objpath = expr.get_origin()
         location = expr.access_location()
-        locations = expr.access_locations()
 
         # Identified target details.
 
@@ -1081,8 +1075,7 @@ class TranslatedModule(CommonModule):
 
                 context_required = self.is_method(objpath)
 
-                accessor_kinds = location and self.get_accessor_kinds([location]) or \
-                                 locations and self.get_accessor_kinds(locations)
+                accessor_kinds = location and self.get_accessor_kinds(location)
 
                 instance_accessor = accessor_kinds and \
                                     len(accessor_kinds) == 1 and \
@@ -1386,11 +1379,6 @@ class TranslatedModule(CommonModule):
             ref, paths = self.importer.get_module(self.name).special[n.name]
             return TrResolvedNameRef(n.name, ref)
 
-        # Temporary names are output program locals.
-
-        elif n.name.startswith("$t"):
-            return TrResolvedNameRef(n.name, Reference("<var>"), expr=expr)
-
         # Get the appropriate name for the name reference, using the same method
         # as in the inspector.
 
@@ -1453,8 +1441,7 @@ class TranslatedModule(CommonModule):
 
         name_ref = TrResolvedNameRef(n.name, ref, expr=expr, is_global=is_global,
                                      location=location)
-        result = self.get_aliases(name_ref)
-        return result or name_ref
+        return not expr and self.get_aliases(name_ref) or name_ref
 
     def get_aliases(self, name_ref):
 
@@ -1462,21 +1449,9 @@ class TranslatedModule(CommonModule):
 
         location = name_ref.access_location()
 
-        accessor_locations = location and self.deducer.get_accessors_for_access(location)
-        alias_refs = set()
-        access_locations = set()
-
-        if accessor_locations:
-            for accessor_location in accessor_locations:
-                aliased_accesses = self.deducer.alias_index.get(accessor_location)
-                if not aliased_accesses:
-                    continue
-                access_locations.update(aliased_accesses)
-                refs = self.deducer.referenced_objects.get(accessor_location)
-                if refs:
-                    alias_refs.update(refs)
-
-        return AliasResult(name_ref, alias_refs, access_locations)
+        refs = self.deducer.referenced_objects.get(location)
+        refs = refs or self.deducer.accessor_all_types.get(location)
+        return AliasResult(name_ref, refs or set(), location)
 
     def make_volatile(self, name):
 

@@ -562,7 +562,6 @@ class CommonModule:
 
             # <t0> = {n.list}
             # <t1> = <t0>.__iter__()
-            # <i0> = <t1>.next
 
             compiler.ast.Assign(
                 [compiler.ast.AssName(t0, "OP_ASSIGN")],
@@ -574,13 +573,9 @@ class CommonModule:
                     compiler.ast.Getattr(compiler.ast.Name(t0), "__iter__"),
                     [])),
 
-            compiler.ast.Assign(
-                [compiler.ast.AssName(i0, "OP_ASSIGN")],
-                compiler.ast.Getattr(compiler.ast.Name(t1), "next")),
-
             # try:
             #     while True:
-            #         <var>... = <next>()
+            #         <var>... = <t1>.next()
             #         ...
             # except StopIteration:
             #     pass
@@ -592,7 +587,7 @@ class CommonModule:
                         compiler.ast.Assign(
                             [n.assign],
                             compiler.ast.CallFunc(
-                                compiler.ast.Name(i0),
+                                compiler.ast.Getattr(compiler.ast.Name(t1), "next"),
                                 []
                                 )),
                         n.body]),
