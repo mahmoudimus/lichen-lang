@@ -372,7 +372,8 @@ class Deducer(CommonOutput):
                 if referenced_attrs:
                     attrname = get_attrname_from_location(location)
 
-                    all_accessed_attrs = self.reference_all_attrs[location]
+                    all_accessed_attrs = list(set(self.reference_all_attrs[location]))
+                    all_accessed_attrs.sort()
 
                     for attrtype, attrs in self.get_referenced_attrs(location):
                         print >>f_attrs, encode_access_location(location), encode_constrained(constrained), attrtype, sorted_output(attrs)
