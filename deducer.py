@@ -62,9 +62,17 @@ class Deducer(CommonOutput):
 
         self.access_index = {}
 
+        # Map definition locations to affected accesses.
+
+        self.access_index_rev = {}
+
         # Map aliases to accesses that define them.
 
         self.alias_index = {}
+
+        # Map accesses to aliases whose initial values are influenced by them.
+
+        self.alias_index_rev = {}
 
         # Map constant accesses to redefined accesses.
 
@@ -521,9 +529,10 @@ class Deducer(CommonOutput):
             self.accessor_all_general_types[location] = all_general_types = \
                 combine_types(general_class_types, general_instance_types, general_module_types)
 
-            # Record guard information.
+            # Record guard information but only for accessors employed by
+            # accesses. There are no attribute accesses to guard, otherwise.
 
-            if not constrained:
+            if not constrained and self.access_index_rev.get(location):
 
                 # Record specific type guard details.
 
@@ -863,6 +872,13 @@ class Deducer(CommonOutput):
                     location = (path, name, None, version)
                     locations.append(location)
 
+                    # Map accessors to affected accesses.
+
+                    l = init_item(self.access_index_rev, location, set)
+                    l.add(access_location)
+
+                # Map accesses to supplying accessors.
+
                 self.access_index[access_location] = locations
 
     def get_accessors_for_access(self, access_location):
@@ -956,22 +972,21 @@ class Deducer(CommonOutput):
 
         for (path, name), all_aliases in self.importer.all_aliased_names.items():
 
-            # For each version of the name, obtain the access location.
+            # For each version of the name, obtain the access locations.
 
-            for version, (original_path, original_name, attrnames, access_number) in all_aliases.items():
-                accessor_location = (path, name, None, version)
-                access_location = (original_path, original_name, attrnames, access_number)
-                init_item(self.alias_index, accessor_location, list)
-                self.alias_index[accessor_location].append(access_location)
+            for version, aliases in all_aliases.items():
+                for (original_path, original_name, attrnames, access_number) in aliases:
+                    accessor_location = (path, name, None, version)
+                    access_location = (original_path, original_name, attrnames, access_number)
+                    init_item(self.alias_index, accessor_location, list)
+                    self.alias_index[accessor_location].append(access_location)
 
         # Get aliases in terms of non-aliases and accesses.
 
         for accessor_location, access_locations in self.alias_index.items():
             self.update_aliases(accessor_location, access_locations)
 
-        # Get accesses affected by aliases.
-
-        self.alias_index_rev = {}
+        # Get a mapping from accesses to affected aliases.
 
         for accessor_location, access_locations in self.alias_index.items():
             for access_location in access_locations:
@@ -997,10 +1012,16 @@ class Deducer(CommonOutput):
         for access_location in access_locations:
             (path, original_name, attrnames, access_number) = access_location
 
+            # Locations may have been recorded for return values, but they may
+            # not correspond to actual accesses.
+
+            if not self.access_index.has_key(access_location):
+                updated_locations.add(access_location)
+
             # Where an alias refers to a name access, obtain the original name
             # version details.
 
-            if attrnames is None:
+            elif attrnames is None:
 
                 # For each name version, attempt to determine any accesses that
                 # initialise the name.
@@ -1251,10 +1272,8 @@ class Deducer(CommonOutput):
 
         # Specific name-based attribute accesses.
 
-        alias_accesses = set()
-
         for access_location, accessor_locations in self.access_index.items():
-            self.record_types_for_access(access_location, accessor_locations, alias_accesses)
+            self.record_types_for_access(access_location, accessor_locations)
 
         # Anonymous references with attribute chains.
 
@@ -1374,6 +1393,23 @@ class Deducer(CommonOutput):
                 if self.record_types_for_alias(location):
                     updated_aliases.add(location)
 
+            # Define accesses employing aliases.
+
+            alias_accesses = set()
+            affected_aliases = set()
+
+            for alias in updated_aliases:
+
+                # Access affected by the alias.
+
+                if self.access_index_rev.has_key(alias):
+                    alias_accesses.update(self.access_index_rev[alias])
+
+                # Another alias affected by the alias.
+
+                elif self.alias_index_rev.has_key(alias):
+                    affected_aliases.update(self.alias_index_rev[alias])
+
             # Update accesses employing aliases.
 
             updated_accesses = set()
@@ -1382,9 +1418,7 @@ class Deducer(CommonOutput):
                 if self.record_types_for_access(access_location, self.access_index[access_location]):
                     updated_accesses.add(access_location)
 
-            # Update aliases for updated accesses.
-
-            affected_aliases = set()
+            # Determine which aliases are affected by the updated accesses.
 
             for access_location in updated_accesses:
                 if self.alias_index_rev.has_key(access_location):
@@ -1434,10 +1468,10 @@ class Deducer(CommonOutput):
         # Detect any initialised name for the location.
 
         if name:
-            ref = self.get_initialised_name(location)
-            if ref:
+            refs = self.get_initialised_name(location)
+            if refs:
                 (class_types, only_instance_types, module_types,
-                    _function_types, _var_types) = separate_types([ref])
+                    _function_types, _var_types) = separate_types(refs)
                 return class_types, only_instance_types, module_types, True, have_assignments
 
         # Retrieve the recorded types for the usage.
@@ -1542,7 +1576,7 @@ class Deducer(CommonOutput):
 
         self.referenced_attrs[location] = {}
 
-    def record_types_for_access(self, access_location, accessor_locations, alias_accesses=None):
+    def record_types_for_access(self, access_location, accessor_locations):
 
         """
         Define types for the 'access_location' associated with the given
@@ -1568,11 +1602,6 @@ class Deducer(CommonOutput):
         old_referenced_attrs = self.referenced_attrs.get(access_location)
 
         for location in accessor_locations:
-
-            # Remember accesses employing aliases.
-
-            if alias_accesses is not None and self.alias_index.has_key(location):
-                alias_accesses.add(access_location)
 
             # Use the type information deduced for names from above.
 
@@ -1677,6 +1706,8 @@ class Deducer(CommonOutput):
             new_accessor_instance_types = set()
             new_accessor_module_types = set()
 
+            refs = set()
+
             for access_location in self.alias_index[accessor_location]:
                 location, name, attrnames, access_number = access_location
                 invocation = self.reference_invocations.get(access_location)
@@ -1743,51 +1774,66 @@ class Deducer(CommonOutput):
                     new_accessor_instance_types.update(instance_types)
                     new_accessor_module_types.update(module_types)
 
+                    refs.update(accessor_attrs)
+
                 # Alias references a name, not an access.
 
                 else:
-                    # Attempt to refine the types using initialised names.
+                    # Attempt to refine the types using initialised names or
+                    # accessors.
 
-                    attr = self.get_initialised_name(access_location)
-                    if attr:
-                        attrs = [attr]
+                    attrs = self.get_initialised_name(access_location)
+
+                    if attrs:
                         provider_attrs = self.convert_invocation_providers(attrs, invocation)
-
-                        (class_types, instance_types, module_types, function_types,
-                            var_types) = separate_types(provider_attrs)
-
-                        class_types = set(provider_class_types).intersection(class_types)
-                        instance_types = set(provider_instance_types).intersection(instance_types)
-                        module_types = set(provider_module_types).intersection(module_types)
-
-                        new_provider_class_types.update(class_types)
-                        new_provider_instance_types.update(instance_types)
-                        new_provider_module_types.update(module_types)
-
                         accessor_attrs = self.convert_invocations(attrs, invocation)
-
-                        (class_types, instance_types, module_types, function_types,
-                            var_types) = separate_types(accessor_attrs)
-
-                        class_types = set(accessor_class_types).intersection(class_types)
-                        instance_types = set(accessor_instance_types).intersection(instance_types)
-                        module_types = set(accessor_module_types).intersection(module_types)
-
-                        new_accessor_class_types.update(class_types)
-                        new_accessor_instance_types.update(instance_types)
-                        new_accessor_module_types.update(module_types)
+                    else:
+                        provider_attrs = self.get_provider_references(access_location)
+                        attrs = accessor_attrs = self.get_accessor_references(access_location)
 
                     # Where no further information is found, do not attempt to
                     # refine the defined accessor types.
 
-                    else:
+                    if not attrs:
                         return False
+
+                    (class_types, instance_types, module_types, function_types,
+                        var_types) = separate_types(provider_attrs)
+
+                    class_types = set(provider_class_types).intersection(class_types)
+                    instance_types = set(provider_instance_types).intersection(instance_types)
+                    module_types = set(provider_module_types).intersection(module_types)
+
+                    new_provider_class_types.update(class_types)
+                    new_provider_instance_types.update(instance_types)
+                    new_provider_module_types.update(module_types)
+
+                    (class_types, instance_types, module_types, function_types,
+                        var_types) = separate_types(accessor_attrs)
+
+                    class_types = set(accessor_class_types).intersection(class_types)
+                    instance_types = set(accessor_instance_types).intersection(instance_types)
+                    module_types = set(accessor_module_types).intersection(module_types)
+
+                    new_accessor_class_types.update(class_types)
+                    new_accessor_instance_types.update(instance_types)
+                    new_accessor_module_types.update(module_types)
+
+                    refs.update(accessor_attrs)
+
+                # Update the alias relationships for invocations.
+
+                self.update_alias_accesses(access_location, attrs)
 
             # Record refined type details for the alias as an accessor.
 
             self.init_definition_details(accessor_location)
             self.update_provider_types(accessor_location, new_provider_class_types, new_provider_instance_types, new_provider_module_types)
             self.update_accessor_types(accessor_location, new_accessor_class_types, new_accessor_instance_types, new_accessor_module_types)
+
+            # Record reference details for the alias separately from accessors.
+
+            self.referenced_objects[accessor_location] = refs
 
             return new_accessor_class_types != accessor_class_types or \
                    new_accessor_instance_types != accessor_instance_types or \
@@ -1798,7 +1844,6 @@ class Deducer(CommonOutput):
         # return value information.
 
         else:
-            old_refs = self.referenced_objects.get(accessor_location)
             refs = set()
 
             for access_location in self.alias_index[accessor_location]:
@@ -1822,8 +1867,14 @@ class Deducer(CommonOutput):
                     # Obtain references and attribute types for the access.
 
                     attrs = self.get_references_for_access(access_location)
-                    attrs = self.convert_invocations(attrs, invocation)
-                    refs.update(attrs)
+
+                    # Where no further information is found, do not attempt to
+                    # refine the defined accessor types.
+
+                    if not attrs:
+                        return False
+
+                    refs.update(self.convert_invocations(attrs, invocation))
 
                 # Alias references a name, not an access.
 
@@ -1831,15 +1882,83 @@ class Deducer(CommonOutput):
 
                     # Obtain initialiser information.
 
-                    attr = self.get_initialised_name(access_location)
-                    if attr:
-                        refs.update(self.convert_invocations([attr], invocation))
+                    attrs = self.get_initialised_name(access_location)
+
+                    if attrs:
+                        provider_attrs = self.convert_invocation_providers(attrs, invocation)
+                        accessor_attrs = self.convert_invocations(attrs, invocation)
+                    else:
+                        provider_attrs = self.get_provider_references(access_location)
+                        attrs = accessor_attrs = self.get_accessor_references(access_location)
+
+                    # Where no further information is found, do not attempt to
+                    # refine the defined accessor types.
+
+                    if not attrs:
+                        return False
+
+                    refs.update(self.convert_invocations(attrs, invocation))
+
+                # Update the alias relationships for invocations.
+
+                self.update_alias_accesses(access_location, attrs)
+
+            # Record refined type details for the alias as an accessor.
+
+            (class_types, instance_types, module_types, function_types,
+                var_types) = separate_types(refs)
+
+            # Where non-accessor types are found, do not attempt to refine
+            # the defined accessor types.
+
+            if not function_types and not var_types:
+                self.init_definition_details(accessor_location)
+                self.update_provider_types(accessor_location, class_types + instance_types, class_types + instance_types, module_types)
+                self.update_accessor_types(accessor_location, class_types, instance_types, module_types)
 
             # Record reference details for the alias separately from accessors.
 
             self.referenced_objects[accessor_location] = refs
 
-            return old_refs != refs
+            return True
+
+    def update_alias_accesses(self, access_location, refs):
+
+        """
+        Record 'access_location' as a location affected by the return values of
+        'refs' if an invocation is involved.
+        """
+
+        if not self.reference_invocations.has_key(access_location):
+            return
+
+        for ref in refs:
+
+            # Initialising accesses originate from the return values.
+
+            key = (ref.get_origin(), "$return")
+            self._update_alias_accesses(access_location, key, self.importer.all_initialised_names)
+            self._update_alias_accesses(access_location, key, self.importer.all_aliased_names)
+
+    def _update_alias_accesses(self, access_location, key, names):
+
+        """
+        Make each return value provide information to the given
+        'access_location', using 'key' to reference the return value and 'names'
+        as the collection of definitions.
+        """
+
+        versions = names.get(key)
+        if not versions:
+            return
+
+        for version in versions.keys():
+            location = key + (None, version)
+            l = init_item(self.alias_index_rev, location, set)
+            l.add(access_location)
+
+            l = init_item(self.alias_index, access_location, set)
+            l.add(location)
 
     def get_references_for_access(self, access_location):
 
@@ -1863,11 +1982,20 @@ class Deducer(CommonOutput):
         providers = set()
 
         for ref in refs:
-            for invocation_ref in self.convert_invocation_provider(ref):
-                if invocation_ref.has_kind("<instance>"):
-                    providers.add(Reference("<class>", invocation_ref.get_origin()))
-                providers.add(invocation_ref)
+            invocation_providers = self.convert_accessors_to_providers(self.convert_invocation_provider(ref))
+            providers.update(invocation_providers)
 
+        return self.references_or_var(providers)
+
+    def convert_accessors_to_providers(self, refs):
+
+        "Convert accessor 'refs' to provider references."
+
+        providers = set()
+        for ref in refs:
+            if ref.has_kind("<instance>"):
+                providers.add(Reference("<class>", ref.get_origin()))
+            providers.add(ref)
         return providers
 
     def convert_invocation_provider(self, ref):
@@ -1876,11 +2004,11 @@ class Deducer(CommonOutput):
 
         if ref:
             if ref.has_kind("<class>"):
-                return ref
+                return [ref]
             elif ref.has_kind("<function>"):
                 return self.convert_function_invocation(ref)
 
-        return Reference("<var>")
+        return [Reference("<var>")]
 
     def convert_invocations(self, refs, invocation):
 
@@ -1897,7 +2025,7 @@ class Deducer(CommonOutput):
         for ref in refs:
             invocation_refs.update(self.convert_invocation(ref))
 
-        return invocation_refs
+        return self.references_or_var(invocation_refs)
 
     def convert_invocation(self, ref):
 
@@ -1915,11 +2043,22 @@ class Deducer(CommonOutput):
 
         "Convert the function 'ref' to its return value reference."
 
-        initialised_names = self.importer.all_initialised_names.get((ref.get_origin(), "$return"))
-        if initialised_names:
-            return set(initialised_names.values())
+        initialisers = self.importer.all_initialised_names.get((ref.get_origin(), "$return"))
+        aliases = self.importer.all_aliased_names.get((ref.get_origin(), "$return"))
+
+        if initialisers and not aliases:
+            return set(initialisers.values())
 
         return [Reference("<var>")]
+
+    def references_or_var(self, refs):
+
+        var = Reference("<var>")
+
+        if var in refs:
+            return set([var])
+        else:
+            return refs
 
     def get_initialised_name(self, access_location):
 
@@ -1932,9 +2071,39 @@ class Deducer(CommonOutput):
 
         # Use initialiser information, if available.
 
-        refs = self.importer.all_initialised_names.get((path, name))
-        if refs and refs.has_key(version):
-            return refs[version]
+        initialisers = self.importer.all_initialised_names.get((path, name))
+        if initialisers and initialisers.has_key(version):
+            return [initialisers[version]]
+        else:
+            return None
+
+    def get_accessor_references(self, access_location):
+
+        """
+        Return references corresponding to accessor details at the given
+        'access_location'.
+        """
+
+        if self.accessor_class_types.has_key(access_location):
+            class_types = self.accessor_class_types[access_location]
+            instance_types = self.accessor_instance_types[access_location]
+            module_types = self.accessor_module_types[access_location]
+            return combine_types(class_types, instance_types, module_types)
+        else:
+            return None
+
+    def get_provider_references(self, access_location):
+
+        """
+        Return references corresponding to provider details at the given
+        'access_location'.
+        """
+
+        if self.provider_class_types.has_key(access_location):
+            class_types = self.provider_class_types[access_location]
+            instance_types = self.provider_instance_types[access_location]
+            module_types = self.provider_module_types[access_location]
+            return combine_types(class_types, instance_types, module_types)
         else:
             return None
 
