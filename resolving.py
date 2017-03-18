@@ -244,11 +244,11 @@ class NameResolving:
                 aliased_names = {}
 
                 for i, name_ref in enumerate(values):
-                    initialised_ref, aliased_name = self.resolve_reference(path, name_ref)
+                    initialised_ref, _aliased_names = self.resolve_reference(path, name_ref)
                     if initialised_ref:
                         initialised_names[i] = initialised_ref
-                    if aliased_name:
-                        aliased_names[i] = aliased_name
+                    if _aliased_names:
+                        aliased_names[i] = _aliased_names
 
                 if initialised_names:
                     self.initialised_names[(path, name)] = initialised_names
@@ -269,11 +269,11 @@ class NameResolving:
             aliased_names = {}
 
             for i, name_ref in enumerate(values):
-                initialised_ref, aliased_name = self.resolve_reference(path, name_ref)
+                initialised_ref, _aliased_names = self.resolve_reference(path, name_ref)
                 if initialised_ref:
                     initialised_names[i] = initialised_ref
-                if aliased_name:
-                    aliased_names[i] = aliased_name
+                if _aliased_names:
+                    aliased_names[i] = _aliased_names
 
             if initialised_names:
                 self.initialised_names[(path, "$return")] = initialised_names
@@ -290,7 +290,7 @@ class NameResolving:
         const_accesses = self.const_accesses.get(path)
 
         initialised_ref = None
-        aliased_name = None
+        aliased_names = None
         no_reference = None, None
 
         # Unwrap invocations.
@@ -336,9 +336,9 @@ class NameResolving:
                 # alongside original name, attribute and access
                 # number details.
 
-                aliased_name = path, name_ref.original_name, name_ref.attrnames, name_ref.number
+                aliased_names = [(path, name_ref.original_name, name_ref.attrnames, name_ref.number)]
 
-                return None, aliased_name
+                return None, aliased_names
 
         # Attempt to resolve a plain name reference.
 
@@ -355,9 +355,9 @@ class NameResolving:
                 # alongside original name, attribute and access
                 # number details.
 
-                aliased_name = path, name_ref.name, None, name_ref.number
+                aliased_names = [(path, name_ref.name, None, name_ref.number)]
 
-                return None, aliased_name
+                return None, aliased_names
 
             ref = self.get_resolved_object(ref.get_origin())
             if not ref:
@@ -382,13 +382,32 @@ class NameResolving:
 
         # Convert class invocations to instances.
 
-        if ref and invocation or ref.has_kind("<invoke>"):
-            ref = self.convert_invocation(ref)
+        if ref and (invocation or ref.has_kind("<invoke>")):
+            target_ref = ref
+            ref = self.convert_invocation(target_ref)
 
-        if ref and not ref.has_kind("<var>"):
+            if not ref or ref.has_kind("<var>"):
+                aliased_names = self.get_aliases_for_target(target_ref.get_origin())
+            else:
+                initialised_ref = ref
+
+        elif ref and not ref.has_kind("<var>"):
             initialised_ref = ref
+        
+        return initialised_ref, aliased_names
 
-        return initialised_ref, aliased_name
+    def get_aliases_for_target(self, path):
+
+        "Return a list of return value locations for the given 'path'."
+
+        return_values = self.importer.all_return_values.get(path)
+        locations = []
+
+        if return_values:
+            for version in range(0, len(return_values)):
+                locations.append((path, "$return", None, version))
+
+        return locations
 
     def resolve_literals(self):
 

@@ -71,10 +71,6 @@ class BasicModule(CommonModule):
 
         self.exception_namespaces = set()
 
-        # Return value details.
-
-        self.return_values = {}
-
         # Attribute usage at module and function levels.
 
         self.attr_usage = {}
@@ -101,6 +97,10 @@ class BasicModule(CommonModule):
 
         self.initialised_names = {}
         self.aliased_names = {}
+
+        # Return values for functions in this module.
+
+        self.return_values = {}
 
     def __repr__(self):
         return "BasicModule(%r, %r)" % (self.name, self.importer)
@@ -496,7 +496,9 @@ class CachedModule(BasicModule):
             init_item(self.aliased_names, (path, name), dict)
             if number == "{}": number = None
             else: number = int(number)
-            self.aliased_names[(path, name)][int(version)] = (original_path, original_name, attrnames != "{}" and attrnames or None, number)
+            d = self.aliased_names[(path, name)]
+            init_item(d, int(version), list)
+            d[int(version)].append((original_path, original_name, attrnames != "{}" and attrnames or None, number))
             line = f.readline().rstrip()
 
     def _get_function_parameters(self, f):
@@ -763,9 +765,10 @@ class CacheWritingModule:
             for (path, name), aliases in assignments:
                 versions = aliases.items()
                 versions.sort()
-                for version, alias in versions:
-                    original_path, original_name, attrnames, number = alias
-                    print >>f, path, name, version, original_path, original_name, attrnames or "{}", number is None and "{}" or number
+                for version, version_aliases in versions:
+                    for alias in version_aliases:
+                        original_path, original_name, attrnames, number = alias
+                        print >>f, path, name, version, original_path, original_name, attrnames or "{}", number is None and "{}" or number
 
             print >>f
             print >>f, "function parameters:"
