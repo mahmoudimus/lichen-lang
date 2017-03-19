@@ -1730,51 +1730,17 @@ class Deducer(CommonOutput):
 
                     attrs = self.get_references_for_access(access_location)
 
-                    # Where no specific attributes are defined, do not attempt
-                    # to refine the alias's types.
+                    if attrs:
 
-                    if not attrs:
-                        return False
+                        # Invocations converting class accessors to instances do
+                        # not change the nature of class providers.
 
-                    # Invocations converting class accessors to instances do not
-                    # change the nature of class providers.
+                        provider_attrs = self.convert_invocation_providers(attrs, invocation)
 
-                    provider_attrs = self.convert_invocation_providers(attrs, invocation)
+                        # Accessors are updated separately, employing invocation
+                        # result details.
 
-                    (class_types, instance_types, module_types, function_types,
-                        var_types) = separate_types(provider_attrs)
-
-                    # Where non-accessor types are found, do not attempt to refine
-                    # the defined accessor types.
-
-                    if function_types or var_types:
-                        return False
-
-                    class_types = set(provider_class_types).intersection(class_types)
-                    instance_types = set(provider_instance_types).intersection(instance_types)
-                    module_types = set(provider_module_types).intersection(module_types)
-
-                    new_provider_class_types.update(class_types)
-                    new_provider_instance_types.update(instance_types)
-                    new_provider_module_types.update(module_types)
-
-                    # Accessors are updated separately, employing invocation
-                    # result details.
-
-                    accessor_attrs = self.convert_invocations(attrs, invocation)
-
-                    (class_types, instance_types, module_types, function_types,
-                        var_types) = separate_types(accessor_attrs)
-
-                    class_types = set(accessor_class_types).intersection(class_types)
-                    instance_types = set(accessor_instance_types).intersection(instance_types)
-                    module_types = set(accessor_module_types).intersection(module_types)
-
-                    new_accessor_class_types.update(class_types)
-                    new_accessor_instance_types.update(instance_types)
-                    new_accessor_module_types.update(module_types)
-
-                    refs.update(accessor_attrs)
+                        accessor_attrs = self.convert_invocations(attrs, invocation)
 
                 # Alias references a name, not an access.
 
@@ -1791,35 +1757,41 @@ class Deducer(CommonOutput):
                         provider_attrs = self.get_provider_references(access_location)
                         attrs = accessor_attrs = self.get_accessor_references(access_location)
 
-                    # Where no further information is found, do not attempt to
-                    # refine the defined accessor types.
+                # Where no specific attributes are defined, do not attempt
+                # to refine the alias's types.
 
-                    if not attrs:
-                        return False
+                if not attrs:
+                    return False
 
-                    (class_types, instance_types, module_types, function_types,
-                        var_types) = separate_types(provider_attrs)
+                (class_types, instance_types, module_types, function_types,
+                    var_types) = separate_types(provider_attrs)
 
-                    class_types = set(provider_class_types).intersection(class_types)
-                    instance_types = set(provider_instance_types).intersection(instance_types)
-                    module_types = set(provider_module_types).intersection(module_types)
+                # Where non-accessor types are found, do not attempt to refine
+                # the defined accessor types.
 
-                    new_provider_class_types.update(class_types)
-                    new_provider_instance_types.update(instance_types)
-                    new_provider_module_types.update(module_types)
+                if function_types or var_types:
+                    return False
 
-                    (class_types, instance_types, module_types, function_types,
-                        var_types) = separate_types(accessor_attrs)
+                class_types = set(provider_class_types).intersection(class_types)
+                instance_types = set(provider_instance_types).intersection(instance_types)
+                module_types = set(provider_module_types).intersection(module_types)
 
-                    class_types = set(accessor_class_types).intersection(class_types)
-                    instance_types = set(accessor_instance_types).intersection(instance_types)
-                    module_types = set(accessor_module_types).intersection(module_types)
+                new_provider_class_types.update(class_types)
+                new_provider_instance_types.update(instance_types)
+                new_provider_module_types.update(module_types)
 
-                    new_accessor_class_types.update(class_types)
-                    new_accessor_instance_types.update(instance_types)
-                    new_accessor_module_types.update(module_types)
+                (class_types, instance_types, module_types, function_types,
+                    var_types) = separate_types(accessor_attrs)
 
-                    refs.update(accessor_attrs)
+                class_types = set(accessor_class_types).intersection(class_types)
+                instance_types = set(accessor_instance_types).intersection(instance_types)
+                module_types = set(accessor_module_types).intersection(module_types)
+
+                new_accessor_class_types.update(class_types)
+                new_accessor_instance_types.update(instance_types)
+                new_accessor_module_types.update(module_types)
+
+                refs.update(accessor_attrs)
 
                 # Update the alias relationships for invocations.
 
@@ -1868,14 +1840,6 @@ class Deducer(CommonOutput):
 
                     attrs = self.get_references_for_access(access_location)
 
-                    # Where no further information is found, do not attempt to
-                    # refine the defined accessor types.
-
-                    if not attrs:
-                        return False
-
-                    refs.update(self.convert_invocations(attrs, invocation))
-
                 # Alias references a name, not an access.
 
                 else:
@@ -1891,13 +1855,13 @@ class Deducer(CommonOutput):
                         provider_attrs = self.get_provider_references(access_location)
                         attrs = accessor_attrs = self.get_accessor_references(access_location)
 
-                    # Where no further information is found, do not attempt to
-                    # refine the defined accessor types.
+                # Where no further information is found, do not attempt to
+                # refine the defined accessor types.
 
-                    if not attrs:
-                        return False
+                if not attrs:
+                    return False
 
-                    refs.update(self.convert_invocations(attrs, invocation))
+                refs.update(self.convert_invocations(attrs, invocation))
 
                 # Update the alias relationships for invocations.
 
