@@ -308,6 +308,11 @@ __attr __unwrap_callable(__attr callable)
     return value.value ? value : callable;
 }
 
+__attr (*__get_function_unchecked(__attr target))(__attr[])
+{
+    return __load_via_object(__unwrap_callable(target).value, __fn__).fn;
+}
+
 __attr (*__get_function(__ref context, __attr target))(__attr[])
 {
     target = __unwrap_callable(target);

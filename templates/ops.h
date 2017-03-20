@@ -108,6 +108,7 @@ __attr __test_context_static(int target, __ref context, __ref value, __ref conte
 /* Context testing for invocations. */
 
 __attr __unwrap_callable(__attr callable);
+__attr (*__get_function_unchecked(__attr target))(__attr[]);
 __attr (*__get_function(__ref context, __attr target))(__attr[]);
 __attr (*__check_and_get_function(__ref context, __attr target))(__attr[]);
 

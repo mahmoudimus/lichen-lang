@@ -1262,6 +1262,8 @@ class TranslatedModule(CommonModule):
                 if have_access_context:
                     stages.append("__get_function(%s, %s)" % (
                         context_identity, target_var))
+                elif context_var == target_var:
+                    stages.append("__get_function_unchecked(%s)" % target_var)
                 else:
                     stages.append("__get_function(__CONTEXT_AS_VALUE(%s).value, %s)" % (
                         context_var, target_var))
