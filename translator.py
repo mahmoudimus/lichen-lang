@@ -557,6 +557,7 @@ class TranslatedModule(CommonModule):
 
         context_index = self.function_target - 1
         context_identity = None
+        final_identity = None
 
         # Obtain encoded versions of each instruction, accumulating temporary
         # variables.
@@ -567,6 +568,13 @@ class TranslatedModule(CommonModule):
 
             if instruction[0] == "<context_identity>":
                 context_identity, _substituted = encode_access_instruction_arg(instruction[1], subs, instruction[0], context_index)
+                continue
+
+            # Intercept a special instruction identifying the target. The value
+            # is not encoded since it is used internally.
+
+            if instruction[0] == "<final_identity>":
+                final_identity = instruction[1]
                 continue
 
             # Collect the encoded instruction, noting any temporary variables
@@ -581,6 +589,12 @@ class TranslatedModule(CommonModule):
         for sub in substituted:
             if self.temp_subs.has_key(sub):
                 self.record_temp(self.temp_subs[sub])
+
+        # Get full final identity details.
+
+        if final_identity and not refs:
+            ref = self.importer.identify(final_identity)
+            refs = [ref]
 
         del self.attrs[0]
         return AttrResult(output, refs, location, context_identity)
@@ -628,19 +642,6 @@ class TranslatedModule(CommonModule):
         Convert 'location' to the form used by the deducer and retrieve any
         identified attributes.
         """
-
-        # Find any static attribute.
-
-        plan = self.deducer.access_plans.get(location)
-        if plan:
-            name, test, test_type, base, \
-               traversed, traversal_modes, remaining, \
-               context, context_test, \
-               first_method, final_method, \
-               origin, accessor_kinds = plan
-
-            if origin:
-                return [self.importer.get_object(origin)]
 
         # Determine whether any deduced references refer to the accessed
         # attribute.

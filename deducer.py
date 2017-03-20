@@ -2910,6 +2910,11 @@ class Deducer(CommonOutput):
             if context_var:
                 emit(("<context_identity>", context_var))
 
+            # Produce an advisory instruction regarding the final attribute.
+
+            if origin:
+                emit(("<final_identity>", origin))
+
             self.access_instructions[access_location] = instructions
             self.accessor_kinds[access_location] = accessor_kinds
 
