@@ -1067,6 +1067,8 @@ class TranslatedModule(CommonModule):
         have_access_context = isinstance(expr, AttrResult)
         context_identity = have_access_context and expr.context()
         parameters = None
+        num_parameters = None
+        num_defaults = None
 
         # Obtain details of the callable and of its parameters.
 
@@ -1082,6 +1084,8 @@ class TranslatedModule(CommonModule):
         elif objpath:
             parameters = self.importer.function_parameters.get(objpath)
             function_defaults = self.importer.function_defaults.get(objpath)
+            num_parameters = parameters and len(parameters) or 0
+            num_defaults = function_defaults and len(function_defaults) or 0
 
             # Class invocation involves instantiators.
 
@@ -1129,26 +1133,43 @@ class TranslatedModule(CommonModule):
                 if attrname:
                     all_params = set()
                     all_defaults = set()
+                    min_params = set()
+                    max_params = set()
                     refs = set()
 
                     # Obtain parameters and defaults for each possible target.
 
                     for ref in self.get_attributes_for_attrname(attrname):
-                        refs.add(ref)
                         origin = ref.get_origin()
                         params = self.importer.function_parameters.get(origin)
-                        if params:
-                            all_params.add(tuple(params))
+
                         defaults = self.importer.function_defaults.get(origin)
-                        if defaults:
+                        if defaults is not None:
                             all_defaults.add(tuple(defaults))
+
+                        if params is not None:
+                            all_params.add(tuple(params))
+                            min_params.add(len(params) - (defaults and len(defaults) or 0))
+                            max_params.add(len(params))
+                            refs.add(ref)
+                        else:
+                            refs = set()
+                            break
 
                     # Where the parameters and defaults are always the same,
                     # permit populating them in advance.
 
-                    if len(all_params) == 1 and (not all_defaults or len(all_defaults) == 1):
-                        parameters = first(all_params)
-                        function_defaults = all_defaults and first(all_defaults) or []
+                    if refs:
+                        if self.uses_keyword_arguments(n):
+                            if len(all_params) == 1 and (not all_defaults or len(all_defaults) == 1):
+                                parameters = first(all_params)
+                                function_defaults = all_defaults and first(all_defaults) or []
+                                num_parameters = parameters and len(parameters) or 0
+                                num_defaults = function_defaults and len(function_defaults) or 0
+                        else:
+                            if len(min_params) == 1 and len(max_params) == 1:
+                                num_parameters = first(max_params)
+                                num_defaults = first(max_params) - first(min_params)
 
             # Some information about the target may be available and be used to
             # provide warnings about argument compatibility.
@@ -1159,11 +1180,11 @@ class TranslatedModule(CommonModule):
                 if unsuitable:
                     for ref in unsuitable:
                         _objpath = ref.get_origin()
-                        num_parameters = len(self.importer.function_parameters[_objpath])
                         print >>sys.stderr, \
                             "In %s, at line %d, inappropriate number of " \
                             "arguments given. Need %d arguments to call %s." % (
-                            self.get_namespace_path(), n.lineno, num_parameters,
+                            self.get_namespace_path(), n.lineno,
+                            len(self.importer.function_parameters[_objpath]),
                             _objpath)
 
         # Determine any readily-accessible target identity.
@@ -1185,6 +1206,8 @@ class TranslatedModule(CommonModule):
         # always being the first argument. Where it would be unused, it may be
         # set to null.
 
+        known_parameters = num_parameters is not None
+
         if context_required:
             if have_access_context:
                 args = ["__ATTRVALUE(%s)" % context_identity]
@@ -1196,7 +1219,7 @@ class TranslatedModule(CommonModule):
         # Complete the array with null values, permitting tests for a complete
         # set of arguments.
 
-        args += [None] * (parameters is None and len(n.args) or parameters is not None and len(parameters) or 0)
+        args += [None] * (num_parameters is None and len(n.args) or num_parameters is not None and num_parameters or 0)
         kwcodes = []
         kwargs = []
 
@@ -1257,16 +1280,28 @@ class TranslatedModule(CommonModule):
         # Defaults are added to the frame where arguments are missing.
 
         if parameters and function_defaults:
-            target_structure = target_structure or "%s.value" % target_var
 
-            # Visit each default and set any missing arguments.
-            # Use the target structure to obtain defaults, as opposed to the
-            # actual function involved.
+            # Visit each default and set any missing arguments. Where keyword
+            # arguments have been used, the defaults must be inspected and, if
+            # necessary, inserted into gaps in the argument list.
 
             for i, (argname, default) in enumerate(function_defaults):
                 argnum = parameters.index(argname)
                 if not args[argnum+1]:
                     args[argnum+1] = "__GETDEFAULT(%s, %d)" % (target_structure, i)
+
+        elif known_parameters:
+
+            # No specific parameter details are provided, but no keyword
+            # arguments are used. Thus, defaults can be supplied using position
+            # information only.
+
+            i = len(n.args)
+            pos = i - (num_parameters - num_defaults)
+            while i < num_parameters:
+                args[i+1] = "__GETDEFAULT(%s.value, %d)" % (target_var, pos)
+                i += 1
+                pos += 1
 
         # Test for missing arguments.
 
@@ -1329,7 +1364,7 @@ class TranslatedModule(CommonModule):
 
         # With known parameters, the target can be tested.
 
-        elif parameters:
+        elif known_parameters:
             context_arg = context_required and args[0] or "__NULL"
             if self.always_callable(refs):
                 if context_var == target_var:
@@ -1345,7 +1380,7 @@ class TranslatedModule(CommonModule):
         # the sequence. Moreover, the parameters become part of the sequence
         # and thereby participate in a guaranteed evaluation order.
 
-        if target or function or parameters:
+        if target or function or known_parameters:
             stages[-1] += "(%s)" % argstr
             if instantiation:
                 return InstantiationResult(instantiation, stages)
@@ -1392,6 +1427,16 @@ class TranslatedModule(CommonModule):
 
         parameters = self.importer.function_parameters.get(objpath)
         return nargs < len(parameters)
+
+    def uses_keyword_arguments(self, n):
+
+        "Return whether invocation node 'n' uses keyword arguments."
+
+        for arg in enumerate(n.args):
+            if isinstance(arg, compiler.ast.Keyword):
+                return True
+
+        return False
 
     def get_attributes_for_attrname(self, attrname):
 
