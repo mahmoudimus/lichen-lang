@@ -29,7 +29,7 @@ from encoders import encode_access_instruction, encode_access_instruction_arg, \
 from errors import InspectError, TranslateError
 from os.path import exists, join
 from os import makedirs
-from referencing import Reference
+from referencing import Reference, combine_types
 from results import Result
 from transresults import TrConstantValueRef, TrInstanceRef, \
                          TrLiteralSequenceRef, TrResolvedNameRef, \
@@ -1067,6 +1067,7 @@ class TranslatedModule(CommonModule):
 
         elif objpath:
             parameters = self.importer.function_parameters.get(objpath)
+            function_defaults = self.importer.function_defaults.get(objpath)
 
             # Class invocation involves instantiators.
 
@@ -1102,22 +1103,54 @@ class TranslatedModule(CommonModule):
 
                 target_structure = "&%s" % encode_path(objpath)
 
-        # Other targets are retrieved at run-time. Some information about them
-        # may be available and be used to provide warnings about argument
-        # compatibility.
+        # Other targets are retrieved at run-time.
 
-        elif self.importer.give_warning("args"):
-            unsuitable = self.get_referenced_attribute_invocations(location)
+        else:
+            if location:
+                path, name, attrnames, access_number = location
+                attrname = attrnames and attrnames.rsplit(".", 1)[-1]
 
-            if unsuitable:
-                for ref in unsuitable:
-                    _objpath = ref.get_origin()
-                    num_parameters = len(self.importer.function_parameters[_objpath])
-                    print >>sys.stderr, \
-                        "In %s, at line %d, inappropriate number of " \
-                        "arguments given. Need %d arguments to call %s." % (
-                        self.get_namespace_path(), n.lineno, num_parameters,
-                        _objpath)
+                # Determine any common aspects of any attribute.
+
+                if attrname:
+                    all_params = set()
+                    all_defaults = set()
+                    refs = set()
+
+                    # Obtain parameters and defaults for each possible target.
+
+                    for ref in self.get_attributes_for_attrname(attrname):
+                        refs.add(ref)
+                        origin = ref.get_origin()
+                        params = self.importer.function_parameters.get(origin)
+                        if params:
+                            all_params.add(tuple(params))
+                        defaults = self.importer.function_defaults.get(origin)
+                        if defaults:
+                            all_defaults.add(tuple(defaults))
+
+                    # Where the parameters and defaults are always the same,
+                    # permit populating them in advance.
+
+                    if len(all_params) == 1 and (not all_defaults or len(all_defaults) == 1):
+                        parameters = first(all_params)
+                        function_defaults = all_defaults and first(all_defaults) or []
+
+            # Some information about the target may be available and be used to
+            # provide warnings about argument compatibility.
+
+            if self.importer.give_warning("args"):
+                unsuitable = self.get_referenced_attribute_invocations(location)
+
+                if unsuitable:
+                    for ref in unsuitable:
+                        _objpath = ref.get_origin()
+                        num_parameters = len(self.importer.function_parameters[_objpath])
+                        print >>sys.stderr, \
+                            "In %s, at line %d, inappropriate number of " \
+                            "arguments given. Need %d arguments to call %s." % (
+                            self.get_namespace_path(), n.lineno, num_parameters,
+                            _objpath)
 
         # Determine any readily-accessible target identity.
 
@@ -1209,18 +1242,17 @@ class TranslatedModule(CommonModule):
 
         # Defaults are added to the frame where arguments are missing.
 
-        if parameters:
-            function_defaults = self.importer.function_defaults.get(objpath)
-            if function_defaults:
+        if parameters and function_defaults:
+            target_structure = target_structure or "%s.value" % target_var
 
-                # Visit each default and set any missing arguments.
-                # Use the target structure to obtain defaults, as opposed to the
-                # actual function involved.
+            # Visit each default and set any missing arguments.
+            # Use the target structure to obtain defaults, as opposed to the
+            # actual function involved.
 
-                for i, (argname, default) in enumerate(function_defaults):
-                    argnum = parameters.index(argname)
-                    if not args[argnum+1]:
-                        args[argnum+1] = "__GETDEFAULT(%s, %d)" % (target_structure, i)
+            for i, (argname, default) in enumerate(function_defaults):
+                argnum = parameters.index(argname)
+                if not args[argnum+1]:
+                    args[argnum+1] = "__GETDEFAULT(%s, %d)" % (target_structure, i)
 
         # Test for missing arguments.
 
@@ -1281,13 +1313,25 @@ class TranslatedModule(CommonModule):
             else:
                 stages.append("__load_via_object(%s.value, __fn__).fn" % target_var)
 
+        # With known parameters, the target can be tested.
+
+        elif parameters:
+            context_arg = context_required and args[0] or "__NULL"
+            if self.always_callable(refs):
+                if context_var == target_var:
+                    stages.append("__get_function_unchecked(%s)" % target_var)
+                else:
+                    stages.append("__get_function(%s.value, %s)" % (context_arg, target_var))
+            else:
+                stages.append("__check_and_get_function(%s.value, %s)" % (context_arg, target_var))
+
         # With a known target, the function is obtained directly and called.
         # By putting the invocation at the end of the final element in the
         # instruction sequence (the stages), the result becomes the result of
         # the sequence. Moreover, the parameters become part of the sequence
         # and thereby participate in a guaranteed evaluation order.
 
-        if target or function:
+        if target or function or parameters:
             stages[-1] += "(%s)" % argstr
             if instantiation:
                 return InstantiationResult(instantiation, stages)
@@ -1334,6 +1378,21 @@ class TranslatedModule(CommonModule):
 
         parameters = self.importer.function_parameters.get(objpath)
         return nargs < len(parameters)
+
+    def get_attributes_for_attrname(self, attrname):
+
+        "Return a set of all attributes exposed by 'attrname'."
+
+        usage = [(attrname, True, False)]
+        class_types = self.deducer.get_class_types_for_usage(usage)
+        instance_types = self.deducer.get_instance_types_for_usage(usage)
+        module_types = self.deducer.get_module_types_for_usage(usage)
+        attrs = set()
+
+        for ref in combine_types(class_types, instance_types, module_types):
+            attrs.update(self.importer.get_attributes(ref, attrname))
+
+        return attrs
 
     def process_lambda_node(self, n):
 
