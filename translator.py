@@ -629,7 +629,18 @@ class TranslatedModule(CommonModule):
         identified attributes.
         """
 
-        access_location = self.deducer.const_accesses.get(location)
+        # Find any static attribute.
+
+        plan = self.deducer.access_plans.get(location)
+        if plan:
+            name, test, test_type, base, \
+               traversed, traversal_modes, remaining, \
+               context, context_test, \
+               first_method, final_method, \
+               origin, accessor_kinds = plan
+
+            if origin:
+                return [self.importer.get_object(origin)]
 
         # Determine whether any deduced references refer to the accessed
         # attribute.
@@ -637,6 +648,8 @@ class TranslatedModule(CommonModule):
         path, accessor_name, attrnames, access_number = location
         attrnames = attrnames and attrnames.split(".")
         remaining = attrnames and len(attrnames) > 1
+
+        access_location = self.deducer.const_accesses.get(location)
 
         if remaining and not access_location:
             return []
