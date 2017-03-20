@@ -630,6 +630,17 @@ class TranslatedModule(CommonModule):
         """
 
         access_location = self.deducer.const_accesses.get(location)
+
+        # Determine whether any deduced references refer to the accessed
+        # attribute.
+
+        path, accessor_name, attrnames, access_number = location
+        attrnames = attrnames and attrnames.split(".")
+        remaining = attrnames and len(attrnames) > 1
+
+        if remaining and not access_location:
+            return []
+
         refs = []
         l = self.deducer.referenced_attrs.get(access_location or location)
         if l:
