@@ -1320,8 +1320,9 @@ class TranslatedModule(CommonModule):
             return False
 
         for ref in refs:
-            if not self.importer.get_attributes(ref, "__fn__"):
+            if not ref.has_kind("<function>") and not self.importer.get_attributes(ref, "__fn__"):
                 return False
+
         return True
 
     def need_default_arguments(self, objpath, nargs):
