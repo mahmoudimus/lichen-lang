@@ -206,7 +206,7 @@ class AttrResult(Result, InstructionSequence):
         return encode_instructions(self.instructions)
 
     def __repr__(self):
-        return "AttrResult(%r, %r, %r)" % (self.instructions, self.refs, self.location)
+        return "AttrResult(%r, %r, %r, %r)" % (self.instructions, self.refs, self.location, self.context_identity)
 
 class AliasResult(NameRef, Result):
 
