@@ -1020,6 +1020,7 @@ class TranslatedModule(CommonModule):
 
         objpath = expr.get_origin()
         location = expr.access_location()
+        refs = expr.references()
 
         # Identified target details.
 
@@ -1286,7 +1287,7 @@ class TranslatedModule(CommonModule):
         else:
             stages.append("__invoke(\n%s,\n%d, %d, %s, %s,\n%d, %s\n)" % (
                 target_var,
-                self.always_callable and 1 or 0,
+                self.always_callable(refs) and 1 or 0,
                 len(kwargs), kwcodestr, kwargstr,
                 len(args), argstr))
             return InvocationResult(stages)
@@ -1302,13 +1303,12 @@ class TranslatedModule(CommonModule):
 
         "Determine whether all 'refs' are callable."
 
+        if not refs:
+            return False
+
         for ref in refs:
-            if not ref.static():
+            if not self.importer.get_attributes(ref, "__fn__"):
                 return False
-            else:
-                origin = ref.final()
-                if not self.importer.get_attribute(origin, "__fn__"):
-                    return False
         return True
 
     def need_default_arguments(self, objpath, nargs):
