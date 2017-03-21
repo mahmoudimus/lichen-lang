@@ -1354,8 +1354,6 @@ class TranslatedModule(CommonModule):
                 if have_access_context:
                     stages.append("__get_function(%s, %s)" % (
                         context_identity, target_var))
-                elif context_var == target_var:
-                    stages.append("__get_function_unchecked(%s)" % target_var)
                 else:
                     stages.append("__get_function(__CONTEXT_AS_VALUE(%s).value, %s)" % (
                         context_var, target_var))
@@ -1367,10 +1365,7 @@ class TranslatedModule(CommonModule):
         elif known_parameters:
             context_arg = context_required and args[0] or "__NULL"
             if self.always_callable(refs):
-                if context_var == target_var:
-                    stages.append("__get_function_unchecked(%s)" % target_var)
-                else:
-                    stages.append("__get_function(%s.value, %s)" % (context_arg, target_var))
+                stages.append("__get_function(%s.value, %s)" % (context_arg, target_var))
             else:
                 stages.append("__check_and_get_function(%s.value, %s)" % (context_arg, target_var))
 
