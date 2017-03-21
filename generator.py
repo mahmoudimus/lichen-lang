@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import CommonOutput, copy
+from common import CommonOutput, copy, indent
 from encoders import encode_code, \
                      encode_function_pointer, \
                      encode_instantiator_pointer, \
@@ -44,6 +44,7 @@ class Generator(CommonOutput):
 
     function_type = "__builtins__.core.function"
     none_type = "__builtins__.none.NoneType"
+    int_type = "__builtins__.int.int"
     string_type = "__builtins__.str.string"
     type_type = "__builtins__.core.type"
     unicode_type = "__builtins__.unicode.utf8string"
@@ -359,6 +360,10 @@ class Generator(CommonOutput):
             for constant, n in self.optimiser.constants.items():
                 self.make_literal_constant(f_decls, f_defs, n, constant)
 
+            # Generate pre-allocated objects.
+
+            self.make_preallocated_objects(f_decls, f_defs)
+
             # Finish the main source file.
 
             self.write_main_program(f_code, f_signatures)
@@ -494,6 +499,48 @@ class Generator(CommonOutput):
         finally:
             f_instancepos.close()
 
+    def make_preallocated_objects(self, f_decls, f_defs):
+
+        """
+        Write pre-allocated object declarations to 'f_decls' and definitions to
+        'f_defs'.
+        """
+
+        ref = Reference("<instance>", self.int_type)
+        table_name = encode_tablename(ref.get_kind(), ref.get_origin())
+        attrs = self.get_instance_attributes_for_reference(ref)
+        specific_instance_type = encode_symbol("inst", self.int_type)
+
+        integers = []
+        integer_cache_size = 256
+        i = 0
+
+        while i < integer_cache_size:
+            attrs["__data__"] = i
+            structure = []
+            self.populate_structure(ref, attrs, ref.get_kind(), structure)
+            integers.append(indent("    ", self.get_structure_definition(table_name, structure)))
+            i += 1
+
+        # Generate an array of specific instances.
+
+        print >>f_defs, """\
+%s __integer_cache[%d] = {
+%s
+    };""" % (specific_instance_type, integer_cache_size, ",\n    ".join(integers))
+
+        # Generate a declaration for the specific instance type.
+
+        structure_size = encode_size("<instance>", self.int_type)
+        self.write_instance_structure(f_decls, self.int_type, structure_size, "inst")
+
+        # Generate declarations for the size of the array and the array itself.
+
+        print >>f_decls, """\
+#define __INTEGER_CACHE_SIZE %d
+%s __integer_cache[%d];""" % (integer_cache_size, specific_instance_type,
+                              integer_cache_size)
+
     def make_literal_constant(self, f_decls, f_defs, n, constant):
 
         """
@@ -531,8 +578,8 @@ class Generator(CommonOutput):
         """
         Write constant details to 'f_decls' (to declare a structure) and to
         'f_defs' (to define the contents) for the constant described by 'ref'
-        having the given 'path' and 'structure_name' (for the constant structure
-        itself).
+        having the given 'const_path' (used to refer to the structure using an
+        attribute) and 'structure_name' (for the constant structure itself).
 
         The additional 'data' and 'encoding' are used to describe specific
         values.
@@ -541,9 +588,7 @@ class Generator(CommonOutput):
         # Obtain the attributes.
 
         cls = ref.get_origin()
-        indexes = self.optimiser.attr_table[ref]
-        attrnames = self.get_attribute_names(indexes)
-        attrs = self.get_instance_attributes(cls, attrnames)
+        attrs = self.get_instance_attributes_for_reference(ref)
 
         # Set the data, if provided.
 
@@ -595,8 +640,9 @@ class Generator(CommonOutput):
 
         # Define a macro for the constant.
 
-        attr_name = encode_path(const_path)
-        print >>f_decls, "#define %s __ATTRVALUE(&%s)" % (attr_name, structure_name)
+        if const_path:
+            print >>f_decls, "#define %s __ATTRVALUE(&%s)" % (
+                encode_path(const_path), structure_name)
 
     def make_parameter_table(self, f_decls, f_defs, argmin, parameters):
 
@@ -740,11 +786,12 @@ const __ptable %s = {
 """ % (table_name, min_parameters, max_parameters, structure_size,
        ",\n        ".join(members))
 
-    def write_instance_structure(self, f_decls, path, structure_size):
+    def write_instance_structure(self, f_decls, path, structure_size, prefix="obj"):
 
         """
         Write a declaration to 'f_decls' for the object having the given 'path'
-        and the given 'structure_size'.
+        and the given 'structure_size'. The optional 'prefix' can be used to
+        modify the declared type.
         """
 
         # Write an instance-specific type definition for instances of classes.
@@ -756,7 +803,7 @@ typedef struct {
     __pos pos;
     __attr attrs[%s];
 } %s;
-""" % (structure_size, encode_symbol("obj", path))
+""" % (structure_size, encode_symbol(prefix, path))
 
     def write_structure(self, f_decls, f_defs, structure_name, table_name, structure, path=None):
 
@@ -769,19 +816,28 @@ typedef struct {
         if f_decls:
             print >>f_decls, "extern __obj %s;\n" % encode_path(structure_name)
 
+        structure_details = self.get_structure_definition(table_name, structure, path)
+        print >>f_defs, """\
+__obj %s = %s;""" % (encode_path(structure_name), structure_details)
+
+    def get_structure_definition(self, table_name, structure, path=None):
+
+        """
+        Return a structure employing 'table_name', the given 'structure'
+        members, and any identifying static 'path'.
+        """
+
         is_class = path and self.importer.get_object(path).has_kind("<class>")
         pos = is_class and encode_pos(encode_type_attribute(path)) or str(self.instancepos)
 
-        print >>f_defs, """\
-__obj %s = {
+        return """\
+{
     &%s,
     %s,
     {
         %s
-    }};
-""" % (
-            encode_path(structure_name), table_name, pos,
-            ",\n        ".join(structure))
+    }
+}""" % (table_name, pos, ",\n        ".join(structure))
 
     def get_argument_limits(self, path):
 
@@ -841,6 +897,18 @@ __obj %s = {
             attrs[attrname] = attr
 
         return attrs
+
+    def get_instance_attributes_for_reference(self, ref):
+
+        """
+        Return a mapping of attribute names to references for attributes
+        belonging to instances of the given 'ref' referencing a class.
+        """
+
+        cls = ref.get_origin()
+        indexes = self.optimiser.attr_table[ref]
+        attrnames = self.get_attribute_names(indexes)
+        return self.get_instance_attributes(cls, attrnames)
 
     def get_instance_attributes(self, name, attrnames):
 

@@ -28,6 +28,12 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __attr __new_int(int i)
 {
+    /* Search the integer cache first. */
+    if ((i >= 0) && (i < __INTEGER_CACHE_SIZE))
+    {
+        return __ATTRVALUE((__ref) &__integer_cache[i]);
+    }
+
     /* Create a new integer and mutate the __data__ attribute. */
     __attr attr = __NEWINSTANCE(__builtins___int_int);
     attr.value->attrs[__ATTRPOS(__data__)].intvalue = i;

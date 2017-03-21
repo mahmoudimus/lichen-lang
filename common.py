@@ -1188,6 +1188,15 @@ def writefile(filename, s):
     finally:
         f.close()
 
+def indent(indent, s):
+
+    "Insert 'indent' before every line in 's'."
+
+    l = []
+    for line in s.split("\n"):
+        l.append(indent + line)
+    return "\n".join(l)
+
 # General encoding.
 
 def sorted_output(x):
