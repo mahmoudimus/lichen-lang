@@ -27,9 +27,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Generic instantiation operations, defining common members. */
 
-__attr __new(const __table * table, __ref cls, size_t size)
+__attr __new(const __table * table, __ref cls, size_t size, int immutable)
 {
-    __ref obj = (__ref) __ALLOCATE(1, size);
+    __ref obj = (__ref) (immutable ? __ALLOCATEIM : __ALLOCATE)(1, size);
     obj->table = table;
     obj->pos = __INSTANCEPOS;
     __store_via_object(obj, __class__, (__attr) {.value=cls});

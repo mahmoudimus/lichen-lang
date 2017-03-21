@@ -29,7 +29,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __new_int(int i)
 {
     /* Create a new integer and mutate the __data__ attribute. */
-    __attr attr = __NEWINSTANCE(__builtins___int_int);
+    __attr attr = __NEWINSTANCEIM(__builtins___int_int);
     attr.value->attrs[__ATTRPOS(__data__)].intvalue = i;
     return attr;
 }

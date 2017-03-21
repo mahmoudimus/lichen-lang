@@ -396,6 +396,14 @@ void *__ALLOCATE(size_t nmemb, size_t size)
     return ptr;
 }
 
+void *__ALLOCATEIM(size_t nmemb, size_t size)
+{
+    void *ptr = GC_MALLOC_ATOMIC(nmemb * size); /* sets memory to zero */
+    if (ptr == NULL)
+        __raise_memory_error();
+    return ptr;
+}
+
 void *__REALLOCATE(void *ptr, size_t size)
 {
     void *nptr = GC_REALLOC(ptr, size);

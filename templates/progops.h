@@ -24,7 +24,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Generic instantiation operations, defining common members. */
 
-__attr __new(const __table *table, __ref cls, size_t size);
+__attr __new(const __table *table, __ref cls, size_t size, int immutable);
 __attr __new_wrapper(__ref context, __attr attr);
 
 /* Generic internal data allocation. */
@@ -77,7 +77,8 @@ int __BOOL(__attr attr);
 
 /* Convenience definitions. */
 
-#define __NEWINSTANCE(__CLS) __new(&__InstanceTable_##__CLS, &__CLS, sizeof(__obj_##__CLS))
+#define __NEWINSTANCE(__CLS) __new(&__InstanceTable_##__CLS, &__CLS, sizeof(__obj_##__CLS), 0)
+#define __NEWINSTANCEIM(__CLS) __new(&__InstanceTable_##__CLS, &__CLS, sizeof(__obj_##__CLS), 1)
 #define __ISINSTANCE(__ATTR, __TYPE) __BOOL(__fn_native_introspection_isinstance((__attr[]) {__NULL, __ATTR, __TYPE}))
 
 #endif /* __PROGOPS_H__ */

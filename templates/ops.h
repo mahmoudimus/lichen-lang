@@ -133,6 +133,7 @@ unsigned int __TYPEPOS(__ref obj);
 /* Memory allocation. */
 
 void *__ALLOCATE(size_t nmemb, size_t size);
+void *__ALLOCATEIM(size_t nmemb, size_t size);
 void *__REALLOCATE(void *ptr, size_t size);
 
 /* Copying of structures. */
