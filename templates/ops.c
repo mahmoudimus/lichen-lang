@@ -27,7 +27,10 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __ref __VALUE(__attr attr)
 {
-    return attr.value;
+    if (!__INTEGER(attr))
+        return attr.value;
+    else
+        return &__common_integer_obj;
 }
 
 /* Basic structure tests. */

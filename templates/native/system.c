@@ -31,7 +31,7 @@ __attr __fn_native_system_exit(__attr __args[])
 {
     __attr * const status = &__args[1];
 
-    exit(__load_via_object(status->value, __data__).intvalue);
+    exit(__VALUE(*status));
     return __builtins___none_None;
 }
 

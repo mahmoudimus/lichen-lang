@@ -3,7 +3,7 @@
 """
 Integer objects.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -34,11 +34,9 @@ class int:
 
         "Initialise the integer with the given 'number_or_string'."
 
-        if _isinstance(number_or_string, int):
-            self.__data__ = number_or_string.__data__
-        else:
-            # NOTE: To be implemented.
-            self.__data__ = None
+        # NOTE: To be implemented.
+
+        pass
 
     def __hash__(self):
 
@@ -51,7 +49,7 @@ class int:
         "Perform 'op' on this int and 'other' if appropriate."
 
         if _isinstance(other, int):
-            return op(self.__data__, other.__data__)
+            return op(self, other)
         else:
             return NotImplemented
 
@@ -60,7 +58,7 @@ class int:
         "Perform 'op' on 'other' and this int if appropriate."
 
         if _isinstance(other, int):
-            return op(other.__data__, self.__data__)
+            return op(other, self)
         else:
             return NotImplemented
 
@@ -122,7 +120,7 @@ class int:
 
         "Return the inversion of this int."
 
-        return int_not(self.__data__)
+        return int_not(self)
 
     __add__ = __radd__ = __iadd__
     __sub__ = __isub__
@@ -206,7 +204,7 @@ class int:
 
         "Apply the unary negation operator."
 
-        return int_neg(self.__data__)
+        return int_neg(self)
 
     def __pos__(self):
 
@@ -218,7 +216,7 @@ class int:
 
         "Return a string representation."
 
-        return utf8string(int_str(self.__data__))
+        return utf8string(int_str(self))
 
     __repr__ = __str__
 
@@ -233,8 +231,7 @@ class int:
 
         "Return whether this int is non-zero."
 
-        zero = 0
-        return int_ne(self.__data__, zero.__data__)
+        return int_ne(self, 0)
 
 # Limits.
 

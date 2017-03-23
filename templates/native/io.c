@@ -62,9 +62,9 @@ __attr __fn_native_io_fopen(__attr __args[])
     __attr * const filename = &__args[1];
     __attr * const mode = &__args[2];
     /* filename.__data__ interpreted as string */
-    char *fn = __load_via_object(filename->value, __data__).strvalue;
+    char *fn = __load_via_object(__VALUE(*filename), __data__).strvalue;
     /* mode.__data__ interpreted as string */
-    char *s = __load_via_object(mode->value, __data__).strvalue;
+    char *s = __load_via_object(__VALUE(*mode), __data__).strvalue;
     FILE *f;
     __attr attr;
 
@@ -93,10 +93,10 @@ __attr __fn_native_io_fdopen(__attr __args[])
 {
     __attr * const fd = &__args[1];
     __attr * const mode = &__args[2];
-    /* fd.__data__ interpreted as int */
-    int i = __load_via_object(fd->value, __data__).intvalue;
+    /* fd interpreted as int */
+    int i = __TOINT(*fd);
     /* mode.__data__ interpreted as string */
-    char *s = __load_via_object(mode->value, __data__).strvalue;
+    char *s = __load_via_object(__VALUE(*mode), __data__).strvalue;
     FILE *f;
     __attr attr;
 
@@ -127,8 +127,8 @@ __attr __fn_native_io_fread(__attr __args[])
     __attr * const size = &__args[2];
     /* fp interpreted as FILE reference */
     FILE *f = (FILE *) fp->datavalue;
-    /* size.__data__ interpreted as int */
-    int to_read = __load_via_object(size->value, __data__).intvalue;
+    /* size interpreted as int */
+    int to_read = __TOINT(*size);
     char buf[to_read];
     size_t have_read;
     int error;
@@ -158,9 +158,9 @@ __attr __fn_native_io_fwrite(__attr __args[])
     /* fp interpreted as FILE reference */
     FILE *f = (FILE *) fp->datavalue;
     /* str.__data__ interpreted as string */
-    char *s = __load_via_object(str->value, __data__).strvalue;
+    char *s = __load_via_object(__VALUE(*str), __data__).strvalue;
     /* str.__size__ interpreted as int */
-    int to_write = __load_via_object(str->value, __size__).intvalue;
+    int to_write = __TOINT(__load_via_object(__VALUE(*str), __size__));
     size_t have_written = fwrite(s, sizeof(char), to_write, f);
     int error;
 
@@ -178,8 +178,8 @@ __attr __fn_native_io_fwrite(__attr __args[])
 __attr __fn_native_io_close(__attr __args[])
 {
     __attr * const fd = &__args[1];
-    /* fd.__data__ interpreted as int */
-    int i = __load_via_object(fd->value, __data__).intvalue;
+    /* fd interpreted as int */
+    int i = __TOINT(*fd);
 
     errno = 0;
     if (close(i) == -1)
@@ -192,10 +192,10 @@ __attr __fn_native_io_read(__attr __args[])
 {
     __attr * const fd = &__args[1];
     __attr * const n = &__args[2];
-    /* fd.__data__ interpreted as int */
-    int i = __load_via_object(fd->value, __data__).intvalue;
-    /* n.__data__ interpreted as int */
-    int to_read = __load_via_object(n->value, __data__).intvalue;
+    /* fd interpreted as int */
+    int i = __TOINT(*fd);
+    /* n interpreted as int */
+    int to_read = __TOINT(*n);
     char buf[to_read];
     ssize_t have_read;
     char *s;
@@ -217,12 +217,12 @@ __attr __fn_native_io_write(__attr __args[])
 {
     __attr * const fd = &__args[1];
     __attr * const str = &__args[2];
-    /* fd.__data__ interpreted as int */
-    int i = __load_via_object(fd->value, __data__).intvalue;
+    /* fd interpreted as int */
+    int i = __TOINT(*fd);
     /* str.__data__ interpreted as string */
-    char *s = __load_via_object(str->value, __data__).strvalue;
+    char *s = __load_via_object(__VALUE(*str), __data__).strvalue;
     /* str.__size__ interpreted as int */
-    int size = __load_via_object(str->value, __size__).intvalue;
+    int size = __TOINT(__load_via_object(__VALUE(*str), __size__));
     ssize_t have_written;
 
     errno = 0;

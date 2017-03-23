@@ -30,8 +30,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __fn_native_list_list_init(__attr __args[])
 {
     __attr * const size = &__args[1];
-    /* size.__data__ interpreted as int */
-    unsigned int n = __load_via_object(size->value, __data__).intvalue;
+    /* size interpreted as int */
+    unsigned int n = __TOINT(*size);
     __attr attr = {.seqvalue=__new_fragment(n)};
 
     /* Return the __data__ attribute. */
@@ -44,8 +44,8 @@ __attr __fn_native_list_list_setsize(__attr __args[])
     __attr * const size = &__args[2];
     /* _data interpreted as list */
     __fragment *data = _data->seqvalue;
-    /* size.__data__ interpreted as int */
-    unsigned int n = __load_via_object(size->value, __data__).intvalue;
+    /* size interpreted as int */
+    unsigned int n = __TOINT(*size);
 
     data->size = n;
     return __builtins___none_None;
@@ -56,12 +56,12 @@ __attr __fn_native_list_list_append(__attr __args[])
     __attr * const self = &__args[1];
     __attr * const value = &__args[2];
     /* self.__data__ interpreted as list */
-    __fragment *data = __load_via_object(self->value, __data__).seqvalue;
+    __fragment *data = __load_via_object(__VALUE(*self), __data__).seqvalue;
     __fragment *newdata = __fragment_append(data, value);
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(self->value, __data__, ((__attr) {.seqvalue=newdata}));
+        __store_via_object(__VALUE(*self), __data__, ((__attr) {.seqvalue=newdata}));
     return __builtins___none_None;
 }
 
@@ -70,7 +70,7 @@ __attr __fn_native_list_list_concat(__attr __args[])
     __attr * const self = &__args[1];
     __attr * const other = &__args[2];
     /* self.__data__, other interpreted as list */
-    __fragment *data = __load_via_object(self->value, __data__).seqvalue;
+    __fragment *data = __load_via_object(__VALUE(*self), __data__).seqvalue;
     __fragment *other_data = other->seqvalue;
     __fragment *newdata = data;
     unsigned int size = data->size, capacity = data->capacity;
@@ -91,7 +91,7 @@ __attr __fn_native_list_list_concat(__attr __args[])
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(self->value, __data__, ((__attr) {.seqvalue=newdata}));
+        __store_via_object(__VALUE(*self), __data__, ((__attr) {.seqvalue=newdata}));
     return __builtins___none_None;
 }
 
@@ -118,8 +118,8 @@ __attr __fn_native_list_list_element(__attr __args[])
     __attr * const index = &__args[2];
     /* _data interpreted as fragment */
     __attr *elements = _data->seqvalue->attrs;
-    /* index.__data__ interpreted as int */
-    int i = __load_via_object(index->value, __data__).intvalue;
+    /* index interpreted as int */
+    int i = __TOINT(*index);
 
     return elements[i];
 }
@@ -131,8 +131,8 @@ __attr __fn_native_list_list_setelement(__attr __args[])
     __attr * const value = &__args[3];
     /* _data interpreted as fragment */
     __attr *elements = _data->seqvalue->attrs;
-    /* index.__data__ interpreted as int */
-    int i = __load_via_object(index->value, __data__).intvalue;
+    /* index interpreted as int */
+    int i = __TOINT(*index);
 
     /* Set the element. */
     elements[i] = *value;

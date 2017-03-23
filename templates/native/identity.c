@@ -1,6 +1,6 @@
 /* Native functions for identity operations.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -31,6 +31,8 @@ __attr __fn_native_identity_is_(__attr __args[])
     __attr * const x = &__args[1];
     __attr * const y = &__args[2];
 
+    /* NOTE: value member assumed equivalent to intvalue for comparison. */
+
     return x->value == y->value ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
@@ -38,6 +40,8 @@ __attr __fn_native_identity_is_not(__attr __args[])
 {
     __attr * const x = &__args[1];
     __attr * const y = &__args[2];
+
+    /* NOTE: value member assumed equivalent to intvalue for comparison. */
 
     return x->value != y->value ? __builtins___boolean_True : __builtins___boolean_False;
 }

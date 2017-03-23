@@ -10,15 +10,15 @@ print sys.minint
 print "# sys.maxint + sys.minint:",
 print sys.maxint + sys.minint
 
-i = 2 ** 30
-print i                                 # 1073741824
-print hex(i)                            # 0x40000000
-print oct(i)                            # 010000000000
+i = 2 ** 29
+print i                                 # 536870912
+print hex(i)                            # 0x20000000
+print oct(i)                            # 04000000000
 
-j = -2 ** 30
-print j                                 # -1073741824
-print hex(j)                            # -0x40000000
-print oct(j)                            # -010000000000
+j = -2 ** 29
+print j                                 # -536870912
+print hex(j)                            # -0x20000000
+print oct(j)                            # -05000000000
 
 print i + j                             # 0
 
@@ -39,9 +39,9 @@ except OverflowError:
 
 print i - i                             # 0
 print j - j                             # 0
-print ~j                                # 1073741823
+print ~j                                # 536870911
 print i & ~j                            # 0
-print i - 1 & ~j                        # 1073741823
+print i - 1 & ~j                        # 536870911
 
 print hex(31)                           # 0x1f
 print oct(31)                           # 037

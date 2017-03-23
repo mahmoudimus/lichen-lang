@@ -1,6 +1,6 @@
 /* Native functions for limit definition.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <limits.h> /* INT_MAX, INT_MIN */
 #include "native/common.h"
 #include "types.h"
 #include "exceptions.h"
@@ -30,12 +29,12 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __attr __fn_native_limits_get_maxint(__attr __args[])
 {
-    return __new_int(INT_MAX);
+    return __new_int(__MAXINT);
 }
 
 __attr __fn_native_limits_get_minint(__attr __args[])
 {
-    return __new_int(INT_MIN);
+    return __new_int(__MININT);
 }
 
 /* Module initialisation. */

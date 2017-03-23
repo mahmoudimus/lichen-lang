@@ -76,7 +76,7 @@ __attr __fn_native_unicode_unicode_len(__attr __args[])
     /* _data interpreted as string */
     char *s = _data->strvalue;
     /* _size interpreted as int */
-    int size = _size->intvalue;
+    int size = __TOINT(*_size);
     unsigned int i, c = 0;
 
     for (i = 0; i < size; i++)
@@ -94,7 +94,7 @@ __attr __fn_native_unicode_unicode_ord(__attr __args[])
     /* _data interpreted as string */
     char *s = _data->strvalue;
     /* _size interpreted as int */
-    int size = _size->intvalue;
+    int size = __TOINT(*_size);
     unsigned int i, c = 0, v;
 
     for (i = 0; i < size; i++)
@@ -133,13 +133,13 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
     /* _data interpreted as string */
     char *s = _data->strvalue, *sub;
     /* _size interpreted as int */
-    int ss = _size->intvalue;
-    /* start.__data__ interpreted as int */
-    int istart = __load_via_object(start->value, __data__).intvalue;
-    /* end.__data__ interpreted as int */
-    int iend = __load_via_object(end->value, __data__).intvalue;
-    /* step.__data__ interpreted as int */
-    int istep = __load_via_object(step->value, __data__).intvalue;
+    int ss = __TOINT(*_size);
+    /* start interpreted as int */
+    int istart = __TOINT(*start);
+    /* end interpreted as int */
+    int iend = __TOINT(*end);
+    /* step interpreted as int */
+    int istep = __TOINT(*step);
 
     /* Calculate the number of characters. */
     size_t nchar = ((iend - istart - (istep > 0 ? 1 : -1)) / istep) + 1;
@@ -206,7 +206,7 @@ __attr __fn_native_unicode_unicode_unichr(__attr __args[])
 {
     __attr * const value = &__args[1];
     /* value interpreted as int */
-    int i = value->intvalue;
+    int i = __TOINT(*value);
     unsigned int resultsize;
     char *s;
 

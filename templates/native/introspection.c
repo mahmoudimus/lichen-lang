@@ -32,7 +32,7 @@ __attr __fn_native_introspection_object_getattr(__attr __args[])
     __attr * const name = &__args[2];
     __attr * const _default = &__args[3];
     /* name.__data__ interpreted as string */
-    __attr key = __load_via_object(name->value, __key__);
+    __attr key = __load_via_object(__VALUE(*name), __key__);
     __attr out;
 
     if ((key.code == 0) && (key.pos == 0))
@@ -40,13 +40,13 @@ __attr __fn_native_introspection_object_getattr(__attr __args[])
 
     /* Attempt to get the attribute from the object. */
 
-    out = __check_and_load_via_object_null(obj->value, key.pos, key.code);
-    if (out.value == 0)
+    out = __check_and_load_via_object_null(__VALUE(*obj), key.pos, key.code);
+    if (__ISNULL(out))
     {
         /* Inspect the object's class if this failed. */
 
-        out = __check_and_load_via_class__(obj->value, key.pos, key.code);
-        if (out.value == 0)
+        out = __check_and_load_via_class__(__VALUE(*obj), key.pos, key.code);
+        if (__ISNULL(out))
             return *_default;
 
         /* Update the context to the object if it is a method. */
@@ -63,7 +63,7 @@ __attr __fn_native_introspection_isinstance(__attr __args[])
     __attr * const cls = &__args[2];
 
     /* cls must be a class. */
-    if (__is_instance_subclass(obj->value, *cls))
+    if (__is_instance_subclass(__VALUE(*obj), *cls))
         return __builtins___boolean_True;
     else
         return __builtins___boolean_False;
@@ -75,7 +75,7 @@ __attr __fn_native_introspection_issubclass(__attr __args[])
     __attr * const cls = &__args[2];
 
     /* obj and cls must be classes. */
-    if (__is_subclass(obj->value, *cls))
+    if (__is_subclass(__VALUE(*obj), *cls))
         return __builtins___boolean_True;
     else
         return __builtins___boolean_False;

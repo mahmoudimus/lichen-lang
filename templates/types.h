@@ -72,14 +72,19 @@ typedef __obj * __ref;
 
 typedef union __attr
 {
+    /* General attribute members. */
+
     __ref value;                /* attribute value */
+    int intvalue;               /* integer value data ((integer << 1) | 1) */
+
+    /* Special case attribute members. */
+
     const __ptable * ptable;    /* parameter table */
     struct {
         __pcode code;           /* parameter table code for key */
         __ppos pos;             /* parameter table position for key */
     };
     __attr (*fn)();             /* callable details */
-    int intvalue;               /* integer value */
     float floatvalue;          	/* floating point value */
     char * strvalue;            /* string value */
     __fragment * seqvalue;      /* sequence data */
@@ -106,10 +111,22 @@ typedef struct __fragment
 
 #define __FRAGMENT_SIZE(NUMBER) ((NUMBER) * sizeof(__attr) + 2 * sizeof(unsigned int))
 
+/* Attribute interpretation. */
+
+#define __INTEGER(ATTR) ((ATTR).intvalue % 2)
+
 /* Attribute value setting. */
 
 #define __ATTRVALUE(VALUE) ((__attr) {.value=VALUE})
 #define __NULL __ATTRVALUE(0)
+#define __SETNULL(ATTR) ((ATTR).value = 0)
+
+/* Attribute as instance setting. */
+
+#define __INTVALUE(VALUE) ((__attr) {.intvalue=((VALUE) << 1) | 1})
+#define __TOINT(ATTR) ((ATTR).intvalue >> 1)
+#define __MAXINT ((1 << ((sizeof(__attr) * 8) - 2)) - 1)
+#define __MININT (-(1 << ((sizeof(__attr) * 8) - 2)))
 
 /* Argument lists. */
 

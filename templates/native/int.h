@@ -23,8 +23,6 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Integer operations. */
 
-__attr __fn_native_int_int_new(__attr __args[]);
-
 __attr __fn_native_int_int_add(__attr __args[]);
 __attr __fn_native_int_int_div(__attr __args[]);
 __attr __fn_native_int_int_mod(__attr __args[]);

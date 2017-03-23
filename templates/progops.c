@@ -73,7 +73,7 @@ void __newdata_sequence(__attr args[], unsigned int number)
 
     /* Store a reference to the data in the object's __data__ attribute. */
 
-    __store_via_object(args[0].value, __data__, attr);
+    __store_via_object(__VALUE(args[0]), __data__, attr);
 }
 
 #ifdef __HAVE___builtins___dict_dict
@@ -221,7 +221,7 @@ __attr __invoke(__attr callable, int always_callable,
         /* Erase the remaining arguments. */
 
         for (pos = nargs; pos < max; pos++)
-            allargs[pos].value = 0;
+            __SETNULL(allargs[pos]);
 
         /* Fill keyword arguments. */
 
@@ -246,7 +246,7 @@ __attr __invoke(__attr callable, int always_callable,
 
         for (pos = nargs; pos < max; pos++)
         {
-            if (allargs[pos].value == 0)
+            if (__ISNULL(allargs[pos]))
                 allargs[pos] = __GETDEFAULT(__VALUE(target), pos - min);
         }
     }
