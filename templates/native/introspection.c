@@ -51,7 +51,7 @@ __attr __fn_native_introspection_object_getattr(__attr __args[])
 
         /* Update the context to the object if it is a method. */
 
-        return __update_context(obj->value, out);
+        return __update_context(*obj, out);
     }
 
     return out;

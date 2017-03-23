@@ -542,7 +542,7 @@ class TranslatedModule(CommonModule):
 
         subs = {
             "<expr>" : attr_expr,
-            "<name>" : "%s.value" % attr_expr,
+            "<name>" : attr_expr,
             "<assexpr>" : self.in_assignment,
             }
 
@@ -884,16 +884,25 @@ class TranslatedModule(CommonModule):
 
             # Produce an appropriate access to an attribute's value.
 
-            parameters = self.importer.function_parameters.get(self.get_namespace_path())
-            if parameters and name in parameters:
-                name_to_value = "%s->value" % encode_path(name)
-            else:
-                name_to_value = "%s.value" % encode_path(name)
+            name_as_attr = self.get_name_as_attribute(name)
 
             # Write a test that raises a TypeError upon failure.
 
-            self.writestmt("if (!__test_%s_%s(%s, %s)) __raise_type_error();" % (
-                guard, guard_type, name_to_value, argstr))
+            self.writestmt("if (!__test_%s_%s(__VALUE(%s), %s)) __raise_type_error();" % (
+                guard, guard_type, name_as_attr, argstr))
+
+    def get_name_as_attribute(self, name):
+
+        "Return a generated expression for 'name' yielding an attribute."
+
+        parameters = self.importer.function_parameters.get(self.get_namespace_path())
+        parameter = name == "self" and self.in_method() or \
+                    parameters and name in parameters
+
+        if parameter:
+            return "*%s" % encode_path(name)
+        else:
+            return "%s" % encode_path(name)
 
     def process_function_node(self, n):
 
@@ -963,6 +972,8 @@ class TranslatedModule(CommonModule):
 
         if not instance_name:
             instance_name = "&%s" % encode_path(objpath)
+        else:
+            instance_name = "__VALUE(%s)" % instance_name
 
         # Where defaults are involved but cannot be identified, obtain a new
         # instance of the lambda and populate the defaults.
@@ -1199,8 +1210,9 @@ class TranslatedModule(CommonModule):
         if not target_identity:
             self.record_temp("__tmp_targets")
 
-        if context_identity and context_identity.startswith("__tmp_contexts"):
-            self.record_temp("__tmp_contexts")
+        if context_identity:
+            if context_identity.startswith("__tmp_contexts"):
+                self.record_temp("__tmp_contexts")
 
         # Arguments are presented in a temporary frame array with any context
         # always being the first argument. Where it would be unused, it may be
@@ -1210,7 +1222,7 @@ class TranslatedModule(CommonModule):
 
         if context_required:
             if have_access_context:
-                args = ["__ATTRVALUE(%s)" % context_identity]
+                args = [context_identity]
             else:
                 args = ["__CONTEXT_AS_VALUE(%s)" % context_var]
         else:
@@ -1355,19 +1367,19 @@ class TranslatedModule(CommonModule):
                     stages.append("__get_function(%s, %s)" % (
                         context_identity, target_var))
                 else:
-                    stages.append("__get_function(__CONTEXT_AS_VALUE(%s).value, %s)" % (
+                    stages.append("__get_function(__CONTEXT_AS_VALUE(%s), %s)" % (
                         context_var, target_var))
             else:
-                stages.append("__load_via_object(%s.value, __fn__).fn" % target_var)
+                stages.append("__load_via_object(__VALUE(%s), __fn__).fn" % target_var)
 
         # With known parameters, the target can be tested.
 
         elif known_parameters:
             context_arg = context_required and args[0] or "__NULL"
             if self.always_callable(refs):
-                stages.append("__get_function(%s.value, %s)" % (context_arg, target_var))
+                stages.append("__get_function(%s, %s)" % (context_arg, target_var))
             else:
-                stages.append("__check_and_get_function(%s.value, %s)" % (context_arg, target_var))
+                stages.append("__check_and_get_function(%s, %s)" % (context_arg, target_var))
 
         # With a known target, the function is obtained directly and called.
         # By putting the invocation at the end of the final element in the
@@ -1467,7 +1479,7 @@ class TranslatedModule(CommonModule):
 
         else:
             self.record_temp("__tmp_value")
-            return make_expression("(__tmp_value = __COPY(&%s, sizeof(%s)), %s, __ATTRVALUE(__tmp_value))" % (
+            return make_expression("(__tmp_value = __ATTRVALUE(__COPY(&%s, sizeof(%s))), %s, __tmp_value)" % (
                 encode_path(function_name),
                 encode_symbol("obj", function_name),
                 ", ".join(defaults)))
@@ -2018,16 +2030,16 @@ class TranslatedModule(CommonModule):
         if self.uses_temp(name, "__tmp_targets"):
             self.writeline("__attr __tmp_targets[%d];" % targets)
         if self.uses_temp(name, "__tmp_contexts"):
-            self.writeline("__ref __tmp_contexts[%d];" % targets)
+            self.writeline("__attr __tmp_contexts[%d];" % targets)
 
         # Add temporary variable usage details.
 
         if self.uses_temp(name, "__tmp_private_context"):
-            self.writeline("__ref __tmp_private_context;")
+            self.writeline("__attr __tmp_private_context;")
         if self.uses_temp(name, "__tmp_value"):
-            self.writeline("__ref __tmp_value;")
+            self.writeline("__attr __tmp_value;")
         if self.uses_temp(name, "__tmp_target_value"):
-            self.writeline("__ref __tmp_target_value;")
+            self.writeline("__attr __tmp_target_value;")
         if self.uses_temp(name, "__tmp_result"):
             self.writeline("__attr __tmp_result;")
 

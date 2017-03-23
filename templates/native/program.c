@@ -31,7 +31,7 @@ __attr __fn_native_program_get_using(__attr __args[])
     __attr * const callable = &__args[1];
     __attr * const instance = &__args[2];
 
-    return __test_context(instance->value, *callable);
+    return __test_context(*instance, *callable);
 }
 
 /* Module initialisation. */

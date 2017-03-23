@@ -22,11 +22,15 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "types.h"
 #include <string.h> /* for __COPY */
 
+/* Get object reference from attribute. */
+
+__ref __VALUE(__attr attr);
+
 /* Direct access and manipulation of static objects. */
 
 __attr __load_static_ignore(__ref obj);
-__attr __load_static_replace(__ref context, __ref obj);
-__attr __load_static_test(__ref context, __ref obj);
+__attr __load_static_replace(__attr context, __ref obj);
+__attr __load_static_test(__attr context, __ref obj);
 
 /* Direct retrieval operations, returning attributes. */
 
@@ -93,24 +97,24 @@ int __check_and_store_via_any__(__ref obj, int pos, int code, __attr value);
 
 /* Context-related operations. */
 
-int __test_context_update(__ref context, __attr attr);
-__attr __test_context(__ref context, __attr attr);
-__attr __update_context(__ref context, __attr attr);
-__attr __test_context_revert(int target, __ref context, __attr attr, __ref contexts[]);
-__attr __test_context_static(int target, __ref context, __ref value, __ref contexts[]);
+int __test_context_update(__attr context, __attr attr);
+__attr __test_context(__attr context, __attr attr);
+__attr __update_context(__attr context, __attr attr);
+__attr __test_context_revert(int target, __attr context, __attr attr, __attr contexts[]);
+__attr __test_context_static(int target, __attr context, __ref value, __attr contexts[]);
 
 #define __get_context(__TARGET) (__tmp_contexts[__TARGET])
-#define __set_context(__TARGET, __ATTR) (__tmp_contexts[__TARGET] = (__ATTR).value)
-#define __set_private_context(__ATTR) (__tmp_private_context = (__ATTR).value)
-#define __set_accessor(__ATTR) (__tmp_value = (__ATTR).value)
-#define __set_target_accessor(__ATTR) (__tmp_target_value = (__ATTR).value)
+#define __set_context(__TARGET, __ATTR) (__tmp_contexts[__TARGET] = (__ATTR))
+#define __set_private_context(__ATTR) (__tmp_private_context = (__ATTR))
+#define __set_accessor(__ATTR) (__tmp_value = (__ATTR))
+#define __set_target_accessor(__ATTR) (__tmp_target_value = (__ATTR))
 
 /* Context testing for invocations. */
 
 __attr __unwrap_callable(__attr callable);
 __attr (*__get_function_unchecked(__attr target))(__attr[]);
-__attr (*__get_function(__ref context, __attr target))(__attr[]);
-__attr (*__check_and_get_function(__ref context, __attr target))(__attr[]);
+__attr (*__get_function(__attr context, __attr target))(__attr[]);
+__attr (*__check_and_get_function(__attr context, __attr target))(__attr[]);
 
 /* Parameter position operations. */
 

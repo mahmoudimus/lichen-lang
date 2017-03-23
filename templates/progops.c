@@ -32,13 +32,13 @@ __attr __new(const __table * table, __ref cls, size_t size, int immutable)
     __ref obj = (__ref) (immutable ? __ALLOCATEIM : __ALLOCATE)(1, size);
     obj->table = table;
     obj->pos = __INSTANCEPOS;
-    __store_via_object(obj, __class__, (__attr) {.value=cls});
-    return (__attr) {.value=obj};
+    __store_via_object(obj, __class__, __ATTRVALUE(cls));
+    return __ATTRVALUE(obj);
 }
 
-__attr __new_wrapper(__ref context, __attr attr)
+__attr __new_wrapper(__attr context, __attr attr)
 {
-    return __new___builtins___core_wrapper((__attr[]) {__NULL, {.value=context}, attr});
+    return __new___builtins___core_wrapper((__attr[]) {__NULL, context, attr});
 }
 
 /* Generic internal data allocation. */
@@ -163,7 +163,7 @@ __attr __ensure_instance(__attr arg)
 
     /* Return instances as provided. */
 
-    if (__is_instance(arg.value))
+    if (__is_instance(__VALUE(arg)))
         return arg;
 
     /* Invoke non-instances to produce instances. */
@@ -192,7 +192,7 @@ __attr __invoke(__attr callable, int always_callable,
     /* Obtain the __args__ special member, referencing the parameter table. */
     /* Refer to the table and minimum/maximum. */
 
-    const __ptable *ptable = __check_and_load_via_object(target.value, __args__).ptable;
+    const __ptable *ptable = __check_and_load_via_object(__VALUE(target), __args__).ptable;
     const unsigned int min = ptable->min, max = ptable->max;
 
     /* Reserve enough space for the arguments. */
@@ -247,13 +247,13 @@ __attr __invoke(__attr callable, int always_callable,
         for (pos = nargs; pos < max; pos++)
         {
             if (allargs[pos].value == 0)
-                allargs[pos] = __GETDEFAULT(target.value, pos - min);
+                allargs[pos] = __GETDEFAULT(__VALUE(target), pos - min);
         }
     }
 
     /* Call with the prepared arguments. */
 
-    return (always_callable ? __get_function(allargs[0].value, target) : __check_and_get_function(allargs[0].value, target))(allargs);
+    return (always_callable ? __get_function(allargs[0], target) : __check_and_get_function(allargs[0], target))(allargs);
 }
 
 /* Error routines. */
@@ -281,9 +281,10 @@ __attr __GETDEFAULT(__ref obj, int pos)
 int __BOOL(__attr attr)
 {
     __attr args[2] = {__NULL, attr};
+    __ref truevalue = __VALUE(__builtins___boolean_True);
 
     /* Invoke the bool function with the object and test against True. */
 
-    return (attr.value == __builtins___boolean_True.value) ||
-           (__fn___builtins___boolean_bool(args).value == __builtins___boolean_True.value);
+    return (__VALUE(attr) == truevalue) ||
+           (__VALUE(__fn___builtins___boolean_bool(args)) == truevalue);
 }
