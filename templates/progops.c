@@ -204,14 +204,22 @@ __attr __invoke(__attr callable, int always_callable,
     unsigned int pos, kwpos;
 
     /* Check the number of arguments. */
+
+    if ((nargs == max) && (nkwargs == 0))
+    {
+        /* pass */
+    }
+
     /* NOTE: Should use a more specific exception. */
 
-    if ((min > (nargs + nkwargs)) || ((nargs + nkwargs) > max))
+    else if ((min > (nargs + nkwargs)) || ((nargs + nkwargs) > max))
+    {
         __raise_type_error();
+    }
 
     /* Copy the arguments. */
 
-    if (nargs < max)
+    else if (nargs < max)
     {
         allargs = moreargs;
 
@@ -253,7 +261,10 @@ __attr __invoke(__attr callable, int always_callable,
 
     /* Call with the prepared arguments. */
 
-    return (always_callable ? __get_function(allargs[0], target) : __check_and_get_function(allargs[0], target))(allargs);
+    return (always_callable ?
+            __get_function_unwrapped(allargs[0], target) :
+            __check_and_get_function_unwrapped(allargs[0], target)
+           )(allargs);
 }
 
 /* Error routines. */

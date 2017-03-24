@@ -326,8 +326,11 @@ __attr (*__get_function_unchecked(__attr target))(__attr[])
 
 __attr (*__get_function(__attr context, __attr target))(__attr[])
 {
-    target = __unwrap_callable(target);
+    return __get_function_unwrapped(context, __unwrap_callable(target));
+}
 
+__attr (*__get_function_unwrapped(__attr context, __attr target))(__attr[])
+{
     /* Require null or instance contexts for functions and methods respectively,
        or type instance contexts for type methods. */
 
@@ -339,8 +342,11 @@ __attr (*__get_function(__attr context, __attr target))(__attr[])
 
 __attr (*__check_and_get_function(__attr context, __attr target))(__attr[])
 {
-    target = __unwrap_callable(target);
+    return __check_and_get_function_unwrapped(context, __unwrap_callable(target));
+}
 
+__attr (*__check_and_get_function_unwrapped(__attr context, __attr target))(__attr[])
+{
     /* Require null or instance contexts for functions and methods respectively,
        or type instance contexts for type methods. */
 
