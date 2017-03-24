@@ -253,7 +253,10 @@ __attr __invoke(__attr callable, int always_callable,
 
     /* Call with the prepared arguments. */
 
-    return (always_callable ? __get_function(allargs[0], target) : __check_and_get_function(allargs[0], target))(allargs);
+    return (always_callable ?
+            __get_function_unwrapped(allargs[0], target) :
+            __check_and_get_function_unwrapped(allargs[0], target)
+           )(allargs);
 }
 
 /* Error routines. */

@@ -114,7 +114,9 @@ __attr __test_context_static(int target, __attr context, __ref value, __attr con
 __attr __unwrap_callable(__attr callable);
 __attr (*__get_function_unchecked(__attr target))(__attr[]);
 __attr (*__get_function(__attr context, __attr target))(__attr[]);
+__attr (*__get_function_unwrapped(__attr context, __attr target))(__attr[]);
 __attr (*__check_and_get_function(__attr context, __attr target))(__attr[]);
+__attr (*__check_and_get_function_unwrapped(__attr context, __attr target))(__attr[]);
 
 /* Parameter position operations. */
 
