@@ -31,6 +31,13 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Integer operations. */
 
+__attr __fn_native_int_is_int(__attr __args[])
+{
+    __attr * const obj = &__args[1];
+
+    return __INTEGER(*obj) ? __builtins___boolean_True : __builtins___boolean_False;
+}
+
 __attr __fn_native_int_int_add(__attr __args[])
 {
     __attr * const self = &__args[1];
@@ -207,6 +214,18 @@ __attr __fn_native_int_int_xor(__attr __args[])
     return __new_int(i ^ j);
 }
 
+__attr __fn_native_int_int_le(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    __attr * const other = &__args[2];
+    /* self and other interpreted as int */
+    int i = __TOINT(*self);
+    int j = __TOINT(*other);
+
+    /* Return a boolean result. */
+    return i <= j ? __builtins___boolean_True : __builtins___boolean_False;
+}
+
 __attr __fn_native_int_int_lt(__attr __args[])
 {
     __attr * const self = &__args[1];
@@ -217,6 +236,18 @@ __attr __fn_native_int_int_lt(__attr __args[])
 
     /* Return a boolean result. */
     return i < j ? __builtins___boolean_True : __builtins___boolean_False;
+}
+
+__attr __fn_native_int_int_ge(__attr __args[])
+{
+    __attr * const self = &__args[1];
+    __attr * const other = &__args[2];
+    /* self and other interpreted as int */
+    int i = __TOINT(*self);
+    int j = __TOINT(*other);
+
+    /* Return a boolean result. */
+    return i >= j ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
 __attr __fn_native_int_int_gt(__attr __args[])
