@@ -29,7 +29,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __attr __fn_native_system_exit(__attr __self, __attr status)
 {
-    exit(__load_via_object(status.value, __data__).intvalue);
+    exit(__VALUE(status));
     return __builtins___none_None;
 }
 

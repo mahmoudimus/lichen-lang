@@ -32,7 +32,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __fn_native_locale_getlocale(__attr __self, __attr category)
 {
     /* category interpreted as int */
-    int cat = __load_via_object(category.value, __data__).intvalue;
+    int cat = __TOINT(category);
     char *result, *out;
     size_t length;
 
@@ -51,9 +51,9 @@ __attr __fn_native_locale_getlocale(__attr __self, __attr category)
 __attr __fn_native_locale_setlocale(__attr __self, __attr category, __attr value)
 {
     /* category interpreted as int */
-    int cat = __load_via_object(category.value, __data__).intvalue;
+    int cat = __TOINT(category);
     /* value interpreted as string */
-    char *s = __load_via_object(value.value, __data__).strvalue;
+    char *s = __load_via_object(__VALUE(value), __data__).strvalue;
     char *result, *out;
     size_t length;
 

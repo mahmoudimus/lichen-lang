@@ -237,8 +237,12 @@ context_op_functions = (
     "<test_context_revert>", "<test_context_static>",
     )
 
-reference_acting_ops = attribute_ops + checked_ops + typename_ops
+reference_acting_ops = attribute_ops + checked_ops + type_ops + typename_ops
 attribute_producing_ops = attribute_loading_ops + checked_loading_ops
+
+attribute_producing_variables = (
+    "<accessor>", "<context>", "<name>", "<private_context>", "<target_accessor>"
+    )
 
 def encode_access_instruction(instruction, subs, context_index):
 
@@ -340,13 +344,7 @@ def encode_access_instruction_arg(arg, subs, op, context_index):
 
     if isinstance(arg, tuple):
         encoded, substituted = encode_access_instruction(arg, subs, context_index)
-
-        # Convert attribute results to references where required.
-
-        if op and op in reference_acting_ops and arg[0] in attribute_producing_ops:
-            return "%s.value" % encoded, substituted
-        else:
-            return encoded, substituted
+        return attribute_to_reference(op, arg[0], encoded, substituted)
 
     # Special values only need replacing, not encoding.
 
@@ -355,19 +353,36 @@ def encode_access_instruction_arg(arg, subs, op, context_index):
         # Handle values modified by storage details.
 
         if arg in context_values:
-            return "%s(%s)" % (subs.get(arg), context_index), set([arg])
+            encoded = "%s(%s)" % (subs.get(arg), context_index)
         else:
-            return subs.get(arg), set([arg])
+            encoded = subs.get(arg)
+
+        substituted = set([arg])
+        return attribute_to_reference(op, arg, encoded, substituted)
 
     # Convert static references to the appropriate type.
 
-    elif op and op in reference_acting_ops and arg != "<accessor>":
+    elif op and op in reference_acting_ops and \
+         arg not in attribute_producing_variables:
+
         return "&%s" % encode_path(arg), set()
 
     # Other values may need encoding.
 
     else:
         return encode_path(arg), set()
+
+def attribute_to_reference(op, arg, encoded, substituted):
+
+    # Convert attribute results to references where required.
+
+    if op and op in reference_acting_ops and (
+       arg in attribute_producing_ops or
+       arg in attribute_producing_variables):
+
+        return "__VALUE(%s)" % encoded, substituted
+    else:
+        return encoded, substituted
 
 def encode_function_pointer(path):
 

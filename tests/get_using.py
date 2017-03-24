@@ -21,6 +21,11 @@ try:
 except UnboundMethodInvocation:
     print "fn(): method is unbound"
 
+try:
+    print f()                       # fails
+except UnboundMethodInvocation:
+    print "f(): method is unbound"
+
 d = D()
 try:
     fn = get_using(C.f, d)

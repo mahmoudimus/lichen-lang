@@ -29,7 +29,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __fn_native_introspection_object_getattr(__attr __self, __attr obj, __attr name, __attr _default)
 {
     /* name interpreted as string */
-    __attr key = __load_via_object(name.value, __key__);
+    __attr key = __load_via_object(__VALUE(name), __key__);
     __attr out;
 
     if ((key.code == 0) && (key.pos == 0))
@@ -37,18 +37,18 @@ __attr __fn_native_introspection_object_getattr(__attr __self, __attr obj, __att
 
     /* Attempt to get the attribute from the object. */
 
-    out = __check_and_load_via_object_null(obj.value, key.pos, key.code);
-    if (out.value == 0)
+    out = __check_and_load_via_object_null(__VALUE(obj), key.pos, key.code);
+    if (__ISNULL(out))
     {
         /* Inspect the object's class if this failed. */
 
-        out = __check_and_load_via_class__(obj.value, key.pos, key.code);
-        if (out.value == 0)
+        out = __check_and_load_via_class__(__VALUE(obj), key.pos, key.code);
+        if (__ISNULL(out))
             return _default;
 
         /* Update the context to the object if it is a method. */
 
-        return __update_context(obj.value, out);
+        return __update_context(obj, out);
     }
 
     return out;
@@ -57,7 +57,7 @@ __attr __fn_native_introspection_object_getattr(__attr __self, __attr obj, __att
 __attr __fn_native_introspection_isinstance(__attr __self, __attr obj, __attr cls)
 {
     /* cls must be a class. */
-    if (__is_instance_subclass(obj.value, cls))
+    if (__is_instance_subclass(__VALUE(obj), cls))
         return __builtins___boolean_True;
     else
         return __builtins___boolean_False;
@@ -66,7 +66,7 @@ __attr __fn_native_introspection_isinstance(__attr __self, __attr obj, __attr cl
 __attr __fn_native_introspection_issubclass(__attr __self, __attr obj, __attr cls)
 {
     /* obj and cls must be classes. */
-    if (__is_subclass(obj.value, cls))
+    if (__is_subclass(__VALUE(obj), cls))
         return __builtins___boolean_True;
     else
         return __builtins___boolean_False;

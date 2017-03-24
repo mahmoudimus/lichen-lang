@@ -29,7 +29,7 @@ def chr(i):
     check_int(i)
 
     if 0 <= i <= 255:
-        return str_chr(i.__data__)
+        return str_chr(i)
     else:
         raise ValueError, i
 
@@ -94,7 +94,7 @@ def unichr(i):
     check_int(i)
 
     if 0 <= i <= 2097151:
-        return utf8string(unicode_unichr(i.__data__))
+        return utf8string(unicode_unichr(i))
     else:
         raise ValueError, i
 

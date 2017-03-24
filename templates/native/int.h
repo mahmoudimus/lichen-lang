@@ -23,8 +23,6 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Integer operations. */
 
-__attr __fn_native_int_int_new(__attr __self, __attr _data);
-
 __attr __fn_native_int_int_add(__attr __self, __attr _data, __attr other);
 __attr __fn_native_int_int_sub(__attr __self, __attr _data, __attr other);
 __attr __fn_native_int_int_mul(__attr __self, __attr _data, __attr other);

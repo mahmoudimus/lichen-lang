@@ -33,8 +33,8 @@ __attr __fn_native_str_str_add(__attr __self, __attr _data, __attr other, __attr
     /* _data, other interpreted as string.__data__ */
     char *s = _data.strvalue;
     char *o = other.strvalue;
-    /* _size, othersize interpreted as int.__data__ */
-    int ss = _size.intvalue, os = othersize.intvalue;
+    /* _size, othersize interpreted as int */
+    int ss = __TOINT(_size), os = __TOINT(othersize);
     int n = ss + os;
     char *r = (char *) __ALLOCATE(n + 1, sizeof(char));
 
@@ -47,8 +47,8 @@ __attr __fn_native_str_str_add(__attr __self, __attr _data, __attr other, __attr
 
 __attr __fn_native_str_str_chr(__attr __self, __attr _data)
 {
-    /* _data interpreted as int.__data__ */
-    int n = _data.intvalue;
+    /* data interpreted as int */
+    int n = __TOINT(_data);
     char *s = (char *) __ALLOCATE(2, sizeof(char));
 
     s[0] = (char) n;
@@ -98,11 +98,11 @@ __attr __fn_native_str_str_substr(__attr __self, __attr _data, __attr start, __a
     /* _data interpreted as string.__data__ */
     char *s = _data.strvalue, *sub;
     /* start interpreted as int */
-    int istart = __load_via_object(start.value, __data__).intvalue;
+    int istart = __TOINT(start);
     /* end interpreted as int */
-    int iend = __load_via_object(end.value, __data__).intvalue;
+    int iend = __TOINT(end);
     /* step interpreted as int */
-    int istep = __load_via_object(step.value, __data__).intvalue;
+    int istep = __TOINT(step);
 
     /* Calculate the size of the substring. */
     size_t resultsize = ((iend - istart - (istep > 0 ? 1 : -1)) / istep) + 1;

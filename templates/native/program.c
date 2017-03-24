@@ -28,7 +28,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __attr __fn_native_program_get_using(__attr __self, __attr callable, __attr instance)
 {
-    return __test_context(instance.value, callable);
+    return __test_context(instance, callable);
 }
 
 /* Module initialisation. */

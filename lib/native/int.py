@@ -24,8 +24,6 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-def int_new(data): pass
-
 def int_add(self, other): pass
 def int_div(self, other): pass
 def int_mod(self, other): pass

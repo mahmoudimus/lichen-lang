@@ -29,7 +29,7 @@ from encoders import encode_access_instruction, encode_access_instruction_arg, \
 from errors import InspectError, TranslateError
 from os.path import exists, join
 from os import makedirs
-from referencing import Reference
+from referencing import Reference, combine_types
 from results import Result
 from transresults import TrConstantValueRef, TrInstanceRef, \
                          TrLiteralSequenceRef, TrResolvedNameRef, \
@@ -542,7 +542,7 @@ class TranslatedModule(CommonModule):
 
         subs = {
             "<expr>" : attr_expr,
-            "<name>" : "%s.value" % attr_expr,
+            "<name>" : attr_expr,
             "<assexpr>" : self.in_assignment,
             }
 
@@ -557,6 +557,7 @@ class TranslatedModule(CommonModule):
 
         context_index = self.function_target - 1
         context_identity = None
+        final_identity = None
 
         # Obtain encoded versions of each instruction, accumulating temporary
         # variables.
@@ -567,6 +568,13 @@ class TranslatedModule(CommonModule):
 
             if instruction[0] == "<context_identity>":
                 context_identity, _substituted = encode_access_instruction_arg(instruction[1], subs, instruction[0], context_index)
+                continue
+
+            # Intercept a special instruction identifying the target. The value
+            # is not encoded since it is used internally.
+
+            if instruction[0] == "<final_identity>":
+                final_identity = instruction[1]
                 continue
 
             # Collect the encoded instruction, noting any temporary variables
@@ -581,6 +589,12 @@ class TranslatedModule(CommonModule):
         for sub in substituted:
             if self.temp_subs.has_key(sub):
                 self.record_temp(self.temp_subs[sub])
+
+        # Get full final identity details.
+
+        if final_identity and not refs:
+            ref = self.importer.identify(final_identity)
+            refs = [ref]
 
         del self.attrs[0]
         return AttrResult(output, refs, location, context_identity)
@@ -629,7 +643,18 @@ class TranslatedModule(CommonModule):
         identified attributes.
         """
 
+        # Determine whether any deduced references refer to the accessed
+        # attribute.
+
+        path, accessor_name, attrnames, access_number = location
+        attrnames = attrnames and attrnames.split(".")
+        remaining = attrnames and len(attrnames) > 1
+
         access_location = self.deducer.const_accesses.get(location)
+
+        if remaining and not access_location:
+            return []
+
         refs = []
         l = self.deducer.referenced_attrs.get(access_location or location)
         if l:
@@ -862,14 +887,10 @@ class TranslatedModule(CommonModule):
             else:
                 return
 
-            # Produce an appropriate access to an attribute's value.
-
-            name_to_value = "%s.value" % encode_path(name)
-
             # Write a test that raises a TypeError upon failure.
 
-            self.writestmt("if (!__test_%s_%s(%s, %s)) __raise_type_error();" % (
-                guard, guard_type, name_to_value, argstr))
+            self.writestmt("if (!__test_%s_%s(__VALUE(%s), %s)) __raise_type_error();" % (
+                guard, guard_type, encode_path(name), argstr))
 
     def process_function_node(self, n):
 
@@ -939,6 +960,8 @@ class TranslatedModule(CommonModule):
 
         if not instance_name:
             instance_name = "&%s" % encode_path(objpath)
+        else:
+            instance_name = "__VALUE(%s)" % instance_name
 
         # Where defaults are involved but cannot be identified, obtain a new
         # instance of the lambda and populate the defaults.
@@ -1021,6 +1044,7 @@ class TranslatedModule(CommonModule):
 
         objpath = expr.get_origin()
         location = expr.access_location()
+        refs = expr.references()
 
         # Identified target details.
 
@@ -1042,6 +1066,8 @@ class TranslatedModule(CommonModule):
         have_access_context = isinstance(expr, AttrResult)
         context_identity = have_access_context and expr.context()
         parameters = None
+        num_parameters = None
+        num_defaults = None
 
         # Obtain details of the callable and of its parameters.
 
@@ -1056,6 +1082,9 @@ class TranslatedModule(CommonModule):
 
         elif objpath:
             parameters = self.importer.function_parameters.get(objpath)
+            function_defaults = self.importer.function_defaults.get(objpath)
+            num_parameters = parameters and len(parameters) or 0
+            num_defaults = function_defaults and len(function_defaults) or 0
 
             # Class invocation involves instantiators.
 
@@ -1091,22 +1120,71 @@ class TranslatedModule(CommonModule):
 
                 target_structure = "&%s" % encode_path(objpath)
 
-        # Other targets are retrieved at run-time. Some information about them
-        # may be available and be used to provide warnings about argument
-        # compatibility.
+        # Other targets are retrieved at run-time.
 
-        elif self.importer.give_warning("args"):
-            unsuitable = self.get_referenced_attribute_invocations(location)
+        else:
+            if location:
+                path, name, attrnames, access_number = location
+                attrname = attrnames and attrnames.rsplit(".", 1)[-1]
 
-            if unsuitable:
-                for ref in unsuitable:
-                    _objpath = ref.get_origin()
-                    num_parameters = len(self.importer.function_parameters[_objpath])
-                    print >>sys.stderr, \
-                        "In %s, at line %d, inappropriate number of " \
-                        "arguments given. Need %d arguments to call %s." % (
-                        self.get_namespace_path(), n.lineno, num_parameters,
-                        _objpath)
+                # Determine any common aspects of any attribute.
+
+                if attrname:
+                    all_params = set()
+                    all_defaults = set()
+                    min_params = set()
+                    max_params = set()
+                    refs = set()
+
+                    # Obtain parameters and defaults for each possible target.
+
+                    for ref in self.get_attributes_for_attrname(attrname):
+                        origin = ref.get_origin()
+                        params = self.importer.function_parameters.get(origin)
+
+                        defaults = self.importer.function_defaults.get(origin)
+                        if defaults is not None:
+                            all_defaults.add(tuple(defaults))
+
+                        if params is not None:
+                            all_params.add(tuple(params))
+                            min_params.add(len(params) - (defaults and len(defaults) or 0))
+                            max_params.add(len(params))
+                            refs.add(ref)
+                        else:
+                            refs = set()
+                            break
+
+                    # Where the parameters and defaults are always the same,
+                    # permit populating them in advance.
+
+                    if refs:
+                        if self.uses_keyword_arguments(n):
+                            if len(all_params) == 1 and (not all_defaults or len(all_defaults) == 1):
+                                parameters = first(all_params)
+                                function_defaults = all_defaults and first(all_defaults) or []
+                                num_parameters = parameters and len(parameters) or 0
+                                num_defaults = function_defaults and len(function_defaults) or 0
+                        else:
+                            if len(min_params) == 1 and len(max_params) == 1:
+                                num_parameters = first(max_params)
+                                num_defaults = first(max_params) - first(min_params)
+
+            # Some information about the target may be available and be used to
+            # provide warnings about argument compatibility.
+
+            if self.importer.give_warning("args"):
+                unsuitable = self.get_referenced_attribute_invocations(location)
+
+                if unsuitable:
+                    for ref in unsuitable:
+                        _objpath = ref.get_origin()
+                        print >>sys.stderr, \
+                            "In %s, at line %d, inappropriate number of " \
+                            "arguments given. Need %d arguments to call %s." % (
+                            self.get_namespace_path(), n.lineno,
+                            len(self.importer.function_parameters[_objpath]),
+                            _objpath)
 
         # Determine any readily-accessible target identity.
 
@@ -1120,16 +1198,19 @@ class TranslatedModule(CommonModule):
         if not target_identity:
             self.record_temp("__tmp_targets")
 
-        if context_identity and context_identity.startswith("__tmp_contexts"):
-            self.record_temp("__tmp_contexts")
+        if context_identity:
+            if context_identity.startswith("__tmp_contexts"):
+                self.record_temp("__tmp_contexts")
 
         # Arguments are presented in a temporary frame array with any context
         # always being the first argument. Where it would be unused, it may be
         # set to null.
 
+        known_parameters = num_parameters is not None
+
         if context_required:
             if have_access_context:
-                args = ["__ATTRVALUE(%s)" % context_identity]
+                args = [context_identity]
             else:
                 args = ["__CONTEXT_AS_VALUE(%s)" % context_var]
         else:
@@ -1138,7 +1219,7 @@ class TranslatedModule(CommonModule):
         # Complete the array with null values, permitting tests for a complete
         # set of arguments.
 
-        args += [None] * (parameters is None and len(n.args) or parameters is not None and len(parameters) or 0)
+        args += [None] * (num_parameters is None and len(n.args) or num_parameters is not None and num_parameters or 0)
         kwcodes = []
         kwargs = []
 
@@ -1198,18 +1279,29 @@ class TranslatedModule(CommonModule):
 
         # Defaults are added to the frame where arguments are missing.
 
-        if parameters:
-            function_defaults = self.importer.function_defaults.get(objpath)
-            if function_defaults:
+        if parameters and function_defaults:
 
-                # Visit each default and set any missing arguments.
-                # Use the target structure to obtain defaults, as opposed to the
-                # actual function involved.
+            # Visit each default and set any missing arguments. Where keyword
+            # arguments have been used, the defaults must be inspected and, if
+            # necessary, inserted into gaps in the argument list.
 
-                for i, (argname, default) in enumerate(function_defaults):
-                    argnum = parameters.index(argname)
-                    if not args[argnum+1]:
-                        args[argnum+1] = "__GETDEFAULT(%s, %d)" % (target_structure, i)
+            for i, (argname, default) in enumerate(function_defaults):
+                argnum = parameters.index(argname)
+                if not args[argnum+1]:
+                    args[argnum+1] = "__GETDEFAULT(%s, %d)" % (target_structure, i)
+
+        elif known_parameters:
+
+            # No specific parameter details are provided, but no keyword
+            # arguments are used. Thus, defaults can be supplied using position
+            # information only.
+
+            i = len(n.args)
+            pos = i - (num_parameters - num_defaults)
+            while i < num_parameters:
+                args[i+1] = "__GETDEFAULT(%s.value, %d)" % (target_var, pos)
+                i += 1
+                pos += 1
 
         # Test for missing arguments.
 
@@ -1264,10 +1356,19 @@ class TranslatedModule(CommonModule):
                     stages.append("__get_function(%s, %s)" % (
                         context_identity, target_var))
                 else:
-                    stages.append("__get_function(__CONTEXT_AS_VALUE(%s).value, %s)" % (
+                    stages.append("__get_function(__CONTEXT_AS_VALUE(%s), %s)" % (
                         context_var, target_var))
             else:
-                stages.append("__load_via_object(%s.value, __fn__).fn" % target_var)
+                stages.append("__load_via_object(__VALUE(%s), __fn__).fn" % target_var)
+
+        # With known parameters, the target can be tested.
+
+        elif known_parameters:
+            context_arg = context_required and args[0] or "__NULL"
+            if self.always_callable(refs):
+                stages.append("__get_function(%s, %s)" % (context_arg, target_var))
+            else:
+                stages.append("__check_and_get_function(%s, %s)" % (context_arg, target_var))
 
         # With a known target, the function is obtained directly and called.
         # By putting the invocation at the end of the final element in the
@@ -1275,7 +1376,7 @@ class TranslatedModule(CommonModule):
         # the sequence. Moreover, the parameters become part of the sequence
         # and thereby participate in a guaranteed evaluation order.
 
-        if target or function:
+        if target or function or known_parameters:
             stages[-1] += "(%s)" % argstr
             if instantiation:
                 return InstantiationResult(instantiation, stages)
@@ -1288,7 +1389,7 @@ class TranslatedModule(CommonModule):
         else:
             stages.append("__invoke(\n%s,\n%d, %d, %s, %s,\n%d, %s\n)" % (
                 target_var,
-                self.always_callable and 1 or 0,
+                self.always_callable(refs) and 1 or 0,
                 len(kwargs), kwcodestr, kwargstr,
                 len(args), "__ARGS(%s)" % argstr))
             return InvocationResult(stages)
@@ -1304,13 +1405,13 @@ class TranslatedModule(CommonModule):
 
         "Determine whether all 'refs' are callable."
 
+        if not refs:
+            return False
+
         for ref in refs:
-            if not ref.static():
+            if not ref.has_kind("<function>") and not self.importer.get_attributes(ref, "__fn__"):
                 return False
-            else:
-                origin = ref.final()
-                if not self.importer.get_attribute(origin, "__fn__"):
-                    return False
+
         return True
 
     def need_default_arguments(self, objpath, nargs):
@@ -1322,6 +1423,31 @@ class TranslatedModule(CommonModule):
 
         parameters = self.importer.function_parameters.get(objpath)
         return nargs < len(parameters)
+
+    def uses_keyword_arguments(self, n):
+
+        "Return whether invocation node 'n' uses keyword arguments."
+
+        for arg in enumerate(n.args):
+            if isinstance(arg, compiler.ast.Keyword):
+                return True
+
+        return False
+
+    def get_attributes_for_attrname(self, attrname):
+
+        "Return a set of all attributes exposed by 'attrname'."
+
+        usage = [(attrname, True, False)]
+        class_types = self.deducer.get_class_types_for_usage(usage)
+        instance_types = self.deducer.get_instance_types_for_usage(usage)
+        module_types = self.deducer.get_module_types_for_usage(usage)
+        attrs = set()
+
+        for ref in combine_types(class_types, instance_types, module_types):
+            attrs.update(self.importer.get_attributes(ref, attrname))
+
+        return attrs
 
     def process_lambda_node(self, n):
 
@@ -1342,7 +1468,7 @@ class TranslatedModule(CommonModule):
 
         else:
             self.record_temp("__tmp_value")
-            return make_expression("(__tmp_value = __COPY(&%s, sizeof(%s)), %s, __ATTRVALUE(__tmp_value))" % (
+            return make_expression("(__tmp_value = __ATTRVALUE(__COPY(&%s, sizeof(%s))), %s, __tmp_value)" % (
                 encode_path(function_name),
                 encode_symbol("obj", function_name),
                 ", ".join(defaults)))
@@ -1923,16 +2049,16 @@ class TranslatedModule(CommonModule):
         if self.uses_temp(name, "__tmp_targets"):
             self.writeline("__attr __tmp_targets[%d];" % targets)
         if self.uses_temp(name, "__tmp_contexts"):
-            self.writeline("__ref __tmp_contexts[%d];" % targets)
+            self.writeline("__attr __tmp_contexts[%d];" % targets)
 
         # Add temporary variable usage details.
 
         if self.uses_temp(name, "__tmp_private_context"):
-            self.writeline("__ref __tmp_private_context;")
+            self.writeline("__attr __tmp_private_context;")
         if self.uses_temp(name, "__tmp_value"):
-            self.writeline("__ref __tmp_value;")
+            self.writeline("__attr __tmp_value;")
         if self.uses_temp(name, "__tmp_target_value"):
-            self.writeline("__ref __tmp_target_value;")
+            self.writeline("__attr __tmp_target_value;")
         if self.uses_temp(name, "__tmp_result"):
             self.writeline("__attr __tmp_result;")
 

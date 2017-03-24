@@ -139,7 +139,13 @@ class TrConstantValueRef(ConstantValueRef):
     "A constant value reference in the translation."
 
     def __str__(self):
-        return encode_literal_constant(self.number)
+
+        # NOTE: Should reference a common variable for the type name.
+
+        if self.ref.get_origin() == "__builtins__.int.int":
+            return "__INTVALUE(%s)" % self.value
+        else:
+            return encode_literal_constant(self.number)
 
 class TrLiteralSequenceRef(LiteralSequenceRef):
 
@@ -205,7 +211,7 @@ class AttrResult(Result, InstructionSequence):
         return encode_instructions(self.instructions)
 
     def __repr__(self):
-        return "AttrResult(%r, %r, %r)" % (self.instructions, self.refs, self.location)
+        return "AttrResult(%r, %r, %r, %r)" % (self.instructions, self.refs, self.location, self.context_identity)
 
 class AliasResult(NameRef, Result):
 

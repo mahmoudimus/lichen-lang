@@ -43,6 +43,7 @@ class Generator(CommonOutput):
     # NOTE: These must be synchronised with the library.
 
     function_type = "__builtins__.core.function"
+    int_type = "__builtins__.int.int"
     none_type = "__builtins__.none.NoneType"
     string_type = "__builtins__.str.string"
     type_type = "__builtins__.core.type"
@@ -373,6 +374,11 @@ class Generator(CommonOutput):
             for constant, n in self.optimiser.constants.items():
                 self.make_literal_constant(f_decls, f_defs, n, constant)
 
+            # Generate a common integer instance object, referenced when integer
+            # attributes are accessed.
+
+            self.make_common_integer(f_decls, f_defs)
+
             # Finish the main source file.
 
             self.write_main_program(f_code, f_signatures)
@@ -560,6 +566,11 @@ __attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n)
 
         value, value_type, encoding = constant
 
+        # Do not generate individual integer constants.
+
+        if value_type == self.int_type:
+            return
+
         const_path = encode_literal_constant(n)
         structure_name = encode_literal_reference(n)
 
@@ -582,13 +593,23 @@ __attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n)
 
         self.make_constant(f_decls, f_defs, ref, attr_path, structure_name)
 
+    def make_common_integer(self, f_decls, f_defs):
+
+        """
+        Write common integer instance details to 'f_decls' (to declare a
+        structure) and to 'f_defs' (to define the contents).
+        """
+
+        ref = Reference("<instance>", self.int_type)
+        self.make_constant(f_decls, f_defs, ref, "__common_integer", "__common_integer_obj")
+
     def make_constant(self, f_decls, f_defs, ref, const_path, structure_name, data=None, encoding=None):
 
         """
         Write constant details to 'f_decls' (to declare a structure) and to
         'f_defs' (to define the contents) for the constant described by 'ref'
-        having the given 'path' and 'structure_name' (for the constant structure
-        itself).
+        having the given 'const_path' (providing an attribute for the constant)
+        and 'structure_name' (for the constant structure itself).
 
         The additional 'data' and 'encoding' are used to describe specific
         values.
@@ -1030,7 +1051,7 @@ __obj %s = {
                 # Special internal size member.
 
                 elif attrname == "__size__":
-                    structure.append("{.intvalue=%d}" % attr)
+                    structure.append("__INTVALUE(%d)" % attr)
                     continue
 
                 # Special internal key member.
@@ -1137,6 +1158,13 @@ __obj %s = {
             # Obtain a constant value directly assigned to the attribute.
 
             if self.optimiser.constant_numbers.has_key(alias):
+
+                # Encode integer constants differently.
+
+                value, value_type, encoding = self.importer.all_constant_values[alias]
+                if value_type == self.int_type:
+                    return "__INTVALUE(%s) /* %s */" % (value, name)
+
                 constant_number = self.optimiser.constant_numbers[alias]
                 constant_value = encode_literal_constant(constant_number)
                 return "%s /* %s */" % (constant_value, name)
@@ -1264,13 +1292,11 @@ int main(int argc, char *argv[])
     __Catch(__tmp_exc)
     {
         if (__ISINSTANCE(__tmp_exc.arg, __ATTRVALUE(&__builtins___exception_system_SystemExit)))
-            return __load_via_object(
-                __load_via_object(__tmp_exc.arg.value, __data__).value,
-                value).intvalue;
+            return __TOINT(__load_via_object(__VALUE(__tmp_exc.arg), value));
 
         fprintf(stderr, "Program terminated due to exception: %%s.\\n",
                 __load_via_object(
-                    %s(__NULL, __tmp_exc.arg).value,
+                    __VALUE(%s(__NULL, __tmp_exc.arg)),
                     __data__).strvalue);
         return 1;
     }

@@ -23,6 +23,16 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "progconsts.h"
 #include "progtypes.h"
 
+/* Get object reference from attribute. */
+
+__ref __VALUE(__attr attr)
+{
+    if (!__INTEGER(attr))
+        return attr.value;
+    else
+        return &__common_integer_obj;
+}
+
 /* Basic structure tests. */
 
 static inline int __HASATTR(__ref obj, int pos, int code)
@@ -37,12 +47,12 @@ __attr __load_static_ignore(__ref obj)
     return __ATTRVALUE(obj);
 }
 
-__attr __load_static_replace(__ref context, __ref obj)
+__attr __load_static_replace(__attr context, __ref obj)
 {
     return __update_context(context, __ATTRVALUE(obj));
 }
 
-__attr __load_static_test(__ref context, __ref obj)
+__attr __load_static_test(__attr context, __ref obj)
 {
     return __test_context(context, __ATTRVALUE(obj));
 }
@@ -92,12 +102,12 @@ int __is_instance(__ref obj)
 
 int __is_subclass(__ref obj, __attr cls)
 {
-    return __HASATTR(obj, __TYPEPOS(cls.value), __TYPECODE(cls.value));
+    return __HASATTR(obj, __TYPEPOS(__VALUE(cls)), __TYPECODE(__VALUE(cls)));
 }
 
 int __is_instance_subclass(__ref obj, __attr cls)
 {
-    return __is_instance(obj) && __HASATTR(__get_class(obj), __TYPEPOS(cls.value), __TYPECODE(cls.value));
+    return __is_instance(obj) && __HASATTR(__get_class(obj), __TYPEPOS(__VALUE(cls)), __TYPECODE(__VALUE(cls)));
 }
 
 int __is_type_instance(__ref obj)
@@ -107,7 +117,7 @@ int __is_type_instance(__ref obj)
 
 __ref __get_class(__ref obj)
 {
-    return __load_via_object(obj, __class__).value;
+    return __VALUE(__load_via_object(obj, __class__));
 }
 
 __attr __get_class_attr(__ref obj)
@@ -174,7 +184,7 @@ __attr __check_and_load_via_object__(__ref obj, int pos, int code)
 __attr __check_and_load_via_any__(__ref obj, int pos, int code)
 {
     __attr out = __check_and_load_via_object_null(obj, pos, code);
-    if (out.value == 0)
+    if (__ISNULL(out))
         out = __check_and_load_via_class__(obj, pos, code);
     return out;
 }
@@ -216,27 +226,28 @@ int __check_and_store_via_any__(__ref obj, int pos, int code, __attr value)
 
 /* Context-related operations. */
 
-int __test_context_update(__ref context, __attr attr)
+int __test_context_update(__attr context, __attr attr)
 {
     /* Return whether the context should be updated for the attribute. */
 
-    __ref attrcontext = __CONTEXT_AS_VALUE(attr).value;
+    __attr attrcontext = __CONTEXT_AS_VALUE(attr);
+    __ref attrcontextvalue = __VALUE(attrcontext);
 
     /* Preserve any existing null or instance context. */
 
-    if ((attrcontext == 0) || __is_instance(attrcontext))
+    if (__ISNULL(attrcontext) || __is_instance(attrcontextvalue))
         return 0;
 
     /* Test any instance context against the context employed by the
        attribute. */
 
-    if (__is_instance(context))
+    if (__is_instance(__VALUE(context)))
     {
         /* Obtain the special class attribute position and code identifying the
            attribute context's class, inspecting the context instance for
            compatibility. */
 
-        if (__test_common_instance__(context, __TYPEPOS(attrcontext), __TYPECODE(attrcontext)))
+        if (__test_common_instance__(__VALUE(context), __TYPEPOS(attrcontextvalue), __TYPECODE(attrcontextvalue)))
             return 1;
         else
             __raise_type_error();
@@ -244,7 +255,7 @@ int __test_context_update(__ref context, __attr attr)
 
     /* Test for access to a type class attribute using a type instance. */
 
-    if (__test_specific_type(attrcontext, &__TYPE_CLASS_TYPE) && __is_type_instance(context))
+    if (__test_specific_type(attrcontextvalue, &__TYPE_CLASS_TYPE) && __is_type_instance(__VALUE(context)))
         return 1;
 
     /* Otherwise, preserve the attribute as retrieved. */
@@ -252,7 +263,7 @@ int __test_context_update(__ref context, __attr attr)
     return 0;
 }
 
-__attr __test_context(__ref context, __attr attr)
+__attr __test_context(__attr context, __attr attr)
 {
     /* Update the context or return the unchanged attribute. */
 
@@ -262,22 +273,22 @@ __attr __test_context(__ref context, __attr attr)
         return attr;
 }
 
-__attr __update_context(__ref context, __attr attr)
+__attr __update_context(__attr context, __attr attr)
 {
     return __new_wrapper(context, attr);
 }
 
-__attr __test_context_revert(int target, __ref context, __attr attr, __ref contexts[])
+__attr __test_context_revert(int target, __attr context, __attr attr, __attr contexts[])
 {
     /* Revert the local context to that employed by the attribute if the
        supplied context is not appropriate. */
 
     if (!__test_context_update(context, attr))
-        contexts[target] = __CONTEXT_AS_VALUE(attr).value;
+        contexts[target] = __CONTEXT_AS_VALUE(attr);
     return attr;
 }
 
-__attr __test_context_static(int target, __ref context, __ref value, __ref contexts[])
+__attr __test_context_static(int target, __attr context, __ref value, __attr contexts[])
 {
     /* Set the local context to the specified context if appropriate. */
 
@@ -288,48 +299,53 @@ __attr __test_context_static(int target, __ref context, __ref value, __ref conte
 
 /* Context testing for invocations. */
 
-int __type_method_invocation(__ref context, __attr target)
+int __type_method_invocation(__attr context, __attr target)
 {
-    __ref targetcontext = __CONTEXT_AS_VALUE(target).value;
+    __attr targetcontext = __CONTEXT_AS_VALUE(target);
 
     /* Require instances, not classes, where methods are function instances. */
 
-    if (!__is_instance(target.value))
+    if (!__is_instance(__VALUE(target)))
         return 0;
 
     /* Access the context of the callable and test if it is the type object. */
 
-    return ((targetcontext != 0) && __test_specific_type(targetcontext, &__TYPE_CLASS_TYPE) && __is_type_instance(context));
+    return (!__ISNULL(targetcontext) && __test_specific_type(__VALUE(targetcontext), &__TYPE_CLASS_TYPE) && __is_type_instance(__VALUE(context)));
 }
 
 __attr __unwrap_callable(__attr callable)
 {
-    __attr value = __check_and_load_via_object_null(callable.value, __ATTRPOS(__value__), __ATTRCODE(__value__));
-    return value.value ? value : callable;
+    __attr value = __check_and_load_via_object_null(__VALUE(callable), __ATTRPOS(__value__), __ATTRCODE(__value__));
+    return __VALUE(value) ? value : callable;
 }
 
-__attr (*__get_function(__ref context, __attr target))()
+__attr (*__get_function_unchecked(__attr target))()
+{
+    return __load_via_object(__VALUE(__unwrap_callable(target)), __fn__).fn;
+}
+
+__attr (*__get_function(__attr context, __attr target))()
 {
     target = __unwrap_callable(target);
 
     /* Require null or instance contexts for functions and methods respectively,
        or type instance contexts for type methods. */
 
-    if ((context == 0) || __is_instance(context) || __type_method_invocation(context, target))
-        return __load_via_object(target.value, __fn__).fn;
+    if (__ISNULL(context) || __is_instance(__VALUE(context)) || __type_method_invocation(context, target))
+        return __load_via_object(__VALUE(target), __fn__).fn;
     else
         return __unbound_method;
 }
 
-__attr (*__check_and_get_function(__ref context, __attr target))()
+__attr (*__check_and_get_function(__attr context, __attr target))()
 {
     target = __unwrap_callable(target);
 
     /* Require null or instance contexts for functions and methods respectively,
        or type instance contexts for type methods. */
 
-    if ((context == 0) || __is_instance(context) || __type_method_invocation(context, target))
-        return __check_and_load_via_object__(target.value, __ATTRPOS(__fn__), __ATTRCODE(__fn__)).fn;
+    if (__ISNULL(context) || __is_instance(__VALUE(context)) || __type_method_invocation(context, target))
+        return __check_and_load_via_object__(__VALUE(target), __ATTRPOS(__fn__), __ATTRCODE(__fn__)).fn;
     else
         return __unbound_method;
 }
@@ -354,7 +370,7 @@ int __HASPARAM(const __ptable *ptable, int ppos, int pcode)
 
 __attr __CONTEXT_AS_VALUE(__attr attr)
 {
-    return __check_and_load_via_object_null(attr.value, __ATTRPOS(__context__), __ATTRCODE(__context__));
+    return __check_and_load_via_object_null(__VALUE(attr), __ATTRPOS(__context__), __ATTRCODE(__context__));
 }
 
 /* Type testing. */
@@ -386,6 +402,14 @@ unsigned int __TYPEPOS(__ref obj)
 void *__ALLOCATE(size_t nmemb, size_t size)
 {
     void *ptr = GC_MALLOC(nmemb * size); /* sets memory to zero */
+    if (ptr == NULL)
+        __raise_memory_error();
+    return ptr;
+}
+
+void *__ALLOCATEIM(size_t nmemb, size_t size)
+{
+    void *ptr = GC_MALLOC_ATOMIC(nmemb * size); /* sets memory to zero */
     if (ptr == NULL)
         __raise_memory_error();
     return ptr;
