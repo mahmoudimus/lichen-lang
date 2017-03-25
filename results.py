@@ -45,7 +45,7 @@ class Result:
     def access_locations(self):
         return None
 
-    def context_identity(self):
+    def context(self):
         return None
 
     def discards_temporary(self, test=True):
