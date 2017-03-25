@@ -555,8 +555,6 @@ class CommonModule:
         self.next_temporary()
         t1 = self.get_temporary_name()
         self.next_temporary()
-        i0 = self.get_temporary_name()
-        self.next_temporary()
 
         node = compiler.ast.Stmt([
 
