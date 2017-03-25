@@ -67,7 +67,7 @@ __attr __newdata_sequence(__attr self, __attr args[], unsigned int number)
 
     /* Copy the given number of values. */
 
-    for (i = 0; i <= number; i++)
+    for (i = 0; i < number; i++)
         data->attrs[i] = args[i];
 
     data->size = number;
