@@ -73,7 +73,12 @@ class xrange(slice):
 
         "Return the length of the range."
 
-        return (self.end - self.start) / self.step
+        n = (self.end - self.start) / self.step
+        last = self.start + (n * self.step)
+        if last == self.end:
+            return n
+        else:
+            return n + 1
 
     def __iter__(self):
 

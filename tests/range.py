@@ -59,3 +59,9 @@ print reduce(lambda x, y: x+y, single)      # [3]
 double = xrange(3, 5, 1)
 print list(double)                          # [3, 4]
 print reduce(lambda x, y: x+y, double)      # [7]
+
+# Test steps not coinciding with the end.
+
+beyond = xrange(4, 9, 2)
+print list(beyond)                          # [4, 6, 8]
+print len(beyond)                           # 3
