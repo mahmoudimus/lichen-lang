@@ -23,6 +23,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Integer operations. */
 
+__attr __fn_native_int_is_int(__attr __self, __attr obj);
 __attr __fn_native_int_int_add(__attr __self, __attr _data, __attr other);
 __attr __fn_native_int_int_sub(__attr __self, __attr _data, __attr other);
 __attr __fn_native_int_int_mul(__attr __self, __attr _data, __attr other);
@@ -36,9 +37,11 @@ __attr __fn_native_int_int_not(__attr __self, __attr _data);
 __attr __fn_native_int_int_or(__attr __self, __attr _data, __attr other);
 __attr __fn_native_int_int_xor(__attr __self, __attr _data, __attr other);
 
-__attr __fn_native_int_int_lt(__attr __self, __attr _data, __attr other);
-__attr __fn_native_int_int_gt(__attr __self, __attr _data, __attr other);
 __attr __fn_native_int_int_eq(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_ge(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_gt(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_le(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_lt(__attr __self, __attr _data, __attr other);
 __attr __fn_native_int_int_ne(__attr __self, __attr _data, __attr other);
 
 __attr __fn_native_int_int_str(__attr __self, __attr _data);

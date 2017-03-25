@@ -31,6 +31,11 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Integer operations. */
 
+__attr __fn_native_int_is_int(__attr __self, __attr obj)
+{
+    return __INTEGER(obj) ? __builtins___boolean_True : __builtins___boolean_False;
+}
+
 __attr __fn_native_int_int_add(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
@@ -187,6 +192,16 @@ __attr __fn_native_int_int_xor(__attr __self, __attr self, __attr other)
     return __new_int(i ^ j);
 }
 
+__attr __fn_native_int_int_le(__attr __self, __attr self, __attr other)
+{
+    /* self and other interpreted as int */
+    int i = __TOINT(self);
+    int j = __TOINT(other);
+
+    /* Return a boolean result. */
+    return i <= j ? __builtins___boolean_True : __builtins___boolean_False;
+}
+
 __attr __fn_native_int_int_lt(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
@@ -195,6 +210,16 @@ __attr __fn_native_int_int_lt(__attr __self, __attr self, __attr other)
 
     /* Return a boolean result. */
     return i < j ? __builtins___boolean_True : __builtins___boolean_False;
+}
+
+__attr __fn_native_int_int_ge(__attr __self, __attr self, __attr other)
+{
+    /* self and other interpreted as int */
+    int i = __TOINT(self);
+    int j = __TOINT(other);
+
+    /* Return a boolean result. */
+    return i >= j ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
 __attr __fn_native_int_int_gt(__attr __self, __attr self, __attr other)
