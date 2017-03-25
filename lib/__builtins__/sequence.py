@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.int import maxint
-from native import isinstance as _isinstance
+from native import isinstance as _isinstance, is_int
 
 class itemaccess:
 
@@ -43,7 +43,7 @@ class itemaccess:
         # Normalise any integer indexes, converting negative indexes to positive
         # ones.
 
-        if _isinstance(index, int):
+        if is_int(index):
             index = _get_absolute_index(index, self.__len__())
             return self.__get_single_item__(index)
 
@@ -64,7 +64,7 @@ class itemaccess:
         # Normalise any integer indexes, converting negative indexes to positive
         # ones.
 
-        if _isinstance(index, int):
+        if is_int(index):
             index = _get_absolute_index(index, self.__len__())
             return self.__set_single_item__(index, value)
 
