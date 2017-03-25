@@ -273,10 +273,9 @@ __attr __GETDEFAULT(__ref obj, int pos)
 
 int __BOOL(__attr attr)
 {
-    __ref truevalue = __VALUE(__builtins___boolean_True);
-
     /* Invoke the bool function with the object and test against True. */
 
-    return (__VALUE(attr) == truevalue) ||
-           (__VALUE(__fn___builtins___boolean_bool(__NULL, attr)) == truevalue);
+    return __VALUE(attr) == &__predefined___builtins___boolean_True ? 1 :
+           __VALUE(attr) == &__predefined___builtins___boolean_False ? 0 :
+           __VALUE(__fn___builtins___boolean_bool(__NULL, attr)) == &__predefined___builtins___boolean_True;
 }
