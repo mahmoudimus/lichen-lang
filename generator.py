@@ -42,10 +42,13 @@ class Generator(CommonOutput):
 
     # NOTE: These must be synchronised with the library.
 
+    dict_type = "__builtins__.dict.dict"
     function_type = "__builtins__.core.function"
     int_type = "__builtins__.int.int"
+    list_type = "__builtins__.list.list"
     none_type = "__builtins__.none.NoneType"
     string_type = "__builtins__.str.string"
+    tuple_type = "__builtins__.tuple.tuple"
     type_type = "__builtins__.core.type"
     unicode_type = "__builtins__.unicode.utf8string"
 
@@ -58,16 +61,9 @@ class Generator(CommonOutput):
         ("__builtins__.notimplemented", "NotImplemented"),
         )
 
-    literal_mapping_types = (
-        "__builtins__.dict.dict",
+    literal_instantiator_types = (
+        dict_type, list_type, tuple_type
         )
-
-    literal_sequence_types = (
-        "__builtins__.list.list",
-        "__builtins__.tuple.tuple",
-        )
-
-    literal_instantiator_types = literal_mapping_types + literal_sequence_types
 
     def __init__(self, importer, optimiser, output):
 
@@ -1247,15 +1243,11 @@ __attr %s(__attr __self%s)
         # Signature: __newliteral_sequence(ARGS, NUM)
 
         if path in self.literal_instantiator_types:
-            if path in self.literal_mapping_types:
-                style = "mapping"
-            else:
-                style = "sequence"
+            style = path.rsplit(".", 1)[-1]
 
-            print >>f_signatures, "#define %s(ARGS, NUM) (%s(__NEWINSTANCE(%s), ARGS, NUM))" % (
+            print >>f_signatures, "#define %s(ARGS, NUM) (%s(ARGS, NUM))" % (
                 encode_literal_instantiator(path),
                 encode_literal_data_initialiser(style),
-                encode_path(path)
                 )
 
     def write_main_program(self, f_code, f_signatures):

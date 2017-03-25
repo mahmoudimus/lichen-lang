@@ -28,12 +28,17 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Generic instantiation operations, defining common members. */
 
-__attr __new(const __table * table, __ref cls, size_t size, int immutable)
+void __init(__ref obj, const __table * table, __ref cls)
 {
-    __ref obj = (__ref) (immutable ? __ALLOCATEIM : __ALLOCATE)(1, size);
     obj->table = table;
     obj->pos = __INSTANCEPOS;
     __store_via_object(obj, __class__, __ATTRVALUE(cls));
+}
+
+__attr __new(const __table * table, __ref cls, size_t size, int immutable)
+{
+    __ref obj = (__ref) (immutable ? __ALLOCATEIM : __ALLOCATE)(1, size);
+    __init(obj, table, cls);
     return __ATTRVALUE(obj);
 }
 
@@ -57,11 +62,8 @@ __fragment *__new_fragment(unsigned int n)
     return data;
 }
 
-__attr __newdata_sequence(__attr self, __attr args[], unsigned int number)
+void __newdata_sequence(__attr self, __attr args[], unsigned int number, __fragment *data)
 {
-    /* Calculate the size of the fragment. */
-
-    __fragment *data = __new_fragment(number);
     __attr attr = {.seqvalue=data};
     unsigned int i;
 
@@ -75,12 +77,35 @@ __attr __newdata_sequence(__attr self, __attr args[], unsigned int number)
     /* Store a reference to the data in the object's __data__ attribute. */
 
     __store_via_object(__VALUE(self), __data__, attr);
+}
+
+__attr __newdata_list(__attr args[], unsigned int number)
+{
+    __attr self = __NEWINSTANCE(__builtins___list_list);
+    __fragment *data = __new_fragment(number);
+    __newdata_sequence(self, args, number, data);
+    return self;
+}
+
+__attr __newdata_tuple(__attr args[], unsigned int number)
+{
+    /* Allocate the tuple and fragment together. */
+
+    __ref obj = (__ref) __ALLOCATE(1, __INSTANCESIZE(__builtins___tuple_tuple) + __FRAGMENT_SIZE(number));
+    __attr self = __ATTRVALUE(obj);
+
+    /* Initialise the instance and fragment. */
+
+    __init(obj, &__INSTANCETABLE(__builtins___tuple_tuple), &__builtins___tuple_tuple);
+    __newdata_sequence(self, args, number, (__fragment *) ((void *) obj + __INSTANCESIZE(__builtins___tuple_tuple)));
     return self;
 }
 
 #ifdef __HAVE___builtins___dict_dict
-__attr __newdata_mapping(__attr self, __attr args[], unsigned int number)
+__attr __newdata_dict(__attr args[], unsigned int number)
 {
+    __attr self = __NEWINSTANCE(__builtins___dict_dict);
+
     /* Create a temporary list using the arguments. */
 
     __attr tmp = __newliteral___builtins___list_list(args, number);

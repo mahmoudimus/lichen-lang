@@ -32,10 +32,11 @@ __attr __new_wrapper(__attr context, __attr attr);
 
 __fragment *__new_fragment(unsigned int n);
 
-__attr __newdata_sequence(__attr self, __attr args[], unsigned int number);
+__attr __newdata_list(__attr args[], unsigned int number);
+__attr __newdata_tuple(__attr args[], unsigned int number);
 
 #ifdef __HAVE___builtins___dict_dict
-__attr __newdata_mapping(__attr self, __attr args[], unsigned int number);
+__attr __newdata_dict(__attr args[], unsigned int number);
 #endif /* __HAVE___builtins___dict_dict */
 
 /* Helpers for raising errors within common operations. */
@@ -78,8 +79,10 @@ int __BOOL(__attr attr);
 
 /* Convenience definitions. */
 
-#define __NEWINSTANCE(__CLS) __new(&__InstanceTable_##__CLS, &__CLS, sizeof(__obj_##__CLS), 0)
-#define __NEWINSTANCEIM(__CLS) __new(&__InstanceTable_##__CLS, &__CLS, sizeof(__obj_##__CLS), 1)
-#define __ISINSTANCE(__ATTR, __TYPE) __BOOL(__fn_native_introspection_isinstance(__NULL, __ATTR, __TYPE))
+#define __INSTANCESIZE(CLS) sizeof(__obj_##CLS)
+#define __INSTANCETABLE(CLS) (__InstanceTable_##CLS)
+#define __NEWINSTANCE(CLS) __new(&__INSTANCETABLE(CLS), &CLS, __INSTANCESIZE(CLS), 0)
+#define __NEWINSTANCEIM(CLS) __new(&__INSTANCETABLE(CLS), &CLS, __INSTANCESIZE(CLS), 1)
+#define __ISINSTANCE(ATTR, TYPE) __BOOL(__fn_native_introspection_isinstance(__NULL, ATTR, TYPE))
 
 #endif /* __PROGOPS_H__ */
