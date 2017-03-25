@@ -21,8 +21,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.iteration.iterator import itemiterator
 from __builtins__.sequence import hashable, sequence
-from native import list_element, list_init, list_len, list_setsize, \
-                   list_setelement
+from native import tuple_init, \
+                   list_element, list_len, list_setsize, list_setelement
 
 class tuple(sequence, hashable):
 
@@ -35,16 +35,19 @@ class tuple(sequence, hashable):
         # Reserve an attribute for a fragment reference along with some space
         # for elements.
 
-        size = args is not None and len(args) or 0
-        self.__data__ = list_init(size)
-        list_setsize(self.__data__, size)
+        self.__data__ = tuple_init(size)
 
-        # Populate the tuple.
+        if args is None:
+            size = 0
+        else:
+            size = args.__len__()
+            list_setsize(self.__data__, size)
 
-        if args is not None:
+            # Populate the tuple.
+
             i = 0
-            for arg in args:
-                list_setelement(self.__data__, i, arg)
+            while i < size:
+                list_setelement(self.__data__, i, args[i])
                 i += 1
 
     def __hash__(self):
