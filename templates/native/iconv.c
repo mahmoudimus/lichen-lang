@@ -33,37 +33,31 @@ static const size_t OUTBUFSIZE_MIN = 16;
 static void __raise_incomplete_sequence_error(__attr value, __attr arg)
 {
 #ifdef __HAVE_posix_iconv_IncompleteSequenceError
-    __attr args[3] = {__NULL, value, arg};
-    __attr exc = __new_posix_iconv_IncompleteSequenceError(args);
-    __Raise(exc);
+    __Raise(__new_posix_iconv_IncompleteSequenceError(__NULL, value, arg));
 #endif /* __HAVE_posix_iconv_IncompleteSequenceError */
 }
 
 static void __raise_invalid_sequence_error(__attr value, __attr arg)
 {
 #ifdef __HAVE_posix_iconv_InvalidSequenceError
-    __attr args[3] = {__NULL, value, arg};
-    __attr exc = __new_posix_iconv_InvalidSequenceError(args);
-    __Raise(exc);
+    __Raise(__new_posix_iconv_InvalidSequenceError(__NULL, value, arg));
 #endif /* __HAVE_posix_iconv_InvalidSequenceError */
 }
 
 /* Character set conversion. */
 
-__attr __fn_native_iconv_iconv(__attr __args[])
+__attr __fn_native_iconv_iconv(__attr __self, __attr cd, __attr state)
 {
-    __attr * const cd = &__args[1];
-    __attr * const state = &__args[2];
     /* cd interpreted as iconv_t */
-    iconv_t c = (iconv_t) cd->datavalue;
+    iconv_t c = (iconv_t) cd.datavalue;
     /* state.__data__ interpreted as list */
-    __fragment *f = __load_via_object(state->value, __data__).seqvalue;
+    __fragment *f = __load_via_object(__VALUE(state), __data__).seqvalue;
 
     /* Obtain the string, start position, and remaining bytes from the state. */
 
-    char *inbuf = __load_via_object(f->attrs[0].value, __data__).strvalue;
-    int start = __load_via_object(f->attrs[1].value, __data__).intvalue;
-    int remaining = __load_via_object(f->attrs[2].value, __data__).intvalue;
+    char *inbuf = __load_via_object(__VALUE(f->attrs[0]), __data__).strvalue;
+    int start = __TOINT(f->attrs[1]);
+    int remaining = __TOINT(f->attrs[2]);
 
     /* Allocate a string for the output buffer using the remaining input size
        as a guide. */
@@ -123,11 +117,10 @@ __attr __fn_native_iconv_iconv(__attr __args[])
     return __builtins___none_None;
 }
 
-__attr __fn_native_iconv_iconv_close(__attr __args[])
+__attr __fn_native_iconv_iconv_close(__attr __self, __attr cd)
 {
-    __attr * const cd = &__args[1];
     /* cd interpreted as iconv_t */
-    iconv_t c = (iconv_t) cd->datavalue;
+    iconv_t c = (iconv_t) cd.datavalue;
 
     errno = 0;
 
@@ -137,14 +130,12 @@ __attr __fn_native_iconv_iconv_close(__attr __args[])
     return __builtins___none_None;
 }
 
-__attr __fn_native_iconv_iconv_open(__attr __args[])
+__attr __fn_native_iconv_iconv_open(__attr __self, __attr tocode, __attr fromcode)
 {
-    __attr * const tocode = &__args[1];
-    __attr * const fromcode = &__args[2];
     /* tocode.__data__ interpreted as string */
-    char *t = __load_via_object(tocode->value, __data__).strvalue;
+    char *t = __load_via_object(__VALUE(tocode), __data__).strvalue;
     /* fromcode.__data__ interpreted as string */
-    char *f = __load_via_object(fromcode->value, __data__).strvalue;
+    char *f = __load_via_object(__VALUE(fromcode), __data__).strvalue;
     iconv_t result;
     __attr attr;
 
@@ -160,11 +151,10 @@ __attr __fn_native_iconv_iconv_open(__attr __args[])
     return attr;
 }
 
-__attr __fn_native_iconv_iconv_reset(__attr __args[])
+__attr __fn_native_iconv_iconv_reset(__attr __self, __attr cd)
 {
-    __attr * const cd = &__args[1];
     /* cd interpreted as iconv_t */
-    iconv_t c = (iconv_t) cd->datavalue;
+    iconv_t c = (iconv_t) cd.datavalue;
 
     iconv(c, NULL, NULL, NULL, NULL);
     return __builtins___none_None;

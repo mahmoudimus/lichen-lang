@@ -26,12 +26,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Method binding. */
 
-__attr __fn_native_program_get_using(__attr __args[])
+__attr __fn_native_program_get_using(__attr __self, __attr callable, __attr instance)
 {
-    __attr * const callable = &__args[1];
-    __attr * const instance = &__args[2];
-
-    return __test_context(*instance, *callable);
+    return __test_context(instance, callable);
 }
 
 /* Module initialisation. */

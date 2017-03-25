@@ -27,7 +27,10 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __ref __VALUE(__attr attr)
 {
-    return attr.value;
+    if (!__INTEGER(attr))
+        return attr.value;
+    else
+        return &__common_integer_obj;
 }
 
 /* Basic structure tests. */
@@ -316,17 +319,17 @@ __attr __unwrap_callable(__attr callable)
     return __VALUE(value) ? value : callable;
 }
 
-__attr (*__get_function_unchecked(__attr target))(__attr[])
+__attr (*__get_function_unchecked(__attr target))()
 {
     return __load_via_object(__VALUE(__unwrap_callable(target)), __fn__).fn;
 }
 
-__attr (*__get_function(__attr context, __attr target))(__attr[])
+__attr (*__get_function(__attr context, __attr target))()
 {
     return __get_function_unwrapped(context, __unwrap_callable(target));
 }
 
-__attr (*__get_function_unwrapped(__attr context, __attr target))(__attr[])
+__attr (*__get_function_unwrapped(__attr context, __attr target))()
 {
     /* Require null or instance contexts for functions and methods respectively,
        or type instance contexts for type methods. */
@@ -337,12 +340,12 @@ __attr (*__get_function_unwrapped(__attr context, __attr target))(__attr[])
         return __unbound_method;
 }
 
-__attr (*__check_and_get_function(__attr context, __attr target))(__attr[])
+__attr (*__check_and_get_function(__attr context, __attr target))()
 {
     return __check_and_get_function_unwrapped(context, __unwrap_callable(target));
 }
 
-__attr (*__check_and_get_function_unwrapped(__attr context, __attr target))(__attr[])
+__attr (*__check_and_get_function_unwrapped(__attr context, __attr target))()
 {
     /* Require null or instance contexts for functions and methods respectively,
        or type instance contexts for type methods. */

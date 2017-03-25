@@ -1,6 +1,6 @@
 /* Native functions for input/output.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -23,15 +23,15 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Input/output. */
 
-__attr __fn_native_io_fclose(__attr __args[]);
-__attr __fn_native_io_fflush(__attr __args[]);
-__attr __fn_native_io_fopen(__attr __args[]);
-__attr __fn_native_io_fdopen(__attr __args[]);
-__attr __fn_native_io_fread(__attr __args[]);
-__attr __fn_native_io_fwrite(__attr __args[]);
-__attr __fn_native_io_close(__attr __args[]);
-__attr __fn_native_io_read(__attr __args[]);
-__attr __fn_native_io_write(__attr __args[]);
+__attr __fn_native_io_fclose(__attr __self, __attr fp);
+__attr __fn_native_io_fflush(__attr __self, __attr fp);
+__attr __fn_native_io_fopen(__attr __self, __attr filename, __attr mode);
+__attr __fn_native_io_fdopen(__attr __self, __attr fd, __attr mode);
+__attr __fn_native_io_fread(__attr __self, __attr fp, __attr size);
+__attr __fn_native_io_fwrite(__attr __self, __attr fp, __attr str);
+__attr __fn_native_io_close(__attr __self, __attr fd);
+__attr __fn_native_io_read(__attr __self, __attr fd, __attr n);
+__attr __fn_native_io_write(__attr __self, __attr fd, __attr str);
 
 /* Module initialisation. */
 

@@ -69,14 +69,12 @@ static unsigned int prevpos(char *s, unsigned int bytestart)
 
 /* Unicode operations. */
 
-__attr __fn_native_unicode_unicode_len(__attr __args[])
+__attr __fn_native_unicode_unicode_len(__attr __self, __attr _data, __attr _size)
 {
-    __attr * const _data = &__args[1];
-    __attr * const _size = &__args[2];
-    /* _data interpreted as string */
-    char *s = _data->strvalue;
+    /* _data interpreted as string.__data__ */
+    char *s = _data.strvalue;
     /* _size interpreted as int */
-    int size = _size->intvalue;
+    int size = __TOINT(_size);
     unsigned int i, c = 0;
 
     for (i = 0; i < size; i++)
@@ -87,14 +85,12 @@ __attr __fn_native_unicode_unicode_len(__attr __args[])
     return __new_int(c);
 }
 
-__attr __fn_native_unicode_unicode_ord(__attr __args[])
+__attr __fn_native_unicode_unicode_ord(__attr __self, __attr _data, __attr _size)
 {
-    __attr * const _data = &__args[1];
-    __attr * const _size = &__args[2];
-    /* _data interpreted as string */
-    char *s = _data->strvalue;
+    /* _data interpreted as string.__data__ */
+    char *s = _data.strvalue;
     /* _size interpreted as int */
-    int size = _size->intvalue;
+    int size = __TOINT(_size);
     unsigned int i, c = 0, v;
 
     for (i = 0; i < size; i++)
@@ -123,23 +119,18 @@ __attr __fn_native_unicode_unicode_ord(__attr __args[])
     return __new_int(c);
 }
 
-__attr __fn_native_unicode_unicode_substr(__attr __args[])
+__attr __fn_native_unicode_unicode_substr(__attr __self, __attr _data, __attr _size, __attr start, __attr end, __attr step)
 {
-    __attr * const _data = &__args[1];
-    __attr * const _size = &__args[2];
-    __attr * const start = &__args[3];
-    __attr * const end = &__args[4];
-    __attr * const step = &__args[5];
-    /* _data interpreted as string */
-    char *s = _data->strvalue, *sub;
+    /* _data interpreted as string.__data__ */
+    char *s = _data.strvalue, *sub;
     /* _size interpreted as int */
-    int ss = _size->intvalue;
-    /* start.__data__ interpreted as int */
-    int istart = __load_via_object(start->value, __data__).intvalue;
-    /* end.__data__ interpreted as int */
-    int iend = __load_via_object(end->value, __data__).intvalue;
-    /* step.__data__ interpreted as int */
-    int istep = __load_via_object(step->value, __data__).intvalue;
+    int ss = __TOINT(_size);
+    /* start interpreted as int */
+    int istart = __TOINT(start);
+    /* end interpreted as int */
+    int iend = __TOINT(end);
+    /* step interpreted as int */
+    int istep = __TOINT(step);
 
     /* Calculate the number of characters. */
     size_t nchar = ((iend - istart - (istep > 0 ? 1 : -1)) / istep) + 1;
@@ -202,11 +193,10 @@ __attr __fn_native_unicode_unicode_substr(__attr __args[])
     return __new_str(sub, resultsize);
 }
 
-__attr __fn_native_unicode_unicode_unichr(__attr __args[])
+__attr __fn_native_unicode_unicode_unichr(__attr __self, __attr value)
 {
-    __attr * const value = &__args[1];
     /* value interpreted as int */
-    int i = value->intvalue;
+    int i = __TOINT(value);
     unsigned int resultsize;
     char *s;
 

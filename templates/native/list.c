@@ -27,51 +27,44 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* List operations. */
 
-__attr __fn_native_list_list_init(__attr __args[])
+__attr __fn_native_list_list_init(__attr __self, __attr size)
 {
-    __attr * const size = &__args[1];
-    /* size.__data__ interpreted as int */
-    unsigned int n = __load_via_object(size->value, __data__).intvalue;
+    /* size interpreted as int */
+    unsigned int n = __TOINT(size);
     __attr attr = {.seqvalue=__new_fragment(n)};
 
     /* Return the __data__ attribute. */
     return attr;
 }
 
-__attr __fn_native_list_list_setsize(__attr __args[])
+__attr __fn_native_list_list_setsize(__attr __self, __attr _data, __attr size)
 {
-    __attr * const _data = &__args[1];
-    __attr * const size = &__args[2];
-    /* _data interpreted as list */
-    __fragment *data = _data->seqvalue;
-    /* size.__data__ interpreted as int */
-    unsigned int n = __load_via_object(size->value, __data__).intvalue;
+    /* _data interpreted as list.__data__ */
+    __fragment *data = _data.seqvalue;
+    /* size interpreted as int */
+    unsigned int n = __TOINT(size);
 
     data->size = n;
     return __builtins___none_None;
 }
 
-__attr __fn_native_list_list_append(__attr __args[])
+__attr __fn_native_list_list_append(__attr __self, __attr self, __attr value)
 {
-    __attr * const self = &__args[1];
-    __attr * const value = &__args[2];
     /* self.__data__ interpreted as list */
-    __fragment *data = __load_via_object(self->value, __data__).seqvalue;
+    __fragment *data = __load_via_object(__VALUE(self), __data__).seqvalue;
     __fragment *newdata = __fragment_append(data, value);
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(self->value, __data__, ((__attr) {.seqvalue=newdata}));
+        __store_via_object(__VALUE(self), __data__, ((__attr) {.seqvalue=newdata}));
     return __builtins___none_None;
 }
 
-__attr __fn_native_list_list_concat(__attr __args[])
+__attr __fn_native_list_list_concat(__attr __self, __attr self, __attr other)
 {
-    __attr * const self = &__args[1];
-    __attr * const other = &__args[2];
-    /* self.__data__, other interpreted as list */
-    __fragment *data = __load_via_object(self->value, __data__).seqvalue;
-    __fragment *other_data = other->seqvalue;
+    /* self, interpreted as list, other interpreted as list.__data__ */
+    __fragment *data = __load_via_object(__VALUE(self), __data__).seqvalue;
+    __fragment *other_data = other.seqvalue;
     __fragment *newdata = data;
     unsigned int size = data->size, capacity = data->capacity;
     unsigned int other_size = other_data->size;
@@ -91,51 +84,43 @@ __attr __fn_native_list_list_concat(__attr __args[])
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(self->value, __data__, ((__attr) {.seqvalue=newdata}));
+        __store_via_object(__VALUE(self), __data__, ((__attr) {.seqvalue=newdata}));
     return __builtins___none_None;
 }
 
-__attr __fn_native_list_list_len(__attr __args[])
+__attr __fn_native_list_list_len(__attr self, __attr _data)
 {
-    __attr * const _data = &__args[1];
-    /* _data interpreted as fragment */
-    unsigned int size = _data->seqvalue->size;
+    /* _data interpreted as list.__data__ */
+    unsigned int size = _data.seqvalue->size;
 
     /* Return the new integer. */
     return __new_int(size);
 }
 
-__attr __fn_native_list_list_nonempty(__attr __args[])
+__attr __fn_native_list_list_nonempty(__attr __self, __attr _data)
 {
-    __attr * const _data = &__args[1];
-
-    return _data->seqvalue->size ? __builtins___boolean_True : __builtins___boolean_False;
+    return _data.seqvalue->size ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
-__attr __fn_native_list_list_element(__attr __args[])
+__attr __fn_native_list_list_element(__attr __self, __attr _data, __attr index)
 {
-    __attr * const _data = &__args[1];
-    __attr * const index = &__args[2];
-    /* _data interpreted as fragment */
-    __attr *elements = _data->seqvalue->attrs;
-    /* index.__data__ interpreted as int */
-    int i = __load_via_object(index->value, __data__).intvalue;
+    /* _data interpreted as list.__data__ */
+    __attr *elements = _data.seqvalue->attrs;
+    /* index interpreted as int */
+    int i = __TOINT(index);
 
     return elements[i];
 }
 
-__attr __fn_native_list_list_setelement(__attr __args[])
+__attr __fn_native_list_list_setelement(__attr __self, __attr _data, __attr index, __attr value)
 {
-    __attr * const _data = &__args[1];
-    __attr * const index = &__args[2];
-    __attr * const value = &__args[3];
-    /* _data interpreted as fragment */
-    __attr *elements = _data->seqvalue->attrs;
-    /* index.__data__ interpreted as int */
-    int i = __load_via_object(index->value, __data__).intvalue;
+    /* _data interpreted as list.__data__ */
+    __attr *elements = _data.seqvalue->attrs;
+    /* index interpreted as int */
+    int i = __TOINT(index);
 
     /* Set the element. */
-    elements[i] = *value;
+    elements[i] = value;
     return __builtins___none_None;
 }
 

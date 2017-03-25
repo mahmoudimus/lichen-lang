@@ -43,6 +43,7 @@ class Generator(CommonOutput):
     # NOTE: These must be synchronised with the library.
 
     function_type = "__builtins__.core.function"
+    int_type = "__builtins__.int.int"
     none_type = "__builtins__.none.NoneType"
     string_type = "__builtins__.str.string"
     type_type = "__builtins__.core.type"
@@ -154,6 +155,8 @@ class Generator(CommonOutput):
         f_decls = open(join(self.output, "progtypes.h"), "w")
         f_signatures = open(join(self.output, "main.h"), "w")
         f_code = open(join(self.output, "main.c"), "w")
+        f_calls = open(join(self.output, "calls.c"), "w")
+        f_call_macros = open(join(self.output, "calls.h"), "w")
 
         try:
             # Output boilerplate.
@@ -193,6 +196,14 @@ class Generator(CommonOutput):
 #include "progtypes.h"
 #include "main.h"
 #include "progops.h"
+#include "calls.h"
+"""
+
+            print >>f_call_macros, """\
+#ifndef __CALLS_H__
+#define __CALLS_H__
+
+#include "types.h"
 """
 
             # Generate table and structure data.
@@ -302,15 +313,18 @@ class Generator(CommonOutput):
                     extra_function_instances.append(path)
 
                 # Write function declarations.
-                # Signature: __attr <name>(__attr[]);
+                # Signature: __attr <name>(...);
 
-                print >>f_signatures, "__attr %s(__attr args[]);" % encode_function_pointer(path)
+                parameters = self.importer.function_parameters[path]
+                l = ["__attr"] * (len(parameters) + 1)
+                print >>f_signatures, "__attr %s(%s);" % (encode_function_pointer(path), ", ".join(l))
 
             # Generate parameter table size data.
 
             min_parameters = {}
             max_parameters = {}
             size_parameters = {}
+            all_max_parameters = set()
 
             # Consolidate parameter tables for instantiators and functions.
 
@@ -339,6 +353,7 @@ class Generator(CommonOutput):
                 min_parameters[signature] = argmin
                 max_parameters[signature] = argmax
                 size_parameters[signature] = len(parameters)
+                all_max_parameters.add(argmax)
 
             self.write_size_constants(f_consts, "pmin", min_parameters, 0)
             self.write_size_constants(f_consts, "pmax", max_parameters, 0)
@@ -358,6 +373,11 @@ class Generator(CommonOutput):
 
             for constant, n in self.optimiser.constants.items():
                 self.make_literal_constant(f_decls, f_defs, n, constant)
+
+            # Generate a common integer instance object, referenced when integer
+            # attributes are accessed.
+
+            self.make_common_integer(f_decls, f_defs)
 
             # Finish the main source file.
 
@@ -398,6 +418,42 @@ class Generator(CommonOutput):
                                       self.optimiser.locations,
                                       "code", "pos", encode_code, encode_pos)
 
+            # Generate macros for calls.
+
+            all_max_parameters = list(all_max_parameters)
+            all_max_parameters.sort()
+
+            for argmax in all_max_parameters:
+                l = []
+                argnum = 0
+                while argnum < argmax:
+                    l.append("ARGS[%d]" % argnum)
+                    argnum += 1
+
+                print >>f_call_macros, "#define __CALL%d(FN, ARGS) (FN(%s))" % (argmax, ", ".join(l))
+
+            # Generate a generic invocation function.
+
+            print >>f_call_macros, "__attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n);"
+
+            print >>f_calls, """\
+#include "types.h"
+#include "calls.h"
+
+__attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n)
+{
+    switch (n)
+    {"""
+
+            for argmax in all_max_parameters:
+                print >>f_calls, """\
+        case %d: return __CALL%d(fn, args);""" % (argmax, argmax)
+
+            print >>f_calls, """\
+        default: return __NULL;
+    }
+}"""
+
             # Output more boilerplate.
 
             print >>f_consts, """\
@@ -424,12 +480,18 @@ class Generator(CommonOutput):
 
 #endif /* __MAIN_H__ */"""
 
+            print >>f_call_macros, """\
+
+#endif /* __CALLS_H__ */"""
+
         finally:
             f_consts.close()
             f_defs.close()
             f_decls.close()
             f_signatures.close()
             f_code.close()
+            f_calls.close()
+            f_call_macros.close()
 
     def write_scripts(self, debug, gc_sections):
 
@@ -504,6 +566,11 @@ class Generator(CommonOutput):
 
         value, value_type, encoding = constant
 
+        # Do not generate individual integer constants.
+
+        if value_type == self.int_type:
+            return
+
         const_path = encode_literal_constant(n)
         structure_name = encode_literal_reference(n)
 
@@ -526,13 +593,23 @@ class Generator(CommonOutput):
 
         self.make_constant(f_decls, f_defs, ref, attr_path, structure_name)
 
+    def make_common_integer(self, f_decls, f_defs):
+
+        """
+        Write common integer instance details to 'f_decls' (to declare a
+        structure) and to 'f_defs' (to define the contents).
+        """
+
+        ref = Reference("<instance>", self.int_type)
+        self.make_constant(f_decls, f_defs, ref, "__common_integer", "__common_integer_obj")
+
     def make_constant(self, f_decls, f_defs, ref, const_path, structure_name, data=None, encoding=None):
 
         """
         Write constant details to 'f_decls' (to declare a structure) and to
         'f_defs' (to define the contents) for the constant described by 'ref'
-        having the given 'path' and 'structure_name' (for the constant structure
-        itself).
+        having the given 'const_path' (providing an attribute for the constant)
+        and 'structure_name' (for the constant structure itself).
 
         The additional 'data' and 'encoding' are used to describe specific
         values.
@@ -974,7 +1051,7 @@ __obj %s = {
                 # Special internal size member.
 
                 elif attrname == "__size__":
-                    structure.append("{.intvalue=%d}" % attr)
+                    structure.append("__INTVALUE(%d)" % attr)
                     continue
 
                 # Special internal key member.
@@ -1081,6 +1158,13 @@ __obj %s = {
             # Obtain a constant value directly assigned to the attribute.
 
             if self.optimiser.constant_numbers.has_key(alias):
+
+                # Encode integer constants differently.
+
+                value, value_type, encoding = self.importer.all_constant_values[alias]
+                if value_type == self.int_type:
+                    return "__INTVALUE(%s) /* %s */" % (value, name)
+
                 constant_number = self.optimiser.constant_numbers[alias]
                 constant_value = encode_literal_constant(constant_number)
                 return "%s /* %s */" % (constant_value, name)
@@ -1127,31 +1211,40 @@ __obj %s = {
         NOTE: where __call__ is provided by the class.
         """
 
-        parameters = self.importer.function_parameters[init_ref.get_origin()]
+        initialiser = init_ref.get_origin()
+        parameters = self.importer.function_parameters[initialiser]
+        argmin, argmax = self.get_argument_limits(initialiser)
+
+        l = []
+        for name in parameters:
+            l.append("__attr %s" % name)
 
         print >>f_code, """\
-__attr %s(__attr __args[])
+__attr %s(__attr __self%s)
 {
-    /* Allocate the structure. */
-    __args[0] = __NEWINSTANCE(%s);
-
-    /* Call the initialiser. */
-    %s(__args);
-
-    /* Return the allocated object details. */
-    return __args[0];
+    return %s(__NEWINSTANCE(%s)%s);
 }
 """ % (
-    encode_instantiator_pointer(path),
-    encode_path(path),
-    encode_function_pointer(init_ref.get_origin())
-    )
+            encode_instantiator_pointer(path),
+            l and ", %s" % ",".join(l) or "",
+            encode_function_pointer(initialiser),
+            encode_path(path),
+            parameters and ", %s" % ", ".join(parameters) or ""
+            )
+
+        # Signature: __new_typename(__attr __self, ...)
+
+        print >>f_signatures, "__attr %s(__attr __self%s);" % (
+            encode_instantiator_pointer(path),
+            l and ", %s" % ", ".join(l) or ""
+            )
 
         print >>f_signatures, "#define __HAVE_%s" % encode_path(path)
-        print >>f_signatures, "__attr %s(__attr[]);" % encode_instantiator_pointer(path)
 
         # Write additional literal instantiators. These do not call the
         # initialisers but instead populate the structures directly.
+
+        # Signature: __newliteral_sequence(ARGS, NUM)
 
         if path in self.literal_instantiator_types:
             if path in self.literal_mapping_types:
@@ -1159,25 +1252,11 @@ __attr %s(__attr __args[])
             else:
                 style = "sequence"
 
-            print >>f_code, """\
-__attr %s(__attr __args[], __pos number)
-{
-    /* Allocate the structure. */
-    __args[0] = __NEWINSTANCE(%s);
-
-    /* Allocate a structure for the data and set it on the __data__ attribute. */
-    %s(__args, number);
-
-    /* Return the allocated object details. */
-    return __args[0];
-}
-""" % (
-    encode_literal_instantiator(path),
-    encode_path(path),
-    encode_literal_data_initialiser(style)
-    )
-
-            print >>f_signatures, "__attr %s(__attr[], __pos);" % encode_literal_instantiator(path)
+            print >>f_signatures, "#define %s(ARGS, NUM) (%s(__NEWINSTANCE(%s), ARGS, NUM))" % (
+                encode_literal_instantiator(path),
+                encode_literal_data_initialiser(style),
+                encode_path(path)
+                )
 
     def write_main_program(self, f_code, f_signatures):
 
@@ -1213,13 +1292,11 @@ int main(int argc, char *argv[])
     __Catch(__tmp_exc)
     {
         if (__ISINSTANCE(__tmp_exc.arg, __ATTRVALUE(&__builtins___exception_system_SystemExit)))
-            return __load_via_object(
-                __load_via_object(__tmp_exc.arg.value, __data__).value,
-                value).intvalue;
+            return __TOINT(__load_via_object(__VALUE(__tmp_exc.arg), value));
 
         fprintf(stderr, "Program terminated due to exception: %%s.\\n",
                 __load_via_object(
-                    %s(__ARGS(__NULL, __tmp_exc.arg)).value,
+                    __VALUE(%s(__NULL, __tmp_exc.arg)),
                     __data__).strvalue);
         return 1;
     }

@@ -1,6 +1,6 @@
 /* Native functions for identity operations.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -23,8 +23,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Identity testing. */
 
-__attr __fn_native_identity_is_(__attr __args[]);
-__attr __fn_native_identity_is_not(__attr __args[]);
+__attr __fn_native_identity_is_(__attr __self, __attr x, __attr y);
+__attr __fn_native_identity_is_not(__attr __self, __attr x, __attr y);
 
 /* Module initialisation. */
 

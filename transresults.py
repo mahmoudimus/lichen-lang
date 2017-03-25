@@ -63,9 +63,8 @@ class TrResolvedNameRef(ResolvedNameRef):
 
     "A reference to a name in the translation."
 
-    def __init__(self, name, ref, expr=None, is_global=False, parameter=None, location=None):
+    def __init__(self, name, ref, expr=None, is_global=False, location=None):
         ResolvedNameRef.__init__(self, name, ref, expr, is_global)
-        self.parameter = parameter
         self.location = location
 
     def access_location(self):
@@ -115,7 +114,7 @@ class TrResolvedNameRef(ResolvedNameRef):
             # All other assignments involve the names as they were given.
 
             else:
-                return "(%s%s) = %s" % (self.parameter and "*" or "", attrname, self.expr)
+                return "%s = %s" % (attrname, self.expr)
 
         # Expressions.
 
@@ -133,14 +132,20 @@ class TrResolvedNameRef(ResolvedNameRef):
         # All other accesses involve the names as they were given.
 
         else:
-            return "(%s%s)" % (self.parameter and "*" or "", attrname)
+            return "(%s)" % attrname
 
 class TrConstantValueRef(ConstantValueRef):
 
     "A constant value reference in the translation."
 
     def __str__(self):
-        return encode_literal_constant(self.number)
+
+        # NOTE: Should reference a common variable for the type name.
+
+        if self.ref.get_origin() == "__builtins__.int.int":
+            return "__INTVALUE(%s)" % self.value
+        else:
+            return encode_literal_constant(self.number)
 
 class TrLiteralSequenceRef(LiteralSequenceRef):
 

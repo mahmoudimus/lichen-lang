@@ -21,6 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdlib.h> /* size_t */
 #include "types.h"
+#include "main.h"
 
 /* Generic instantiation operations, defining common members. */
 
@@ -31,10 +32,10 @@ __attr __new_wrapper(__attr context, __attr attr);
 
 __fragment *__new_fragment(unsigned int n);
 
-void __newdata_sequence(__attr args[], unsigned int number);
+__attr __newdata_sequence(__attr self, __attr args[], unsigned int number);
 
 #ifdef __HAVE___builtins___dict_dict
-void __newdata_mapping(__attr args[], unsigned int number);
+__attr __newdata_mapping(__attr self, __attr args[], unsigned int number);
 #endif /* __HAVE___builtins___dict_dict */
 
 /* Helpers for raising errors within common operations. */
@@ -60,12 +61,12 @@ __attr __ensure_instance(__attr arg);
 /* Generic invocation operations. */
 
 __attr __invoke(__attr callable, int always_callable,
-                unsigned int nkwargs, __param kwcodes[], __attr kwargs[],
-                unsigned int nargs, __attr args[]);
+                   unsigned int nkwargs, __param kwcodes[], __attr kwargs[],
+                   unsigned int nargs, __attr args[]);
 
 /* Error routines. */
 
-__attr __unbound_method(__attr args[]);
+__attr __unbound_method(__attr __self);
 
 /* Generic operations depending on specific program details. */
 
@@ -79,6 +80,6 @@ int __BOOL(__attr attr);
 
 #define __NEWINSTANCE(__CLS) __new(&__InstanceTable_##__CLS, &__CLS, sizeof(__obj_##__CLS), 0)
 #define __NEWINSTANCEIM(__CLS) __new(&__InstanceTable_##__CLS, &__CLS, sizeof(__obj_##__CLS), 1)
-#define __ISINSTANCE(__ATTR, __TYPE) __BOOL(__fn_native_introspection_isinstance((__attr[]) {__NULL, __ATTR, __TYPE}))
+#define __ISINSTANCE(__ATTR, __TYPE) __BOOL(__fn_native_introspection_isinstance(__NULL, __ATTR, __TYPE))
 
 #endif /* __PROGOPS_H__ */

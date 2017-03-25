@@ -3,7 +3,7 @@
 """
 Operator support.
 
-Copyright (C) 2010, 2013, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2010, 2013, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -20,6 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from operator.core import unary_op
+from native.int import int_neg, int_not, is_int
 
 # These functions defer method lookup by wrapping the attribute access in
 # lambda functions. Thus, the appropriate methods are defined locally, but no
@@ -31,12 +32,18 @@ def invert(a):
     return unary_op(a, lambda a: a.__invert__)
 
 def neg(a):
+    if is_int(a):
+        return int_neg(a)
     return unary_op(a, lambda a: a.__neg__)
 
 def not_(a):
+    if is_int(a):
+        return int_not(a)
     return not a
 
 def pos(a):
+    if is_int(a):
+        return a
     return unary_op(a, lambda a: a.__pos__)
 
 # vim: tabstop=4 expandtab shiftwidth=4

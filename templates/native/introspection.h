@@ -1,6 +1,6 @@
 /* Native functions for introspection.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -23,9 +23,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Introspection. */
 
-__attr __fn_native_introspection_object_getattr(__attr __args[]);
-__attr __fn_native_introspection_isinstance(__attr __args[]);
-__attr __fn_native_introspection_issubclass(__attr __args[]);
+__attr __fn_native_introspection_object_getattr(__attr __self, __attr obj, __attr name, __attr _default);
+__attr __fn_native_introspection_isinstance(__attr __self, __attr obj, __attr cls);
+__attr __fn_native_introspection_issubclass(__attr __self, __attr obj, __attr cls);
 
 /* Module initialisation. */
 

@@ -3,7 +3,7 @@
 """
 Operator support.
 
-Copyright (C) 2010, 2013, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2010, 2013, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -20,6 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from operator.core import binary_op
+from native import int_eq, int_ge, int_gt, int_le, int_lt, int_ne, is_int
 
 # These functions defer method lookup by wrapping the attribute access in
 # lambda functions. Thus, the appropriate methods are defined locally, but no
@@ -28,21 +29,33 @@ from operator.core import binary_op
 # Comparison functions.
 
 def eq(a, b):
+    if is_int(a) and is_int(b):
+        return int_eq(a, b)
     return binary_op(a, b, lambda a: a.__eq__, lambda b: b.__eq__, False)
 
 def ge(a, b):
+    if is_int(a) and is_int(b):
+        return int_ge(a, b)
     return binary_op(a, b, lambda a: a.__ge__, lambda b: b.__le__)
 
 def gt(a, b):
+    if is_int(a) and is_int(b):
+        return int_gt(a, b)
     return binary_op(a, b, lambda a: a.__gt__, lambda b: b.__lt__)
 
 def le(a, b):
+    if is_int(a) and is_int(b):
+        return int_le(a, b)
     return binary_op(a, b, lambda a: a.__le__, lambda b: b.__ge__)
 
 def lt(a, b):
+    if is_int(a) and is_int(b):
+        return int_lt(a, b)
     return binary_op(a, b, lambda a: a.__lt__, lambda b: b.__gt__)
 
 def ne(a, b):
+    if is_int(a) and is_int(b):
+        return int_ne(a, b)
     return binary_op(a, b, lambda a: a.__ne__, lambda b: b.__ne__, True)
 
 # vim: tabstop=4 expandtab shiftwidth=4

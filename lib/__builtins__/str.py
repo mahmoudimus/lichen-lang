@@ -22,7 +22,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.operator import _negate
 from __builtins__.sequence import hashable, itemaccess
 from __builtins__.types import check_int
-from native import int_new, str_add, str_lt, str_gt, str_eq, str_ord, \
+from native import str_add, str_lt, str_gt, str_eq, str_ord, \
                    str_substr
 
 WHITESPACE = (" ", "\f", "\n", "\r", "\t")
@@ -53,7 +53,7 @@ class basestring(hashable):
         else:
             self.__data__ = None
             self.__key__ = None
-            self.__size__ = None
+            self.__size__ = 0
 
     # Internal methods.
 
@@ -157,7 +157,7 @@ class basestring(hashable):
 
         "Return the number of bytes in this string."
 
-        return int_new(self.__size__)
+        return self.__size__
 
     # General type methods.
 
@@ -165,7 +165,7 @@ class basestring(hashable):
 
         "Return whether the string provides any data."
 
-        return int_new(self.__size__).__bool__()
+        return self.__size__.__bool__()
 
     def __contains__(self, value):
 

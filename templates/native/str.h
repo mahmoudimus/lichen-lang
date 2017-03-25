@@ -21,13 +21,13 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* String operations. */
 
-__attr __fn_native_str_str_add(__attr __args[]);
-__attr __fn_native_str_str_chr(__attr __args[]);
-__attr __fn_native_str_str_lt(__attr __args[]);
-__attr __fn_native_str_str_gt(__attr __args[]);
-__attr __fn_native_str_str_eq(__attr __args[]);
-__attr __fn_native_str_str_ord(__attr __args[]);
-__attr __fn_native_str_str_substr(__attr __args[]);
+__attr __fn_native_str_str_add(__attr __self, __attr _data, __attr other, __attr _size, __attr othersize);
+__attr __fn_native_str_str_chr(__attr __self, __attr _data);
+__attr __fn_native_str_str_lt(__attr __self, __attr _data, __attr other);
+__attr __fn_native_str_str_gt(__attr __self, __attr _data, __attr other);
+__attr __fn_native_str_str_eq(__attr __self, __attr _data, __attr other);
+__attr __fn_native_str_str_ord(__attr __self, __attr _data);
+__attr __fn_native_str_str_substr(__attr __self, __attr _data, __attr start, __attr end, __attr step);
 
 /* Module initialisation. */
 

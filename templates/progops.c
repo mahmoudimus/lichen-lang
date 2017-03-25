@@ -24,6 +24,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "progtypes.h"
 #include "main.h"
 #include "exceptions.h"
+#include "calls.h"
 
 /* Generic instantiation operations, defining common members. */
 
@@ -38,7 +39,7 @@ __attr __new(const __table * table, __ref cls, size_t size, int immutable)
 
 __attr __new_wrapper(__attr context, __attr attr)
 {
-    return __new___builtins___core_wrapper((__attr[]) {__NULL, context, attr});
+    return __new___builtins___core_wrapper(__NULL, context, attr);
 }
 
 /* Generic internal data allocation. */
@@ -56,43 +57,38 @@ __fragment *__new_fragment(unsigned int n)
     return data;
 }
 
-void __newdata_sequence(__attr args[], unsigned int number)
+__attr __newdata_sequence(__attr self, __attr args[], unsigned int number)
 {
     /* Calculate the size of the fragment. */
 
     __fragment *data = __new_fragment(number);
     __attr attr = {.seqvalue=data};
-    unsigned int i, j;
+    unsigned int i;
 
-    /* Copy the given number of values, starting from the second element. */
+    /* Copy the given number of values. */
 
-    for (i = 1, j = 0; i <= number; i++, j++)
-        data->attrs[j] = args[i];
+    for (i = 0; i <= number; i++)
+        data->attrs[i] = args[i];
 
     data->size = number;
 
     /* Store a reference to the data in the object's __data__ attribute. */
 
-    __store_via_object(args[0].value, __data__, attr);
+    __store_via_object(__VALUE(self), __data__, attr);
+    return self;
 }
 
 #ifdef __HAVE___builtins___dict_dict
-void __newdata_mapping(__attr args[], unsigned int number)
+__attr __newdata_mapping(__attr self, __attr args[], unsigned int number)
 {
-    __attr dict = args[0];
-    __attr callargs[2];
-
     /* Create a temporary list using the arguments. */
 
-    __newliteral___builtins___list_list(args, number);
+    __attr tmp = __newliteral___builtins___list_list(args, number);
 
     /* Call __init__ with the dict object and list argument. */
 
-    callargs[0] = dict;
-    callargs[1] = args[0];
-
-    __fn___builtins___dict_dict___init__(callargs);
-    args[0] = dict;
+    __fn___builtins___dict_dict___init__(self, tmp);
+    return self;
 }
 #endif /* __HAVE___builtins___dict_dict */
 
@@ -101,56 +97,42 @@ void __newdata_mapping(__attr args[], unsigned int number)
 void __raise_eof_error()
 {
 #ifdef __HAVE___builtins___exception_io_EOFError
-    __attr args[1];
-    __attr exc = __new___builtins___exception_io_EOFError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___exception_io_EOFError(__NULL));
 #endif /* __HAVE___builtins___exception_io_EOFError */
 }
 
 void __raise_io_error(__attr value)
 {
 #ifdef __HAVE___builtins___exception_io_IOError
-    __attr args[2] = {__NULL, value};
-    __attr exc = __new___builtins___exception_io_IOError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___exception_io_IOError(__NULL, value));
 #endif /* __HAVE___builtins___exception_io_IOError */
 }
 
 void __raise_memory_error()
 {
-    __attr args[1];
-    __attr exc = __new___builtins___core_MemoryError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___core_MemoryError(__NULL));
 }
 
 void __raise_os_error(__attr value, __attr arg)
 {
 #ifdef __HAVE___builtins___exception_system_OSError
-    __attr args[3] = {__NULL, value, arg};
-    __attr exc = __new___builtins___exception_system_OSError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___exception_system_OSError(__NULL, value, arg));
 #endif /* __HAVE___builtins___exception_system_OSError */
 }
 
 void __raise_overflow_error()
 {
-    __attr args[1];
-    __attr exc = __new___builtins___core_OverflowError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___core_OverflowError(__NULL));
 }
 
 void __raise_type_error()
 {
-    __attr args[1];
-    __attr exc = __new___builtins___core_TypeError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___core_TypeError(__NULL));
 }
 
 void __raise_zero_division_error()
 {
-    __attr args[1];
-    __attr exc = __new___builtins___core_ZeroDivisionError(args);
-    __Raise(exc);
+    __Raise(__new___builtins___core_ZeroDivisionError(__NULL));
 }
 
 /* Helper for raising exception instances. */
@@ -229,7 +211,7 @@ __attr __invoke(__attr callable, int always_callable,
         /* Erase the remaining arguments. */
 
         for (pos = nargs; pos < max; pos++)
-            allargs[pos].value = 0;
+            __SETNULL(allargs[pos]);
 
         /* Fill keyword arguments. */
 
@@ -254,26 +236,26 @@ __attr __invoke(__attr callable, int always_callable,
 
         for (pos = nargs; pos < max; pos++)
         {
-            if (allargs[pos].value == 0)
+            if (__ISNULL(allargs[pos]))
                 allargs[pos] = __GETDEFAULT(__VALUE(target), pos - min);
         }
     }
 
-    /* Call with the prepared arguments. */
+    /* Call with the prepared arguments via a special adaptor function that
+       converts the array to an argument list. */
 
-    return (always_callable ?
-            __get_function_unwrapped(allargs[0], target) :
-            __check_and_get_function_unwrapped(allargs[0], target)
-           )(allargs);
+    return __call_with_args(
+        always_callable ?
+        __get_function_unwrapped(allargs[0], target) :
+        __check_and_get_function_unwrapped(allargs[0], target),
+        allargs, max);
 }
 
 /* Error routines. */
 
-__attr __unbound_method(__attr args[])
+__attr __unbound_method(__attr __self)
 {
-    __attr excargs[1];
-    __attr exc = __new___builtins___core_UnboundMethodInvocation(excargs);
-    __Raise(exc);
+    __Raise(__new___builtins___core_UnboundMethodInvocation(__NULL));
     return __builtins___none_None; /* superfluous */
 }
 
@@ -291,11 +273,10 @@ __attr __GETDEFAULT(__ref obj, int pos)
 
 int __BOOL(__attr attr)
 {
-    __attr args[2] = {__NULL, attr};
     __ref truevalue = __VALUE(__builtins___boolean_True);
 
     /* Invoke the bool function with the object and test against True. */
 
     return (__VALUE(attr) == truevalue) ||
-           (__VALUE(__fn___builtins___boolean_bool(args)) == truevalue);
+           (__VALUE(__fn___builtins___boolean_bool(__NULL, attr)) == truevalue);
 }

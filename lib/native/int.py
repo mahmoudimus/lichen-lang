@@ -24,7 +24,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-def int_new(data): pass
+def is_int(obj): pass
 
 def int_add(self, other): pass
 def int_div(self, other): pass
@@ -39,9 +39,11 @@ def int_not(self): pass
 def int_or(self, other): pass
 def int_xor(self, other): pass
 
-def int_lt(self, other): pass
-def int_gt(self, other): pass
 def int_eq(self, other): pass
+def int_ge(self, other): pass
+def int_gt(self, other): pass
+def int_le(self, other): pass
+def int_lt(self, other): pass
 def int_ne(self, other): pass
 
 def int_str(self): pass

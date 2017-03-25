@@ -23,10 +23,10 @@ from native.buffer import buffer_str
 
 from native.identity import is_, is_not
 
-from native.int import int_new, \
-                       int_add, int_div, int_mod, int_mul, int_neg, int_pow, \
-                       int_sub, int_and, int_not, int_or, int_xor, int_lt, \
-                       int_gt, int_eq, int_ne, int_str
+from native.int import int_add, int_div, int_mod, int_mul, int_neg, int_pow, \
+                       int_sub, int_and, int_not, int_or, int_xor, \
+                       int_eq, int_ge, int_gt, int_le, int_lt, int_ne, \
+                       int_str, is_int
 
 from native.introspection import object_getattr, isinstance, issubclass
 
