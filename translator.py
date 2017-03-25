@@ -557,6 +557,7 @@ class TranslatedModule(CommonModule):
 
         context_index = self.function_target - 1
         context_identity = None
+        context_identity_verified = False
         final_identity = None
 
         # Obtain encoded versions of each instruction, accumulating temporary
@@ -566,14 +567,15 @@ class TranslatedModule(CommonModule):
 
             # Intercept a special instruction identifying the context.
 
-            if instruction[0] == "<context_identity>":
+            if instruction[0] in ("<context_identity>", "<context_identity_verified>"):
                 context_identity, _substituted = encode_access_instruction_arg(instruction[1], subs, instruction[0], context_index)
+                context_identity_verified = instruction[0] == "<context_identity_verified>"
                 continue
 
             # Intercept a special instruction identifying the target. The value
             # is not encoded since it is used internally.
 
-            if instruction[0] == "<final_identity>":
+            elif instruction[0] == "<final_identity>":
                 final_identity = instruction[1]
                 continue
 
@@ -597,7 +599,7 @@ class TranslatedModule(CommonModule):
             refs = [ref]
 
         del self.attrs[0]
-        return AttrResult(output, refs, location, context_identity)
+        return AttrResult(output, refs, location, context_identity, context_identity_verified)
 
     def init_substitutions(self):
 
@@ -1065,6 +1067,7 @@ class TranslatedModule(CommonModule):
         context_required = True
         have_access_context = isinstance(expr, AttrResult)
         context_identity = have_access_context and expr.context()
+        context_verified = have_access_context and expr.context_verified()
         parameters = None
         num_parameters = None
         num_defaults = None
@@ -1353,20 +1356,26 @@ class TranslatedModule(CommonModule):
         elif function:
             if context_required:
                 if have_access_context:
-                    stages.append("__get_function(%s, %s)" % (
-                        context_identity, target_var))
+                    if context_verified:
+                        stages.append("__get_function_member(%s)" % target_var)
+                    else:
+                        stages.append("__get_function(%s, %s)" % (
+                            context_identity, target_var))
                 else:
                     stages.append("__get_function(__CONTEXT_AS_VALUE(%s), %s)" % (
                         context_var, target_var))
             else:
-                stages.append("__load_via_object(__VALUE(%s), __fn__).fn" % target_var)
+                stages.append("_get_function_member(%s)" % target_var)
 
         # With known parameters, the target can be tested.
 
         elif known_parameters:
             context_arg = context_required and args[0] or "__NULL"
             if self.always_callable(refs):
-                stages.append("__get_function(%s, %s)" % (context_arg, target_var))
+                if context_verified:
+                    stages.append("__get_function_member(%s)" % target_var)
+                else:
+                    stages.append("__get_function(%s, %s)" % (context_arg, target_var))
             else:
                 stages.append("__check_and_get_function(%s, %s)" % (context_arg, target_var))
 

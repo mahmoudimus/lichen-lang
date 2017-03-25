@@ -178,11 +178,12 @@ class AttrResult(Result, InstructionSequence):
 
     "A translation result for an attribute access."
 
-    def __init__(self, instructions, refs, location, context_identity):
+    def __init__(self, instructions, refs, location, context_identity, context_identity_verified):
         InstructionSequence.__init__(self, instructions)
         self.refs = refs
         self.location = location
         self.context_identity = context_identity
+        self.context_identity_verified = context_identity_verified
 
     def references(self):
         return self.refs
@@ -192,6 +193,9 @@ class AttrResult(Result, InstructionSequence):
 
     def context(self):
         return self.context_identity
+
+    def context_verified(self):
+        return self.context_identity_verified and self.context() or None
 
     def get_origin(self):
         return self.refs and len(self.refs) == 1 and first(self.refs).get_origin()

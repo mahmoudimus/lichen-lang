@@ -335,9 +335,14 @@ __attr (*__get_function_unwrapped(__attr context, __attr target))()
        or type instance contexts for type methods. */
 
     if (__ISNULL(context) || __is_instance(__VALUE(context)) || __type_method_invocation(context, target))
-        return __load_via_object(__VALUE(target), __fn__).fn;
+        return __get_function_member(target);
     else
         return __unbound_method;
+}
+
+__attr (*__get_function_member(__attr target))()
+{
+    return __load_via_object(__VALUE(target), __fn__).fn;
 }
 
 __attr (*__check_and_get_function(__attr context, __attr target))()

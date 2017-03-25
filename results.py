@@ -48,6 +48,9 @@ class Result:
     def context(self):
         return None
 
+    def context_verified(self):
+        return None
+
     def discards_temporary(self, test=True):
         return None
 

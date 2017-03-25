@@ -2908,7 +2908,10 @@ class Deducer(CommonOutput):
             # Produce an advisory instruction regarding the context.
 
             if context_var:
-                emit(("<context_identity>", context_var))
+                if context_test in ("ignore", "replace"):
+                    emit(("<context_identity_verified>", context_var))
+                else:
+                    emit(("<context_identity>", context_var))
 
             # Produce an advisory instruction regarding the final attribute.
 
