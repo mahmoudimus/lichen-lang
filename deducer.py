@@ -723,22 +723,6 @@ class Deducer(CommonOutput):
         for location, referenced_attrs in self.referenced_attrs.items():
             path, name, attrnames, version = location
 
-            # Identify module-level paths.
-
-            if self.importer.modules.has_key(path):
-                module_name = path
-
-            # Identify the module containing other paths.
-
-            else:
-                ref = self.importer.identify(path)
-                for objpath in ref.ancestors():
-                    if self.importer.modules.has_key(objpath):
-                        module_name = objpath
-                        break
-                else:
-                    raise DeduceError("Cannot find module for path %s." % path)
-
             # Identify references providing dependencies.
 
             for attrtype, objtype, attr in referenced_attrs:
