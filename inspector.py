@@ -1249,7 +1249,13 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         "Set the local with the given 'name' and optional 'ref'."
 
-        locals = self.function_locals[self.get_namespace_path()]
+        path = self.get_namespace_path()
+        locals = self.function_locals[path]
+        used = self.names_used.get(path)
+
+        if not locals.has_key(name) and used and name in used:
+            raise InspectError("Name %s assigned locally but used previously." % name, path)
+
         multiple = not ref or locals.has_key(name) and locals[name] != ref
         locals[name] = multiple and Reference("<var>") or ref
 
