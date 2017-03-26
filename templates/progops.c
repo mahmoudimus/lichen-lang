@@ -62,9 +62,8 @@ __fragment *__new_fragment(unsigned int n)
     return data;
 }
 
-void __newdata_sequence(__attr self, __attr args[], unsigned int number, __fragment *data)
+void __newdata_sequence(unsigned int number, __fragment *data, __attr args[])
 {
-    __attr attr = {.seqvalue=data};
     unsigned int i;
 
     /* Copy the given number of values. */
@@ -73,36 +72,38 @@ void __newdata_sequence(__attr self, __attr args[], unsigned int number, __fragm
         data->attrs[i] = args[i];
 
     data->size = number;
-
-    /* Store a reference to the data in the object's __data__ attribute. */
-
-    __store_via_object(__VALUE(self), __data__, attr);
 }
 
-__attr __newdata_list(__attr args[], unsigned int number)
+__attr __newdata_list(unsigned int number, __attr args[])
 {
     __attr self = __NEWINSTANCE(__builtins___list_list);
     __fragment *data = __new_fragment(number);
-    __newdata_sequence(self, args, number, data);
+
+    /* Store a reference to the data in the object's __data__ attribute. */
+
+    __store_via_object(__VALUE(self), __data__, (__attr) {.seqvalue=data});
+    __newdata_sequence(number, data, args);
     return self;
 }
 
-__attr __newdata_tuple(__attr args[], unsigned int number)
+__attr __newdata_tuple(unsigned int number, __attr args[])
 {
     /* Allocate the tuple and fragment together. */
 
     __attr self = __new(&__INSTANCETABLE(__builtins___tuple_tuple),
-                  &__builtins___tuple_tuple,
-                  __INSTANCESIZE(__builtins___tuple_tuple) + __FRAGMENT_SIZE(number), 0);
+                        &__builtins___tuple_tuple,
+                        __INSTANCESIZE(__builtins___tuple_tuple) + __FRAGMENT_SIZE(number), 0);
+    __fragment *data = (__fragment *) ((void *) __VALUE(self) + __INSTANCESIZE(__builtins___tuple_tuple));
 
-    /* Initialise the fragment. */
+    /* Store a reference to the data in the object's __data__ attribute. */
 
-    __newdata_sequence(self, args, number, (__fragment *) ((void *) __VALUE(self) + __INSTANCESIZE(__builtins___tuple_tuple)));
+    __store_via_object(__VALUE(self), __data__, (__attr) {.seqvalue=data});
+    __newdata_sequence(number, data, args);
     return self;
 }
 
 #ifdef __HAVE___builtins___dict_dict
-__attr __newdata_dict(__attr args[], unsigned int number)
+__attr __newdata_dict(unsigned int number, __attr args[])
 {
     __attr self = __NEWINSTANCE(__builtins___dict_dict);
 

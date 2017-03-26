@@ -25,8 +25,7 @@ from encoders import encode_code, \
                      encode_instantiator_pointer, \
                      encode_literal_constant, encode_literal_constant_member, \
                      encode_literal_constant_size, encode_literal_constant_value, \
-                     encode_literal_data_initialiser, \
-                     encode_literal_instantiator, encode_literal_reference, \
+                     encode_literal_reference, \
                      encode_path, encode_pcode, encode_pos, encode_ppos, \
                      encode_predefined_reference, encode_size, \
                      encode_symbol, encode_tablename, \
@@ -1236,19 +1235,6 @@ __attr %s(__attr __self%s)
             )
 
         print >>f_signatures, "#define __HAVE_%s" % encode_path(path)
-
-        # Write additional literal instantiators. These do not call the
-        # initialisers but instead populate the structures directly.
-
-        # Signature: __newliteral_sequence(ARGS, NUM)
-
-        if path in self.literal_instantiator_types:
-            style = path.rsplit(".", 1)[-1]
-
-            print >>f_signatures, "#define %s(ARGS, NUM) (%s(ARGS, NUM))" % (
-                encode_literal_instantiator(path),
-                encode_literal_data_initialiser(style),
-                )
 
     def write_main_program(self, f_code, f_signatures):
 

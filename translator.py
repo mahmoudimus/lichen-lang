@@ -1318,7 +1318,7 @@ class TranslatedModule(CommonModule):
         # the number of values. The context is excluded.
 
         if literal_instantiation:
-            argstr = "__ARGS(%s), %d" % (", ".join(args[1:]), len(args) - 1)
+            argstr = "%d, %s" % (len(args) - 1, ", ".join(args[1:]))
         else:
             argstr = ", ".join(args)
 
