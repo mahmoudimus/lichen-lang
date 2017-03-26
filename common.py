@@ -650,22 +650,22 @@ class CommonModule:
     def process_slice_node(self, n, expr=None):
 
         """
-        Process the given slice node 'n' as an operator function invocation.
+        Process the given slice node 'n' as a method invocation.
         """
 
-        if n.flags == "OP_ASSIGN": op = "setslice"
-        elif n.flags == "OP_DELETE": op = "delslice"
-        else: op = "getslice"
+        if n.flags == "OP_ASSIGN": op = "__setslice__"
+        elif n.flags == "OP_DELETE": op = "__delslice__"
+        else: op = "__getslice__"
 
         invocation = compiler.ast.CallFunc(
-            compiler.ast.Name("$op%s" % op),
-            [n.expr, n.lower or compiler.ast.Name("None"), n.upper or compiler.ast.Name("None")] +
+            compiler.ast.Getattr(n.expr, op),
+            [n.lower or compiler.ast.Name("None"), n.upper or compiler.ast.Name("None")] +
                 (expr and [expr] or [])
             )
 
         # Fix parse tree structure.
 
-        if op == "delslice":
+        if op == "__delslice__":
             invocation = compiler.ast.Discard(invocation)
 
         return self.process_structure_node(invocation)
@@ -686,21 +686,21 @@ class CommonModule:
     def process_subscript_node(self, n, expr=None):
 
         """
-        Process the given subscript node 'n' as an operator function invocation.
+        Process the given subscript node 'n' as a method invocation.
         """
 
-        if n.flags == "OP_ASSIGN": op = "setitem"
-        elif n.flags == "OP_DELETE": op = "delitem"
-        else: op = "getitem"
+        if n.flags == "OP_ASSIGN": op = "__setitem__"
+        elif n.flags == "OP_DELETE": op = "__delitem__"
+        else: op = "__getitem__"
 
         invocation = compiler.ast.CallFunc(
-            compiler.ast.Name("$op%s" % op),
-            [n.expr] + list(n.subs) + (expr and [expr] or [])
+            compiler.ast.Getattr(n.expr, op),
+            list(n.subs) + (expr and [expr] or [])
             )
 
         # Fix parse tree structure.
 
-        if op == "delitem":
+        if op == "__delitem__":
             invocation = compiler.ast.Discard(invocation)
 
         return self.process_structure_node(invocation)
