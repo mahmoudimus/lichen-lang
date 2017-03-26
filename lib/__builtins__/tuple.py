@@ -35,12 +35,14 @@ class tuple(sequence, hashable):
         # Reserve an attribute for a fragment reference along with some space
         # for elements.
 
-        self.__data__ = tuple_init(size)
-
         if args is None:
             size = 0
         else:
             size = args.__len__()
+
+        self.__data__ = tuple_init(size)
+
+        if size:
             list_setsize(self.__data__, size)
 
             # Populate the tuple.
