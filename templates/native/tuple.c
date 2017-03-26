@@ -32,7 +32,7 @@ static __fragment __empty_fragment = {.size=0, .capacity=0};
 __attr __fn_native_tuple_tuple_init(__attr __self, __attr size)
 {
     /* size interpreted as int */
-    unsigned int n = __TOINT(size);
+    int n = __TOINT(size);
 
     /* Return the __data__ attribute. */
     if (n) return (__attr) {.seqvalue=__new_fragment(n)};
