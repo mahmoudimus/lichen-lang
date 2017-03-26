@@ -866,9 +866,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         self.record_name(n.name)
 
         # Search for unknown names in non-function scopes immediately.
+        # Temporary names should not be re-used between scopes.
         # External names in functions are resolved later.
 
-        ref = self.find_name(n.name)
+        ref = not n.name.startswith("$t") and self.find_name(n.name) or None
+
         if ref:
             self.record_name_access(n.name, True)
             return ResolvedNameRef(n.name, ref, is_global=True)
