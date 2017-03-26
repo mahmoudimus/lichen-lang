@@ -91,13 +91,13 @@ __attr __newdata_tuple(__attr args[], unsigned int number)
 {
     /* Allocate the tuple and fragment together. */
 
-    __ref obj = (__ref) __ALLOCATE(1, __INSTANCESIZE(__builtins___tuple_tuple) + __FRAGMENT_SIZE(number));
-    __attr self = __ATTRVALUE(obj);
+    __attr self = __new(&__INSTANCETABLE(__builtins___tuple_tuple),
+                  &__builtins___tuple_tuple,
+                  __INSTANCESIZE(__builtins___tuple_tuple) + __FRAGMENT_SIZE(number), 0);
 
-    /* Initialise the instance and fragment. */
+    /* Initialise the fragment. */
 
-    __init(obj, &__INSTANCETABLE(__builtins___tuple_tuple), &__builtins___tuple_tuple);
-    __newdata_sequence(self, args, number, (__fragment *) ((void *) obj + __INSTANCESIZE(__builtins___tuple_tuple)));
+    __newdata_sequence(self, args, number, (__fragment *) ((void *) __VALUE(self) + __INSTANCESIZE(__builtins___tuple_tuple)));
     return self;
 }
 
