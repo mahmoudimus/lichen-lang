@@ -21,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from __builtins__.operator import _negate
 from __builtins__.unicode import utf8string
-from native import isinstance as _isinstance, get_maxint, get_minint, \
+from native import get_maxint, get_minint, is_int, \
                    int_add, int_and, int_div, int_eq, int_gt, int_lt, int_mod, \
                    int_mul, int_ne, int_neg, int_not, int_or, int_pow, \
                    int_str, int_sub, int_xor
@@ -48,7 +48,7 @@ class int:
 
         "Perform 'op' on this int and 'other' if appropriate."
 
-        if _isinstance(other, int):
+        if is_int(other):
             return op(self, other)
         else:
             return NotImplemented
@@ -57,7 +57,7 @@ class int:
 
         "Perform 'op' on 'other' and this int if appropriate."
 
-        if _isinstance(other, int):
+        if is_int(other):
             return op(other, self)
         else:
             return NotImplemented

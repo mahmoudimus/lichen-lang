@@ -3,7 +3,7 @@
 """
 POSIX character set conversion functions.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.types import check_int, check_string
+from __builtins__.types import check_string
 from native import iconv, iconv_close, iconv_open, iconv_reset
 
 class IncompleteSequenceError(OSError):

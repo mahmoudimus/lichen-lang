@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.span import _max
-from native import isinstance as _isinstance
+from native import is_int
 
 class hashtable:
 
@@ -66,7 +66,7 @@ class hashtable:
 
         index = key.__hash__()
 
-        if not _isinstance(index, int):
+        if not is_int(index):
             raise TypeError
 
         return index % len(self.buckets)

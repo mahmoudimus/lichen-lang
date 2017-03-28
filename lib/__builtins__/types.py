@@ -3,7 +3,7 @@
 """
 Common type validation functions.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,13 +19,13 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from native import isinstance as _isinstance
+from native import isinstance as _isinstance, is_int
 
 def check_int(i):
 
     "Check the given int 'i'."
 
-    if not _isinstance(i, int):
+    if not is_int(i):
         raise ValueError(i)
 
 def check_string(s):
