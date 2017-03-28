@@ -23,9 +23,10 @@ from common import first, get_assigned_attributes, \
                    get_attrname_from_location, get_attrnames, \
                    get_invoked_attributes, get_name_path, init_item, \
                    order_dependencies_partial, sorted_output, CommonOutput
-from encoders import encode_access_location, encode_constrained, \
-                     encode_instruction, encode_location, encode_usage, \
-                     get_kinds, test_label_for_kind, test_label_for_type
+from encoders import encode_access_location, encode_alias_location, \
+                     encode_constrained, encode_instruction, encode_location, \
+                     encode_usage, get_kinds, \
+                     test_label_for_kind, test_label_for_type
 from errors import DeduceError
 from os.path import join
 from referencing import combine_types, is_single_class_type, separate_types, \
@@ -320,8 +321,10 @@ class Deducer(CommonOutput):
             for location in locations:
                 accesses = []
                 for access_location in self.alias_index[location]:
-                    accesses.append(encode_access_location(access_location))
-                print >>f_aliases, encode_location(location), ", ".join(accesses)
+                    invocation = access_location in self.reference_invocations
+                    accesses.append(encode_alias_location(access_location, invocation))
+                invocation = location in self.reference_invocations
+                print >>f_aliases, encode_alias_location(location, invocation), ", ".join(accesses)
 
         finally:
             f_type_summary.close()

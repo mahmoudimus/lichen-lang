@@ -79,6 +79,13 @@ def encode_access_location(t):
     path, name, attrname, version = t
     return "%s:%s:%s:%d" % (path, name or "{}", attrname or "{}", version)
 
+def encode_alias_location(t, invocation=False):
+
+    "Encode the alias location 't'."
+
+    path, name, attrname, version = t
+    return "%s:%s:%s:%d%s" % (path, name or "{}", attrname or "{}", version, invocation and "!" or "")
+
 def encode_location(t):
 
     "Encode the general location 't' in a concise form."
