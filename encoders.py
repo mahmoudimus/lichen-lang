@@ -77,7 +77,7 @@ def encode_access_location(t):
     "Encode the access location 't'."
 
     path, name, attrname, version = t
-    return "%s %s %s:%d" % (path, name or "{}", attrname, version)
+    return "%s:%s:%s:%d" % (path, name or "{}", attrname or "{}", version)
 
 def encode_location(t):
 
@@ -85,11 +85,11 @@ def encode_location(t):
 
     path, name, attrname, version = t
     if name is not None and version is not None:
-        return "%s %s:%d" % (path, name, version)
+        return "%s:%s:%d" % (path, name, version)
     elif name is not None:
-        return "%s %s" % (path, name)
+        return "%s:%s" % (path, name)
     else:
-        return "%s :%s" % (path, attrname)
+        return "%s::%s" % (path, attrname)
 
 def encode_modifiers(modifiers):
 

@@ -205,7 +205,7 @@ class Deducer(CommonOutput):
 
         Locations have the following format:
 
-        qualified name of scope "." local name ":" name version
+        qualified name of scope ":" local name ":" name version
 
         The attribute type can be "<class>", "<instance>", "<module>" or "<>",
         where the latter indicates an absence of suitable references.
@@ -238,12 +238,19 @@ class Deducer(CommonOutput):
         location " " ( "specific" | "common" ) " " object kind " " object types
 
         Object kind can be "<class>", "<instance>" or "<module>".
+
+        ----
+
+        A summary of aliases is formatted as follows:
+
+        location " " locations
         """
 
         f_type_summary = open(join(self.output, "type_summary"), "w")
         f_types = open(join(self.output, "types"), "w")
         f_warnings = open(join(self.output, "type_warnings"), "w")
         f_guards = open(join(self.output, "guards"), "w")
+        f_aliases = open(join(self.output, "aliases"), "w")
 
         try:
             locations = self.accessor_class_types.keys()
@@ -304,11 +311,24 @@ class Deducer(CommonOutput):
                 print >>f_type_summary, encode_location(location), encode_constrained(constrained), \
                     guard_test and "-".join(guard_test) or "unguarded", sorted_output(all_general_types), len(all_types)
 
+            # Aliases are visited separately from accessors, even though they
+            # are often the same thing.
+
+            locations = self.alias_index.keys()
+            locations.sort()
+
+            for location in locations:
+                accesses = []
+                for access_location in self.alias_index[location]:
+                    accesses.append(encode_access_location(access_location))
+                print >>f_aliases, encode_location(location), ", ".join(accesses)
+
         finally:
             f_type_summary.close()
             f_types.close()
             f_warnings.close()
             f_guards.close()
+            f_aliases.close()
 
     def write_accesses(self):
 
@@ -322,7 +342,7 @@ class Deducer(CommonOutput):
 
         Locations have the following format:
 
-        qualified name of scope "." local name " " attribute name ":" access number
+        qualified name of scope ":" local name ":" attribute name ":" access number
 
         The attribute type can be "<class>", "<instance>", "<module>" or "<>",
         where the latter indicates an absence of suitable references.
