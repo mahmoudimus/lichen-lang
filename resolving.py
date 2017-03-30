@@ -431,7 +431,7 @@ class NameResolving:
 
     # Object resolution.
 
-    def get_resolved_object(self, path):
+    def get_resolved_object(self, path, defer=False):
 
         """
         Get the details of an object with the given 'path' within this module.
@@ -442,7 +442,7 @@ class NameResolving:
 
         if self.objects.has_key(path):
             ref = self.objects[path]
-            if ref.has_kind("<depends>"):
+            if not defer and ref.has_kind("<depends>"):
                 return None
             else:
                 return ref

@@ -132,9 +132,9 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
             key = "%s.%s" % (path, name)
 
-            # Find local definitions (within dynamic namespaces).
+            # Find local definitions.
 
-            ref = self.get_resolved_object(key)
+            ref = self.get_resolved_object(key, True)
             if ref:
                 self.set_name_reference(key, ref)
                 continue
@@ -1287,13 +1287,11 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Function local names.
 
         elif self.in_function:
-            path = self.get_object_path(name)
             self.set_function_local(name, init_value)
 
         # Other namespaces (classes).
 
         else:
-            path = self.get_object_path(name)
             self.set_name(name, init_value)
 
     def set_name(self, name, ref=None):
