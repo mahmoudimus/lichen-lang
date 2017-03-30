@@ -109,7 +109,7 @@ __attr __newdata_dict(unsigned int number, __attr args[])
 
     /* Create a temporary list using the arguments. */
 
-    __attr tmp = __newliteral___builtins___list_list(args, number);
+    __attr tmp = __newdata_list(number, args);
 
     /* Call __init__ with the dict object and list argument. */
 
