@@ -19,10 +19,10 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import first, get_assigned_attributes, \
-                   get_attrname_from_location, get_attrnames, \
+from common import first, get_assigned_attributes, get_attrnames, \
                    get_invoked_attributes, get_name_path, init_item, \
-                   order_dependencies_partial, sorted_output, CommonOutput
+                   order_dependencies_partial, sorted_output, \
+                   AccessLocation, CommonOutput, Location
 from encoders import encode_access_location, encode_alias_location, \
                      encode_constrained, encode_instruction, encode_location, \
                      encode_usage, get_kinds, \
@@ -74,6 +74,11 @@ class Deducer(CommonOutput):
         # Map accesses to aliases whose initial values are influenced by them.
 
         self.alias_index_rev = {}
+
+        # Map definitions and accesses to initialised names.
+
+        self.initialised_names = {}
+        self.initialised_accesses = {}
 
         # Map constant accesses to redefined accesses.
 
@@ -401,7 +406,7 @@ class Deducer(CommonOutput):
                 referenced_attrs = self.referenced_attrs[location]
 
                 if referenced_attrs:
-                    attrname = get_attrname_from_location(location)
+                    attrname = location.get_attrname()
 
                     all_accessed_attrs = list(set(self.reference_all_attrs[location]))
                     all_accessed_attrs.sort()
@@ -636,7 +641,7 @@ class Deducer(CommonOutput):
             # Record attribute information for each name used on the
             # accessor.
 
-            attrname = get_attrname_from_location(location)
+            attrname = location.get_attrname()
 
             self.reference_all_attrs[location] = all_accessed_attrs = []
             self.reference_all_providers[location] = all_providers = []
@@ -744,12 +749,11 @@ class Deducer(CommonOutput):
         "Introduce more module dependencies to the importer."
 
         for location, referenced_attrs in self.referenced_attrs.items():
-            path, name, attrnames, version = location
 
             # Identify references providing dependencies.
 
             for attrtype, objtype, attr in referenced_attrs:
-                self.importer.add_dependency(path, attr.get_origin())
+                self.importer.add_dependency(location.path, attr.get_origin())
 
     def get_referenced_attrs(self, location):
 
@@ -817,10 +821,10 @@ class Deducer(CommonOutput):
             for path, assignments in module.attr_usage.items():
                 self.add_usage(assignments, path)
 
-        for location, all_attrnames in self.importer.all_attr_accesses.items():
+        for path, all_attrnames in self.importer.all_attr_accesses.items():
             for attrnames in all_attrnames:
                 attrname = get_attrnames(attrnames)[-1]
-                access_location = (location, None, attrnames, 0)
+                access_location = AccessLocation(path, None, attrnames, 0)
                 self.add_usage_term(access_location, ((attrname, False, False),))
 
     def add_usage(self, assignments, path):
@@ -833,7 +837,7 @@ class Deducer(CommonOutput):
 
         for name, versions in assignments.items():
             for i, usages in enumerate(versions):
-                location = (path, name, None, i)
+                location = Location(path, name, None, i)
 
                 for usage in usages:
                     self.add_usage_term(location, usage)
@@ -872,11 +876,11 @@ class Deducer(CommonOutput):
             # Obtain the usage details using the access information.
 
             for access_number, versions in enumerate(accesses):
-                access_location = (path, name, attrnames, access_number)
+                access_location = AccessLocation(path, name, attrnames, access_number)
                 locations = []
 
                 for version in versions:
-                    location = (path, name, None, version)
+                    location = Location(path, name, None, version)
                     locations.append(location)
 
                     # Map accessors to affected accesses.
@@ -922,9 +926,9 @@ class Deducer(CommonOutput):
                 for access_number, (assignment, invocation) in enumerate(modifiers):
 
                     if name:
-                        access_location = (path, name, attrname_str, access_number)
+                        access_location = AccessLocation(path, name, attrname_str, access_number)
                     else:
-                        access_location = (path, None, attrname_str, 0)
+                        access_location = AccessLocation(path, None, attrname_str, 0)
 
                     # Plain name accesses do not employ attributes and are
                     # ignored. Whether they are invoked is of interest, however.
@@ -983,15 +987,24 @@ class Deducer(CommonOutput):
 
             for version, aliases in all_aliases.items():
                 for (original_path, original_name, attrnames, access_number) in aliases:
-                    accessor_location = (path, name, None, version)
-                    access_location = (original_path, original_name, attrnames, access_number)
+                    accessor_location = Location(path, name, None, version)
+                    access_location = AccessLocation(original_path, original_name, attrnames, access_number)
                     init_item(self.alias_index, accessor_location, list)
                     self.alias_index[accessor_location].append(access_location)
 
-        # Get aliases in terms of non-aliases and accesses.
+        # Get initialised name information for accessors and accesses.
 
-        for accessor_location, access_locations in self.alias_index.items():
-            self.update_aliases(accessor_location, access_locations)
+        for (path, name), versions in self.importer.all_initialised_names.items():
+            for version, ref in versions.items():
+                location = Location(path, name, None, version)
+
+                self.initialised_names[location] = ref
+
+                access_locations = self.access_index_rev.get(location)
+                if access_locations:
+                    for access_location in access_locations:
+                        init_item(self.initialised_accesses, access_location, set)
+                        self.initialised_accesses[access_location].add(ref)
 
         # Get a mapping from accesses to affected aliases.
 
@@ -999,62 +1012,6 @@ class Deducer(CommonOutput):
             for access_location in access_locations:
                 init_item(self.alias_index_rev, access_location, set)
                 self.alias_index_rev[access_location].add(accessor_location)
-
-    def update_aliases(self, accessor_location, access_locations, visited=None):
-
-        """
-        Update the given 'accessor_location' defining an alias, update
-        'access_locations' to refer to non-aliases, following name references
-        via the access index.
-
-        If 'visited' is specified, it contains a set of accessor locations (and
-        thus keys to the alias index) that are currently being defined.
-        """
-
-        if visited is None:
-            visited = set()
-
-        updated_locations = set()
-
-        for access_location in access_locations:
-            (path, original_name, attrnames, access_number) = access_location
-
-            # Locations may have been recorded for return values, but they may
-            # not correspond to actual accesses.
-
-            if not self.access_index.has_key(access_location):
-                updated_locations.add(access_location)
-
-            # Where an alias refers to a name access, obtain the original name
-            # version details.
-
-            elif attrnames is None:
-
-                # For each name version, attempt to determine any accesses that
-                # initialise the name.
-
-                for name_accessor_location in self.access_index[access_location]:
-
-                    # Already-visited aliases do not contribute details.
-
-                    if name_accessor_location in visited:
-                        continue
-
-                    visited.add(name_accessor_location)
-
-                    name_access_locations = self.alias_index.get(name_accessor_location)
-                    if name_access_locations:
-                        updated_locations.update(self.update_aliases(name_accessor_location, name_access_locations, visited))
-                    else:
-                        updated_locations.add(name_accessor_location)
-
-            # Otherwise, record the access details.
-
-            else:
-                updated_locations.add(access_location)
-
-        self.alias_index[accessor_location] = updated_locations
-        return updated_locations
 
     # Attribute mutation for types.
 
@@ -1284,7 +1241,7 @@ class Deducer(CommonOutput):
 
         # Anonymous references with attribute chains.
 
-        for location, accesses in self.importer.all_attr_accesses.items():
+        for path, accesses in self.importer.all_attr_accesses.items():
 
             # Get distinct attribute names.
 
@@ -1296,12 +1253,12 @@ class Deducer(CommonOutput):
             # Get attribute and accessor details for each attribute name.
 
             for attrname in all_attrnames:
-                access_location = (location, None, attrname, 0)
+                access_location = AccessLocation(path, None, attrname, 0)
                 self.record_types_for_attribute(access_location, attrname)
 
         # References via constant/identified objects.
 
-        for location, name_accesses in self.importer.all_const_accesses.items():
+        for path, name_accesses in self.importer.all_const_accesses.items():
 
             # A mapping from the original name and attributes to resolved access
             # details.
@@ -1324,8 +1281,8 @@ class Deducer(CommonOutput):
                     oa, attrname = original_accessor[:-1], original_accessor[-1]
                     oa = ".".join(oa)
 
-                    access_location = (location, oa, attrname, 0)
-                    accessor_location = (location, oa, None, 0)
+                    access_location = AccessLocation(path, oa, attrname, 0)
+                    accessor_location = Location(path, oa, None, 0)
                     self.access_index[access_location] = [accessor_location]
 
                     self.init_access_details(access_location)
@@ -1364,8 +1321,8 @@ class Deducer(CommonOutput):
                     oa = original_accessor[:-len(l)]
                     oa = ".".join(oa)
 
-                    access_location = (location, oa, attrnames, 0)
-                    accessor_location = (location, oa, None, 0)
+                    access_location = AccessLocation(path, oa, attrnames, 0)
+                    accessor_location = Location(path, oa, None, 0)
                     self.access_index[access_location] = [accessor_location]
 
                     self.init_access_details(access_location)
@@ -1379,7 +1336,7 @@ class Deducer(CommonOutput):
                 # Define mappings between the original and access locations
                 # so that translation can work from the source details.
 
-                original_location = (location, original_name, original_attrnames, 0)
+                original_location = AccessLocation(path, original_name, original_attrnames, 0)
 
                 if original_location != access_location:
                     self.const_accesses[original_location] = access_location
@@ -1469,12 +1426,11 @@ class Deducer(CommonOutput):
         plus whether the types have been constrained to a specific kind of type.
         """
 
-        unit_path, name, attrnames, version = location
         have_assignments = get_assigned_attributes(usage)
 
         # Detect any initialised name for the location.
 
-        if name:
+        if location.name:
             refs = self.get_initialised_name(location)
             if refs:
                 (class_types, only_instance_types, module_types,
@@ -1490,12 +1446,12 @@ class Deducer(CommonOutput):
         # Merge usage deductions with observations to obtain reference types
         # for names involved with attribute accesses.
 
-        if not name:
+        if not location.name:
             return class_types, only_instance_types, module_types, False, have_assignments
 
         # Obtain references to known objects.
 
-        path = get_name_path(unit_path, name)
+        path = get_name_path(location.path, location.name)
 
         class_types, only_instance_types, module_types, constrained_specific = \
             self.constrain_types(path, class_types, only_instance_types, module_types)
@@ -1506,19 +1462,19 @@ class Deducer(CommonOutput):
 
         # Constrain "self" references.
 
-        if name == "self":
+        if location.name == "self":
 
             # Test for the class of the method in the deduced types.
 
-            class_name = self.in_method(unit_path)
+            class_name = self.in_method(location.path)
 
             if class_name and class_name not in class_types and class_name not in only_instance_types:
                 raise DeduceError("In %s, usage {%s} is not directly supported by class %s or its instances." %
-                                  (unit_path, encode_usage(usage), class_name))
+                                  (location.path, encode_usage(usage), class_name))
 
             # Constrain the types to the class's hierarchy.
 
-            t = self.constrain_self_reference(unit_path, class_types, only_instance_types)
+            t = self.constrain_self_reference(location.path, class_types, only_instance_types)
             if t:
                 class_types, only_instance_types, module_types, constrained = t
                 return class_types, only_instance_types, module_types, constrained, have_assignments
@@ -1590,7 +1546,7 @@ class Deducer(CommonOutput):
         'accessor_locations'. Return whether referenced attributes were updated.
         """
 
-        attrname = get_attrname_from_location(access_location)
+        attrname = access_location.get_attrname()
         if not attrname:
             return False
 
@@ -1716,8 +1672,8 @@ class Deducer(CommonOutput):
             refs = set()
 
             for access_location in self.alias_index[accessor_location]:
-                location, name, attrnames, access_number = access_location
-                invocation = self.reference_invocations.get(access_location)
+                attrnames = access_location.attrnames
+                invocation = self.reference_invocations.has_key(access_location)
 
                 attrnames = attrnames and attrnames.split(".")
                 remaining = attrnames and len(attrnames) > 1
@@ -1755,7 +1711,7 @@ class Deducer(CommonOutput):
                     # Attempt to refine the types using initialised names or
                     # accessors.
 
-                    attrs = self.get_initialised_name(access_location)
+                    attrs = self.get_initialised_access(access_location)
 
                     if attrs:
                         provider_attrs = self.convert_invocation_providers(attrs, invocation)
@@ -1826,8 +1782,8 @@ class Deducer(CommonOutput):
             refs = set()
 
             for access_location in self.alias_index[accessor_location]:
-                location, name, attrnames, access_number = access_location
-                invocation = self.reference_invocations.get(access_location)
+                attrnames = access_location.attrnames
+                invocation = self.reference_invocations.has_key(access_location)
 
                 attrnames = attrnames and attrnames.split(".")
                 remaining = attrnames and len(attrnames) > 1
@@ -1853,7 +1809,7 @@ class Deducer(CommonOutput):
 
                     # Obtain initialiser information.
 
-                    attrs = self.get_initialised_name(access_location)
+                    attrs = self.get_initialised_access(access_location)
 
                     if attrs:
                         provider_attrs = self.convert_invocation_providers(attrs, invocation)
@@ -1923,8 +1879,10 @@ class Deducer(CommonOutput):
         if not versions:
             return
 
+        path, name = key
+
         for version in versions.keys():
-            location = key + (None, version)
+            location = Location(path, name, None, version)
             l = init_item(self.alias_index_rev, location, set)
             l.add(access_location)
 
@@ -2031,22 +1989,27 @@ class Deducer(CommonOutput):
         else:
             return refs
 
-    def get_initialised_name(self, access_location):
+    def get_initialised_name(self, location):
 
         """
-        Return references for any initialised names at 'access_location', or
-        None if no such references exist.
+        Return references for any initialised names at 'location', or None if no
+        such references exist.
         """
 
-        path, name, attrnames, version = access_location
+        ref = self.initialised_names.get(location)
+        return ref and [ref] or None
 
-        # Use initialiser information, if available.
+    def get_initialised_access(self, location):
 
-        initialisers = self.importer.all_initialised_names.get((path, name))
-        if initialisers and initialisers.has_key(version):
-            return [initialisers[version]]
+        """
+        Return references for any initialised names supplying the given access
+        'location', or None if no such references exist.
+        """
+
+        if location.access_number is not None:
+            return self.initialised_accesses.get(location)
         else:
-            return None
+            return self.get_initialised_name(location)
 
     def get_accessor_references(self, access_location):
 
@@ -2112,7 +2075,7 @@ class Deducer(CommonOutput):
         # Instance-only and module types support only their own kinds as
         # accessors.
 
-        path, name, attrnames, version = location
+        path, name = location.path, location.name
 
         if invocations:
             class_only_types = self.filter_for_invocations(class_types, invocations)
@@ -2334,7 +2297,7 @@ class Deducer(CommonOutput):
 
         const_access = self.const_accesses_rev.get(location)
 
-        path, name, attrnames, version = location
+        path, name, attrnames = location.path, location.name, location.attrnames
         remaining = attrnames.split(".")
         attrname = remaining[0]
 

@@ -76,27 +76,27 @@ def encode_access_location(t):
 
     "Encode the access location 't'."
 
-    path, name, attrname, version = t
-    return "%s:%s:%s:%d" % (path, name or "{}", attrname or "{}", version)
+    return "%s:%s:%s:%d" % (t.path, t.name or "{}", t.attrnames or "{}", t.access_number)
 
 def encode_alias_location(t, invocation=False):
 
     "Encode the alias location 't'."
 
-    path, name, attrname, version = t
-    return "%s:%s:%s:%d%s" % (path, name or "{}", attrname or "{}", version, invocation and "!" or "")
+    return "%s:%s:%s%s%s%s" % (t.path, t.name or "{}", t.attrnames or "{}",
+        t.version is not None and ":=%d" % t.version or "",
+        t.access_number is not None and ":#%d" % t.access_number or "",
+        invocation and "!" or "")
 
 def encode_location(t):
 
     "Encode the general location 't' in a concise form."
 
-    path, name, attrname, version = t
-    if name is not None and version is not None:
-        return "%s:%s:%d" % (path, name, version)
-    elif name is not None:
-        return "%s:%s" % (path, name)
+    if t.name is not None and t.version is not None:
+        return "%s:%s:%d" % (t.path, t.name, t.version)
+    elif t.name is not None:
+        return "%s:%s" % (t.path, t.name)
     else:
-        return "%s::%s" % (path, attrname)
+        return "%s::%s" % (t.path, t.attrnames)
 
 def encode_modifiers(modifiers):
 

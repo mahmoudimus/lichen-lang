@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from common import CommonModule, CommonOutput, \
+from common import AccessLocation, CommonModule, CommonOutput, Location, \
                    first, get_builtin_class, init_item, is_newer, \
                    predefined_constants
 from encoders import encode_access_instruction, encode_access_instruction_arg, \
@@ -648,7 +648,7 @@ class TranslatedModule(CommonModule):
         # Determine whether any deduced references refer to the accessed
         # attribute.
 
-        path, accessor_name, attrnames, access_number = location
+        attrnames = location.attrnames
         attrnames = attrnames and attrnames.split(".")
         remaining = attrnames and len(attrnames) > 1
 
@@ -695,7 +695,7 @@ class TranslatedModule(CommonModule):
         attrnames = attrnames and ".".join(self.attrs)
         access_number = self.get_access_number(path, name, attrnames)
         self.update_access_number(path, name, attrnames)
-        return (path, name, attrnames, access_number)
+        return AccessLocation(path, name, attrnames, access_number)
 
     def get_access_number(self, path, name, attrnames):
         access = name, attrnames
@@ -723,9 +723,9 @@ class TranslatedModule(CommonModule):
         # Get the location used by the deducer and optimiser and find any
         # recorded accessor.
 
-        access_number = self.get_accessor_number(path, name)
+        version = self.get_accessor_number(path, name)
         self.update_accessor_number(path, name)
-        return (path, name, None, access_number)
+        return Location(path, name, None, version)
 
     def get_accessor_number(self, path, name):
         if self.attr_accessors.has_key(path) and self.attr_accessors[path].has_key(name):
@@ -1127,7 +1127,7 @@ class TranslatedModule(CommonModule):
 
         else:
             if location:
-                path, name, attrnames, access_number = location
+                attrnames = location.attrnames
                 attrname = attrnames and attrnames.rsplit(".", 1)[-1]
 
                 # Determine any common aspects of any attribute.

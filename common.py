@@ -907,6 +907,62 @@ def get_names_from_nodes(nodes):
 
     return names, count
 
+# Location classes.
+
+class Location:
+
+    "A generic program location."
+
+    def __init__(self, path, name, attrnames=None, version=None, access_number=None):
+        self.path = path
+        self.name = name
+        self.attrnames = attrnames
+        self.version = version
+        self.access_number = access_number
+
+    def __repr__(self):
+        return "Location(%r, %r, %r, %r, %r)" % self.as_tuple()
+
+    def as_tuple(self):
+        return (self.path, self.name, self.attrnames, self.version, self.access_number)
+
+    def __hash__(self):
+        return hash(self.as_tuple())
+
+    def __eq__(self, other):
+        return self.as_tuple() == other.as_tuple()
+
+    def __cmp__(self, other):
+        return cmp(self.as_tuple(), other.as_tuple())
+
+    def get_attrname(self):
+
+        """
+        Extract the first attribute from the attribute names employed in this
+        location.
+        """
+
+        attrnames = self.attrnames
+        if not attrnames:
+            return attrnames
+        return get_attrnames(attrnames)[0]
+
+class AccessLocation(Location):
+
+    "A specialised access location."
+
+    def __init__(self, path, name, attrnames, access_number):
+
+        """
+        Initialise an access location featuring 'path', 'name', 'attrnames' and
+        'access_number'.
+        """
+
+        Location.__init__(self, path, name, attrnames, None, access_number)
+
+    def __repr__(self):
+        return "AccessLocation(%r, %r, %r, %r)" % (self.path, self.name, self.attrnames, self.access_number)
+
 # Result classes.
 
 class InstructionSequence:
@@ -1404,18 +1460,6 @@ def get_attrnames(attrnames):
         return [attrnames]
     else:
         return attrnames.split(".")
-
-def get_attrname_from_location(location):
-
-    """
-    Extract the first attribute from the attribute names employed in a
-    'location'.
-    """
-
-    path, name, attrnames, access = location
-    if not attrnames:
-        return attrnames
-    return get_attrnames(attrnames)[0]
 
 def get_name_path(path, name):
 
