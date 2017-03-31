@@ -240,20 +240,7 @@ class NameResolving:
             # Resolve values for each name in a scope.
 
             for name, values in name_initialisers.items():
-                initialised_names = {}
-                aliased_names = {}
-
-                for i, name_ref in enumerate(values):
-                    initialised_ref, _aliased_names = self.resolve_reference(path, name_ref)
-                    if initialised_ref:
-                        initialised_names[i] = initialised_ref
-                    if _aliased_names:
-                        aliased_names[i] = _aliased_names
-
-                if initialised_names:
-                    self.initialised_names[(path, name)] = initialised_names
-                if aliased_names:
-                    self.aliased_names[(path, name)] = aliased_names
+                self._resolve_values(path, name, values)
 
     def resolve_return_values(self):
 
@@ -265,20 +252,29 @@ class NameResolving:
 
             # Resolve each return value provided by the scope.
 
-            initialised_names = {}
-            aliased_names = {}
+            self._resolve_values(path, "$return", values)
 
-            for i, name_ref in enumerate(values):
-                initialised_ref, _aliased_names = self.resolve_reference(path, name_ref)
-                if initialised_ref:
-                    initialised_names[i] = initialised_ref
-                if _aliased_names:
-                    aliased_names[i] = _aliased_names
+    def _resolve_values(self, path, name, values):
 
-            if initialised_names:
-                self.initialised_names[(path, "$return")] = initialised_names
-            if aliased_names:
-                self.aliased_names[(path, "$return")] = aliased_names
+        """
+        Resolve in 'path' the references for 'name' involving the given
+        'values'.
+        """
+
+        initialised_names = {}
+        aliased_names = {}
+
+        for i, name_ref in enumerate(values):
+            initialised_ref, _aliased_names = self.resolve_reference(path, name_ref)
+            if initialised_ref:
+                initialised_names[i] = initialised_ref
+            if _aliased_names:
+                aliased_names[i] = _aliased_names
+
+        if initialised_names:
+            self.initialised_names[(path, name)] = initialised_names
+        if aliased_names:
+            self.aliased_names[(path, name)] = aliased_names
 
     def resolve_reference(self, path, name_ref):
 
