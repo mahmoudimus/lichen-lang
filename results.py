@@ -209,6 +209,26 @@ class LiteralSequenceRef(ResolvedNameRef):
     def __repr__(self):
         return "LiteralSequenceRef(%r, %r, %r, %r)" % (self.name, self.ref, self.node, self.items)
 
+class MultipleRef(Result):
+
+    "A multiple outcome result."
+
+    def __init__(self, results):
+        self.results = results
+
+    def reference(self):
+        refs = set(self.references())
+        ref = len(refs) == 1 and list(refs)[0] or Reference("<var>")
+
+    def references(self):
+        refs = []
+        for result in self.results:
+            refs.append(result.reference())
+        return refs
+
+    def __repr__(self):
+        return "MultipleRef(%r)" % self.results
+
 class VariableRef(Result):
 
     "A variable reference."

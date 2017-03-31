@@ -21,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from common import init_item
 from results import AccessRef, InstanceRef, InvocationRef, LocalNameRef, \
-                    NameRef, ResolvedNameRef
+                    MultipleRef, NameRef, ResolvedNameRef
 from referencing import Reference
 import sys
 
@@ -283,11 +283,39 @@ class NameResolving:
         initialised reference, along with any aliased name information.
         """
 
-        const_accesses = self.const_accesses.get(path)
-
         initialised_ref = None
         aliased_names = None
         no_reference = None, None
+
+        # Attempt to obtain a coherent reference from multiple outcomes.
+
+        if isinstance(name_ref, MultipleRef):
+            refs = set()
+            aliases = []
+
+            for result in name_ref.results:
+                _initialised_ref, _aliased_names = self.resolve_reference(path, result)
+
+                # Unsuitable references at any level cause the result to yield
+                # no reference.
+
+                if not _initialised_ref:
+                    refs = None
+                elif refs is not None:
+                    refs.add(_initialised_ref)
+
+                if not _aliased_names:
+                    aliases = None
+                elif aliases is not None:
+                    aliases += _aliased_names
+
+            # Only unambiguous references are returned as initialising
+            # references.
+
+            if refs and len(refs) == 1:
+                return list(refs)[0], aliases
+            else:
+                return None, aliases
 
         # Unwrap invocations.
 
@@ -296,6 +324,8 @@ class NameResolving:
             name_ref = name_ref.name_ref
         else:
             invocation = False
+
+        const_accesses = self.const_accesses.get(path)
 
         # Obtain a usable reference from names or constants.
 

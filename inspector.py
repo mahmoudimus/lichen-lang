@@ -27,7 +27,8 @@ from errors import InspectError
 from referencing import Reference
 from resolving import NameResolving
 from results import AccessRef, InstanceRef, InvocationRef, LiteralSequenceRef, \
-                    LocalNameRef, NameRef, ResolvedNameRef, VariableRef
+                    LocalNameRef, MultipleRef, NameRef, ResolvedNameRef, \
+                    Result, VariableRef
 import compiler
 import sys
 
@@ -800,7 +801,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         "Process the given operator node 'n'."
 
-        self.process_operator_chain(n.nodes, self.process_structure_node)
+        return self.process_operator_chain(n.nodes)
 
     def process_name_node(self, n):
 
@@ -915,20 +916,24 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
                                               self.in_invocation)
         return None
 
-    def process_operator_chain(self, nodes, fn):
+    def process_operator_chain(self, nodes):
 
         """
-        Process the given chain of 'nodes', applying 'fn' to each node or item.
+        Process the given chain of 'nodes', processing each node or item.
         Each node starts a new conditional region, effectively making a deeply-
         nested collection of if-like statements.
         """
+
+        results = []
 
         tracker = self.trackers[-1]
 
         for item in nodes:
             tracker.new_branchpoint()
             tracker.new_branch()
-            fn(item)
+            result = self.process_structure_node(item)
+            if result:
+                results.append(result)
 
         for item in nodes[:-1]:
             tracker.shelve_branch()
@@ -938,6 +943,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         tracker.shelve_branch()
         tracker.merge_branches()
+
+        return MultipleRef(results)
 
     def process_try_node(self, n):
 
@@ -1322,22 +1329,8 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         "Return a suitable initialiser reference for 'value'."
 
-        # Includes LiteralSequenceRef, ResolvedNameRef...
-
-        if isinstance(value, (NameRef, AccessRef, InstanceRef)):
+        if isinstance(value, Result):
             return value.reference()
-
-        # In general, invocations do not produce known results. However, the
-        # name initialisers are resolved once a module has been inspected.
-
-        elif isinstance(value, InvocationRef):
-            return value.reference()
-
-        # Variable references are unknown results.
-
-        elif isinstance(value, VariableRef):
-            return value.reference()
-
         else:
             return value
 
