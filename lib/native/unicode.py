@@ -24,11 +24,13 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+# NOTE: Example values used to provide type information.
+
 # Unicode string operations.
 
-def unicode_len(data, size): pass
-def unicode_ord(data, size): pass
-def unicode_substr(data, size, start, end, step): pass
-def unicode_unichr(value): pass
+def unicode_len(data, size): return 0
+def unicode_ord(data, size): return 0
+def unicode_substr(data, size, start, end, step): return ""
+def unicode_unichr(value): return ""
 
 # vim: tabstop=4 expandtab shiftwidth=4

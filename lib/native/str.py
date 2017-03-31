@@ -24,14 +24,14 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# String operations.
+# NOTE: Example values used to provide type information.
 
-def str_add(data, other_data, size, other_size): pass
-def str_chr(data): pass
-def str_eq(data, other_data): pass
-def str_gt(data, other_data): pass
-def str_lt(data, other_data): pass
-def str_ord(data): pass
-def str_substr(data, start, end, step): pass
+def str_add(data, other_data, size, other_size): return ""
+def str_chr(data): return ""
+def str_eq(data, other_data): return True or False
+def str_gt(data, other_data): return True or False
+def str_lt(data, other_data): return True or False
+def str_ord(data): return 0
+def str_substr(data, start, end, step): return ""
 
 # vim: tabstop=4 expandtab shiftwidth=4

@@ -24,28 +24,31 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-def is_int(obj): pass
+def is_int(obj): return True or False
 
-def int_add(self, other): pass
-def int_div(self, other): pass
-def int_mod(self, other): pass
-def int_mul(self, other): pass
-def int_neg(self): pass
-def int_pow(self, other): pass
-def int_sub(self, other): pass
+# NOTE: Update return types when integers eventually get promoted to longs.
+# NOTE: Example values used to provide type information.
 
-def int_and(self, other): pass
-def int_not(self): pass
-def int_or(self, other): pass
-def int_xor(self, other): pass
+def int_add(self, other): return 0
+def int_div(self, other): return 0
+def int_mod(self, other): return 0
+def int_mul(self, other): return 0
+def int_neg(self): return 0
+def int_pow(self, other): return 0
+def int_sub(self, other): return 0
 
-def int_eq(self, other): pass
-def int_ge(self, other): pass
-def int_gt(self, other): pass
-def int_le(self, other): pass
-def int_lt(self, other): pass
-def int_ne(self, other): pass
+def int_and(self, other): return 0
+def int_not(self): return True or False
+def int_or(self, other): return 0
+def int_xor(self, other): return 0
 
-def int_str(self): pass
+def int_eq(self, other): return True or False
+def int_ge(self, other): return True or False
+def int_gt(self, other): return True or False
+def int_le(self, other): return True or False
+def int_lt(self, other): return True or False
+def int_ne(self, other): return True or False
+
+def int_str(self): return ""
 
 # vim: tabstop=4 expandtab shiftwidth=4

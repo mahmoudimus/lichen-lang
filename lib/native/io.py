@@ -8,7 +8,7 @@ substituted when each program is built. It is, however, important to declare
 non-core exceptions used by the native functions because they need to be
 identified as being needed by the program.
 
-Copyright (C) 2011, 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2011, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -24,17 +24,26 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+# NOTE: Example values used to provide type information.
+
 def fclose(fp): IOError
 def fflush(fp): IOError
 def fopen(filename, mode): IOError
 def fdopen(fd, mode): IOError
 def close(fd): IOError
-def read(fd, n): IOError
-def write(fd, str): IOError
+
+def read(fd, n):
+    IOError
+    return ""
+
+def write(fd, str):
+    IOError
+    return 0
 
 def fread(fp, n):
     IOError
     EOFError
+    return ""
 
 def fwrite(fp, str):
     IOError
