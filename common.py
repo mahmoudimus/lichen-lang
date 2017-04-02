@@ -620,12 +620,44 @@ class CommonModule:
         Process the given operator node 'n' as an operator function invocation.
         """
 
-        op = operator_functions[n.__class__.__name__]
-        invocation = compiler.ast.CallFunc(
-            compiler.ast.Name("$op%s" % op),
-            list(n.getChildNodes())
-            )
+        opname = n.__class__.__name__
+        operands = n.getChildNodes()
+
+        # Convert a unary operation to an invocation.
+
+        op = unary_operator_functions.get(opname)
+
+        if op:
+            invocation = compiler.ast.CallFunc(
+                compiler.ast.Name("$op%s" % op),
+                [operands[0]]
+                )
+
+        # Convert a single operator with a list of operands to a combination of
+        # pairwise operations.
+
+        else:
+            op = operator_functions[opname]
+            invocation = self._process_operator_node(op, operands)
+
         return self.process_structure_node(invocation)
+
+    def _process_operator_node(self, op, operands):
+
+        """
+        Process the given 'op', being an operator function, together with the
+        supplied 'operands', returning either a single remaining operand or an
+        invocation combining the operands.
+        """
+
+        remaining = operands[1:]
+        if not remaining:
+            return operands[0]
+
+        return compiler.ast.CallFunc(
+            compiler.ast.Name("$op%s" % op),
+            [operands[0], self._process_operator_node(op, remaining)]
+            )
 
     def process_print_node(self, n):
 
@@ -1548,6 +1580,15 @@ def get_builtin_class(name):
 
 predefined_constants = "False", "None", "NotImplemented", "True"
 
+unary_operator_functions = {
+
+    # Unary operations.
+
+    "Invert" : "invert",
+    "UnaryAdd" : "pos",
+    "UnarySub" : "neg",
+    }
+
 operator_functions = {
 
     # Fundamental operations.
@@ -1571,12 +1612,6 @@ operator_functions = {
     "Power" : "pow",
     "RightShift" : "rshift",
     "Sub" : "sub",
-
-    # Unary operations.
-
-    "Invert" : "invert",
-    "UnaryAdd" : "pos",
-    "UnarySub" : "neg",
 
     # Augmented assignment.
 
@@ -1602,5 +1637,7 @@ operator_functions = {
     ">=" : "ge",
     ">" : "gt",
     }
+
+operator_functions.update(unary_operator_functions)
 
 # vim: tabstop=4 expandtab shiftwidth=4
