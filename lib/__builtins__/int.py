@@ -22,9 +22,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.operator import _negate
 from __builtins__.unicode import utf8string
 from native import get_maxint, get_minint, is_int, \
-                   int_add, int_and, int_div, int_eq, int_gt, int_lt, int_mod, \
-                   int_mul, int_ne, int_neg, int_not, int_or, int_pow, \
-                   int_str, int_sub, int_xor
+                   int_add, int_and, int_div, int_eq, int_gt, int_lshift, \
+                   int_lt, int_mod, int_mul, int_ne, int_neg, int_not, \
+                   int_or, int_pow, int_rshift, int_str, int_sub, int_xor
 
 class int:
 
@@ -164,6 +164,34 @@ class int:
     __or__ = __ror__ = __ior__
     __xor__ = __rxor__ = __ixor__
 
+    def __lshift__(self, other):
+
+        "Return a new int left-shifted by 'other'."
+
+        return self._binary_op(int_lshift, other)
+
+    def __rlshift__(self, other):
+
+        "Return a new int left-shifted by 'other'."
+
+        return self._binary_op_rev(int_lshift, other)
+
+    def __rshift__(self, other):
+
+        "Return a new int right-shifted by 'other'."
+
+        return self._binary_op(int_rshift, other)
+
+    def __rrshift__(self, other):
+
+        "Return a new int right-shifted by 'other'."
+
+        return self._binary_op_rev(int_rshift, other)
+
+    __ilshift__ = __lshift__
+
+    __irshift__ = __rshift__
+
     def __lt__(self, other):
 
         "Return whether this int is less than 'other'."
@@ -219,13 +247,6 @@ class int:
         return utf8string(int_str(self))
 
     __repr__ = __str__
-
-    def __lshift__(self): pass
-    def __rlshift__(self): pass
-    def __rshift__(self): pass
-    def __rrshift__(self): pass
-    def __ilshift__(self): pass
-    def __irshift__(self): pass
 
     def __bool__(self):
 

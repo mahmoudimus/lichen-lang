@@ -42,6 +42,9 @@ def int_not(self): return True or False
 def int_or(self, other): return 0
 def int_xor(self, other): return 0
 
+def int_lshift(self, other): return 0
+def int_rshift(self, other): return 0
+
 def int_eq(self, other): return True or False
 def int_ge(self, other): return True or False
 def int_gt(self, other): return True or False

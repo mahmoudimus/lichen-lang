@@ -25,6 +25,7 @@ from native.identity import is_, is_not
 
 from native.int import int_add, int_div, int_mod, int_mul, int_neg, int_pow, \
                        int_sub, int_and, int_not, int_or, int_xor, \
+                       int_lshift, int_rshift, \
                        int_eq, int_ge, int_gt, int_le, int_lt, int_ne, \
                        int_str, is_int
 

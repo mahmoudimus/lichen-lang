@@ -192,6 +192,28 @@ __attr __fn_native_int_int_xor(__attr __self, __attr self, __attr other)
     return __new_int(i ^ j);
 }
 
+__attr __fn_native_int_int_lshift(__attr __self, __attr self, __attr other)
+{
+    /* self and other interpreted as int */
+    int i = __TOINT(self);
+    int j = __TOINT(other);
+
+    /* Return the new integer. */
+    /* NOTE: No overflow test applied. */
+    return __new_int(i << j);
+}
+
+__attr __fn_native_int_int_rshift(__attr __self, __attr self, __attr other)
+{
+    /* self and other interpreted as int */
+    int i = __TOINT(self);
+    int j = __TOINT(other);
+
+    /* Return the new integer. */
+    /* NOTE: No overflow test applied. */
+    return __new_int(i >> j);
+}
+
 __attr __fn_native_int_int_le(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */

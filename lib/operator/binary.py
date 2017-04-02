@@ -21,6 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from operator.core import binary_op, is_, is_not
 from native import int_add, int_div, int_mod, int_mul, int_pow, int_sub, \
+                   int_lshift, int_rshift, \
                    int_and, int_not, int_or, int_xor, \
                    is_int
 
@@ -58,6 +59,8 @@ def not_in(a, b):
     return not b.__contains__(a)
 
 def lshift(a, b):
+    if is_int(a) and is_int(b):
+        return int_lshift(a, b)
     return binary_op(a, b, lambda a: a.__lshift__, lambda b: b.__rlshift__)
 
 def mod(a, b):
@@ -81,6 +84,8 @@ def pow(a, b):
     return binary_op(a, b, lambda a: a.__pow__, lambda b: b.__rpow__)
 
 def rshift(a, b):
+    if is_int(a) and is_int(b):
+        return int_rshift(a, b)
     return binary_op(a, b, lambda a: a.__rshift__, lambda b: b.__rrshift__)
 
 def sub(a, b):

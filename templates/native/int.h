@@ -37,6 +37,9 @@ __attr __fn_native_int_int_not(__attr __self, __attr _data);
 __attr __fn_native_int_int_or(__attr __self, __attr _data, __attr other);
 __attr __fn_native_int_int_xor(__attr __self, __attr _data, __attr other);
 
+__attr __fn_native_int_int_lshift(__attr __self, __attr _data, __attr other);
+__attr __fn_native_int_int_rshift(__attr __self, __attr _data, __attr other);
+
 __attr __fn_native_int_int_eq(__attr __self, __attr _data, __attr other);
 __attr __fn_native_int_int_ge(__attr __self, __attr _data, __attr other);
 __attr __fn_native_int_int_gt(__attr __self, __attr _data, __attr other);
