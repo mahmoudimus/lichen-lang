@@ -113,6 +113,27 @@ class list(sequence):
             self.extend(other)
         return self
 
+    def __mul__(self, other):
+
+        "Replicate this sequence 'other' times."
+
+        return self._mul(list(self), other)
+
+    def __imul__(self, other):
+
+        "Replicate this list 'other' times."
+
+        return self._mul(self, other)
+
+    def _mul(self, l, other):
+
+        "Replicate 'l' 'other' times."
+
+        while other > 1:
+            l.extend(self)
+            other -= 1
+        return l
+
     def __str__(self):
 
         "Return a string representation."

@@ -57,6 +57,9 @@ b = [5, 6]
 c = a + b
 print c                 # [1, 2, 3, 4, 5, 6]
 
+a2 = a * 2
+print a2                # [1, 2, 3, 4, 1, 2, 3, 4]
+
 # Test removal.
 
 print c.pop()           # 6
