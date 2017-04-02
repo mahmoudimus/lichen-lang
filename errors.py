@@ -70,7 +70,9 @@ class NodeProcessingError(ProcessingError):
 
     def __str__(self):
         lineno = self.get_lineno(self.astnode)
-        return "Error in %s%s: %s" % (self.unit_name, lineno and (" at line %s" % lineno) or "", self.message)
+        return "Error in %s%s: %s%s" % (
+            self.unit_name, lineno and (" at line %s" % lineno) or "",
+            self.message, self.astnode and "\n\n%s" % self.astnode or "")
 
 class InspectError(NodeProcessingError):
 
