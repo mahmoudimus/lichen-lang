@@ -22,7 +22,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.operator import _negate
 from __builtins__.sequence import hashable, itemaccess
 from __builtins__.types import check_int
-from native import str_add, str_lt, str_gt, str_eq, str_ord, \
+from native import isinstance as _isinstance, \
+                   str_add, str_lt, str_gt, str_eq, str_ord, \
                    str_substr
 
 WHITESPACE = (" ", "\f", "\n", "\r", "\t")
@@ -209,7 +210,47 @@ class basestring(hashable):
 
         return self._binary_op_rev(str_add, other, True)
 
-    def __mod__(self, other): pass
+    def __mod__(self, other):
+
+        "Format 'other' using this string."
+
+        if not _isinstance(other, tuple):
+            other = [other]
+
+        i = 0
+        first = True
+        b = buffer()
+
+        for s in self.split("%"):
+            if first:
+                b.append(s)
+                first = False
+                continue
+
+            # Handle format codes.
+            # NOTE: To be completed.
+
+            if s.startswith("%"):
+                b.append(s)
+
+            elif s.startswith("s"):
+                b.append(str(other[i]))
+                b.append(s[1:])
+                i += 1
+
+            elif s.startswith("r"):
+                b.append(repr(other[i]))
+                b.append(s[1:])
+                i += 1
+
+            # Unrecognised code: probably just a stray %.
+
+            else:
+                b.append("%")
+                b.append(s)
+
+        return str(b)
+
     def __rmod__(self, other): pass
 
     def __mul__(self, other):

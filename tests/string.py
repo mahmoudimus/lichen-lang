@@ -100,6 +100,8 @@ print s7.split()            # ["Hello...", "world,", "planet,", "globe."]
 print s7.split(maxsplit=2)  # ["Hello...", "world,", "planet,\n  globe."]
 print s7.split("\n")        # ["Hello...", "  world,", "  planet,", "  globe."]
 
+print "RGB(%r, %r, %r)".split("%") # ["RGB(", "r, ", "r, ", "r)"]
+
 # NOTE: To test rsplit once list.insert is implemented.
 
 # Test stripping of strings.
@@ -117,3 +119,7 @@ print repr(s9.rstrip("xyYZ"))   # "xyzHello worldX"
 # Test quoting of strings.
 
 print repr('æ\nø\rå\t"')    # "\xe6\n\xf8\r\xe5\t\""
+
+# Test formatting of strings.
+
+print "RGB(%r, %r, %r)" % (1, 2, 3)
