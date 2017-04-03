@@ -129,8 +129,9 @@ class list(sequence):
 
         "Replicate 'l' 'other' times."
 
+        copy = list(self)
         while other > 1:
-            l.extend(self)
+            l.extend(copy)
             other -= 1
         return l
 
