@@ -458,9 +458,23 @@ class Optimiser(CommonOutput):
 
         # Allocate positions from 1 onwards, ignoring the context argument.
 
-        self.arg_locations = [set()] + get_allocated_locations(
-            self.importer.function_parameters, get_parameters_and_sizes,
-            self.existing_arg_locations[1:])
+        try:
+            self.arg_locations = [set()] + get_allocated_locations(
+                self.importer.function_parameters, get_parameters_and_sizes,
+                self.existing_arg_locations[1:])
+
+        # Uphold positioning conflicts only if the existing locations were
+        # explicitly specified.
+
+        except OptimiseError:
+            if self.parameter_locations_filename:
+                raise
+
+            # Otherwise, reposition parameters, causing the program to be
+            # regenerated.
+
+            self.arg_locations = [set()] + get_allocated_locations(
+                self.importer.function_parameters, get_parameters_and_sizes)
 
     def position_attributes(self):
 
