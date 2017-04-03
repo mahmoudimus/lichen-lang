@@ -1282,7 +1282,7 @@ class TranslatedModule(CommonModule):
 
         # Defaults are added to the frame where arguments are missing.
 
-        if parameters and function_defaults:
+        if parameters and function_defaults is not None:
 
             # Visit each default and set any missing arguments. Where keyword
             # arguments have been used, the defaults must be inspected and, if
