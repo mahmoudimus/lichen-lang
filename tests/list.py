@@ -70,3 +70,30 @@ try:
     d.pop()             # should raise an exception
 except IndexError, exc:
     print "d.pop(): failed to access item", exc.index
+
+# Test insertion.
+
+e = []
+
+try:
+    e.insert(1, 1)      # should raise an exception
+except IndexError, exc:
+    print "e.insert(1, 1): failed to insert at index", exc.index
+
+e.insert(0, 1)
+print e                 # [1]
+
+try:
+    e.insert(2, 1)      # should raise an exception
+except IndexError, exc:
+    print "e.insert(2, 1): failed to insert at index", exc.index
+
+e.insert(1, 2)
+print e                 # [1, 2]
+e.insert(0, 3)
+print e                 # [3, 1, 2]
+
+# Test reversal.
+
+e.reverse()
+print e                 # [2, 1, 3]

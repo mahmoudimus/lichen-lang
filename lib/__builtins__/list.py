@@ -65,7 +65,27 @@ class list(sequence):
 
         list_append(self, value)
 
-    def insert(self, i, value): pass
+    def insert(self, index, value):
+
+        "Insert at 'index' the given 'value'."
+
+        length = self.__len__()
+        index = _get_absolute_index(index, length)
+
+        if index == length:
+            self.append(value)
+            return
+        elif index > length:
+            raise IndexError, index
+
+        i = length - 1
+        self.append(self.__getitem__(i))
+
+        while i > index:
+            self.__setitem__(i, self.__getitem__(i - 1))
+            i -= 1
+
+        self.__setitem__(index, value)
 
     def extend(self, iterable):
 
@@ -85,7 +105,20 @@ class list(sequence):
         list_setsize(self.__data__, self.__len__() - 1)
         return i
 
-    def reverse(self): pass
+    def reverse(self):
+
+        "Reverse the list in-place."
+
+        length = self.__len__()
+        i = 0
+        j = length - 1
+
+        while i < j:
+            item = self.__getitem__(j)
+            self.__setitem__(j, self.__getitem__(i))
+            self.__setitem__(i, item)
+            i += 1
+            j -= 1
 
     def sort(self, cmp=None, key=None, reverse=0): pass
 
