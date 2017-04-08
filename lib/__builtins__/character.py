@@ -63,6 +63,15 @@ def _base(number, base, prefix=""):
 
     return "".join(reversed(digits))
 
+def bin(number, prefix="0b"):
+
+    """
+    Return 'number' encoded as a binary (base 2) value, prefixed with 'prefix'
+    ("0b" by default).
+    """
+
+    return _base(number, 2, prefix)
+
 def hex(number, prefix="0x"):
 
     """

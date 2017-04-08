@@ -74,7 +74,7 @@ from __builtins__.unicode import unicode, utf8string
 # Functions.
 
 from __builtins__.attribute import getattr, hasattr, setattr
-from __builtins__.character import chr, hex, oct, ord, unichr
+from __builtins__.character import bin, chr, hex, oct, ord, unichr
 from __builtins__.comparable import cmp, hash
 from __builtins__.identity import callable, id, isinstance, issubclass, repr
 from __builtins__.io import open, raw_input, print_
