@@ -186,9 +186,6 @@ class CommonModule:
     def get_object_path(self, name):
         return ".".join([self.name] + self.namespace_path + [name])
 
-    def get_parent_path(self):
-        return ".".join([self.name] + self.namespace_path[:-1])
-
     # Namespace management.
 
     def enter_namespace(self, name):
