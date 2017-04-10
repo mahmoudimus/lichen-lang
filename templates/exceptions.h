@@ -1,6 +1,6 @@
 /* Exception definitions.
 
-Copyright (C) 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -27,9 +27,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 typedef struct
 {
     __attr arg;
-    int raising;
-    int raising_else;
-    int completing;
+    unsigned char raising:1;
+    unsigned char raising_else:1;
+    unsigned char completing:1;
 } __exc;
 
 define_exception_type(__exc);
