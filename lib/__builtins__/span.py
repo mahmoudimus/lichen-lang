@@ -45,8 +45,8 @@ class slice:
 
         "Return a string representation."
 
-        b = buffer([self.__parent__.__name__, ".", self.__name__, "(", self.start, ", ", self.end, ", ", self.step, ")"])
-        return str(b)
+        return "%s.%s(%r, %r, %r)" % (self.__parent__.__name__, self.__name__,
+                                      self.start,  self.end, self.step)
 
     __repr__ = __str__
 
