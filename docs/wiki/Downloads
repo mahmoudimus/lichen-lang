@@ -22,3 +22,59 @@ as follows:
 {{{
 hg clone http://hgweb.boddie.org.uk/Lichen
 }}}
+
+If you are familiar with version control systems and Mercurial in particular,
+it can be convenient to use this approach to obtain and update the software,
+although you should be aware that updates made available in the repository may,
+if deployed, cause the software to not function correctly on occasion, even if
+attempts are made to avoid such situations. Therefore, you should choose to
+update with care and be prepared to switch to a "known working" revision if
+necessary.
+
+== Releases ==
+
+{{{#!wiki tip
+See below for downloadable archives.
+}}}
+
+Releases are tagged in the repository. The currently-supported releases are
+listed here for convenience:
+
+{{{#!table
+'''Release''' || '''Details'''
+==
+0.1 || [[http://hgweb.boddie.org.uk/Lichen/rev/rel-0-1|changeset]]
+    .. [[http://hgweb.boddie.org.uk/Lichen/file/rel-0-1|files]]
+}}}
+
+Details of changes introduced in each new release can be found in the
+[[../Changelog|changelog]].
+
+=== Archives ===
+
+Downloadable archives are provided below. Choose "get" to download the
+appropriate file.
+
+<<AttachList(,application/x-tar)>>
+<<AttachList(,application/x-bzip2)>>
+
+=== Signatures ===
+
+Downloadable archive signatures are provided below. Choose "get" to download
+the appropriate file.
+
+<<AttachList(,text/plain)>>
+<<AttachList(,application/pgp-signature)>>
+
+To verify an archive, download the archive and accompanying signature file to
+the same location and then run a command of the following form:
+
+{{{
+gpg --verify <signature file> <archive file>
+}}}
+
+For example:
+
+{{{
+gpg --verify Lichen-0.1.tar.bz2.asc Lichen-0.1.tar.bz2
+}}}
