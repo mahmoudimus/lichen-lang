@@ -1,0 +1,164 @@
+= Translating Programs =
+
+The Lichen toolchain currently targets the C programming language, generating programs that are then compiled using existing C compilers. The process of translation involves the optimisation and generation of program structures, and the translation of Lichen language constructs into equivalent C language constructs.
+
+<<TableOfContents(2,3)>>
+
+== Attribute Access Plans ==
+
+During [[../Inspection|inspection]], each attribute access is associated with a unique location and its details stored. During [[../Deduction|deduction]], such accesses are resolved and characterised. During [[../Optimisation|optimisation]], such accesses are encoded as '''instruction plans''' indicating the operations or instructions required to achieve the access. During translation, these instruction plans are generated as part of the final program.
+
+== Structure Optimisation ==
+
+All object structures need to support the attributes defined for them, and although it may be possible to determine the identity of attributes in advance of a program being run, there generally remains a need to provide mechanisms to determine the nature of an object at run-time and to access its attributes dynamically. To achieve this, an [[../Optimisation|optimisation]] process catalogues the presence of each attribute name on all program objects, then deciding upon a position for the structure member corresponding to that attribute name in all objects.
+
+== Structure Generation ==
+
+Each program consists of a number of structures providing the program's objects and defining classes, functions, modules and any predefined instances.
+
+=== Attribute Representation ===
+
+Attributes most typically provide references to objects within a certain optional context. Since attributes are employed to encode various other kinds of information, the data structure may be interpreted in other ways within suitably controlled environments. For example, the `__data__` attribute found on instances of certain built-in classes will encode references to other kinds of information that are used within native functions.
+
+=== Object Representation ===
+
+Objects provide collections of attributes, and the object representation is meant to support efficient computed access to attributes whilst also allowing a reasonably efficient means of testing and accessing attributes at run-time.
+
+=== Structure Constants ===
+
+For clarity, several classes of symbolic constant are defined in the translated program to help define structures or to refer to structure members.
+
+|| '''Constant Class''' || '''Purpose''' || '''Example''' || '''Application''' ||
+|| `csize` || Indicates the number of attributes in a class || `__csize___builtins___list_list` ||<|3> Structure definition ||
+|| `isize` || Indicates the number of attributes in an instance || `__isize___builtins___list_list` ||
+|| `msize` || Indicates the number of attributes in a module || `__msize___builtins___list` ||
+|| `pminsize` || Indicates the minimum number of parameters expected by a callable || `__pminsize___builtins___list_list_append` ||<|2> Invocation ||
+|| `pmaxsize` || Indicates the maximum number of parameters expected by a callable || `__pmaxsize___builtins___list_list_append` ||
+|| `pcode` || Assigns a code to a particular parameter name || `__pcode_value` ||<|2> Keyword argument positioning ||
+|| `ppos` || Indicates the table position used by a particular parameter name || `__ppos_value` ||
+|| `code` || Assigns a code to a particular attribute name || `__code_value` ||<|2> Attribute access ||
+|| `pos` || Indicates the table position used by a particular attribute name || `__pos_value` ||
+
+Such constants are encoded using helper functions, producing names resembling those above that are intended to be distinct and not to conflict with other defined names in the final program.
+
+=== Instance Structures ===
+
+Like all program objects, instances are defined in C according to a generic structure, meaning that all instances have the same generic members from the perspective of a C program. However, specific structures are defined for each class in order to conveniently describe the dimensions of instances of that class. For example, for the built-in list class, a declaration resembling the following is issued:
+
+{{{
+typedef struct {
+    const __table * table;
+    unsigned int pos;
+    __attr attrs[__isize___builtins___list_list___init__];
+} __obj___builtins___list_list___init__;
+}}}
+
+== Program Translation ==
+
+=== Useful C Language Features ===
+
+The translated code relies on the availability of certain useful features of C, some of them supported only in modern compilers:
+
+ * Array and structure literals: these are used to define values within expressions that would otherwise require separate definition; invocation arguments are defined using inline expressions and the `__ARGS` macro (for unknown invocation targets and for keyword arguments)
+ * [[https://gcc.gnu.org/onlinedocs/cpp/Variadic-Macros.html#Variadic-Macros|Variadic macros]]: such macros permit variable numbers of arguments, thus making the `__ARGS` macro possible
+ * [[WikiPedia:Comma operator]] sequences: these are used to construct instruction sequences within expressions, providing a mechanism for formulating attribute accesses
+
+=== Function Naming ===
+
+A naming scheme is applied to functions defined in the final C program to support different kinds of callables present in the original program.
+
+|| '''Name Class''' || '''Purpose''' || '''Example''' ||
+|| `fn` || Indicates a plain function || `__fn___builtins___str_str` ||
+|| `main` || Indicates a module main program || `__main_sys` ||
+|| `new` || Indicates a class instantiator || `__new___builtins___list_list` ||
+|| `newliteral` || Provides an instantiator for literals mentioned in programs || `__newliteral___builtins___list_list` ||
+
+=== Generic Program Functionality ===
+
+Given the representation of the fundamental program objects, a suite of generic operations is provided to support the activities necessary to inspect and update program data. Such operations are largely concerned with generic object and attribute representations and are practically identical from program to program.
+
+For example, an attribute provided by an object can be accessed in several different ways depending on the information known about the object when the program is translated. Consequently, a suite of attribute access operations is provided to support each different scenario:
+
+||<-2|2> ||<-2> '''Attribute provider''' ||
+|| '''Class''' || '''Instance''' ||
+||<|3> '''Accessor''' || '''Class''' || `load_via_object` || ||
+|| '''Instance''' || `load_via_class` || `load_via_object` ||
+|| '''Class or instance''' || `get_class_and_load` ||  `check_and_load_via_any` ||
+
+=== Specific Program Functionality ===
+
+Since objects at the program level have their layouts [[../Optimisation|optimised]], and since these layouts may differ from program to program, a suite of specific operations is provided to support a range of activities within programs, such operations being configured with program-specific information in order to do the right thing within a given program.
+
+|| '''Function''' || '''Purpose''' ||
+|| `__invoke` || A generic invocation function that populates the argument array and obtains the appropriate target ||
+|| `__new` || Creates a new object, setting the `__class__` attribute to the indicated class identity ||
+|| `__BOOL` || Tests the identity of an attribute value against the `True` constant's address ||
+|| `__GETDEFAULT` || Obtains a function default from additional members of a function instance beyond the core members ||
+|| `__SETDEFAULT` || Updates a function default from additional members of a function instance beyond the core members ||
+
+=== Module Files ===
+
+Each program module is defined in its own file in the translated program. Since C has no notion of general module-level code, a special main function is generated for each module to perform the operations defined at the module level in the original program. These main functions are called in turn by the principal `main` function of the final C program, and the order of invocation is defined by the module initialisation ordering established when resolving inter-module dependencies.
+
+=== Statement Translation ===
+
+Statements in the original program are generally translated to statements in the final C program. During inspection and translation, certain constructs are transformed to produce the operations necessary to implement such constructs. For instance, operators need to be rewritten as function invocations, and thus the form of the original program changes before it is translated to C.
+
+When translating certain operations that may appear within a statement, a sequence of instructions is generated, and such instructions must be performed in turn. Fortunately, C supports a wide variety of operations - such as assignments - within expressions, and it also provides the comma operator which permits sequences of operations to be performed in order and to yield a result that can then be used in the context of an expression. Such sequences of operations are employed extensively to realise attribute access instruction plans.
+
+=== Name References ===
+
+Names can be translated in different ways for the final C program. Function locals and parameters correspond directly to locals in C functions. Module-level globals and class-level locals are translated to structure accesses. However, temporary names that are used in sequence assignment are translated to C function locals, either in functions corresponding to their equivalents in the original program, or in module initialisation functions corresponding to the module scope in the original program.
+
+Certain special names that are formulated during [[../Inspection|inspection]] are converted to constant or static references.
+
+=== Attribute Accesses ===
+
+Each attribute access is associated with a particular access location, corresponding to an operation occurring in the original program identified during inspection. This location can be used as a key to access a [[#Attribute_Access_Plans|plan]] that describes how the access may be realised in the final program. Since most of the work computing the nature of the access is done during the preceding deduction and optimisation activities, what remains is mostly the emission of the plan into the generated program text with some substitutions performed.
+
+=== Invocations ===
+
+Each invocation involves an object whose identity may or may not be known at compile-time, plus a collection of arguments. The translation process is concerned with obtaining a target to be invoked in the generated program, populating an argument array appropriately for the target, and providing the means of invocation.
+
+Where the identity of the object is not known at all, the information provided is effectively passed on to the special `__invoke` function which is then required to do all the work at run-time. However, one of the goals of analysing and compiling the program is to avoid doing such work at run-time and to take advantage of those cases where the identity of the object can be determined.
+
+Thus, where the identity of the called object is known, details of the object's signature - its parameters and their positions - are used to populate the argument array and to determine whether this can be done successfully. Some callables require a context to be provided, and knowledge about the callable can be used to obtain or omit such a context from the arguments.
+
+Finally, the invocation target must be obtained. Where some knowledge of the identity of the object is available, it may be sufficient to access the special `__fn__` member directly (potentially testing for its presence if this is not certain) and to call the appropriate function with the assembled argument array. Where a definite identity is available, the actual function itself may be named and thus called with the arguments. Such operations are mere fragments of the total work performed by the `__invoke` function in the least optimal case.
+
+=== Assignments ===
+
+Assignments of objects to names occur for the following kinds of statements: assignments, definition statements (`class` and `def`), import statements (`from` and `import`).
+
+=== Guards ===
+
+Guards are identified during [[../Deduction|deduction]] as being necessary to uphold deductions about the nature of objects referenced via names that may be undermined at run-time by potentially erroneous program behaviour.
+
+=== Exceptions ===
+
+The C programming language does not support exceptions in a form supported by more modern programming languages. Consequently, lower-level mechanisms need to be employed to reproduce the semantics of the `try` statement, its `except` and `finally` clauses, and the `raise` statement, as well as considering the effect of exceptions on the `return` statement.
+
+Fortunately, some consideration has been given to this topic before. The [[http://www.nicemice.net/cexcept/|cexcept]] library - really a collection of convenience macros - provides a way of expressing exception constructs in a natural way in C while translating those constructs to usage of the `setjmp` and `longjmp` functions. Although direct usage of such functions could be generated during program translation, for convenience and to focus on other implementation concerns, it was decided to employ the cexcept macros and to build any additional functionality in terms of their usage.
+
+A structure is defined to hold exception-related information:
+
+{{{
+typedef struct
+{
+    __attr arg;
+    int raising;
+    int raising_else;
+    int completing;
+} __exc;
+}}}
+
+Here, the `arg` member holds a raised exception object reference. Meanwhile, the remaining members interact with language constructs as follows:
+
+|| '''Member''' || '''Description''' || '''Output Program Operation''' ||
+|| `raising` || Indicates an exception that has been raised and not yet handled || `__Raise` ||
+|| `raising_else` || Indicates an exception that must be re-raised because it occurred in an `else` clause || `__RaiseElse` ||
+|| `completing` || Indicates the completion of, or return from, a `try` clause requiring entry into a `finally` clause || `__Complete` and `__Return` ||
+
+=== Memory Allocation and Garbage Collection ===
+
+To avoid having to write a garbage collector, the [[http://www.hboehm.info/gc/|Boehm-Demers-Weiser garbage collector]] is employed by programs to allocate and free memory needed for its objects.

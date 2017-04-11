@@ -1,0 +1,53 @@
+= Toolchain =
+
+The toolchain implements the process of analysing Lichen source files, compiling information about the structures and routines expressed in each program, and generating output for further processing that can produce an executable program.
+
+<<TableOfContents(2,3)>>
+
+== Compiling Programs ==
+
+The principal interface to the toolchain is the `lplc` command, run on source files as in the following example:
+
+{{{
+lplc tests/unicode.py
+}}}
+
+There is no need to specify all the files that might be required by the complete program. Instead, the toolchain identifies files in the program by searching its module search path. This can be configured using the `LICHENPATH` environment variable and the `-E` option.
+
+Various [[../Prerequisites|prerequisites]] are needed for the toolchain to work properly. By specifying the `-c` option, the specified program will be translated to a C programming language representation but not built, avoiding the need for some development tools to be installed if this is desirable.
+
+The default output file from a successful compilation is a file called `_main`, but this can be overridden using the `-o` option. For example:
+
+{{{
+lplc -o unicode tests/unicode.py
+}}}
+
+The complete set of options can be viewed by specifying the `--help` option, and a manual page is also provided in the `docs` directory of the source distribution:
+
+{{{
+man -l docs/lplc.1
+}}}
+
+This page may already be installed if the software was provided as a package as part of an operating system distribution:
+
+{{{
+man lplc
+}}}
+
+== Toolchain Implementation ==
+
+The toolchain itself is currently written in Python, but it is envisaged that it will eventually be written in the Lichen language, hopefully needing only minor modifications so that it may be able to accept its own source files as input and ultimately produce a representation of itself as an executable program. Since the Lichen language is based on Python, it is convenient to use existing Python implementations to access libraries that support the parsing of Python source files into useful representations.
+
+The Python standard library provides two particularly useful modules or packages of relevance: the `compiler` package and the `parser` module; `parser` is employed by `compiler` to decode source text, whereas `compiler` takes the concrete syntax tree representation from `parser` and produces an abstract syntax tree (AST) which is particularly helpful to software of the nature described here. (Contrary to impressions that [[http://eli.thegreenplace.net/2009/11/28/python-internals-working-with-python-asts/|some articles]] might give, the `ast` module available in Python 2.5 and later was not the first module to offer AST representations of Python programs in Python, nor was it even the first such module in the standard library.)
+
+However, it is not desirable to have a dependency on a Python implementation, which the `parser` module effectively is (as would the `ast` module also be if it were used here), with it typically being implemented as an extension module in a non-Python language (in C for CPython, in Java for Jython, and so on). Fortunately, the !PyPy project implemented their own parsing module, `pyparser`, that is intended to be used within the !PyPy environment together with their own `ast` equivalent, but it has been possible to rework `pyparser` to produce representations that are compatible with the `compiler` package, itself being modified in various ways to achieve compatibility (and also to provide various other conveniences).
+
+== Program Analysis ==
+
+With the means of inspecting source files available through a `compiler` package producing a usable representation of each file, it becomes possible to identify the different elements in each file and to collect information that may be put to use later. But before any files are inspected, it must be determined ''which'' files are to be inspected, these comprising the complete program to be analysed.
+
+Both Lichen and Python support the notion of a main source file (sometimes called the "script" file or the main module or `__main__`) and of imported modules and packages. The complete set of modules employed in a program is defined as those imported by the main module, then those imported by those modules, and so on. Thus, the complete set is not known without inspecting part of the program, and this set must be built incrementally until no new modules are encountered.
+
+Where Lichen and Python differ is in the handling of [[../Imports|imports]] themselves. Python [[https://docs.python.org/3/reference/import.html|employs]] an intricate mechanism that searches for modules and packages, loading modules encountered when descending into packages to retrieve specific modules. In contrast, Lichen only imports the modules that are explicitly mentioned in programs. Thus, a Lichen program will not accumulate potentially large numbers of superfluous modules.
+
+With a given module identified as being part of a program, the module will then be [[../Inspection|inspected]] for the purposes of gathering useful information. Since the primary objectives are to characterise the structure of the objects in a program and to determine how such objects are used, certain kinds of program constructs will be inspected more closely than others. Note that this initial inspection activity is not concerned with the translation of program operations to other forms: such [[../Translation|translation]] will occur later; this initial inspection is purely concerned with obtaining enough information to inform such later activities, with the original program being revisited to provide the necessary detail required to translate it.

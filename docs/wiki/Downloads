@@ -1,0 +1,24 @@
+= Downloads =
+
+Remember that certain [[../Prerequisites|prerequisites]] are needed for the
+software to work.
+
+== Copyright and Licence ==
+
+The Lichen distribution is made available according to the terms of the
+[[http://www.gnu.org/copyleft/gpl.html|GNU GPL (version 3 or later)]]. See
+the `docs/COPYING.txt` and `docs/gpl-3.0.txt` files in the source code
+distribution for details.
+
+== Repository ==
+
+The source code repository is located at the following location:
+
+http://hgweb.boddie.org.uk/Lichen
+
+The repository can be cloned using [[https://www.mercurial-scm.org/|Mercurial]]
+as follows:
+
+{{{
+hg clone http://hgweb.boddie.org.uk/Lichen
+}}}

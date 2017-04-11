@@ -1,0 +1,44 @@
+= Built-Ins =
+
+The "built-ins" are a collection of special names that do not need to be explicitly imported. For example:
+
+{{{#!python numbers=disable
+biggest = max([23, 19, 27]) # max is a built-in function
+}}}
+
+Such names are always available as if they were defined in the current module. However, they are provided by a package hierarchy that seeks to divide them into isolated areas of functionality that can be included or excluded depending on the facilities employed by each program. For example, complex numbers are provided in the `__builtins__.complex` module, but for any program not employing complex numbers, this module will be excluded and its functionality not appear in the final program. (The exclusion of modules is achieved using the hidden module functionality provided by the [[../Imports|import mechanism]].)
+
+The principal, "top-level" module providing built-ins is the `__builtins__` module whose only role is to expose the actual built-in names. It does so by importing names directly from the different submodules, such as `__builtins__.complex`, so that attempts to import names from `__builtins__` may provide such attempts with the named objects. The `__builtins__` module looks like this in such cases:
+
+{{{#!python numbers=disable
+from __builtins__.complex import complex
+}}}
+
+Accesses to built-in names use the same technique of importing a name (`complex`) rather than the module providing it (`__builtins__`). It is as if the following code would appear before usage of a built-in name:
+
+{{{#!python numbers=disable
+from __builtins__ import complex
+}}}
+
+Since it is the specific name that is being referenced, not the module, the other contents of the module can be ignored and the reference to the named object followed to its actual definition location. Thus, usage of `complex` causes `__builtins__.complex` to be included in the program so that it may provide the `complex` type.
+
+Thus, it becomes possible to keep a module like `__builtins__` out of the program since its only role would be to hold references to other modules' objects, but such specific imports permit the module to be bypassed by just following the declared import relationships. However, consider the consequences of `__builtins__` being imported as follows:
+
+{{{#!python numbers=disable
+import __builtins__
+}}}
+
+Its entire contents would then need to be exposed because it would then be possible to access any name provided by the module via the module. This was not the case with a specific name import because there was no way of referencing the module itself as a result of such an import.
+
+This would then cause all of the referenced modules to be imported because it would no longer be possible to readily identify the modules that would actually be needed by the program. For example:
+
+{{{#!python numbers=disable
+def get_things(obj):
+    obj.complex
+    obj.function
+    obj.list
+
+get_things(__builtins__)
+}}}
+
+Of course, no module in a program should be referencing the `__builtins__` module by explicitly importing it, anyway. Given that all the names provided by that module are already available without any need to perform an import operation, such an import operation would have rather limited additional benefits.

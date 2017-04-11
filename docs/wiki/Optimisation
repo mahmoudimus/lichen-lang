@@ -1,0 +1,157 @@
+= Optimisation =
+
+In the process of generating an output representation of a Lichen program, the process of optimisation is concerned with positioning members within program structures. Attributes are positioned in object structures, and '''object tables''' are defined so that attributes can be located in such objects. Similarly, parameters, whose positions are determined by their appearance in function and other callable signatures, have positioning information defined in '''parameter tables''' that can be used to position arguments in parameter arrays when their names are used in argument lists.
+
+Also performed during optimisation is the consolidation of constant information, initially discussed [[../Inspection#Literals_and_Constants|in the context of inspection]].
+
+<<TableOfContents(2,3)>>
+
+== Populating Objects ==
+
+A program will have objects that are classes, modules and instances, and each such object will provide a number of attributes. Each object's attributes are stored in an array. For simplicity, each attribute having a given name will always be positioned at the same place in any array provided by an object featuring an attribute with that name. Even different object types will use the same position.
+
+Consider an attribute called `elephant` provided by a number of types:
+
+|| '''Type''' ||<-5> '''Attributes''' ||
+|| class C || `__class__` || `ant` || `dog` ||<style="background-color: #ddd"> `elephant` || `cat` ||
+|| class D || `__class__` || `ant` || `duck` ||<style="background-color: #ddd"> `elephant` || `horse` ||
+|| class E || `__class__` || `ant` || `dog` || `giraffe` || `horse` ||
+|| module M || `__class__` || `rhino` || `hippo` ||<style="background-color: #ddd"> `elephant` || `zebra` ||
+
+Where `elephant` is provided as an attribute, it will always appear in the same position - in this case as the fourth attribute - in any object attribute array.
+
+Consequently, any operation involving an object of unknown identity that employs `elephant` can employ the same position information to determine whether the attribute is supported and to retrieve or modify its value. Where an object does not support `elephant`, it may use the same attribute position for another attribute. Determining whether objects support attributes is done using tables, described below.
+
+It should be noted that the positions of attributes in object structures are the same as the positions of attribute identifiers in object tables. With attribute positions allocated, table definition is trivial.
+
+=== Allocation Considerations ===
+
+Such common positioning of attributes demands a degree of coordination between objects. If `elephant` is positioned in a given place in one object, then given the constraint of it only ever being positioned in a single location for all objects, it may not then be positioned in a different place in another object. Thus, where two attributes co-exist in an object, their positions must be different and will affect all objects supporting those attributes, regardless of whether they support them both. For example:
+
+|| '''Type''' ||<-5> '''Attributes''' ||
+|| class C || `__class__` ||<style="background-color: #ddd"> `ant` || `dog` ||<style="background-color: #ddd"> `elephant` || `cat` ||
+|| class D || `__class__` ||<style="background-color: #ddd"> `ant` || `duck` ||<style="background-color: #ddd"> `elephant` || `horse` ||
+|| class E || `__class__` ||<style="background-color: #ddd"> `ant` || `dog` || `giraffe` || `horse` ||
+|| module M || `__class__` || `rhino` || `hippo` ||<style="background-color: #ddd"> `elephant` || `zebra` ||
+|| module N || `__class__` || || ||<style="background-color: #ddd"> `elephant` || `zebra` ||
+
+Here, module N still positions `elephant` in the fourth position. If `elephant` were moved to the second position, it would conflict with `ant` or `rhino` in those objects supporting those attributes. Such coordination therefore has an impact on allocation strategies. Care has to be taken to allocate attributes in such a way that small objects (having few attributes) do not have their attributes positioned far from the start of their attribute arrays, because failing to do so effectively makes those objects large, inefficiently-represented objects.
+
+A reasonable solution is to consider the following when allocating attribute positions:
+
+ * Attribute frequency (or ubiquity)
+ * Object size
+ * Object kind (whether the object is a class, module or instance)
+
+More frequently-occurring (or ubiquitous) attributes may need to appear in both large and small objects and should probably be allocated in lower positions (`__class__` being an extreme example of needing to be allocated for all objects). Attributes featured in small objects should also be given priority for lower positions due to the desirability of keeping such objects small. Meanwhile, classes and modules only appear once in a program, whereas there may be countless instances allocated during the lifetime of a program's execution. Therefore, attributes featured in instances should have priority over other attributes for lower positions in object structures.
+
+== Populating Signatures ==
+
+The positions of parameters in callable signatures are determined by the definitions of those signatures in the source program. When callables are invoked using an argument list, arguments that are not specified using keywords are merely copied into the parameter array in the same position. However, keyword arguments will need to have their positions looked up in the appropriate parameter table for the callable involved.
+
+Consequently, no allocation needs to be performed on the parameters themselves: they have specific positions for each callable. However, just as attribute names must yield positions when accessing attributes on objects, a similar mechanism that takes parameter names and yields positions must be provided. It is instead the positions of parameter details that must be allocated in structures to be consulted as if parameter names were attribute names, with attributes providing parameter position details.
+
+Consider the following functions:
+
+{{{#!python numbers=disable
+def f(a, b, c, d):
+    ...
+
+def g(p, q, r):
+    ...
+
+def h(d, p, v):
+    ...
+}}}
+
+In order to find the position of each parameter using its name, the following table could be provided:
+
+|| '''Table''' ||<-4> '''Parameters''' ||
+|| function f || `a` at 1 || `b` at 2 || `c` at 3 || `d` at 4 ||
+|| function g || `q` at 2 ||<style="background-color: #ddd"> `p` at 1 || `r` at 3 || ||
+|| function h || `v` at 2 ||<style="background-color: #ddd"> `p` at 2 || || `d` at 1 ||
+
+Such a table behaves like an object structure (or an object table) with parameters acting like attributes in such a structure. Here, the attributes yield the positions of parameters within parameter arrays. Note how `p` always resides in the same location but may yield different positions depending on the actual callable involved (as is also observable with `d`).
+
+=== Allocation Considerations ===
+
+Parameter table allocation involves similar considerations to those influencing object table allocation. In order to keep parameter tables small, more frequently appearing parameters should be positioned earlier in arrays. A specific consideration of importance is that of the number of tables generated. There may be many callables with the same signature, and such callables therefore do not need their own parameter tables since they will merely be duplicates. An attempt is therefore made to identify distinct signatures and to generate parameter tables only for these signatures, instead of providing a one-to-one mapping between callables and tables.
+
+== Populating Tables ==
+
+With names allocated to positions in each kind of table, the straightforward task of generating such tables proceeds as follows.
+
+=== Object Tables and Attribute Codes ===
+
+Object tables consist of locations directly corresponding to structure member locations. Each location in a table will correspond to a specific name, but since potentially many names may have the same position, a table must provide identifying details for the name that is actually supported.
+
+In object tables, such identifying details take the form of '''attribute codes'''. Each attribute name is mapped to a distinct identifier, and upon consulting an object table, the lookup process must read the stored attribute code and compare it to the code for the attribute it intends to access. If these codes match, then it can be assumed that the object involved supports the named attribute. Otherwise, a different attribute (or even no attribute at all) resides at that location in the object structure, making the access inappropriate.
+
+A more comprehensive object table resembles the following:
+
+|| '''Type''' ||<-5> '''Attributes (Codes)''' ||
+|| class C || `__class__` (1) || `ant` (2) || `dog` (4) || `elephant` (6) || `cat` (3) ||
+|| class D || `__class__` (1) || `ant` (2) || `duck` (5) || `elephant` (6) || `horse` (9) ||
+|| class E || `__class__` (1) || `ant` (2) || `dog` (4) || `giraffe` (7) || `horse` (9) ||
+|| module M || `__class__` (1) || `rhino` (10) || `hippo` (8) || `elephant` (6) || `zebra` (11) ||
+|| module N || `__class__` (1) || || || `elephant` (6) || `zebra` (11) ||
+
+The following attribute codes would be employed:
+
+|| '''Attribute Name''' || '''Attribute Code''' ||
+|| `__class__` || 1 ||
+|| `ant` || 2 ||
+|| `cat` || 3 ||
+|| `dog` || 4 ||
+|| `duck` || 5 ||
+|| `elephant` || 6 ||
+|| `giraffe` || 7 ||
+|| `hippo` || 8 ||
+|| `horse` || 9 ||
+|| `rhino` || 10 ||
+|| `zebra` || 11 ||
+
+=== Parameter Tables and Parameter Codes ===
+
+Parameter tables consist of locations yielding parameter position information. Each location in a table will correspond to a particular name, but since potentially many names may have the same position, a table must provide identifying details for the name that is actually supported.
+
+Just as with object tables, in parameter tables, such identifying details take the form of '''parameter codes'''. Each parameter name is mapped to a distinct identifier, and upon consulting a parameter table, the lookup process must read the stored parameter code and compare it to the code for the parameter it is attempting to position in a parameter list. If these codes match, then it can be assumed that the signature supports the named parameter. Otherwise, a different parameter (or even no parameter at all) resides at that location in the parameter table, making any attempt to set such a parameter inappropriate.
+
+Since parameter tables provide both identifying information and parameter positions, a more comprehensive parameter table resembles the following:
+
+|| '''Table''' ||<-4> '''Parameters (Codes)''' ||
+|| function f || `a` at 1 (1) || `b` at 2 (2) || `c` at 3 (3) || `d` at 4 (4) ||
+|| function g || `q` at 2 (6) ||<style="background-color: #ddd"> `p` at 1 (5) || `r` at 3 (7) || ||
+|| function h || `v` at 2 (8) ||<style="background-color: #ddd"> `p` at 2 (5) || || `d` at 1 (4) ||
+
+The following parameter codes would be employed:
+
+|| '''Parameter Name''' || '''Parameter Code''' ||
+|| `a` || 1 ||
+|| `b` || 2 ||
+|| `c` || 3 ||
+|| `d` || 4 ||
+|| `p` || 5 ||
+|| `q` || 6 ||
+|| `r` || 7 ||
+|| `v` || 8 ||
+
+== Consolidating Constants ==
+
+With knowledge about all constants used in a program, it becomes possible to prepare a catalogue of distinct constants and to assign each of them a unique name for convenient referencing in the generated program code. All constants are inspected in turn and a content digest prepared for each of them, establishing a mapping from values to such digests which act as global identifiers. Since local names are associated with constants, a mapping is also established from each local name to the corresponding global identifier.
+
+Considering the [[../Inspection#Literals_and_Constants|previous example]], the following mappings would be established, from values to global identifiers:
+
+|| '''Type''' || '''Encoding''' || '''Value''' || '''Global Identifier (Content Digest)''' ||
+|| `__builtins__.str.string` || `iso-8859-15` || `'\xc6\xd8\xc5'` || `OeyoRfPI__XqwJcPgTDTItX9v__OM` ||
+|| `__builtins__.int.int` || || `123` || `qPRjUheGUngBhhVaHVqYNbBu4m8` ||
+
+And from local names or identifiers to global identifiers:
+
+|| '''Identifier''' || '''Global Identifier (Content Digest)''' ||
+|| `__main__.$c0` || `OeyoRfPI__XqwJcPgTDTItX9v__OM` ||
+|| `__main__.$c1` || `qPRjUheGUngBhhVaHVqYNbBu4m8` ||
+
+== Optimisation Products ==
+
+The optimisation process should produce catalogues of attribute and parameter codes plus positioning information for object tables, object structures and parameter tables. It should also produce a catalogue of distinct constant identifiers.

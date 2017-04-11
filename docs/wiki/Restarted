@@ -1,0 +1,282 @@
+= Lichen Restarted =
+
+Originally, lots of work was being put in to support various Python features that are arguably superfluous. The realisation was had that a lot of effort was being made for little practical benefit by trying to support things that are, [[../Design|in the larger picture]], not that important. Consequently, Lichen was refocused on a smaller set of more useful Python features.
+
+This document is of historical interest only, with the [[../Design|design]] and other documents attempting to communicate the results of this restarting effort. Some obsolete information is therefore preserved below. For example, attributes hold context information in the diagrams, but context information is now held in wrappers or is maintained separately within programs.
+
+Objectives:
+
+ * Individual module inspection
+ * No importing triggered during module inspection
+ * All unresolved external references are set to `<depends>`
+ * Hierarchical module namespaces are not exposed in programs
+ * Modules are independent: package hierarchies are not traversed when importing
+ * Nested scopes will be dropped
+ * If expressions and comprehensions will be dropped
+ * `self` is a reserved name and is optional in method parameter lists
+ * Unbound methods must be bound using a special function taking an instance
+ * Functions assigned to classes do not become unbound methods
+
+== Names ==
+
+Names are locals, globals or built-ins. (Special names exist internally to support certain operations.)
+
+Locals inside functions are dynamic; locals outside functions are static, as are module globals. Built-ins are defined statically in the `__builtins__` package.
+
+== Imports ==
+
+Imports provide access to external references. The "leaf" module in a module path is the module returned by the statement.
+
+Indicate that module "compiler" is accessed via compiler...
+{{{#!python numbers=disable
+import compiler
+}}}
+
+Indicate that module "compiler" is accessed via comp...
+{{{#!python numbers=disable
+import compiler as comp
+}}}
+
+Indicate that module "compiler.ast" is accessed via ast; module "compiler.transformer" is accessed via tr...
+{{{#!python numbers=disable
+import compiler.ast as ast, compiler.transformer as tr
+}}}
+
+Import compiler.ast, access Function...
+{{{#!python numbers=disable
+from compiler.ast import Function
+}}}
+
+Import compiler.ast, access Function as F...
+{{{#!python numbers=disable
+from compiler.ast import Function as F
+}}}
+
+This causes some semantic differences with Python, with the most significant one being the following:
+
+{{{{#!table
+'''Python''' || '''Lichen'''
+==
+<style="vertical-align:top">
+
+Import compiler, import compiler.ast, set ast on compiler...
+{{{#!python numbers=disable
+import compiler.ast
+}}}
+...returning compiler
+
+||
+<style="vertical-align:top">
+
+Import compiler.ast...
+{{{#!python numbers=disable
+import compiler.ast
+}}}
+...returning compiler.ast as ast
+
+}}}}
+
+Some statements can be rewritten to achieve the same effect:
+
+{{{{#!table
+'''Python''' || '''Lichen'''
+==
+<style="vertical-align:top">
+
+Import compiler, access ast as submodule...
+{{{#!python numbers=disable
+from compiler import ast
+}}}
+
+||
+<style="vertical-align:top">
+
+Import compiler.ast...
+{{{#!python numbers=disable
+import compiler.ast
+}}}
+...returning compiler.ast as ast
+
+}}}}
+
+Other kinds of import are not directly possible with Lichen. For example:
+
+Import all names from compiler.ast...
+{{{#!python numbers=disable
+from compiler.ast import *
+}}}
+
+Some notes:
+
+ * Names not defined in a module and not declared in import statements are unresolved
+ * Modules are identified during inspection but are not loaded
+ * Instead, modules are added to a list and are imported later
+ * Names imported from modules are set to `<depends>` (since the contents of modules will not generally be known)
+ * Names are resolved in a later activity
+
+== Self ==
+
+In Python:
+
+ * The `self` name provides access to the instance associated with a method
+ * The instance is supplied by a "context", initialised when a method is obtained from an instance (or through other attribute accesses)
+ * Upon invocation, any instance context must be assigned to the `self` parameter, provided the callable is a method
+ * Meanwhile, any non-instance context is not assigned to the `self` parameter, which should be provided explicitly for class-accessed methods
+ * Plain functions never expose `self` or have `self` initialised, even if they have been assigned to an instance
+
+Apart from tests for the nature of the context and the callable, the argument list is effectively variable.
+
+With `self` as a ubiquitous, hidden parameter:
+
+ * The `self` name still provides access to the instance associated with a method
+ * The instance is still supplied by a "context", initialised when a method is obtained from an instance (or through other attribute accesses)
+ * Upon invocation, `self` is included in the argument list regardless of the nature of the callable
+ * Class-accessed methods would have their class as context, following from the above, but `self` may not refer to a class: it must be an instance
+ * To combine class-accessed methods with instance contexts, a special function is employed
+
+The argument list for each callable thus remains static, at a cost of allocating an extra argument that may not be used. (Various calling conventions for certain processor architectures employ potentially unused registers, anyway.) Note that a callable may support defaults, however, and thus any argument list may need extending to include default values for parameters without corresponding arguments.
+
+{{{{#!table
+'''Python''' || '''Without self'''
+==
+<style="vertical-align:top">
+
+{{{#!python numbers=disable
+inst.method(x, y, z)
+# -> inst.method(inst, x, y, z)
+
+def method(self, a, b, c):
+    # self = inst; a = x; b = y; c = z
+}}}
+
+||
+<style="vertical-align:top">
+
+{{{#!python numbers=disable
+inst.method(x, y, z)
+# -> inst.method(inst, x, y, z)
+
+def method(a, b, c):
+    # self = inst; a = x; b = y; c = z
+}}}
+
+==
+<style="vertical-align:top">
+
+{{{#!python numbers=disable
+cls.method(self, x, y, z)
+
+def method(self, a, b, c):
+    # parameters = arguments
+}}}
+
+||
+<style="vertical-align:top">
+
+{{{#!python numbers=disable
+f = get_using(cls.method, self)
+# context of f = self; value of f = cls.method
+f(x, y, z)
+# -> f(context of f, x, y, z)
+
+def method(a, b, c):
+    # self = context of f = self; a = x; b = y; c = z
+}}}
+
+}}}}
+
+To avoid usage of `self` in undefined ways, only methods are able to use `self` and are not allowed to redefine it. Consequently, when invoking a callable, the context is set (where the callable is unknown until run-time; it is not set if compile-time knowledge indicates that it is not needed), and in situations where `self` is not permitted, the context is therefore safely ignored. Meanwhile, methods are always supplied with a context compatible with `self`.
+
+|| '''Callable''' || '''self''' || '''Remarks''' ||
+|| Class || context || context discarded and replaced by allocated instance ||
+|| Function || null || `self` not permitted, context ignored ||
+|| Function (stored on class) || class as context || `self` not permitted, context ignored ||
+|| Function (stored on instance) || instance as context || `self` not permitted, context ignored ||
+|| Instance || instance as context || `self` set to instance ||
+|| Method (via class) || class as context || method not called (see "unbound methods") ||
+|| Method (via instance) || instance as context || `self` set to instance ||
+
+Note that the treatment of functions stored on classes differs from Python. In Python, such functions would become unbound methods (see below) and would employ their first parameter as an effective `self` parameter (regardless of name).
+
+== Unbound Methods ==
+
+Since methods acquired directly from classes ("unbound methods" in Python) are meant to be combined with an instance as context (using the `get_using` function), they must be uncallable until combined with the appropriate context, yet the same methods when acquired via instances ("bound methods" in Python) must be immediately callable.
+
+To support the two different states of methods, the principal structure of a class has attributes referencing uncallable versions of its methods. Meanwhile, such uncallable methods reference callable versions and when instances are employed to access the class attributes, it is these callable versions that are retrieved. For example:
+
+{{{#!graphviz
+//format=svg
+//transform=notugly
+digraph structures {
+  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Instance and class structures"];
+  edge [fontsize="13.0",fontname="Helvetica",tooltip="Instance and class structures"];
+  rankdir=TB;
+
+  instanceC [label="<main> instance of C |{ context of a | value of a }|{context of b | value of b }",shape=record];
+  classC [label="<main> class C |{ context of m | <m> value of m }|{ context of n | <n> value of n}",shape=record];
+  callables [label="<m> m\ncallable |<n> n\ncallable",shape=record];
+  uncallables [label="<m> m\nuncallable |<n> n\nuncallable",shape=record];
+
+  instanceC:main -> classC:main;
+  classC:m -> uncallables:m [label="C.m",style=dashed];
+  classC:n -> uncallables:n [label="C.n",style=dashed];
+  uncallables:m -> callables:m [label="get_using(C.m, instance)",style=dashed];
+  uncallables:n -> callables:n [label="get_using(C.n, instance)",style=dashed];
+}
+}}}
+
+The precise structure usage is as follows:
+
+{{{#!graphviz
+//format=svg
+//transform=notugly
+digraph methods {
+  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Method structures"];
+  edge [fontsize="13.0",fontname="Helvetica",tooltip="Method structures"];
+  rankdir=TB;
+
+  classC [label="<main> class C | { context of m | <mvalue> uncallable for m } | ...",shape=record];
+  uncallableattr [label="attr | { <context> C | <value> uncallable for m }",shape=record];
+  callableattr [label="attr | { <context> instance | <value> callable for m }",shape=record];
+  uncallable [label="<main> uncallable for m |{ __fn__ | <b> bound method reference | <fn> unbound method routine }|{ __args__ | minimum #parameters | <ptable> parameter table reference }",shape=record];
+  callable [label="<main> callable for m |{ __fn__ | 0 | <fn> bound method routine }|{ __args__ | minimum #parameters | <ptable> parameter table reference }",shape=record];
+  ptable [label="<main> parameter table for m | ...",shape=record];
+
+  classC:mvalue -> uncallableattr [label="C.m",style=dashed];
+  classC:mvalue -> uncallable:main;
+  uncallableattr:value -> uncallable:main;
+  uncallableattr -> callableattr [label="get_using(C.m, instance)",style=dashed];
+  uncallable:b -> callable:main;
+  callableattr:value -> callable:main;
+  uncallable:ptable -> ptable:main;
+  callable:ptable -> ptable:main;
+}
+}}}
+
+Callable methods provide a reference to a callable routine in its special callable member, just as functions and classes do. Uncallable methods populate the callable member with a reference to an error routine. Thus, any attempt to call an uncallable method would cause the error routine to be invoked. In addition, uncallable methods reference the corresponding callable methods so that the callable methods can be found and referenced.
+
+|| '''Accessor''' || '''Provider''' || '''Attribute''' || '''Context''' || '''Summary''' ||
+||<|4> Instance ||<|4> Instance || Function || ''not used'' ||<|6> Preserve context ||
+|| Bound method || Original instance ||
+|| Unbound method || Providing class ||
+|| Other || Same as value ||
+||<|4> Instance ||<|4> Class || Function || ''not used'' ||
+|| Bound method || Original instance ||
+|| Unbound method || Accessing instance, if compatible || Test and replace context ||
+|| Other || Same as value ||<|5> Preserve context ||
+||<|4> Class ||<|4> Class || Function || ''not used'' ||
+|| Bound method || Original instance ||
+|| Unbound method || Providing class ||
+|| Other || Same as value ||
+
+When obtaining an unbound method from an instance attribute, the context of the method attribute is provided. Indeed, the context is always preserved when accessing instance attributes.
+
+When obtaining an unbound method from a class attribute via an instance, the context of the method attribute is tested against the accessing instance. If compatible, an attribute is copied containing the instance as context and a callable method reference as value.
+
+When obtaining an unbound method from a class attribute, the context of the method attribute is provided. Indeed, the context is always preserved when accessing class attributes directly.
+
+When combining an unbound method obtained from a class with an instance using `get_using`, the context of the method attribute is tested against the supplied instance. If compatible, an attribute is copied containing the instance as context and a callable method reference as value.
+
+=== Functions as Unbound Methods ===
+
+Functions not defined within classes could be treated as unbound methods if they were to employ `self` (thus indicating that they are intended as methods). Such functions would then be recorded as uncallable in the module namespace, needing to be explicitly bound to a class using a special function. However, there appears to be limited utility in defining functions in this way, instead of defining them directly as methods, or instead of merely using such generic functions from existing methods.

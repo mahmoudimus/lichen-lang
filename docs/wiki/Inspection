@@ -1,0 +1,418 @@
+= Inspecting Programs =
+
+A program's source code is inspected module by module. As [[../Imports|imports]] of modules are encountered, other modules are added to the program. The inspection process for each module involves top-to-bottom traversal of the code using depth-first processing of the abstract syntax tree, with a stack of namespaces being employed to record definitions and names within namespaces are they are visited. Inspection continues until all modules in the program have been imported and inspected.
+
+<<TableOfContents(2,3)>>
+
+== The Inspection Process ==
+
+The inspection process is focused on two primary tasks:
+
+ * Populating namespaces
+   * Identifying the names defined by each namespace
+   * Recording relationships between namespaces
+ * Describing the operations in each namespace
+   * Identifying the names in each namespace and the attributes used by those names
+   * Recording details of assignments and invocations
+
+The results of inspection are written out to [[../Cache|cache]] files, one for each module in the program.
+
+=== Program Units for Inspection ===
+
+The `inspector` module performs much of the inspection work, relying on the `common` module for certain tasks, with the `modules` module providing the relevant module abstractions including those writing to and reading from cache files, and the `resolving` module completing each module's inspection. The `importer` module coordinates inspection across the whole program.
+
+=== Name Identification ===
+
+Names can be introduced to a namespace via several different mechanisms:
+
+ * Assignments to local names
+ * References to global names
+ * References to built-in names (defined in the built-in modules)
+ * Importing of modules
+ * Importing of names from modules
+
+The origins of names are discovered by considering local, global and built-in namespaces. Where a name is '''local''', it is defined in the same namespace. Where a name is '''global''', it is defined in the same module at the module level. Where a name is '''built-in''', it is defined in a module in the `__builtins__` package and exposed via the `__builtins__` namespace.
+
+Initial tentative identification of names will sort names into two categories: locals and external names. Global variables employed in function (or method) namespaces may not be defined when a function body is inspected, either within a module or being imported from another module, and so it is not initially possible to more specifically determine the nature of a name.
+
+These categories are later refined to distinguish between globals and built-in names as external names. The built-in origin of a name is only suggested when no locals or globals can provide the name, and the final identification of such names, plus other external names introduced as locals or globals via imports, will occur at the end of the inspection activity. Names that are unrecognised by then may be treated like unrecognised built-ins.
+
+=== Name Restrictions and Resolution ===
+
+'''Static''' objects, forming the fundamental [[../Structure|structure]] of the program, expose their names through the general structure hierarchy. Classes, which are defined as part of this structure, depend on well-defined names for any base classes they employ. For example:
+
+{{{#!python numbers=disable
+class C(A): # depends on A being a name that can be resolved (and being a class)
+    ...
+
+class D(A.B.C): # depends on A.B.C being resolvable (and being a class)
+    ...
+}}}
+
+Base classes must be identifiable and unambiguous. Since base classes may be imported, their identification may not necessarily occur immediately, but it must be possible once all information about a program is known and when all such dependencies are resolved.
+
+=== Attribute Identification ===
+
+Attributes are introduced to namespaces as follows:
+
+ * For classes and modules, the definition of names defines attributes in those namespaces
+ * Functions do not generally support attributes, although [[../Representations#Special_Members|representation-specific attributes]] do exist on functions
+ * For instances, assignments to attributes of the special `self` name, performed in methods, define attributes in all instances of the method's class
+
+Attributes are only supported on program objects if they have been defined or '''bound''' as described above. Any attempt to access or set an attribute on an object using a name that was not determined through the above process is considered an invalid operation. Thus, augmenting the attributes available on an object (so-called "monkeypatching") is not possible.
+
+When an attribute is accessed, the location of its use is recorded and ultimately associated with assignments of the name involved, just as is done for accesses of the plain name itself, but the attribute details are subsequently collected together for each assignment or '''version''' of the name. This is discussed below.
+
+=== Inherited Attributes ===
+
+In order to support inheritance, a process of propagation makes class and instance attributes available to any given class from its ancestor classes according to a depth-first traversal of a class's base class hierarchy. Thus, for each class, given the definition of its base classes, a complete collection of class and instance attribute names can be determined. The actual mechanism of propagation occurs during the consolidation phase of inspection, principally because class bases are not generally immediately identifiable upon completing the inspection of any given class.
+
+=== Name Assignments and Accesses ===
+
+Each assignment of a name defines a '''version''' of the name within a namespace. The location of this definition consists of the following:
+
+ * The namespace in which the assignment appears
+ * The name itself
+ * The version or assignment instance number
+
+When a name is used, the location of its use is recorded and is ultimately associated with the assignments that may be providing the name at that location. This permits information about the type of the name to become available for each usage location. The location of each name usage consists of the following:
+
+ * The namespace in which the name appears
+ * The name itself
+ * The access instance number
+
+Name accesses are described as special cases of attribute accesses: where attributes would be indicated, none are specified.
+
+=== Attribute Accesses ===
+
+Attribute '''accesses''' are operations involving attributes where those attributes are obtained or set in conjunction with an '''accessor''' expression. They are recorded in terms of location tuples, each describing an access as follows:
+
+ * The namespace in which the access occurs
+ * Any named accessor or an anonymous accessor
+ * The attribute (or chain of attributes) involved (omitted for name accesses)
+ * The access instance number
+
+As with name accesses, the access instance number distinguishes between different accesses employing the same details.
+
+Consider the following example:
+
+{{{{#!table
+<style="vertical-align: top">
+{{{#!python numbers=disable
+
+def f():
+    p = ...        # p version 0
+    p.a            # p.a access 0
+    if fn().a:     # anonymous a access 0
+        q = ...    # q version 0
+        q.a        # q.a access 0
+        p          # p access 0
+    else:
+        q = ...    # q version 1
+        q.a        # q.a access 1
+    q.b            # q.b access 0
+    p              # p access 1
+}}}
+||
+{{{#!graphviz
+//format=svg
+//transform=notugly
+digraph accesses {
+  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Names and accesses"];
+  edge [tooltip="Names and accesses"];
+  rankdir=TB;
+
+  p [label="p = ...",style=filled,fillcolor=gold];
+
+  subgraph {
+    rank=same;
+    pa0expr [label="p.a",style=filled,fillcolor=cyan];
+    pa0 [label="p.a #0",style=filled,fillcolor=red];
+  }
+
+  subgraph {
+    rank=same;
+    if [label="if",shape=ellipse];
+    fnaexpr [label="fn().a",style=filled,fillcolor=cyan];
+    fna [label="{}.a #0",style=filled,fillcolor=red];
+  }
+
+  q0 [label="q = ...",style=filled,fillcolor=gold];
+
+  subgraph {
+    rank=same;
+    qa0expr [label="q.a",style=filled,fillcolor=cyan];
+    qa0 [label="q.a #0",style=filled,fillcolor=red];
+  }
+
+  subgraph {
+    rank=same;
+    p0expr [label="p",style=filled,fillcolor=cyan];
+    p0 [label="p.{} #0",style=filled,fillcolor=red];
+  }
+
+  else [label="else",shape=ellipse];
+  q1 [label="q = ...",style=filled,fillcolor=gold];
+
+  subgraph {
+    rank=same;
+    qa1expr [label="q.a #1",style=filled,fillcolor=cyan];
+    qa1 [label="q.a #1",style=filled,fillcolor=red];
+  }
+
+  subgraph {
+    rank=same;
+    qb0expr [label="q.b",style=filled,fillcolor=cyan];
+    qb0 [label="q.b #0",style=filled,fillcolor=red];
+  }
+
+  subgraph {
+    rank=same;
+    p1expr [label="p",style=filled,fillcolor=cyan];
+    p1 [label="p.{} #1",style=filled,fillcolor=red];
+  }
+
+  p -> pa0expr -> if -> fnaexpr -> q0 -> qa0expr -> p0expr -> qb0expr;
+  if -> else -> q1 -> qa1expr -> qb0expr;
+  qb0expr -> p1expr;
+
+  fnaexpr -> fna [dir=none,style=dashed];
+  pa0expr -> pa0 [dir=none,style=dashed];
+  qa0expr -> qa0 [dir=none,style=dashed];
+  p0expr -> p0 [dir=none,style=dashed];
+  qa1expr -> qa1 [dir=none,style=dashed];
+  qb0expr -> qb0 [dir=none,style=dashed];
+  p1expr -> p1 [dir=none,style=dashed];
+
+  p -> pa0 [dir=none];
+  p -> p0 [dir=none];
+  p -> p1 [dir=none];
+
+  q0 -> qa0 [dir=none];
+  q0 -> qb0 [dir=none];
+
+  q1 -> qa1 [dir=none];
+  q1 -> qb0 [dir=none];
+}
+}}}
+}}}}
+
+Since the names involved may be provided by different name versions, accesses are counted independently. Meanwhile, a non-name or '''anonymous''' accessor may be involved in an access. Such anonymous accessors are independent and do not accumulate attribute usage because they potentially involve completely different objects.
+
+|| '''Namespace''' || '''Name''' || '''Attribute''' || '''Access number''' ||
+|| `module.f`      || `p`        || `a`             || 0 ||
+|| `module.f`      || `p`        || `{}`            || 0 ||
+|| `module.f`      || `p`        || `{}`            || 1 ||
+|| `module.f`      || `q`        || `a`             || 0 ||
+|| `module.f`      || `q`        || `a`             || 1 ||
+|| `module.f`      || `q`        || `b`             || 0 ||
+|| `module.f`      || `{}`       || `a`             || 0 ||
+
+Accessors may be recorded using a similar location scheme. For example:
+
+|| '''Namespace''' || '''Name''' || '''Attribute''' || '''Name version''' ||
+|| `module.f`      || `p`        || `{}`            || 0 ||
+|| `module.f`      || `q`        || `{}`            || 0 ||
+|| `module.f`      || `q`        || `{}`            || 1 ||
+
+Here, the attribute field is left empty and indicates that name definitions are being described. Although the data is superficially similar to name accesses, it should be remembered that accesses employ an access number whereas accessors employ a name version, with such identifiers being different things.
+
+=== Names and Attribute Usage ===
+
+Within each scope, the names employed by the program and the attributes used with those names are tracked. As the path of execution diverges and converges again through control-flow constructs, the tracking attempts to maintain the '''attribute usage''' associated with each name, or specifically each '''version''' of each name.
+
+{{{{#!table
+<style="vertical-align: top">
+{{{#!python numbers=disable
+y = ...         # y version 0
+while cond0:
+    if cond1:
+        y.a1
+    elif cond2:
+        y = ... # y version 1
+        y.a2
+    else:
+        y.a3
+
+# y version 0 is used with a1 or a3 or neither
+
+# y version 1 is used with a2
+}}}
+||
+{{{#!graphviz
+//format=svg
+//transform=notugly
+digraph usage {
+  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Name and attribute tracking"];
+  edge [tooltip="Name and attribute tracking"];
+  rankdir=TB;
+
+  sety0 [label="y = ...",style=filled,fillcolor=gold];
+  while [label="while cond0",shape=ellipse];
+
+  subgraph {
+    rank=same;
+    if [label="if cond1",shape=ellipse];
+    ya1 [label="y.a1",style=filled,fillcolor=cyan];
+  }
+
+  subgraph {
+    rank=same;
+    elif [label="elif cond2",shape=ellipse];
+    sety1 [label="y = ...",style=filled,fillcolor=gold];
+    ya2 [label="y.a2",style=filled,fillcolor=green];
+  }
+
+  subgraph {
+    rank=same;
+    ifelse [label="else",shape=ellipse];
+    ya3 [label="y.a3",style=filled,fillcolor=cyan];
+  }
+
+  endif [label="end if",shape=ellipse];
+
+  whileelse [label="(else)",shape=ellipse];
+
+  endwhile [label="end while",shape=ellipse];
+
+  sety0 -> while -> if -> elif -> ifelse -> endif;
+  if -> ya1 -> endif;
+  elif -> sety1 -> ya2 -> endif;
+  ifelse -> ya3 -> endif;
+  endif -> while [style=dashed];
+  while -> whileelse -> endwhile;
+}
+}}}
+}}}}
+
+The outcome of such tracking should be an indication of the attribute usage with each name based on the shortest routes that names can take through the control-flow structure. Such shortest-route usage defines the minimal selection of attributes that can be considered used with a name, and thus such usage defines the broadest selection of object types that can be identified as supporting such attributes. In the above example, the following minimal selections of attributes apply:
+
+|| '''Name Version''' || '''Minimal Set of Attributes''' || '''Types''' ||
+|| `y` (version 0) || ''empty set'' || ''any object'' ||
+|| `y` (version 1) || `a2` ||  ''only objects providing the single attribute'' ||
+
+The assumption is made that any attribute used with a name is always provided by the object referenced by that name and that the correct execution of the code does not rely on an attribute being absent (and thus raising an exception). By defining usage for each name, the toolchain can determine whether any type can provide the attributes used with a name, producing a compile-time error if no type supports such usage.
+
+It is possible that certain routes taken by names might define attribute usage that cannot be supported by types that do support the shortest-route usage, yet it might not be appropriate to forbid usage of such types with such names: the program logic may intend that such types do not visit the regions of the code that employ the attributes that such types cannot support. However, as a consequence, run-time tests will be required to prevent attribute accesses that are inappropriate for such types from taking place. In the above example, the following maximal selections apply:
+
+|| '''Name Version''' || '''Maximal Set of Attributes''' || '''Types''' ||
+|| `y` (version 0) || `a1`, `a3` || ''only objects providing both attributes'' ||
+|| `y` (version 1) || `a1`, `a2`, `a3` ||  ''only objects providing all three attributes'' ||
+
+Tracking occurs separately in function or method namespaces and at a level combining the static namespaces in a module. This latter combination of namespaces permits the flow of global name details through class namespaces. Tracking employs special '''tracking names''' with which usage is associated, with globals and class attributes employing complete object paths to describe their names, whereas locals merely employ the plain names defined and used in local namespaces. Some examples follow:
+
+|| '''Namespace''' || '''Name''' || '''Name Scope''' || '''Tracking Name''' ||
+|| `__main__` (module) || `x` || global || `__main__.x` ||
+|| `__main__.C` (class) || `x` || global || `__main__.x` ||
+|| `__main__.C` (class) || `y` || local (class attribute) || `__main__.C.y` ||
+|| `__main__.f` (function) || `y` || local || `y` ||
+
+=== Name Initialisation and Aliases ===
+
+Each name version may be associated with a value upon assignment provided by an expression known as an '''initialiser'''. Such values may be used to inform the interpretation of operations on names, restricting the types involved to the initialised values. Some examples are as follows:
+
+{{{#!python numbers=disable
+x = 123         # initialiser is a constant, indicating a known type
+x = classname() # initialiser refers to a class, indicating instantiation
+}}}
+
+Names may also be assigned the values of other names, and such a name becomes an '''alias''' for such other names. Aliases can therefore be used to combine attribute usage observations across names. Other forms of aliases involve assigning attributes accessed via other names to any given name. Some examples are as follows:
+
+{{{#!python numbers=disable
+y = x   # y 
+y.p     # p can be assumed to apply to x
+z = x.q # z can be restricted to the types deduced for x.q
+}}}
+
+Initialising values are retained for later resolution because their identities are not generally known until certain name resolution activities have taken place.
+
+=== Invocations ===
+
+During inspection only limited information is available about the nature of invocations. However, some information will already be available about global names and these may be defined by classes. Thus, invocations that cause the instantiation of classes may be determined even during the inspection phase.
+
+Information about class instantiation is most useful in combination with the initialisation of names. When an assignment occurs, any initialising expression that provides enough information can be evaluated to see if it describes instantiation. If so, the nature of the instantiation can be associated with the name and used in the deduction process to constrain any usage of that name and its attributes. Such restrictions on the types associated with names are applied in the deduction phase.
+
+=== Literals and Constants ===
+
+Literal values or '''literals''' are specific values that appear in the program, typically representing numbers, character strings, mappings or collections. Literal numbers and strings are effectively '''constants''', meaning that their values are unambiguously defined and can eventually be referenced using a unique identifier that applies throughout the program and which can refer to an initialised object in any generated program. Initially, they are recorded for the namespace in which they appear. For example:
+
+|| '''Namespace''' || '''Identifier''' || '''Type''' || '''Encoding''' || '''Value''' ||
+|| `__main__` || `__main__.$c0` || `__builtins__.str.string` || `iso-8859-15` || `'\xc6\xd8\xc5'` ||
+|| `__main__` || `__main__.$c1` || `__builtins__.int.int` || || `123` ||
+
+Since values may appear again in other namespaces, a mapping is generated from such local identifiers to common global identifiers for constants. Where such an identifier is derived from the value content, this can potentially occur immediately, although in practice (and in general) such a mapping will be generated after all modules have been inspected.
+
+Collections and mappings may also be initialised using literal syntax but may contain non-constant information such as names or expressions whose values are unknown before the program is run. Such values can be represented as instantiation operations of the appropriate type in any generated program, and the instances of the type concerned can be associated with any names to which such literals are assigned. Special names are used to refer to literal types for collections and mappings. For example:
+
+|| '''Identifier''' || '''Type''' ||
+|| `$Ldict` || `__builtins__.dict.dict` ||
+|| `$Llist` || `__builtins__.list.list` ||
+|| `$Ltuple` || `__builtins__.tuple.tuple` ||
+
+Such special names merely serve as convenient placeholders for the types of any literals mentioned in a module.
+
+== Consolidating Inspection Details ==
+
+As briefly discussed above, certain activities occur after information has been collected from an input program. Within each module, names that are external to namespaces are recorded in a '''name reference''' collection. These references identify unrecognised names but do not generally define their origins. Examples of name references are as follows:
+
+|| '''Name''' || '''Identity''' ||
+|| `__main__.repr` || `<deferred>:__builtins__.repr` ||
+|| `__main__.sys` || `<module>:sys` ||
+
+In order to obtain the final identities, deferred references may need to be resolved, yielding concrete references:
+
+|| '''Name''' || '''Identity''' ||
+|| `__main__.repr` || `<function>:__builtins__.identity.repr` ||
+|| `__main__.sys` || `<module>:sys` ||
+
+This process of resolution cannot be performed immediately with only the knowledge available in a single module. Only with all program modules loaded can such resolution occur.
+
+=== Identifying Deferred References ===
+
+After all modules are loaded, and with all objects present in the program at this point, each deferred reference defined within a module should ultimately yield an identity. Any failure to do so indicates usage of a name not defined in the program. The process of identifying them by resolving what each of them points to, is illustrated by the following example:
+
+|| '''Reference''' || '''Object Path to Search''' ||
+|| `<depends>:__builtins__.repr` || `__builtins__.repr` ||
+|| `<depends>:__builtins__.identity.repr` || `__builtins__.identity.repr` ||
+|| `<function>:__builtins__.identity.repr` || ''identification has occurred'' ||
+
+Initially, the origin information from the reference is used to find the details of the referenced object. However, in this case, the details yield another deferred reference that has not yet been resolved. Consequently, the origin information must be used to find the details of the object referenced in this case, finally yielding a reference with concrete object information. Deferred references are mutated to concrete references, thus changing the nature of such references throughout the accumulated data.
+
+=== Identifying Module Dependencies ===
+
+During deferred reference resolution, relationships are catalogued between modules in which deferred references are found and those providing the corresponding referenced objects. In addition, module ordering dependencies are established on the basis that some kinds of objects must be initialised before being used in other parts of the program. As a result, the modules providing such objects must themselves be initialised before the modules referencing such objects. More information on this topic can be found in the [[../Imports#Import_Sequencing|import sequencing]] documentation.
+
+=== Resolving Module Details ===
+
+With all dependencies resolved, further work can be done with the details within each module. The `resolving` module provides the functionality to each module instance to perform such work.
+
+ 1. Class bases can be identified.
+ 1. Special names (referring to built-in objects employed by certain operations) are resolved.
+ 1. Each access involving an external name is investigated to see if it provides an effectively constant object (as described below).
+ 1. Invocation references are converted to provide instantiation information, if appropriate.
+ 1. Initialisers are investigated to see if they provide concrete object details and can thus indicate the nature of a name.
+ 1. Constant value literals are associated with the appropriate types.
+
+Thus, attribute details for each module and its classes are finalised. Meanwhile, modules that are still hidden are removed from the program.
+
+==== Investigating Accesses ====
+
+External names will not have been resolved during the inspection process, but with information about the whole program, it becomes possible to identify names and to determine whether attribute accesses involving those names can also be identified. Thus, name references from each namespace are investigated in turn as follows.
+
+Each name referencing a static object is considered a constant access of that object. However, given a number of accompanying attributes describing an access, each attribute is added in turn, and the resulting object path identified. If the path identifies a constant object, the next attribute in the access chain is added and the resulting object path identified, and so on. The maximal collection of attributes identifying a constant object is then recorded as a constant access, with any remaining attributes in the access chain retained for traversal in a later phase.
+
+Names yielding constant accesses do not need to have their identity deduced through the application of attribute usage.
+
+==== Investigating Initialisers ====
+
+During inspection, initialisers will have been recorded in terms of expression results such as names, invocations, readily-identifiable instances, and attribute accesses. With details of the whole program plus constant accesses having been made available, such results may be definitively identified and associated with initialised names.
+
+Alias information may also be refined at this point by identifying attribute accesses that are used to initialise names.
+
+=== Finalising Program Details ===
+
+With class contents and relationships identified, class attribute inheritance and instance attribute availability can be defined. Some classes may depend on external state for their initialisation, and so additional module dependencies may be defined at this stage. The `importer` module contains the functionality to conduct these whole-program activities.
+
+== Inspection Outcome ==
+
+Once inspection is complete, the available knowledge concerns the whole program and not merely individual modules or parts of the program. However, only limited efforts have been made until this point, notably in the acquisition of statically-defined object details when referencing names or attributes, to integrate the different modules. The [[../Deduction|deduction]] process is concerned with such integration.

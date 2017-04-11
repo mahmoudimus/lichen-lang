@@ -1,0 +1,205 @@
+= Inspection Cache Files =
+
+The results of inspection for each module are written out to cache files, and these files should be able to provide all the information that is gathered during inspection without having to inspect the source code again. One minor benefit of using cached data, instead of having to parse and inspect the source code for a given module, is that of a slightly reduced processing time for the inspection activity. However, an arguably greater benefit is that of being able to see the outcome of the activity as a summary of accumulated data.
+
+Each cache file has the following general format:
+
+{{{{#!table
+{{{
+<filename>
+
+}}}
+|| The main program filename
+==
+{{{
+imports:
+<required module-names>
+<possibly-required module-names>
+
+}}}
+||
+ * Comma-separated list of modules explicitly imported by this module
+ * Comma-separated list of modules implicitly imported by this module
+==
+{{{
+deferred:
+<deferred references>
+
+}}}
+|| Comma-separated list of references not identified within this module
+==
+{{{
+special:
+<special-name> <reference> <qualified-names>
+...
+
+}}}
+|| Special name and corresponding reference plus comma-separated list of usage namespaces
+==
+{{{
+members:
+<qualified-name> <reference>
+...
+
+}}}
+|| Reference for each member of the static namespace hierarchy of the module
+==
+{{{
+class relationships:
+<qualified-class-name> <base-class-references>
+...
+
+}}}
+|| Comma-separated list of base classes for each class
+==
+{{{
+instance attributes:
+<qualified-class-name> <instance-attribute-names>
+...
+
+}}}
+|| Comma-separated list of instance attributes for each class
+==
+{{{
+instance attribute constants:
+<qualified-class-name> <attribute-name> <reference>
+...
+
+}}}
+|| Reference for the named constant instance attribute in the given class
+==
+{{{
+names used:
+<qualified-class/function/module-name> <names>
+...
+
+}}}
+|| Comma-separated list of names in each namespace
+==
+{{{
+name references:
+<qualified-name> <reference>
+...
+
+}}}
+|| Correspondence between name and resolved identity
+==
+{{{
+initialised-names:
+<qualified-name> <definition-version> <reference>
+...
+
+}}}
+|| Identity of a given definition of a name
+==
+{{{
+aliased-names:
+<qualified-name> <definition-version> <original-name> <attribute-names> <access-number>
+...
+
+}}}
+|| Name definition by access operation
+==
+{{{
+function parameters:
+<qualified-function-name> <parameter-names>
+...
+
+}}}
+|| Comma-separated list of parameters for each function
+==
+{{{
+function default parameters:
+<qualified-function-name> <parameter-names-with-defaults>
+...
+
+}}}
+||
+Comma-separated parameter definitions for each function, with each definition being of the form...
+{{{
+<name>=<references>
+}}}
+...and with the references being semicolon-separated
+==
+{{{
+function locals:
+<qualified-function-name> <local-variable-name> <reference>
+...
+
+}}}
+|| Identity of the given local name in the given class
+==
+{{{
+scope globals:
+<qualified-function-name> <global-variable-names>
+...
+
+}}}
+|| Comma-separated list of global names in each namespace
+==
+{{{
+attribute usage:
+<qualified-name> <local/global/qualified-variable-name> <usages>
+...
+
+}}}
+||
+Attribute usage details for the given name in the given namespace, with usages being a semicolon-separated list of usage alternatives, each being a comma-separated list of attribute names or {} (meaning no attribute names used), attribute names employing ! if invoked
+==
+{{{
+attribute accesses:
+<qualified-name> <attribute-chains>
+...
+
+}}}
+|| Comma-separated list of attribute chains used on anonymous/unidentified objects
+==
+{{{
+constant accesses:
+<qualified-function-name> <attribute-chain> <reference> <remaining attribute-chain>
+...
+
+}}}
+|| Identity of the given attribute chain in the given namespace, with any unresolved attribute chain provided
+==
+{{{
+attribute access usage:
+<qualified-function-name> <local/global-variable-name> <attribute-name> <definition-versions>
+...
+
+}}}
+|| Indicates, for each access involving the given name and first attribute name in the given namespace, the definitions that may provide the name
+==
+{{{
+attribute access-modifiers:
+<qualified-function-name> <local/global-variable-name> <attribute-name> <access-modifiers>
+...
+
+}}}
+|| Indicates, for accesses involving the given name and first attribute name in the given namespace, the modifiers applying to each access, where = indicates assignment, ! indicates invocation, and _ indicates access
+==
+{{{
+constant literals:
+<qualified-name> <value-type> <encoding> <constant-literal>
+...
+
+}}}
+|| Describes a constant literal in the given namespace having the indicated type, encoding (if a string), and value
+==
+{{{
+constant values:
+<qualified-name> <value-type> <encoding> <constant-literal>
+...
+
+}}}
+|| Describes a constant literal identified using a locally-qualified name
+==
+{{{
+exception namespaces:
+<qualified-names>
+...
+}}}
+|| Comma-separated list of namespaces that need to handle exceptions
+}}}}
+
+A qualified name is a name prefixed with the namespace it appears in.

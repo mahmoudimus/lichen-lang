@@ -107,3 +107,27 @@ paul@boddie.org.uk
 
 Copyright and licence information can be found in the docs directory - see
 docs/COPYING.txt and docs/gpl-3.0.txt for more information.
+
+Generating the Wiki Pages
+=========================
+
+The docs/tools/make_pages.sh script generates a page package for MoinMoin. The
+following command will generate a page package called pages.zip using the
+pages directory for staging, with Lichen as the page prefix:
+
+docs/tools/make_pages.sh pages Lichen
+
+Make sure to include the page prefix where the pages are being deployed in a
+wiki with other content at the top level.
+
+Currently, the wiki pages require the following extensions:
+
+ImprovedTableParser     https://moinmo.in/ParserMarket/ImprovedTableParser
+
+MoinSupport             http://hgweb.boddie.org.uk/MoinSupport
+
+GraphvizParser          https://moinmo.in/ParserMarket/graphviz
+
+The GraphvizParser requires diagram-tools for the notugly.xsl stylesheet,
+although a copy of the stylesheet is provided in the GraphvizParser
+distribution for convenience.

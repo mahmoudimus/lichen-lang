@@ -1,0 +1,57 @@
+= To Do =
+
+As always with software, there are still many things that need to be done. Here is a list of a few of them.
+
+<<TableOfContents(2,3)>>
+
+== Finish the Core Standard Library ==
+
+Lichen provides its own core standard library featuring the [[../Builtins|built-ins]] and other essential modules, with only a small amount of native code supporting implementations written in the Lichen language.
+
+=== Numeric Types ===
+
+Support all the numeric types. Currently, only `int` is supported, but `float` merely requires some native code handling operations and testing for exception conditions. A representation for `long` needs to be determined, and `complex` probably just needs some methods implementing.
+
+Support promotion between some of the numeric types. Currently, `int` values that overflow raise `OverflowError`, as was done in Python before automatic promotion to `long`.
+
+=== String Types ===
+
+The remaining methods need defining for byte and Unicode strings. Some methods are more complicated than others, particularly where some interpretation of the content is required: identification of case, whitespace, punctuation, and so on.
+
+Some Unicode operations could be implemented in the Lichen language, not in C.
+
+=== Sequence and Mapping Types ===
+
+Various methods still need defining in the dictionary, list, tuple and set classes to provide parity with Python.
+
+=== Hashing ===
+
+Unlike Python, the hashing approaches currently employed are not well-tuned. One important difference between Lichen and Python is that the former does not use hashtables as a general structure for objects, meaning that certain desirable criteria for Python hashtables (randomising certain aspects of their behaviour to prevent the exploitation of poorly performing cases) are less important for Lichen.
+
+== Provide Peripheral Library Support ==
+
+The Python standard library offers support for things like networking which require a degree of system-level integration. The Lichen libraries could be expanded to offer coverage of many of the same APIs.
+
+=== Versatile Native Libraries ===
+
+Currently, the native functionality already exposes things like file descriptors, and a relatively simple versatile interface might be sufficient for many future libraries.
+
+== Incremental Compilation ==
+
+To some extent, the toolchain supports the caching of inspection results with selective regeneration upon changes to source files. However, deduction and subsequent activities are performed in their entirety every time.
+
+=== Preserving Structures ===
+
+Where source files have changed, it may be possible that the structure details remain the same. Consequently, it is unnecessary to regenerate structures, and it is only necessary to determine the nature of modified program operations.
+
+Where structures have changed, certain existing operations may need to be updated because such operations may no longer support certain types of object or may support additional types. Meanwhile, changes to structures may be compatible with existing structure layouts and not require such layouts to be recomputed.
+
+== Exploit Deductions Further ==
+
+So far, deductions have been used to inform the translation of certain operations and to identify situations where suitable operations cannot be generated. However, no attempt has been made to broaden the application of such information.
+
+=== Parameter Type Checking ===
+
+Elementary knowledge about function parameters is currently available when inspecting a program, but the deducer does not attempt to propagate such information to likely callers of such functions. Such propagation in its simplest form would merely use the list of potential targets for each invocation, obtain the parameter types from each target, compare these types to any readily-comparable argument (such as a name), and then determine which targets may still be invoked successfully, potentially imposing restrictions on the suitable targets as a result.
+
+Such propagation activities can be time-consuming because they can lead to iterative whole-program propagation occurring. Consider the restriction of an invocation target: this may indicate a restriction on a name that provides such a target, thus affecting the function parameter providing the name; such a restriction could then be propagated to callers of that function, initiating further refinement of other invocations, and so on.

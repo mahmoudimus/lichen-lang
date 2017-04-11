@@ -1,0 +1,44 @@
+= Lichen =
+
+|| [[/Downloads|Downloads]] || [[#Language|Language]] || [[#Toolchain|Toolchain]] || [[#Rationale|Rationale]] || [[#Documents|Documents]] ||
+
+Lichen is both a Python-like [[/Design|language]] and a [[/Toolchain|toolchain]] for that language.
+
+Some objectives:
+
+ * Perform analysis on programs to better understand program structure and behaviour
+ * Develop code generation capabilities
+ * Provide a platform for experimentation independent of existing Python language and library implementations
+ * Provide independence from Python language evolution
+ * Learn things about writing compilers
+
+Despite building on a long [[/History|history]] of experimentation, Lichen still requires some [[/ToDo|work to be done]] for it to be more widely usable.
+
+<<Anchor(Language)>>
+== Language ==
+
+The Lichen language [[/Design|foregoes]] various dynamic aspects of Python to provide a foundation upon which more predictable programs can be built, while preserving essential functionality to make the core of the language seem very much "like Python" (thus yielding the name "Lichen"). The general syntax is largely identical to Python, with only certain syntactic constructs being deliberately unsupported, largely because the associated features are not desired.
+
+<<Anchor(Toolchain)>>
+== Toolchain ==
+
+The Lichen [[/Toolchain|toolchain]] employs existing tokeniser and parser software to obtain an abstract syntax tree which is then inspected to provide data to support deductions about the structure and nature of a given program. With the information obtained from these processes, a program is then constructed, consisting of a number of source files in the target compilation language (which is currently the C programming language). This generated program may be compiled and run, hopefully producing the results intended by the source program's authors.
+
+Lichen source files use the `.py` suffix since the language syntax is superficially compatible with Python, allowing text editors to provide highlighting and editing support for Lichen programs without the need to reconfigure such tools. However, an alternative, recommended suffix is likely to be introduced in future.
+
+<<Anchor(Library)>>
+== Library ==
+
+Unlike other Python compilation efforts, Lichen programs employ a newly-written library that is distinct from the CPython standard library distribution and completely independent from the CPython extension and object libraries on which Python programs being run with CPython must depend. Thus, there is no dependency on any `libpython` for run-time functionality. Since the parts of the Python standard library that are written in Python tend to be rather variable in quality, there has been no real inclination to re-use modules from that particular source, noting that they would need modifying to be compatible with Lichen, anyway. However, rewriting such modules provides opportunities to "do things right": with some functionality being over twenty years old and in bad shape, this is arguably something that should have been done for Python, anyway.
+
+<<Anchor(Rationale)>>
+== Rationale ==
+
+Python has proven to be a readable, productive, comfortable-to-use and popular programming language. However, as it has accumulated features, the precise behaviour of programs making use of many of these features has become more difficult to predict. Features added to provide even more convenience to the programmer have often incurred run-time costs, introduced layers of indirection, and have made programs even more inscrutable. Instead of development tools reaching a point of being able to infer information about programs, it has been suggested that programmers annotate their programs in order to help tools understand those programs instead. Beyond superficial code style analysis and providing tooltips in integrated development environments, Python code analysis is often portrayed as a lost cause.
+
+By employing a refined language [[/Design|design]], Lichen aims to let each program define its [[/Structure|structure]] conveniently, be readily [[/Inspection|inspected]], and thus support [[/Deduction|deductions]] about the use of the program's objects by the code. The result should be more predictable programs that can be [[/Translation|translated]] to other, more efficient, [[/Representations|representations]]. The Lichen toolchain should be able to tell the programmer useful things about their programs that it may also be able to make use of itself. It not only aims to report information about programs that might be of interest to the developer, but it seeks to produce functioning, translated programs that can actually be run.
+
+<<Anchor(Documents)>>
+== Document Index ==
+
+<<FullSearch(title:Lichen/)>>

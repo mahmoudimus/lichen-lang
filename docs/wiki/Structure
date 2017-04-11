@@ -1,0 +1,135 @@
+= Program Structure =
+
+A program consists of a number of '''modules''' with each module providing its own namespace. Modules can be organised within '''packages''' which define a hierarchical relationship between them. However, the relationship between modules is not automatically exposed within the program: it is more appropriate to consider modules as independent entities that have a particular naming scheme.
+
+Within each module a hierarchy of namespaces is provided by '''classes''', with each class potentially containing other classes, and so on. Also appearing within modules and classes are '''functions''', with those appearing within classes being regarded as '''methods'''.
+
+Function namespaces are considered separately from module and class namespaces and are not considered part of the general namespace hierarchy, instead merely appearing as objects at the edges of that hierarchy. Functions may also be defined within functions, and such inner functions will be referenced within their parent functions, but no hierarchical relationship will exist between their namespaces.
+
+Thus, a program provides a static namespace hierarchy consisting of modules containing classes (containing other classes, and so on) plus functions. Objects residing within namespaces are accessed via '''attributes''' of those namespaces.
+
+{{{{#!table
+{{{#!graphviz
+//format=svg
+//transform=notugly
+digraph program {
+  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Program structure"];
+  edge [tooltip="Program structure"];
+  rankdir=LR;
+
+  program [label="program",shape=folder,style=filled,fillcolor=cyan];
+
+  subgraph {
+    rank=same;
+    moduleM [label="module M",style=filled,fillcolor=gold];
+    moduleN [label="module N\n(package)",style=filled,fillcolor=gold];
+  }
+
+  subgraph {
+    rank=same;
+    classA [label="class A"];
+    moduleNP [label="module N.P",style=filled,fillcolor=gold];
+  }
+
+  subgraph {
+    rank=same;
+    functionF [label="function f",shape=ellipse];
+    functionG [label="function g",shape=ellipse];
+    classB [label="class B"];
+    classC [label="class C"];
+  }
+
+  subgraph {
+    rank=same;
+    functionJ [label="function j",shape=ellipse];
+    functionH [label="function h",shape=ellipse];
+    functionK [label="function k",shape=ellipse];
+  }
+
+  program -> moduleM;
+  program -> moduleN;
+
+  moduleM -> classA;
+  moduleN -> moduleNP;
+  moduleNP -> classC;
+
+  classA -> functionF;
+  classA -> functionG;
+  classA -> classB;
+  classB -> functionH;
+  classC -> functionK;
+
+  functionG -> functionJ [style=dashed];
+}
+}}}
+||
+{{{#!python numbers=disable
+# module M
+
+class A:
+    def f(...): pass
+
+    def g(...):
+        def j(...): pass
+
+    class B:
+        def h(...): pass
+
+# module N
+
+...
+
+# module N.P
+
+class C:
+    def k(...): pass
+}}}
+}}}}
+
+== Referencing the Structure ==
+
+Each part of the structure is catalogued using an '''object path''', indicating its location in the structure hierarchy, and a reference indicating its nature and origin. For example:
+
+|| '''Object Path''' || '''Reference''' || '''Explanation''' ||
+|| `M.A` || `<class>:M.A` || The definition of class `A` in module `M` ||
+|| `O.A` || `<class>:M.A` || A reference to `M.A`, a class ||
+|| `N.P.C.k` || `<function>:N.P.C.k` || The definition of method `k` in class `C` of module `N.P` ||
+|| `O.k` || `<function>:N.P.C.k` || A reference to `N.P.C.k`, a function ||
+|| `O.values` || `<instance>:__builtins__.list.list` || An object identified as an instance of class `__builtins__.list.list` ||
+|| `__main__.M` || `<module>:M` || A reference to module `M` ||
+|| `__main__.counter` || `<var>` || An undetermined object called `counter` in the `__main__` module ||
+
+The reference therefore expresses the '''kind''' of object (class, function, instance, module or undetermined variable), possibly accompanied by an object type, and also possibly accompanied by an alias indicating where the reference was obtained.
+
+== Classes ==
+
+Classes are regarded as statically-defined objects, meaning that they are only evaluated once and must not be defined within conditional sections or within functions. Base classes must be expressed using readily-identifiable class names, since any potential ambiguity or uncertainty with the identity of base classes could result in a class inheritance hierarchy that is effectively dynamic.
+
+When '''instantiated''', classes provide '''instances''' that provide the attributes of each class's namespace plus any '''inherited''' attributes from base classes that would not be provided by the class itself. In addition, instances provide their own instance attributes.
+
+== Functions ==
+
+Functions are regarded as statically-defined objects, but they may be defined either with names within other named functions or as '''lambdas''' (functions without names) within named functions or other lambdas. Thus, unlike classes, functions may be defined once but replicated many times, each time with different accompanying state information. Such state information needs to be provided via default parameters: it is not detected and propagated automatically. Closures are not supported: any state from enclosing scopes must be supplied at the point of definition of a function; it is not acquired from outer functions by name.
+
+{{{#!python numbers=disable
+def outer(a):
+    b = 2
+    def inner(c, a=a, b=b):
+        # a initialised using default from outer scope
+        # b also initialised using default from outer scope
+        return a, b, c
+    b = 4
+
+outer(1)(3) # returns (1, 2, 3) not (1, 4, 3)
+}}}
+
+=== Lambdas ===
+
+Lambdas are given special names for the purposes of identification within the program structure, being named relative to the scope in which they are defined. For example, the first lambda appearing within module `N` would have an object path of `N.$l0`, and a subsequent lambda within the same scope would have an object path of `N.$l1`. Lambdas may appear within classes and functions, including lambdas themselves. For example:
+
+{{{#!python numbers=disable
+def f(x):
+    return lambda y, x=x: lambda z, x=x, y=y: (x, y, z)
+}}}
+
+Here, within a module `M`, the outer lambda would have the object path `M.f.$l0` whereas the inner lambda would have the object path `M.f.$l0.$l0`.

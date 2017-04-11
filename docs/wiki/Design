@@ -1,0 +1,469 @@
+= Design Decisions =
+
+The Lichen language design involves some different choices to those taken in Python's design. Many of these choices are motivated by the following criteria:
+
+ * To simplify the language and to make what programs do easier to understand and to predict
+ * To make analysis of programs easier, particularly [[../Deduction|deductions]] about the nature of the code
+ * To simplify and otherwise reduce the [[../Representations|representations]] employed and the operations performed at run-time
+
+Lichen is in many ways a restricted form of Python. In particular, restrictions on the attribute names supported by each object help to clearly define the object types in a program, allowing us to identify those objects when they are used. Consequently, optimisations that can be employed in a Lichen program become possible in situations where they would have been difficult or demanding to employ in a Python program.
+
+Some design choices evoke memories of earlier forms of Python. Removing nested scopes simplifies the [[../Inspection|inspection]] of programs and run-time [[../Representations|representations]] and mechanisms. Other choices seek to remedy difficult or defective aspects of Python, notably the behaviour of Python's [[../Imports|import]] system.
+
+<<TableOfContents(2,3)>>
+
+== Attributes ==
+
+{{{#!table
+'''Lichen''' || '''Python''' || '''Rationale'''
+==
+Objects have a fixed set of attribute names
+|| Objects can gain and lose attributes at run-time
+|| Having fixed sets of attributes helps identify object types
+==
+Instance attributes may not shadow class attributes
+|| Instance attributes may shadow class attributes
+|| Forbidding shadowing simplifies access operations
+==
+Attributes are simple members of object structures
+|| Dynamic handling and computation of attributes is supported
+|| Forbidding dynamic attributes simplifies access operations
+}}}
+
+=== Fixed Attribute Names ===
+
+Attribute names are bound for classes through assignment in the class namespace, for modules in the module namespace, and for instances in methods through assignment to `self`. Class and instance attributes are propagated to descendant classes and instances of descendant classes respectively. Once bound, attributes can be modified, but new attributes cannot be bound by other means, such as the assignment of an attribute to an arbitrary object that would not already support such an attribute.
+
+{{{#!python numbers=disable
+class C:
+    a = 123
+    def __init__(self):
+        self.x = 234
+
+C.b = 456 # not allowed (b not bound in C)
+C().y = 567 # not allowed (y not bound for C instances)
+}}}
+
+Permitting the addition of attributes to objects would then require that such addition attempts be associated with particular objects, leading to a potentially iterative process involving object type deduction and modification, also causing imprecise results.
+
+=== No Shadowing ===
+
+Instances may not define attributes that are provided by classes.
+
+{{{#!python numbers=disable
+class C:
+    a = 123
+    def shadow(self):
+        self.a = 234 # not allowed (attribute shadows class attribute)
+}}}
+
+Permitting this would oblige instances to support attributes that, when missing, are provided by consulting their classes but, when not missing, may also be provided directly by the instances themselves.
+
+=== No Dynamic Attributes ===
+
+Instance attributes cannot be provided dynamically, such that any missing attribute would be supplied by a special method call to determine the attribute's presence and to retrieve its value.
+
+{{{#!python numbers=disable
+class C:
+    def __getattr__(self, name): # not supported
+        if name == "missing":
+            return 123
+}}}
+
+Permitting this would require object types to potentially support any attribute, undermining attempts to use attributes to identify objects.
+
+== Naming ==
+
+{{{#!table
+'''Lichen''' || '''Python''' || '''Rationale'''
+==
+Names may be local, global or built-in: nested namespaces must be initialised explicitly
+|| Names may also be non-local, permitting closures
+|| Limited name scoping simplifies program inspection and run-time mechanisms
+==
+`self` is a reserved name and is optional in method parameter lists
+|| `self` is a naming convention, but the first method parameter must always refer to the accessed object
+|| Reserving `self` assists deduction; making it optional is a consequence of the method binding behaviour
+}}}
+
+=== Traditional Local, Global and Built-In Scopes Only ===
+
+Namespaces reside within a hierarchy within modules: classes containing classes or functions; functions containing other functions. Built-in names are exposed in all namespaces, global names are defined at the module level and are exposed in all namespaces within the module, locals are confined to the namespace in which they are defined.
+
+However, locals are not inherited by namespaces from surrounding or enclosing namespaces.
+
+{{{#!python numbers=disable
+def f(x):
+    def g(y):
+        return x + y # not permitted: x is not inherited from f in Lichen (it is in Python)
+    return g
+
+def h(x):
+    def i(y, x=x): # x is initialised but held in the namespace of i
+        return x + y # succeeds: x is defined
+    return i
+}}}
+
+Needing to access outer namespaces in order to access any referenced names complicates the way in which such dynamic namespaces would need to be managed. Although the default initialisation technique demonstrated above could be automated, explicit initialisation makes programs easier to follow and avoids mistakes involving globals having the same name.
+
+=== Reserved Self ===
+
+The `self` name can be omitted in method signatures, but in methods it is always initialised to the instance on which the method is operating.
+
+{{{#!python numbers=disable
+class C:
+    def f(y): # y is not the instance
+        self.x = y # self is the instance
+}}}
+
+The assumption in methods is that `self` must always be referring to an instance of the containing class or of a descendant class. This means that `self` cannot be initialised to another kind of value, which Python permits through the explicit invocation of a method with the inclusion of the affected instance as the first argument. Consequently, `self` becomes optional in the signature because it is not assigned in the same way as the other parameters.
+
+== Inheritance and Binding ==
+
+{{{#!table
+'''Lichen''' || '''Python''' || '''Rationale'''
+==
+Class attributes are propagated to class hierarchy members during initialisation: rebinding class attributes does not affect descendant class attributes
+|| Class attributes are propagated live to class hierarchy members and must be looked up by the run-time system if not provided by a given class
+|| Initialisation-time propagation simplifies access operations and attribute table storage
+==
+Unbound methods must be bound using a special function taking an instance
+|| Unbound methods may be called using an instance as first argument
+|| Forbidding instances as first arguments simplifies the invocation mechanism
+==
+Functions assigned to class attributes do not become unbound methods
+|| Functions assigned to class attributes become unbound methods
+|| Removing method assignment simplifies deduction: methods are always defined in place
+==
+Base classes must be well-defined
+|| Base classes may be expressions
+|| Well-defined base classes are required to establish a well-defined hierarchy of types
+==
+Classes may not be defined in functions
+|| Classes may be defined in any kind of namespace
+|| Forbidding classes in functions prevents the definition of countless class variants that are awkward to analyse
+}}}
+
+=== Inherited Class Attributes ===
+
+Class attributes that are changed for a class do not change for that class's descendants.
+
+{{{#!python numbers=disable
+class C:
+    a = 123
+
+class D(C):
+    pass
+
+C.a = 456
+print D.a # remains 123 in Lichen, becomes 456 in Python
+}}}
+
+Permitting this requires indirection for all class attributes, requiring them to be treated differently from other kinds of attributes. Meanwhile, class attribute rebinding and the accessing of inherited attributes changed in this way is relatively rare.
+
+=== Unbound Methods ===
+
+Methods are defined on classes but are only available via instances: they are instance methods. Consequently, acquiring a method directly from a class and then invoking it should fail because the method will be unbound: the "context" of the method is not an instance. Furthermore, the Python technique of supplying an instance as the first argument in an invocation to bind the method to an instance, thus setting the context of the method, is not supported. See [[#ReservedSelf|"Reserved Self"]] for more information.
+
+{{{#!python numbers=disable
+class C:
+    def f(self, x):
+        self.x = x
+    def g(self):
+        C.f(123) # not permitted: C is not an instance
+        C.f(self, 123) # not permitted: self cannot be specified in the argument list
+        get_using(C.f, self)(123) # binds C.f to self, then the result is called
+}}}
+
+Binding methods to instances occurs when acquiring methods via instances or explicitly using the `get_using` built-in. The built-in checks the compatibility of the supplied method and instance. If compatible, it provides the bound method as its result.
+
+Normal functions are callable without any further preparation, whereas unbound methods need the binding step to be performed and are not immediately callable. Were functions to become unbound methods upon assignment to a class attribute, they would need to be invalidated by having the preparation mechanism enabled on them. However, this invalidation would only be relevant to the specific case of assigning functions to classes and this would need to be tested for. Given the added complications, such functionality is arguably not worth supporting.
+
+=== Assigning Functions to Class Attributes ===
+
+Functions can be assigned to class attributes but do not become unbound methods as a result.
+
+{{{#!python numbers=disable
+class C:
+    def f(self): # will be replaced
+        return 234
+
+def f(self):
+    return self
+
+C.f = f # makes C.f a function, not a method
+C().f() # not permitted: f requires an explicit argument
+C().f(123) # permitted: f has merely been exposed via C.f
+}}}
+
+Methods are identified as such by their definition location, they contribute information about attributes to the class hierarchy, and they employ certain structure details at run-time to permit the binding of methods. Since functions can defined in arbitrary locations, no class hierarchy information is available, and a function could combine `self` with a range of attributes that are not compatible with any class to which the function might be assigned.
+
+=== Well-Defined Base Classes ===
+
+Base classes must be clearly identifiable as well-defined classes. This facilitates the cataloguing of program objects and further analysis on them.
+
+{{{#!python numbers=disable
+class C:
+    x = 123
+
+def f():
+    return C
+
+class D(f()): # not permitted: f could return anything
+    pass
+}}}
+
+If base class identification could only be done reliably at run-time, class relationship information would be very limited without running the program or performing costly and potentially unreliable analysis. Indeed, programs employing such dynamic base classes are arguably resistant to analysis, which is contrary to the goals of a language like Lichen.
+
+=== Class Definitions and Functions ===
+
+Classes may not be defined in functions because functions provide dynamic namespaces, but Lichen relies on a static namespace hierarchy in order to clearly identify the principal objects in a program. If classes could be defined in functions, despite seemingly providing the same class over and over again on every invocation, a family of classes would, in fact, be defined.
+
+{{{#!python numbers=disable
+def f(x):
+    class C: # not permitted: this describes one of potentially many classes
+        y = x
+    return f
+}}}
+
+Moreover, issues of namespace nesting also arise, since the motivation for defining classes in functions would surely be to take advantage of local state to parameterise such classes.
+
+== Modules and Packages ==
+
+{{{#!table
+'''Lichen''' || '''Python''' || '''Rationale'''
+==
+Modules are independent: package hierarchies are not traversed when importing
+|| Modules exist in hierarchical namespaces: package roots must be imported before importing specific submodules
+|| Eliminating module traversal permits more precise imports and reduces superfluous code
+==
+Only specific names can be imported from a module or package using the `from` statement
+|| Importing "all" from a package or module is permitted
+|| Eliminating "all" imports simplifies the task of determining where names in use have come from
+==
+Modules must be specified using absolute names
+|| Imports can be absolute or relative
+|| Using only absolute names simplifies the import mechanism
+==
+Modules are imported independently and their dependencies subsequently resolved
+|| Modules are imported as import statements are encountered
+|| Statically-initialised objects can be used declaratively, although an initialisation order may still need establishing
+}}}
+
+=== Independent Modules ===
+
+The inclusion of modules in a program affects only explicitly-named modules: they do not have relationships implied by their naming that would cause such related modules to be included in a program.
+
+{{{#!python numbers=disable
+from compiler import consts # defines consts
+import compiler.ast # defines ast, not compiler
+
+ast # is defined
+compiler # is not defined
+consts # is defined
+}}}
+
+Where modules should have relationships, they should be explicitly defined using `from` and `import` statements which target the exact modules required. In the above example, `compiler` is not routinely imported because modules within the `compiler` package have been requested.
+
+=== Specific Name Imports Only ===
+
+Lichen, unlike Python, also does not support the special `__all__` module attribute.
+
+{{{#!python numbers=disable
+from compiler import * # not permitted
+from compiler import ast, consts # permitted
+
+interpreter # undefined in compiler (yet it might be thought to reside there) and in this module
+}}}
+
+The `__all__` attribute supports `from ... import *` statements in Python, but without identifying the module or package involved and then consulting `__all__` in that module or package to discover which names might be involved (which might require the inspection of yet other modules or packages), the names imported cannot be known. Consequently, some names used elsewhere in the module performing the import might be assumed to be imported names when, in fact, they are unknown in both the importing and imported modules. Such uncertainty hinders the inspection of individual modules.
+
+=== Modules Imported Independently ===
+
+When indicating an import using the `from` and `import` statements, the [[../Toolchain|toolchain]] does not attempt to immediately import other modules. Instead, the imports act as declarations of such other modules or names from other modules, resolved at a later stage. This permits mutual imports to a greater extent than in Python.
+
+{{{#!python numbers=disable
+# Module M
+from N import C # in Python: fails attempting to re-enter N
+
+class D(C):
+    y = 456
+
+# Module N
+from M import D # in Python: causes M to be entered, fails when re-entered from N
+
+class C:
+    x = 123
+
+class E(D):
+    z = 789
+
+# Main program
+import N
+}}}
+
+Such flexibility is not usually needed, and circular importing usually indicates issues with program organisation. However, declarative imports can help to decouple modules and avoid combining import declaration and module initialisation order concerns.
+
+== Syntax and Control-Flow ==
+
+{{{#!table
+'''Lichen''' || '''Python''' || '''Rationale'''
+==
+If expressions and comprehensions are not supported
+|| If expressions and comprehensions are supported
+|| Omitting such syntactic features simplifies program inspection and translation
+==
+The `with` statement is not supported
+|| The `with` statement offers a mechanism for resource allocation and deallocation using context managers
+|| This syntactic feature can be satisfactorily emulated using existing constructs
+==
+Generators are not supported
+|| Generators are supported
+|| Omitting generator support simplifies run-time mechanisms
+==
+Only positional and keyword arguments are supported
+|| Argument unpacking (using `*` and `**`) is supported
+|| Omitting unpacking simplifies generic invocation handling
+==
+All parameters must be specified
+|| Catch-all parameters (`*` and `**`) are supported
+|| Omitting catch-all parameter population simplifies generic invocation handling
+}}}
+
+=== No If Expressions or Comprehensions ===
+
+In order to support the classic [[WikiPedia:?:|ternary operator]], a construct was [[https://www.python.org/dev/peps/pep-0308/|added]] to the Python syntax that needed to avoid problems with the existing grammar and notation. Unfortunately, it reorders the components from the traditional form:
+
+{{{#!python numbers=disable
+# Not valid in Lichen, only in Python.
+
+# In C: condition ? true_result : false_result
+true_result if condition else false_result
+
+# In C: (condition ? inner_true_result : inner_false_result) ? true_result : false_result
+true_result if (inner_true_result if condition else inner_false_result) else false_result
+}}}
+
+Since if expressions may participate within expressions, they cannot be rewritten as if statements. Nor can they be rewritten as logical operator chains in general.
+
+{{{#!python numbers=disable
+# Not valid in Lichen, only in Python.
+
+a = 0 if x else 1 # x being true yields 0
+
+# Here, x being true causes (x and 0) to complete, yielding 0.
+# But this causes ((x and 0) or 1) to complete, yielding 1.
+
+a = x and 0 or 1 # not valid
+}}}
+
+But in any case, it would be more of a motivation to support the functionality if a better syntax could be adopted instead. However, if expressions are not particularly important in Python, and despite enhancement requests over many years, everybody managed to live without them.
+
+List and generator comprehensions are more complicated but share some characteristics of if expressions: their syntax contradicts the typical conventions established by the rest of the Python language; they create implicit state that is perhaps most appropriately modelled by a separate function or similar object. Since Lichen does not support generators at all, it will obviously not support generator expressions.
+
+Meanwhile, list comprehensions quickly encourage barely-readable programs:
+
+{{{#!python numbers=disable
+# Not valid in Lichen, only in Python.
+
+x = [0, [1, 2, 0], 0, 0, [0, 3, 4]]
+a = [z for y in x if y for z in y if z]
+}}}
+
+Supporting the creation of temporary functions to produce list comprehensions, while also hiding temporary names from the enclosing scope, adds complexity to the toolchain for situations where programmers would arguably be better creating their own functions and thus writing more readable programs.
+
+=== No With Statement ===
+
+The [[https://docs.python.org/2.7/reference/compound_stmts.html#the-with-statement|with statement]] introduced the concept of [[https://docs.python.org/2.7/reference/datamodel.html#context-managers|context managers]] in Python 2.5, with such objects supporting a [[https://docs.python.org/2.7/library/stdtypes.html#typecontextmanager|programming interface]] that aims to formalise certain conventions around resource management. For example:
+
+{{{#!python numbers=disable
+# Not valid in Lichen, only in Python.
+
+with connection = db.connect(connection_args):
+    with cursor = connection.cursor():
+        cursor.execute(query, args)
+}}}
+
+Although this makes for readable code, it must be supported by objects which define the `__enter__` and `__exit__` special methods. Here, the `connect` method invoked in the first `with` statement must return such an object; similarly, the `cursor` method must also provide an object with such characteristics.
+
+However, the "pre-with" solution is as follows:
+
+{{{#!python numbers=disable
+connection = db.connect(connection_args)
+try:
+    cursor = connection.cursor()
+    try:
+        cursor.execute(query, args)
+    finally:
+        cursor.close()
+finally:
+    connection.close()
+}}}
+
+Although this seems less readable, its behaviour is more obvious because magic methods are not being called implicitly. Moreover, any parameterisation of the acts of resource deallocation or closure can be done in the `finally` clauses where such parameterisation would seem natural, rather than being specified through some kind of context manager initialisation arguments that must then be propagated to the magic methods so that they may take into consideration contextual information that is readily available in the place where the actual resource operations are being performed.
+
+=== No Generators ===
+
+[[https://www.python.org/dev/peps/pep-0255/|Generators]] were [[https://docs.python.org/release/2.3/whatsnew/section-generators.html|added]] to Python in the 2.2 release and became fully part of the language in the 2.3 release. They offer a convenient way of writing iterator-like objects, capturing execution state instead of obliging the programmer to manage such state explicitly.
+
+{{{#!python numbers=disable
+# Not valid in Lichen, only in Python.
+
+def fib():
+    a, b = 0, 1
+    while 1:
+        yield b
+        a, b = b, a+b
+
+# Alternative form valid in Lichen.
+
+class fib:
+    def __init__(self):
+        self.a, self.b = 0, 1
+
+    def next(self):
+        result = self.b
+        self.a, self.b = self.b, self.a + self.b
+        return result
+
+# Main program.
+
+seq = fib()
+i = 0
+while i < 10:
+    print seq.next()
+    i += 1
+}}}
+
+However, generators make additional demands on the mechanisms provided to support program execution. The encapsulation of the above example generator in a separate class illustrates the need for state that persists outside the execution of the routine providing the generator's results. Generators may look like functions, but they do not necessarily behave like them, leading to potential misunderstandings about their operation even if the code is superficially tidy and concise.
+
+=== Positional and Keyword Arguments Only ===
+
+When invoking callables, only positional arguments and keyword arguments can be used. Python also supports `*` and `**` arguments which respectively unpack sequences and mappings into the argument list, filling the list with sequence items (using `*`) and keywords (using `**`).
+
+{{{#!python numbers=disable
+def f(a, b, c, d):
+    return a + b + c + d
+
+l = range(0, 4)
+f(*l) # not permitted
+
+m = {"c" : 10, "d" : 20}
+f(2, 4, **m) # not permitted
+}}}
+
+While convenient, such "unpacking" arguments obscure the communication between callables and undermine the safety provided by function and method signatures. They also require run-time support for the unpacking operations.
+
+=== Positional Parameters Only ===
+
+Similarly, signatures may only contain named parameters that correspond to arguments. Python supports `*` and `**` in parameter lists, too, which respectively accumulate superfluous positional and keyword arguments.
+
+{{{#!python numbers=disable
+def f(a, b, *args, **kw): # not permitted
+    return a + b + sum(args) + kw.get("c", 0) + kw.get("d", 0)
+
+f(1, 2, 3, 4)
+f(1, 2, c=3, d=4)
+}}}
+
+Such accumulation parameters can be useful for collecting arbitrary data and applying some of it within a callable. However, they can easily proliferate throughout a system and allow erroneous data to propagate far from its origin because such parameters permit the deferral of validation until the data needs to be accessed. Again, run-time support is required to marshal arguments into the appropriate parameter of this nature, but programmers could just write functions and methods that employ general sequence and mapping parameters explicitly instead.
