@@ -209,7 +209,7 @@ attribute_loading_ops = (
     )
 
 attribute_ops = attribute_loading_ops + (
-    "__store_via_object",
+    "__store_via_class", "__store_via_object",
     )
 
 checked_loading_ops = (

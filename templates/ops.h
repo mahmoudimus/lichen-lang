@@ -44,9 +44,11 @@ __attr __get_class_and_load__(__ref obj, int pos);
 
 /* Direct storage operations. */
 
+int __store_via_class__(__ref obj, int pos, __attr value);
 int __store_via_object__(__ref obj, int pos, __attr value);
 int __get_class_and_store__(__ref obj, int pos, __attr value);
 
+#define __store_via_class(OBJ, ATTRNAME, VALUE) (__store_via_class__(OBJ, __ATTRPOS(ATTRNAME), VALUE))
 #define __store_via_object(OBJ, ATTRNAME, VALUE) (__store_via_object__(OBJ, __ATTRPOS(ATTRNAME), VALUE))
 #define __get_class_and_store(OBJ, ATTRNAME, VALUE) (__get_class_and_store__(OBJ, __ATTRPOS(ATTRNAME), VALUE))
 

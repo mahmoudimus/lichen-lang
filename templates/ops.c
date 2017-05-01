@@ -85,6 +85,11 @@ int __store_via_object__(__ref obj, int pos, __attr value)
     return 1;
 }
 
+int __store_via_class__(__ref obj, int pos, __attr value)
+{
+    return __store_via_object__(__get_class(obj), pos, value);
+}
+
 int __get_class_and_store__(__ref obj, int pos, __attr value)
 {
     /* Forbid class-relative assignments. */
