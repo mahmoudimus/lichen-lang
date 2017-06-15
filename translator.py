@@ -848,6 +848,12 @@ class TranslatedModule(CommonModule):
         for name in self.importer.function_parameters.get(function_name):
             self.generate_guard(name)
 
+        # Also support self in methods, since some mix-in methods may only work
+        # with certain descendant classes.
+
+        if self.in_method():
+            self.generate_guard("self")
+
         # Produce the body and any additional return statement.
 
         expr = self.process_structure_node(n.code) or \

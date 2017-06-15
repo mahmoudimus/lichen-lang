@@ -71,17 +71,6 @@ class hashtable:
 
         return index % len(self.buckets)
 
-    def _find_entry(self, buckets, key, index):
-
-        """
-        Search in 'buckets' for 'key', using an 'index' identifying the bucket
-        involved.
-
-        Method to be overridden by subclasses.
-        """
-
-        pass
-
     def _items(self):
 
         "Return the values stored in all buckets."
@@ -103,14 +92,10 @@ class hashtable:
         del self.buckets[index][i]
         self.size -= 1
 
-    def _resize(self, capacity):
+    # Methods implemented by subclasses:
 
-        """
-        Resize the hashtable to have the given 'capacity'.
-        Method to be overridden by subclasses.
-        """
-
-        pass
+    # _find_entry(self, buckets, key, index)
+    # _resize(self, capacity)
 
     # Public special methods.
 

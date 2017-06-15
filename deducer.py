@@ -562,21 +562,36 @@ class Deducer(CommonOutput):
 
             if not constrained and self.access_index_rev.get(location):
 
-                # Record specific type guard details.
+                # Test for self parameters in methods that could not be
+                # constrained, potentially due to usage unsupported by the class
+                # defining the method (such as in mix-in classes).
 
-                if len(all_types) == 1:
-                    self.accessor_guard_tests[location] = ("specific", test_label_for_type(first(all_types)))
-                elif is_single_class_type(all_types):
-                    self.accessor_guard_tests[location] = ("specific", "object")
+                if location.name != "self" or self.in_method(location.path):
+                    self.record_guard(location, all_types, all_general_types)
 
-                # Record common type guard details.
+    def record_guard(self, location, all_types, all_general_types):
 
-                elif len(all_general_types) == 1:
-                    self.accessor_guard_tests[location] = ("common", test_label_for_type(first(all_types)))
-                elif is_single_class_type(all_general_types):
-                    self.accessor_guard_tests[location] = ("common", "object")
+        """
+        For the accessor 'location', record a guard if 'all_types' or
+        'all_general_types' are appropriate. Where no guard is recorded, access
+        tests will need to be applied.
+        """
 
-                # Otherwise, no convenient guard can be defined.
+        # Record specific type guard details.
+
+        if len(all_types) == 1:
+            self.accessor_guard_tests[location] = ("specific", test_label_for_type(first(all_types)))
+        elif is_single_class_type(all_types):
+            self.accessor_guard_tests[location] = ("specific", "object")
+
+        # Record common type guard details.
+
+        elif len(all_general_types) == 1:
+            self.accessor_guard_tests[location] = ("common", test_label_for_type(first(all_types)))
+        elif is_single_class_type(all_general_types):
+            self.accessor_guard_tests[location] = ("common", "object")
+
+        # Otherwise, no convenient guard can be defined.
 
     def classify_accesses(self):
 
@@ -1462,24 +1477,29 @@ class Deducer(CommonOutput):
 
         # Constrain "self" references.
 
-        if location.name == "self":
+        class_name = self.in_method(location.path)
+        constrained = False
 
-            # Test for the class of the method in the deduced types.
-
-            class_name = self.in_method(location.path)
-
-            if class_name and class_name not in class_types and class_name not in only_instance_types:
-                raise DeduceError("In %s, usage {%s} is not directly supported by class %s or its instances." %
-                                  (location.path, encode_usage(usage), class_name))
+        if class_name and location.name == "self":
 
             # Constrain the types to the class's hierarchy.
 
-            t = self.constrain_self_reference(location.path, class_types, only_instance_types)
-            if t:
-                class_types, only_instance_types, module_types, constrained = t
-                return class_types, only_instance_types, module_types, constrained, have_assignments
+            class_types, only_instance_types, module_types, constrained = \
+                self.constrain_to_class(class_name, class_types, only_instance_types)
 
-        return class_types, only_instance_types, module_types, False, have_assignments
+            # Without any deduced types, produce an error.
+
+            if not class_types and not only_instance_types:
+                raise DeduceError("In %s, usage {%s} is not directly supported by class %s or its instances." %
+                                  (location.path, encode_usage(usage), class_name))
+
+            # If the class defining the method does not appear amongst the
+            # types supporting the usage, remove the constrained status of the
+            # name.
+
+            constrained = constrained and (class_name in class_types or class_name in only_instance_types)
+
+        return class_types, only_instance_types, module_types, constrained, have_assignments
 
     def constrain_self_reference(self, unit_path, class_types, only_instance_types):
 
@@ -1495,6 +1515,18 @@ class Deducer(CommonOutput):
 
         if not class_name:
             return None
+
+        return self.constrain_to_class(class_name, class_types, only_instance_types)
+
+    def constrain_to_class(self, class_name, class_types, only_instance_types):
+
+        """
+        Constrain to 'class_name' and its descendants, the given 'class_types'
+        and 'only_instance_types'.
+
+        Return the class, instance, module types plus whether the types are
+        constrained.
+        """
 
         classes = set([class_name])
         classes.update(self.get_descendants_for_class(class_name))
@@ -1512,7 +1544,11 @@ class Deducer(CommonOutput):
 
         "Return whether 'path' refers to a method."
 
-        class_name, method_name = path.rsplit(".", 1)
+        t = path.rsplit(".", 1)
+        if len(t) == 1:
+            return False
+
+        class_name, method_name = t
         return class_name != "__builtins__.core.type" and self.importer.classes.has_key(class_name) and class_name
 
     def init_reference_details(self, location):

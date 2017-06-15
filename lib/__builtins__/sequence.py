@@ -115,26 +115,6 @@ class itemaccess:
 
         return self.__get_multiple_items__(start, end, step)
 
-    # Methods implemented by subclasses.
-
-    def __setslice__(self, start, end, value):
-
-        "Method to be overridden by subclasses."
-
-        pass
-
-    def __get_single_item__(self, index):
-
-        "Method to be overridden by subclasses."
-
-        return None
-
-    def __set_single_item__(self, index, value):
-
-        "Method to be overridden by subclasses."
-
-        pass
-
     def __get_multiple_items__(self, start, end, step):
 
         """
@@ -150,11 +130,12 @@ class itemaccess:
 
         return result
 
-    def __len__(self):
+    # Methods implemented by subclasses:
 
-        "Method to be overridden by subclasses."
-
-        return 0
+    # __setslice__(self, start, end, value)
+    # __get_single_item__(self, index)
+    # __set_single_item__(self, index, value)
+    # __len__(self)
 
 class hashable(itemaccess):
 
@@ -270,11 +251,9 @@ class sequence(itemaccess):
 
         return not self.__eq__(other)
 
-    def __iter__(self):
+    # Methods implemented by subclasses:
 
-        "Method to be overridden by subclasses."
-
-        raise StopIteration()
+    # __iter__(self)
 
 def _get_absolute_index(index, length):
 
