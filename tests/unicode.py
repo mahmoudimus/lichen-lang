@@ -132,6 +132,14 @@ try:
 except UnicodeDecodeError, exc:
     print "Attempt to decode", s, "as UTF-8 failed."
 
+# Mix Unicode and byte values.
+
+u10 = "\u00e6\xf8\u00e5"
+print "ISO-8859-15 values:"
+print u10                           # \u00e6ø\u00e5
+print u10.__class__                 # __builtins__.str.string
+print len(u10)                      # 13
+
 # Combine bytes and text.
 # The text should be decoded.
 
