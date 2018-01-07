@@ -3,7 +3,7 @@
 """
 Translate programs.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -1558,13 +1558,6 @@ class TranslatedModule(CommonModule):
         if not expr and not ref and self.in_function:
             locals = self.importer.function_locals.get(path)
             ref = locals and locals.get(n.name)
-
-        # Determine whether the name refers to a parameter. The generation of
-        # parameter references is different from other names.
-
-        parameters = self.importer.function_parameters.get(path)
-        parameter = n.name == "self" and self.in_method() or \
-                    parameters and n.name in parameters
 
         # Find any invocation or alias details.
 
