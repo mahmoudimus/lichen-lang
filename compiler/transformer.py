@@ -719,7 +719,7 @@ class Transformer:
         # varargslist:
         #     (fpdef ['=' test] ',')* ('*' NAME [',' '**' NAME] | '**' NAME)
         #   | fpdef ['=' test] (',' fpdef ['=' test])* [',']
-        # fpdef: NAME | '(' fplist ')'
+        # fpdef: NAME | '.' NAME | '(' fplist ')'
         # fplist: fpdef (',' fpdef)* [',']
         names = []
         defaults = []
@@ -748,7 +748,7 @@ class Transformer:
 
                 break
 
-            # fpdef: NAME | '(' fplist ')'
+            # fpdef: NAME | '.' NAME | '(' fplist ')'
             names.append(self.com_fpdef(node))
 
             i = i + 1
@@ -766,9 +766,11 @@ class Transformer:
         return names, defaults, flags
 
     def com_fpdef(self, node):
-        # fpdef: NAME | '(' fplist ')'
+        # fpdef: NAME | '.' NAME | '(' fplist ')'
         if node[1][0] == token["LPAR"]:
             return self.com_fplist(node[2])
+        elif node[1][0] == token["DOT"]:
+            return node[1][1] + node[2][1]
         return node[1][1]
 
     def com_fplist(self, node):

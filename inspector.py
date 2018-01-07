@@ -4,7 +4,7 @@
 Inspect and obtain module structure.
 
 Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+              2014, 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -591,10 +591,30 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         if is_method and argnames and argnames[0] == "self":
             del argnames[0]
 
+        # Convert .name entries in the parameters, provided this is a method.
+
+        l = []
+        attr_initialisers = []
+
+        for argname in argnames:
+            if argname[0] == ".":
+                if not is_method:
+                    raise InspectError("Attribute initialisers are only allowed amongst method parameters.", function_name, n)
+
+                argname = argname[1:]
+                attr_initialisers.append(argname)
+
+            l.append(argname)
+
+        argnames = l
+
         # Copy and propagate the parameters.
 
         self.importer.function_parameters[function_name] = \
             self.function_parameters[function_name] = argnames[:]
+
+        self.importer.function_attr_initialisers[function_name] = \
+            self.function_attr_initialisers[function_name] = attr_initialisers
 
         # Define all arguments/parameters in the local namespace.
 
@@ -652,8 +672,15 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Track attribute usage within the namespace.
 
         path = self.get_namespace_path()
-
         self.start_tracking(locals)
+
+        # Establish attributes for .name entries, provided this is a method.
+
+        for argname in attr_initialisers:
+            self.process_assignment_node(
+                    compiler.ast.AssAttr(compiler.ast.Name("self"), argname, "OP_ASSIGN"),
+                    compiler.ast.Name(argname))
+
         self.process_structure_node(n.code)
         returns_value = self.stop_tracking()
 

@@ -11,10 +11,13 @@ eval_input: testlist NEWLINE* ENDMARKER
 
 funcdef: 'def' NAME parameters ':' suite
 parameters: '(' [varargslist] ')'
+# NOTE: Remove * and ** support.
 varargslist: ((fpdef ['=' test] ',')*
               ('*' NAME [',' '**' NAME] | '**' NAME) |
               fpdef ['=' test] (',' fpdef ['=' test])* [','])
-fpdef: NAME | '(' fplist ')'
+# NOTE: Replace with flat parameter lists?
+# Supporting .name for attribute assignment convenience.
+fpdef: NAME | '.' NAME | '(' fplist ')'
 fplist: fpdef (',' fpdef)* [',']
 
 stmt: simple_stmt | compound_stmt

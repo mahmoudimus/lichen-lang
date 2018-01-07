@@ -4,7 +4,7 @@
 Module abstractions.
 
 Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+              2014, 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -63,6 +63,7 @@ class BasicModule(CommonModule):
         # Function details.
 
         self.function_parameters = {}
+        self.function_attr_initialisers = {}
         self.function_defaults = {}
         self.function_locals = {}
         self.scope_globals = {}
@@ -391,6 +392,7 @@ class CachedModule(BasicModule):
             self._get_initialised_names(f)
             self._get_aliased_names(f)
             self._get_function_parameters(f)
+            self._get_function_attr_initialisers(f)
             self._get_function_defaults(f)
             self._get_function_locals(f)
             self.from_lines(f, self.scope_globals)  # "scope globals:"
@@ -508,6 +510,15 @@ class CachedModule(BasicModule):
             function, names = self._get_fields(line)
             self.importer.function_parameters[function] = \
                 self.function_parameters[function] = names != "{}" and names.split(", ") or []
+            line = f.readline().rstrip()
+
+    def _get_function_attr_initialisers(self, f):
+        f.readline() # "function attribute initialisers:"
+        line = f.readline().rstrip()
+        while line:
+            function, names = self._get_fields(line)
+            self.importer.function_attr_initialisers[function] = \
+                self.function_attr_initialisers[function] = names != "{}" and names.split(", ") or []
             line = f.readline().rstrip()
 
     def _get_function_defaults(self, f):
@@ -776,6 +787,17 @@ class CacheWritingModule:
             functions.sort()
             for function in functions:
                 parameters = self.function_parameters[function]
+                if parameters:
+                    print >>f, function, ", ".join(parameters)
+                else:
+                    print >>f, function, "{}"
+
+            print >>f
+            print >>f, "function attribute initialisers:"
+            functions = self.function_attr_initialisers.keys()
+            functions.sort()
+            for function in functions:
+                parameters = self.function_attr_initialisers[function]
                 if parameters:
                     print >>f, function, ", ".join(parameters)
                 else:

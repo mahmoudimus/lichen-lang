@@ -4,7 +4,7 @@
 Import logic.
 
 Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+              2014, 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -79,6 +79,7 @@ class Importer:
         self.objects = {}
         self.classes = {}
         self.function_parameters = {}
+        self.function_attr_initialisers = {}
         self.function_defaults = {}
         self.function_locals = {}
 

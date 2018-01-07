@@ -3,7 +3,7 @@
 """
 Translate programs.
 
-Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -853,6 +853,15 @@ class TranslatedModule(CommonModule):
 
         if self.in_method():
             self.generate_guard("self")
+
+        # Make assignments for .name entries in the parameters, provided this is
+        # a method.
+
+        if self.in_method():
+            for name in self.importer.function_attr_initialisers.get(function_name) or []:
+                self.process_assignment_node(
+                    compiler.ast.AssAttr(compiler.ast.Name("self"), name, "OP_ASSIGN"),
+                    compiler.ast.Name(name))
 
         # Produce the body and any additional return statement.
 
