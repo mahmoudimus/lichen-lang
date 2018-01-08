@@ -604,6 +604,9 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
                 argname = argname[1:]
                 attr_initialisers.append(argname)
 
+            if argname in l:
+                raise InspectError("Argument name %s is repeated." % argname, function_name, n)
+
             l.append(argname)
 
         argnames = l
