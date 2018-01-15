@@ -3,7 +3,7 @@
 """
 System exception objects.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -29,12 +29,11 @@ class OSError(Exception):
 
     "A general operating system error."
 
-    def __init__(self, value, arg):
+    def __init__(self, .value, .arg):
 
         "Initialise the exception with the given error 'value' and 'arg'."
 
-        self.value = value
-        self.arg = arg
+        pass
 
     def __str__(self):
         return str(buffer(["OSError(", repr(self.value), ", ", repr(self.arg), ")"]))
@@ -51,7 +50,10 @@ class SystemExit(Exception):
 
     "An exception exiting the program."
 
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, .value):
+
+        "Initialise the exception with the given 'value'."
+
+        pass
 
 # vim: tabstop=4 expandtab shiftwidth=4

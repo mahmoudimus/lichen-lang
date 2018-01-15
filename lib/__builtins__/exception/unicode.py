@@ -3,7 +3,7 @@
 """
 Unicode exception objects.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -32,14 +32,14 @@ class UnicodeDecodeError(UnicodeError):
     a character encoding.
     """
 
-    def __init__(self, value):
+    def __init__(self, .value):
 
         """
         Initialise an exception with a 'value' providing the illegal byte
         sequence responsible for the error.
         """
 
-        self.value = value
+        pass
 
 class UnicodeEncodeError(UnicodeError): pass
 class UnicodeTranslateError(UnicodeError): pass

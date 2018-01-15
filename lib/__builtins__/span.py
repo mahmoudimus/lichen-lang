@@ -3,7 +3,7 @@
 """
 Span-related objects.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -90,13 +90,11 @@ class xrangeiterator:
 
     "An iterator over an xrange."
 
-    def __init__(self, start, step, count):
+    def __init__(self, start, .step, .count):
 
-        "Initialise the iterator with the given 'obj'."
+        "Initialise the iterator with the given 'start', 'step' and 'count'."
 
         self.current = start
-        self.step = step
-        self.count = count
 
     def next(self):
 

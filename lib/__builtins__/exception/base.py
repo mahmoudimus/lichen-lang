@@ -3,7 +3,7 @@
 """
 Base exception objects. See __builtins__.core for the core exceptions.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -29,15 +29,21 @@ class IndexError(LookupError):
 
     "An error condition involving an index."
 
-    def __init__(self, index):
-        self.index = index
+    def __init__(self, .index):
+
+        "Initialise the exception with the given 'index'."
+
+        pass
 
 class KeyError(LookupError):
 
     "An error concerned with a dictionary key."
 
-    def __init__(self, key):
-        self.key = key
+    def __init__(self, .key):
+
+        "Initialise the exception with the given 'key'."
+
+        pass
 
 class RuntimeError(Exception):
 
@@ -49,8 +55,11 @@ class NotImplementedError(RuntimeError):
 
     "An error indicating an unimplemented function or method."
 
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, .name):
+
+        "Initialise the exception with the given 'name'."
+
+        pass
 
 class StopIteration(Exception):
 
@@ -62,7 +71,10 @@ class ValueError(Exception):
 
     "An error concerned with a particular value."
 
-    def __init__(self, value):
-        self.value = value
+    def __init__(self, .value):
+
+        "Initialise the exception with the given 'value'."
+
+        pass
 
 # vim: tabstop=4 expandtab shiftwidth=4
