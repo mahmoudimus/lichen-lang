@@ -84,6 +84,10 @@ Names may be local, global or built-in: nested namespaces must be initialised ex
 `self` is a reserved name and is optional in method parameter lists
 || `self` is a naming convention, but the first method parameter must always refer to the accessed object
 || Reserving `self` assists deduction; making it optional is a consequence of the method binding behaviour
+==
+Instance attributes can be initialised using `.name` parameter notation
+|| [[https://stackoverflow.com/questions/1389180/automatically-initialize-instance-variables|Workarounds]] involving decorators and introspection are required for similar brevity
+|| Initialiser notation eliminates duplication in program code and is convenient
 }}}
 
 === Traditional Local, Global and Built-In Scopes Only ===
@@ -117,6 +121,33 @@ class C:
 }}}
 
 The assumption in methods is that `self` must always be referring to an instance of the containing class or of a descendant class. This means that `self` cannot be initialised to another kind of value, which Python permits through the explicit invocation of a method with the inclusion of the affected instance as the first argument. Consequently, `self` becomes optional in the signature because it is not assigned in the same way as the other parameters.
+
+=== Instance Attribute Initialisers ===
+
+In parameter lists, a special notation can be used to indicate that the given name is an instance attribute that will be assigned the argument value corresponding to the parameter concerned.
+
+{{{#!python numbers=disable
+class C:
+    def f(self, .a, .b, c): # .a and .b indicate instance attributes
+        self.c = c # a traditional assignment using a parameter
+}}}
+
+To use the notation, such dot-qualified parameters must appear only in the parameter lists of methods, not plain functions. The qualified parameters are represented as locals having the same name, and assignments to the corresponding instance attributes are inserted into the generated code.
+
+{{{#!python numbers=disable
+class C:
+    def f1(self, .a, .b): # equivalent to f2, below
+        pass
+
+    def f2(self, a, b):
+        self.a = a
+        self.b = b
+
+    def g(self, .a, .b, a): # not permitted: a appears twice
+        pass
+}}}
+
+Naturally, `self` can also be omitted from such parameter lists.
 
 == Inheritance and Binding ==
 
