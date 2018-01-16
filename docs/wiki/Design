@@ -147,7 +147,18 @@ class C:
         pass
 }}}
 
-Naturally, `self` can also be omitted from such parameter lists.
+Naturally, `self`, being a reserved name in methods, can also be omitted from such parameter lists. Moreover, such initialising parameters can have default values.
+
+{{{#!python numbers=disable
+class C:
+    def __init__(.a=1, .b=2):
+        pass
+
+c1 = C()
+c2 = C(3, 4)
+print c1.a, c1.b # 1 2
+print c2.a, c2.b # 3 4
+}}}
 
 == Inheritance and Binding ==
 
