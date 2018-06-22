@@ -3,7 +3,7 @@
 """
 Deduce types for usage observations.
 
-Copyright (C) 2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2014, 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -2713,11 +2713,15 @@ class Deducer(CommonOutput):
                     accessor = (stored_accessor,)
                 else:
                     accessor = (original_accessor,)
+            else:
+                accessor = None
 
             # Apply any test.
 
             if test[0] == "test":
-                accessor = ("__%s_%s_%s" % test, accessor, test_type)
+                test_accessor = accessor = ("__to_error", ("__%s_%s_%s" % test, accessor, test_type))
+            else:
+                test_accessor = None
 
             # Perform the first or final access.
             # The access only needs performing if the resulting accessor is used.

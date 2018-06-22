@@ -1,6 +1,6 @@
 /* Common operations.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -70,6 +70,8 @@ __ref __test_specific_type(__ref obj, __ref type);
 __ref __test_common_instance__(__ref obj, int pos, int code);
 __ref __test_common_object__(__ref obj, int pos, int code);
 __ref __test_common_type__(__ref obj, int pos, int code);
+
+#define __to_error(REF) (REF ? REF : (__raise_type_error(), (__ref) 0))
 
 #define __test_common_instance(OBJ, TYPENAME) (__test_common_instance__(OBJ, __ATTRPOS(TYPENAME), __ATTRCODE(TYPENAME)))
 #define __test_common_object(OBJ, TYPENAME) (__test_common_object__(OBJ, __ATTRPOS(TYPENAME), __ATTRCODE(TYPENAME)))
