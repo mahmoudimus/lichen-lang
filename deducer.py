@@ -2347,7 +2347,7 @@ class Deducer(CommonOutput):
 
         accessor_types = self.reference_all_accessor_types[location]
         accessor_general_types = self.reference_all_accessor_general_types[location]
-        accessor_kinds = get_kinds(accessor_general_types)
+        accessor_kinds = set(get_kinds(accessor_general_types))
 
         # Determine any guard or test requirements.
 
