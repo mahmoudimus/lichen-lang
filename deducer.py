@@ -2845,18 +2845,27 @@ class Deducer(CommonOutput):
 
                     remaining -= 1
 
+            # Make any accessor test available if not emitted.
+
+            test_accessor = not instructions and test_accessor or None
+
             # Define or emit the means of accessing the actual target.
 
-            # Assignments to known attributes.
+            if final_method in ("static", "static-assign", "static-invoke"):
 
-            if final_method == "static-assign":
-                parent, attrname = origin.rsplit(".", 1)
-                emit(("__store_via_object", parent, attrname, "<assexpr>"))
+                if test_accessor:
+                    emit(test_accessor)
 
-            # Invoked attributes employ a separate context.
+                # Assignments to known attributes.
 
-            elif final_method in ("static", "static-invoke"):
-                accessor = ("__load_static_ignore", origin)
+                if final_method == "static-assign":
+                    parent, attrname = origin.rsplit(".", 1)
+                    emit(("__store_via_object", parent, attrname, "<assexpr>"))
+
+                # Invoked attributes employ a separate context.
+
+                elif final_method in ("static", "static-invoke"):
+                    accessor = ("__load_static_ignore", origin)
 
             # Wrap accesses in context operations.
 
@@ -2910,7 +2919,8 @@ class Deducer(CommonOutput):
                     emit(("__update_context", context_var, accessor))
 
             # Omit the accessor for assignments and for invocations of static
-            # targets.
+            # targets. Otherwise, emit the accessor which may involve the
+            # invocation of a test.
 
             elif final_method not in ("assign", "static-assign", "static-invoke"):
                 emit(accessor)
