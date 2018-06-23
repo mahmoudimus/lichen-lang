@@ -1234,16 +1234,14 @@ class TranslatedModule(CommonModule):
         # An expression featuring an accessor test.
 
         need_target_stored = defaults_target_var and not target_identity or \
-                             need_context_target and not target_named or \
+                             need_context_target and not target_identity or \
                              need_context_stored or \
                              tests_accessor and not target
 
         # Define stored target details.
 
         target_stored = "__tmp_targets[%d]" % self.function_target
-
         target_var = need_target_stored and target_stored or target_identity
-        context_var = need_target_stored and target_stored or target_named
 
         if need_target_stored:
             self.record_temp("__tmp_targets")
@@ -1259,7 +1257,7 @@ class TranslatedModule(CommonModule):
             if have_access_context:
                 args = [context_identity]
             else:
-                args = ["__CONTEXT_AS_VALUE(%s)" % context_var]
+                args = ["__CONTEXT_AS_VALUE(%s)" % target_var]
         else:
             args = ["__NULL"]
 
@@ -1410,7 +1408,7 @@ class TranslatedModule(CommonModule):
                             context_identity, target_expr))
                 else:
                     emit("__get_function(__CONTEXT_AS_VALUE(%s), %s)" % (
-                        context_var, target_expr))
+                        target_var, target_expr))
             else:
                 emit("_get_function_member(%s)" % target_expr)
 
