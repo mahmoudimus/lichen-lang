@@ -2719,7 +2719,7 @@ class Deducer(CommonOutput):
             # Apply any test.
 
             if test[0] == "test":
-                test_accessor = accessor = ("__to_error", ("__%s_%s_%s" % test, accessor, test_type))
+                test_accessor = accessor = ("__%s_%s_%s" % test, accessor, test_type)
             else:
                 test_accessor = None
 

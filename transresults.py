@@ -178,12 +178,14 @@ class AttrResult(Result, InstructionSequence):
 
     "A translation result for an attribute access."
 
-    def __init__(self, instructions, refs, location, context_identity, context_identity_verified):
+    def __init__(self, instructions, refs, location, context_identity,
+                 context_identity_verified, accessor_test):
         InstructionSequence.__init__(self, instructions)
         self.refs = refs
         self.location = location
         self.context_identity = context_identity
         self.context_identity_verified = context_identity_verified
+        self.accessor_test = accessor_test
 
     def references(self):
         return self.refs
@@ -196,6 +198,9 @@ class AttrResult(Result, InstructionSequence):
 
     def context_verified(self):
         return self.context_identity_verified and self.context() or None
+
+    def tests_accessor(self):
+        return self.accessor_test
 
     def get_origin(self):
         return self.refs and len(self.refs) == 1 and first(self.refs).get_origin()
@@ -215,7 +220,8 @@ class AttrResult(Result, InstructionSequence):
         return encode_instructions(self.instructions)
 
     def __repr__(self):
-        return "AttrResult(%r, %r, %r, %r)" % (self.instructions, self.refs, self.location, self.context_identity)
+        return "AttrResult(%r, %r, %r, %r, %r)" % (self.instructions, self.refs,
+               self.location, self.context_identity, self.accessor_test)
 
 class AliasResult(NameRef, Result):
 

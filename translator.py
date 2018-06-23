@@ -3,7 +3,7 @@
 """
 Translate programs.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -25,7 +25,8 @@ from common import AccessLocation, CommonModule, CommonOutput, Location, \
 from encoders import encode_access_instruction, encode_access_instruction_arg, \
                      encode_function_pointer, encode_literal_instantiator, \
                      encode_instantiator_pointer, encode_path, encode_symbol, \
-                     encode_type_attribute, is_type_attribute
+                     encode_type_attribute, is_type_attribute, \
+                     type_ops, typename_ops
 from errors import InspectError, TranslateError
 from os.path import exists, join
 from os import makedirs
@@ -119,10 +120,6 @@ class TranslatedModule(CommonModule):
 
         self.in_try_finally = False
         self.in_try_except = False
-
-        # Invocation adjustments.
-
-        self.in_argument_list = False
 
         # Attribute access and accessor counting.
 
@@ -317,7 +314,9 @@ class TranslatedModule(CommonModule):
         else:
             self.in_function = False
             self.function_target = 0
-            self.max_function_targets = 0
+            self.max_function_target = 0
+            self.context_index = 0
+            self.max_context_index = 0
             self.start_module()
             self.process_structure(node)
             self.end_module()
@@ -555,10 +554,11 @@ class TranslatedModule(CommonModule):
         # The context set or retrieved will be that used by any enclosing
         # invocation.
 
-        context_index = self.function_target - 1
+        context_index = self.context_index
         context_identity = None
         context_identity_verified = False
         final_identity = None
+        accessor_test = False
 
         # Obtain encoded versions of each instruction, accumulating temporary
         # variables.
@@ -578,6 +578,12 @@ class TranslatedModule(CommonModule):
             elif instruction[0] == "<final_identity>":
                 final_identity = instruction[1]
                 continue
+
+            # Modify test instructions.
+
+            elif instruction[0] in typename_ops or instruction[0] in type_ops:
+                instruction = ("__to_error", instruction)
+                accessor_test = True
 
             # Collect the encoded instruction, noting any temporary variables
             # required by it.
@@ -599,7 +605,7 @@ class TranslatedModule(CommonModule):
             refs = [ref]
 
         del self.attrs[0]
-        return AttrResult(output, refs, location, context_identity, context_identity_verified)
+        return AttrResult(output, refs, location, context_identity, context_identity_verified, accessor_test)
 
     def init_substitutions(self):
 
@@ -837,7 +843,9 @@ class TranslatedModule(CommonModule):
         in_conditional = self.in_conditional
         self.in_conditional = False
         self.function_target = 0
-        self.max_function_targets = 0
+        self.max_function_target = 0
+        self.context_index = 0
+        self.max_context_index = 0
 
         # Volatile locals for exception handling.
 
@@ -1040,22 +1048,9 @@ class TranslatedModule(CommonModule):
 
         "Process the given invocation node 'n'."
 
-        # Any invocations in the expression will store target details in a
-        # different location.
-
-        self.next_target()
-
-        in_argument_list = self.in_argument_list
-        self.in_argument_list = False
-
         # Process the expression.
 
         expr = self.process_structure_node(n.node)
-
-        # Reference the current target again.
-
-        self.in_argument_list = in_argument_list
-        self.function_target -= 1
 
         # Obtain details of the invocation expression.
 
@@ -1083,6 +1078,7 @@ class TranslatedModule(CommonModule):
         have_access_context = isinstance(expr, AttrResult)
         context_identity = have_access_context and expr.context()
         context_verified = have_access_context and expr.context_verified()
+        tests_accessor = have_access_context and expr.tests_accessor()
         parameters = None
         num_parameters = None
         num_defaults = None
@@ -1204,27 +1200,60 @@ class TranslatedModule(CommonModule):
                             len(self.importer.function_parameters[_objpath]),
                             _objpath)
 
+        # Logical statement about available parameter information.
+
+        known_parameters = num_parameters is not None
+
+        # The source of context information: target or temporary.
+
+        need_context_target = context_required and not have_access_context
+
+        need_context_stored = context_required and context_identity and \
+                              context_identity.startswith("__get_context")
+
         # Determine any readily-accessible target identity.
 
         target_named = expr.is_name() and str(expr) or None
+        target_identity = target or target_named
+
+        # Use of target information to populate defaults.
+
+        defaults_target_var = not (parameters and function_defaults is not None) and \
+                              known_parameters and len(n.args) < num_parameters
+
+        # Use of a temporary target variable in these situations:
+        #
+        # A target provided by an expression needed for defaults.
+        #
+        # A target providing the context but not using a name to do so.
+        #
+        # A target expression involving the definition of a context which may
+        # then be evaluated and stored to ensure that the context is available
+        # during argument evaluation.
+        #
+        # An expression featuring an accessor test.
+
+        need_target_stored = defaults_target_var and not target_identity or \
+                             need_context_target and not target_named or \
+                             need_context_stored or \
+                             tests_accessor and not target
+
+        # Define stored target details.
+
         target_stored = "__tmp_targets[%d]" % self.function_target
 
-        target_identity = target or target_named
-        target_var = target_identity or target_stored
-        context_var = target_named or target_stored
+        target_var = need_target_stored and target_stored or target_identity
+        context_var = need_target_stored and target_stored or target_named
 
-        if not target_identity:
+        if need_target_stored:
             self.record_temp("__tmp_targets")
 
-        if context_identity:
-            if context_identity.startswith("__tmp_contexts"):
-                self.record_temp("__tmp_contexts")
+        if need_context_stored:
+            self.record_temp("__tmp_contexts")
 
         # Arguments are presented in a temporary frame array with any context
         # always being the first argument. Where it would be unused, it may be
         # set to null.
-
-        known_parameters = num_parameters is not None
 
         if context_required:
             if have_access_context:
@@ -1245,12 +1274,13 @@ class TranslatedModule(CommonModule):
         # different location.
 
         function_target = self.function_target
+        context_index = self.context_index
 
-        if not target_identity:
+        if need_target_stored:
             self.next_target()
 
-        in_argument_list = self.in_argument_list
-        self.in_argument_list = True
+        if need_context_stored:
+            self.next_context()
 
         for i, arg in enumerate(n.args):
             argexpr = self.process_structure_node(arg)
@@ -1290,10 +1320,8 @@ class TranslatedModule(CommonModule):
 
         # Reference the current target again.
 
-        self.in_argument_list = in_argument_list
-
-        if not self.in_argument_list:
-            self.function_target = function_target
+        self.function_target = function_target
+        self.context_index = context_index
 
         # Defaults are added to the frame where arguments are missing.
 
@@ -1343,27 +1371,31 @@ class TranslatedModule(CommonModule):
         # First, the invocation expression is presented.
 
         stages = []
+        emit = stages.append
 
-        # Without a known specific callable, the expression provides the target.
+        # Assign and yield any stored target.
+        # The context may be set in the expression.
 
-        if not target or context_required:
+        if need_target_stored:
+            emit("%s = %s" % (target_var, expr))
+            target_expr = target_var
 
-            # The context is set in the expression.
+        # Otherwise, retain the expression for later use.
 
-            if target and not target_named:
-
-                # Test whether the expression provides anything.
-
-                if expr:
-                    stages.append(str(expr))
-
-            elif not target_identity:
-                stages.append("%s = %s" % (target_var, expr))
+        else:
+            target_expr = str(expr)
 
         # Any specific callable is then obtained for invocation.
 
         if target:
-            stages.append(target)
+
+            # An expression involving a test of the accessor providing the target.
+            # This must be emitted in order to perform the test.
+
+            if tests_accessor:
+                emit(str(expr))
+
+            emit(target)
 
         # Methods accessed via unidentified accessors are obtained for
         # invocation.
@@ -1372,15 +1404,15 @@ class TranslatedModule(CommonModule):
             if context_required:
                 if have_access_context:
                     if context_verified:
-                        stages.append("__get_function_member(%s)" % target_var)
+                        emit("__get_function_member(%s)" % target_expr)
                     else:
-                        stages.append("__get_function(%s, %s)" % (
-                            context_identity, target_var))
+                        emit("__get_function(%s, %s)" % (
+                            context_identity, target_expr))
                 else:
-                    stages.append("__get_function(__CONTEXT_AS_VALUE(%s), %s)" % (
-                        context_var, target_var))
+                    emit("__get_function(__CONTEXT_AS_VALUE(%s), %s)" % (
+                        context_var, target_expr))
             else:
-                stages.append("_get_function_member(%s)" % target_var)
+                emit("_get_function_member(%s)" % target_expr)
 
         # With known parameters, the target can be tested.
 
@@ -1388,11 +1420,11 @@ class TranslatedModule(CommonModule):
             context_arg = context_required and args[0] or "__NULL"
             if self.always_callable(refs):
                 if context_verified:
-                    stages.append("__get_function_member(%s)" % target_var)
+                    emit("__get_function_member(%s)" % target_expr)
                 else:
-                    stages.append("__get_function(%s, %s)" % (context_arg, target_var))
+                    emit("__get_function(%s, %s)" % (context_arg, target_expr))
             else:
-                stages.append("__check_and_get_function(%s, %s)" % (context_arg, target_var))
+                emit("__check_and_get_function(%s, %s)" % (context_arg, target_expr))
 
         # With a known target, the function is obtained directly and called.
         # By putting the invocation at the end of the final element in the
@@ -1411,8 +1443,8 @@ class TranslatedModule(CommonModule):
         # the callable and argument collections.
 
         else:
-            stages.append("__invoke(\n%s,\n%d, %d, %s, %s,\n%d, %s\n)" % (
-                target_var,
+            emit("__invoke(\n%s,\n%d, %d, %s, %s,\n%d, %s\n)" % (
+                target_expr,
                 self.always_callable(refs) and 1 or 0,
                 len(kwargs), kwcodestr, kwargstr,
                 len(args), "__ARGS(%s)" % argstr))
@@ -1423,7 +1455,14 @@ class TranslatedModule(CommonModule):
         "Allocate the next function target storage."
 
         self.function_target += 1
-        self.max_function_targets = max(self.function_target, self.max_function_targets)
+        self.max_function_target = max(self.function_target, self.max_function_target)
+
+    def next_context(self):
+
+        "Allocate the next context value storage."
+
+        self.context_index += 1
+        self.max_context_index = max(self.context_index, self.max_context_index)
 
     def always_callable(self, refs):
 
@@ -2061,12 +2100,15 @@ class TranslatedModule(CommonModule):
 
         # Provide space for the given number of targets.
 
-        targets = self.max_function_targets
+        targets = self.max_function_target
 
         if self.uses_temp(name, "__tmp_targets"):
             self.writeline("__attr __tmp_targets[%d];" % targets)
+
+        index = self.max_context_index
+
         if self.uses_temp(name, "__tmp_contexts"):
-            self.writeline("__attr __tmp_contexts[%d];" % targets)
+            self.writeline("__attr __tmp_contexts[%d];" % index)
 
         # Add temporary variable usage details.
 
