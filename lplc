@@ -3,7 +3,7 @@
 """
 Lichen Python-like compiler tool.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -98,6 +98,9 @@ def getvalue(l, i):
 def remove_all(dirname):
 
     "Remove 'dirname' and its contents."
+
+    if not isdir(dirname):
+        return
 
     for filename in listdir(dirname):
         pathname = join(dirname, filename)
