@@ -1631,10 +1631,22 @@ class TranslatedModule(CommonModule):
         "Return alias references for the given 'name_ref'."
 
         location = name_ref.access_location()
+        accessor_locations = self.deducer.access_index.get(location)
 
-        refs = self.deducer.referenced_objects.get(location)
-        refs = refs or self.deducer.accessor_all_types.get(location)
-        return AliasResult(name_ref, refs or set(), location)
+        if not accessor_locations:
+            return None
+
+        refs = set()
+
+        for accessor_location in accessor_locations:
+            alias_refs = self.deducer.referenced_objects.get(accessor_location)
+            if alias_refs:
+                refs.update(alias_refs)
+
+        if refs:
+            return AliasResult(name_ref, refs, location)
+        else:
+            return None
 
     def make_volatile(self, name):
 
