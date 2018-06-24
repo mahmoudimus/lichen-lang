@@ -1141,18 +1141,22 @@ class TranslatedModule(CommonModule):
                 attrnames = location.attrnames
                 attrname = attrnames and attrnames.rsplit(".", 1)[-1]
 
-                # Determine any common aspects of any attribute.
+                # Determine common aspects of any identifiable targets.
 
-                if attrname:
+                if attrname or refs:
                     all_params = set()
                     all_defaults = set()
                     min_params = set()
                     max_params = set()
-                    refs = set()
+
+                    # Employ references from the expression or find all
+                    # possible attributes for the given attribute name.
+
+                    refs = refs or self.get_attributes_for_attrname(attrname)
 
                     # Obtain parameters and defaults for each possible target.
 
-                    for ref in self.get_attributes_for_attrname(attrname):
+                    for ref in refs:
                         origin = ref.get_origin()
                         params = self.importer.function_parameters.get(origin)
 
@@ -1164,7 +1168,6 @@ class TranslatedModule(CommonModule):
                             all_params.add(tuple(params))
                             min_params.add(len(params) - (defaults and len(defaults) or 0))
                             max_params.add(len(params))
-                            refs.add(ref)
                         else:
                             refs = set()
                             break
