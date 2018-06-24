@@ -552,6 +552,8 @@ class CommonModule:
         self.next_temporary()
         t1 = self.get_temporary_name()
         self.next_temporary()
+        t2 = self.get_temporary_name()
+        self.next_temporary()
 
         node = compiler.ast.Stmt([
 
@@ -568,12 +570,17 @@ class CommonModule:
                     compiler.ast.Getattr(compiler.ast.Name(t0), "__iter__"),
                     [])),
 
+            # <t2> = <t1>.next
             # try:
             #     while True:
-            #         <var>... = <t1>.next()
+            #         <var>... = <t2>()
             #         ...
             # except StopIteration:
             #     pass
+
+            compiler.ast.Assign(
+                [compiler.ast.AssName(t2, "OP_ASSIGN")],
+                compiler.ast.Getattr(compiler.ast.Name(t1), "next")),
 
             compiler.ast.TryExcept(
                 compiler.ast.While(
@@ -582,7 +589,7 @@ class CommonModule:
                         compiler.ast.Assign(
                             [n.assign],
                             compiler.ast.CallFunc(
-                                compiler.ast.Getattr(compiler.ast.Name(t1), "next"),
+                                compiler.ast.Name(t2),
                                 []
                                 )),
                         n.body]),
