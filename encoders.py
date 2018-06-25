@@ -3,7 +3,7 @@
 """
 Encoder functions, producing representations of program objects.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -86,6 +86,26 @@ def encode_alias_location(t, invocation=False):
         t.version is not None and ":=%d" % t.version or "",
         t.access_number is not None and ":#%d" % t.access_number or "",
         invocation and "!" or "")
+
+def decode_alias_location(s):
+
+    "Decode the alias location 's'."
+
+    path, name, rest = s.split(":", 2)
+    attrnames = version = access_number = None
+    invocation = rest.endswith("!")
+
+    t = rest.rstrip("!").split(":#")
+    if len(t) > 1:
+        rest = t[0]; access_number = int(t[1])
+
+    t = rest.split(":=")
+    if len(t) > 1:
+        attrnames = t[0]; version = int(t[1])
+    else:
+        attrnames = rest
+
+    return path, name, attrnames, version, access_number, invocation
 
 def encode_location(t):
 
