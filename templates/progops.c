@@ -1,6 +1,6 @@
 /* Operations depending on program specifics.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -301,7 +301,9 @@ int __BOOL(__attr attr)
 {
     /* Invoke the bool function with the object and test against True. */
 
-    return __VALUE(attr) == &__predefined___builtins___boolean_True ? 1 :
-           __VALUE(attr) == &__predefined___builtins___boolean_False ? 0 :
+    __ref value = __VALUE(attr);
+
+    return value == &__predefined___builtins___boolean_True ? 1 :
+           value == &__predefined___builtins___boolean_False ? 0 :
            __VALUE(__fn___builtins___boolean_bool(__NULL, attr)) == &__predefined___builtins___boolean_True;
 }
