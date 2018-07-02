@@ -23,3 +23,11 @@ try:
     print t[-5]         # should raise an exception
 except IndexError, exc:
     print "t[-5]: failed with argument", exc.index
+
+a, b, c, d = l
+print a, b, c, d        # 1 2 3 "four"
+
+try:
+    a, b, c = l
+except ValueError, exc:
+    print "a, b, c = l: failed with length", exc.value

@@ -4,7 +4,7 @@
 Common functions.
 
 Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+              2014, 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -433,7 +433,7 @@ class CommonModule:
         variable.
         """
 
-        assignments = []
+        statements = []
 
         # Employ existing names to access the sequence.
         # Literal sequences do not provide names of accessible objects.
@@ -447,19 +447,25 @@ class CommonModule:
             temp = self.get_temporary_name()
             self.next_temporary()
 
-            assignments.append(
+            statements.append(
                 compiler.ast.Assign([compiler.ast.AssName(temp, "OP_ASSIGN")], expr)
                 )
+
+        # Generate a test for the length of the expression object.
+
+        statements.append(compiler.ast.Discard(
+            compiler.ast.CallFunc(compiler.ast.Name("$seq_test_length"),
+                [compiler.ast.Name(temp), compiler.ast.Const(len(n.nodes))])))
 
         # Assign the items to the target nodes.
 
         for i, node in enumerate(n.nodes):
-            assignments.append(
+            statements.append(
                 compiler.ast.Assign([node], compiler.ast.Subscript(
                     compiler.ast.Name(temp), "OP_APPLY", [compiler.ast.Const(i, str(i))]))
                 )
 
-        return self.process_structure_node(compiler.ast.Stmt(assignments))
+        return self.process_structure_node(compiler.ast.Stmt(statements))
 
     def process_literal_sequence_items(self, n, name_ref):
 

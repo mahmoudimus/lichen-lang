@@ -873,6 +873,15 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
             self.set_special(n.name, value)
             return value
 
+        # Special case for sequence length testing.
+
+        elif n.name.startswith("$seq"):
+            op = n.name[len("$seq"):]
+            ref = self.import_name_from_module(op, "__builtins__.sequence")
+            value = ResolvedNameRef(n.name, ref)
+            self.set_special(n.name, value)
+            return value
+
         # Special case for print operations.
 
         elif n.name.startswith("$print"):

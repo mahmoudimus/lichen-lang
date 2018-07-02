@@ -1564,7 +1564,7 @@ class TranslatedModule(CommonModule):
         # function names to references.
 
         elif n.name.startswith("$L") or n.name.startswith("$op") or \
-             n.name.startswith("$print"):
+             n.name.startswith("$seq") or n.name.startswith("$print"):
 
             ref, paths = self.importer.get_module(self.name).special[n.name]
             return TrResolvedNameRef(n.name, ref)

@@ -3,7 +3,7 @@
 """
 Sequence operations.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -266,5 +266,12 @@ def _get_absolute_index(index, length):
         return length + index
     else:
         return index
+
+def _test_length(seq, length):
+
+    "Helper function for asserting that 'seq' is of the given 'length'."
+
+    if len(seq) != length:
+        raise ValueError, length
 
 # vim: tabstop=4 expandtab shiftwidth=4
