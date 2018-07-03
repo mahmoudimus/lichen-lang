@@ -20,7 +20,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.int import maxint
-from native import isinstance as _isinstance, is_int
+from native import isinstance as _isinstance, is_int, list_element
 
 class itemaccess:
 
@@ -254,6 +254,19 @@ class sequence(itemaccess):
     # Methods implemented by subclasses:
 
     # __iter__(self)
+
+class unpackable(sequence):
+
+    "Class for list and tuple unpacking."
+
+    def __get_single_item_unchecked__(self, index):
+
+        """
+        NOTE: Should restrict this to internal translator use.
+        NOTE: This also uses implementation-specific access.
+        """
+
+        return list_element(self.__data__, index)
 
 def _get_absolute_index(index, length):
 

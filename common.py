@@ -462,7 +462,7 @@ class CommonModule:
         for i, node in enumerate(n.nodes):
             statements.append(
                 compiler.ast.Assign([node], compiler.ast.CallFunc(
-                    compiler.ast.Getattr(compiler.ast.Name(temp), "__get_single_item__"),
+                    compiler.ast.Getattr(compiler.ast.Name(temp), "__get_single_item_unchecked__"),
                     [compiler.ast.Const(i, str(i))]))
                 )
 

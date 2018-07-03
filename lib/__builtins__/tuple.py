@@ -3,7 +3,7 @@
 """
 Tuple objects.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -20,11 +20,11 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iteration.iterator import itemiterator
-from __builtins__.sequence import hashable, sequence
+from __builtins__.sequence import hashable, unpackable
 from native import tuple_init, \
                    list_element, list_len, list_setsize, list_setelement
 
-class tuple(sequence, hashable):
+class tuple(unpackable, hashable):
 
     "Implementation of tuple."
 
@@ -65,7 +65,7 @@ class tuple(sequence, hashable):
         'step'.
         """
 
-        return tuple(get_using(sequence.__getslice__, self)(start, end, step))
+        return tuple(get_using(unpackable.__getslice__, self)(start, end, step))
 
     def __len__(self):
 

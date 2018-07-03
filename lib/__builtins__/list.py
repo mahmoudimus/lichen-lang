@@ -3,7 +3,7 @@
 """
 List objects.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -20,11 +20,11 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iteration.iterator import itemiterator
-from __builtins__.sequence import sequence, _get_absolute_index
+from __builtins__.sequence import unpackable, _get_absolute_index
 from native import list_append, list_concat, list_element, list_init, \
                    list_len, list_nonempty, list_setelement, list_setsize
 
-class list(sequence):
+class list(unpackable):
 
     "Implementation of list."
 
