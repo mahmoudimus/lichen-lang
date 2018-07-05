@@ -78,6 +78,13 @@ def encode_access_location(t):
 
     return "%s:%s:%s:%d" % (t.path, t.name or "{}", t.attrnames or "{}", t.access_number)
 
+def decode_access_location(s):
+
+    "Decode the access location 's'."
+
+    path, name, attrnames, access_number = s.split(":")
+    return path, name, attrnames, access_number
+
 def encode_alias_location(t, invocation=False):
 
     "Encode the alias location 't'."
