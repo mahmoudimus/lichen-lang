@@ -601,8 +601,7 @@ class TranslatedModule(CommonModule):
         # Get full final identity details.
 
         if final_identity and not refs:
-            ref = self.importer.identify(final_identity)
-            refs = [ref]
+            refs = set([self.importer.identify(final_identity)])
 
         del self.attrs[0]
         return AttrResult(output, refs, location, context_identity, context_identity_verified, accessor_test)
@@ -661,14 +660,9 @@ class TranslatedModule(CommonModule):
         access_location = self.deducer.const_accesses.get(location)
 
         if remaining and not access_location:
-            return []
+            return set()
 
-        refs = []
-        l = self.deducer.referenced_attrs.get(access_location or location)
-        if l:
-            for attrtype, objpath, attr in l:
-                refs.append(attr)
-        return refs
+        return self.deducer.get_references_for_access(access_location or location)
 
     def get_referenced_attribute_invocations(self, location):
 
