@@ -1403,12 +1403,14 @@ class TranslatedModule(CommonModule):
 
         elif function:
             if context_required:
+
+                # With context_verified or context_identity...
+
                 if have_access_context:
-                    if context_verified:
-                        emit("__get_function_member(%s)" % target_expr)
-                    else:
-                        emit("__get_function(%s, %s)" % (
-                            context_identity, target_expr))
+                    emit("__get_function_member(%s)" % target_expr)
+
+                # Otherwise, test the context for the function/method.
+
                 else:
                     emit("__get_function(__CONTEXT_AS_VALUE(%s), %s)" % (
                         target_var, target_expr))
@@ -1420,7 +1422,7 @@ class TranslatedModule(CommonModule):
         elif known_parameters:
             context_arg = context_required and args[0] or "__NULL"
             if self.always_callable(refs):
-                if context_verified:
+                if context_verified or context_identity:
                     emit("__get_function_member(%s)" % target_expr)
                 else:
                     emit("__get_function(%s, %s)" % (context_arg, target_expr))

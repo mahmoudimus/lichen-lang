@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from os.path import abspath, split
+from os.path import abspath, exists, join, split
 import sys
 
 # Find the modules.
@@ -15,11 +15,17 @@ except ImportError:
 from encoders import decode_alias_location
 
 if len(sys.argv) < 3:
-    print >>sys.stderr, "Usage: %s <filename> <alias>" % sys.argv[0]
+    print >>sys.stderr, "Usage: %s <directory> <alias>" % sys.argv[0]
     sys.exit(1)
 
-filename = sys.argv[1]
+dirname = sys.argv[1]
 alias = sys.argv[2]
+
+filename = join(dirname, "_deduced", "aliases")
+
+if not exists(filename):
+    print >>sys.stderr, "Directory %s does not provide file %s." % (dirname, filename)
+    sys.exit(1)
 
 f = open(filename)
 try:

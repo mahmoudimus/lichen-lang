@@ -651,7 +651,8 @@ class Deducer(CommonOutput):
             referenced_attrs = self.referenced_attrs[location]
 
             if not referenced_attrs:
-                raise DeduceError("In %s, access via %s to attribute %s (occurrence %d) cannot be identified." % location)
+                raise DeduceError("In %s, access via %s to attribute %s (occurrence %d) cannot be identified." %
+                    (location.path, location.name, location.get_attrname(), location.access_number))
 
             # Record attribute information for each name used on the
             # accessor.
@@ -2134,6 +2135,17 @@ class Deducer(CommonOutput):
 
         if constrained:
             self.accessor_constrained.add(location)
+
+        # Complain about situations where no types are valid but where a
+        # specific, known accessor type has been indicated. This absence of
+        # suitable types is likely to occur when the presence of invocations
+        # filters out the accessor type.
+
+        if not class_only_types and not instance_types and not module_types and \
+           invocations and constrained_specific:
+
+            raise DeduceError("In %s, methods of class %s cannot be called directly." %
+                (path, name))
 
     def update_provider_types(self, location, class_types, instance_types, module_types):
 
