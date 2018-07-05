@@ -659,24 +659,22 @@ class Deducer(CommonOutput):
 
             attrname = location.get_attrname()
 
-            self.reference_all_attrs[location] = all_accessed_attrs = []
-            self.reference_all_providers[location] = all_providers = []
+            self.reference_all_attrs[location] = all_accessed_attrs = set()
+            self.reference_all_providers[location] = all_providers = set()
             self.reference_all_provider_kinds[location] = all_provider_kinds = set()
 
             # Obtain provider and attribute details for this kind of
             # object.
 
             for attrtype, object_type, attr in referenced_attrs:
-                all_accessed_attrs.append(attr)
-                all_providers.append(object_type)
+                all_accessed_attrs.add(attr)
+                all_providers.add(object_type)
                 all_provider_kinds.add(attrtype)
 
             # Obtain reference and provider information as sets for the
             # operations below, retaining the list forms for use with
             # instruction plan preparation.
 
-            all_accessed_attrs = set(all_accessed_attrs)
-            all_providers = set(all_providers)
             all_general_providers = self.get_most_general_types(all_providers)
 
             # Determine which attributes would be provided by the
@@ -1930,9 +1928,9 @@ class Deducer(CommonOutput):
 
         "Return the references identified for 'access_location'."
 
-        attrs = []
+        attrs = set()
         for attrtype, object_type, attr in self.referenced_attrs[access_location]:
-            attrs.append(attr)
+            attrs.add(attr)
         return attrs
 
     def convert_invocation_providers(self, refs, invocation):
