@@ -651,7 +651,8 @@ class Deducer(CommonOutput):
             referenced_attrs = self.referenced_attrs[location]
 
             if not referenced_attrs:
-                raise DeduceError("In %s, access via %s to attribute %s (occurrence %d) cannot be identified." % location)
+                raise DeduceError("In %s, access via %s to attribute %s (occurrence %d) cannot be identified." %
+                    (location.path, location.name, location.get_attrname(), location.access_number))
 
             # Record attribute information for each name used on the
             # accessor.
