@@ -5,6 +5,8 @@ class C:
         self.x = x
         self.y = 3
         self.z = "zebra libre"
+    def __len__(self):
+        return len(self.z)
 
 c = C([1])
 x = c.x
@@ -45,3 +47,11 @@ print a             # 3
 print b             # zebra libre
 print i             # __builtins__.str.basestring.__len__
 print i()           # 11
+
+j = C.__len__
+k = get_using(j, c)
+try:
+    print j()
+except UnboundMethodInvocation:
+    print "j(): invocation of method with class context"
+print k()           # 11
