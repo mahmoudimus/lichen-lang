@@ -462,7 +462,9 @@ class CommonModule:
         for i, node in enumerate(n.nodes):
             statements.append(
                 compiler.ast.Assign([node], compiler.ast.CallFunc(
-                    compiler.ast.Getattr(compiler.ast.Name(temp), "__get_single_item_unchecked__"),
+                    compiler.ast.Getattr(compiler.ast.Name(temp),
+                                         "__get_single_item_unchecked__",
+                                         privileged=True),
                     [compiler.ast.Const(i, str(i))]))
                 )
 
@@ -1590,6 +1592,10 @@ def get_builtin_class(name):
 # Useful data.
 
 predefined_constants = "False", "None", "NotImplemented", "True"
+
+privileged_attributes = [
+    "__get_single_item_unchecked__",
+    ]
 
 unary_operator_functions = {
 
