@@ -262,9 +262,12 @@ class unpackable(sequence):
     def __get_single_item_unchecked__(self, index):
 
         """
-        NOTE: Should restrict this to internal translator use.
-        NOTE: This also uses implementation-specific access.
+        This method is provided by a privileged attribute recorded in the common
+        module in the toolchain. Normal programs should not be able to access
+        it.
         """
+
+        # NOTE: This uses implementation-specific access.
 
         return list_element(self.__data__, index)
 
