@@ -3,7 +3,7 @@
 """
 Native library functions.
 
-Copyright (C) 2011, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2011, 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -21,13 +21,19 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from native.buffer import buffer_str
 
+from native.float import float_add, float_div, float_mod, float_mul, \
+                         float_neg, float_pow, float_sub, \
+                         float_eq, float_ge, float_gt, float_le, float_lt, \
+                         float_ne, \
+                         float_int, float_str
+
 from native.identity import is_, is_not
 
 from native.int import int_add, int_div, int_mod, int_mul, int_neg, int_pow, \
                        int_sub, int_and, int_not, int_or, int_xor, \
                        int_lshift, int_rshift, \
                        int_eq, int_ge, int_gt, int_le, int_lt, int_ne, \
-                       int_str, is_int
+                       int_float, int_str, is_int
 
 from native.introspection import object_getattr, isinstance, issubclass
 

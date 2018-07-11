@@ -156,6 +156,11 @@ void __raise_type_error()
     __Raise(__new___builtins___core_TypeError(__NULL));
 }
 
+void __raise_underflow_error()
+{
+    __Raise(__new___builtins___core_UnderflowError(__NULL));
+}
+
 void __raise_zero_division_error()
 {
     __Raise(__new___builtins___core_ZeroDivisionError(__NULL));
@@ -303,7 +308,7 @@ int __BOOL(__attr attr)
 
     __ref value = __VALUE(attr);
 
-    return value == &__predefined___builtins___boolean_True ? 1 :
-           value == &__predefined___builtins___boolean_False ? 0 :
-           __VALUE(__fn___builtins___boolean_bool(__NULL, attr)) == &__predefined___builtins___boolean_True;
+    return value == (__ref) &__predefined___builtins___boolean_True ? 1 :
+           value == (__ref) &__predefined___builtins___boolean_False ? 0 :
+           __VALUE(__fn___builtins___boolean_bool(__NULL, attr)) == (__ref) &__predefined___builtins___boolean_True;
 }

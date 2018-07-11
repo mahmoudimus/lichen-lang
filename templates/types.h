@@ -1,6 +1,6 @@
 /* Runtime types.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -85,7 +85,6 @@ typedef union __attr
         __ppos pos;             /* parameter table position for key */
     };
     __attr (*fn)();             /* callable details */
-    float floatvalue;          	/* floating point value */
     char * strvalue;            /* string value */
     __fragment * seqvalue;      /* sequence data */
     void * datavalue;           /* object-specific data */
@@ -96,6 +95,11 @@ typedef struct __obj
     const __table * table;      /* attribute table */
     __ppos pos;                 /* position of attribute indicating class */
     __attr attrs[];             /* attributes */
+
+    /* Specialisations of this type may add other members.
+       See generator.py for type generation, progops.h for definitions, and
+       the generated progtypes.h for the final details. */
+
 } __obj;
 
 #define __INSTANCE_SIZE(NUMBER) ((NUMBER) * sizeof(__attr) + sizeof(__table *) + sizeof(__ppos))
@@ -117,7 +121,7 @@ typedef struct __fragment
 
 /* Attribute value setting. */
 
-#define __ATTRVALUE(VALUE) ((__attr) {.value=VALUE})
+#define __ATTRVALUE(VALUE) ((__attr) {.value=(__ref) VALUE})
 #define __NULL __ATTRVALUE(0)
 #define __SETNULL(ATTR) ((ATTR).value = 0)
 

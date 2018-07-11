@@ -505,6 +505,15 @@ def encode_literal_reference(n):
 
     return "__constvalue%s" % n
 
+def encode_trailing_area(path):
+
+    """
+    Encode any reference to trailing data members for instances of the type
+    given by 'path'.
+    """
+
+    return "__TRAILING_%s" % encode_path(path)
+
 
 
 # Track all encoded paths, detecting and avoiding conflicts.

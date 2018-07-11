@@ -29,6 +29,7 @@ from encoders import encode_code, \
                      encode_path, encode_pcode, encode_pos, encode_ppos, \
                      encode_predefined_reference, encode_size, \
                      encode_symbol, encode_tablename, \
+                     encode_trailing_area, \
                      encode_type_attribute, decode_type_attribute, \
                      is_type_attribute
 from os import listdir, mkdir, remove
@@ -42,6 +43,7 @@ class Generator(CommonOutput):
     # NOTE: These must be synchronised with the library.
 
     dict_type = "__builtins__.dict.dict"
+    float_type = "__builtins__.float.float"
     function_type = "__builtins__.core.function"
     int_type = "__builtins__.int.int"
     list_type = "__builtins__.list.list"
@@ -63,6 +65,12 @@ class Generator(CommonOutput):
     literal_instantiator_types = (
         dict_type, list_type, tuple_type
         )
+
+    # Data types with a trailing data member of the given native types.
+
+    trailing_data_types = {
+        float_type : "double",
+        }
 
     def __init__(self, importer, optimiser, output):
 
@@ -219,6 +227,7 @@ class Generator(CommonOutput):
 
                 if kind != "<instance>":
                     structure = []
+                    trailing = []
                     attrs = self.get_static_attributes(kind, path, attrnames)
 
                     # Set a special instantiator on the class.
@@ -244,12 +253,13 @@ class Generator(CommonOutput):
                         attrs["__args__"] = path
 
                     self.populate_structure(Reference(kind, path), attrs, kind, structure)
+                    self.populate_trailing(Reference(kind, path), attrs, trailing)
 
                     if kind == "<class>":
                         self.write_instance_structure(f_decls, path, structure_size)
 
-                    self.write_structure(f_decls, f_defs, path, table_name, structure,
-                        kind == "<class>" and path)
+                    self.write_structure(f_decls, f_defs, path, table_name,
+                                         structure, trailing, ref)
 
                 # Record function instance details for function generation below.
 
@@ -297,7 +307,7 @@ class Generator(CommonOutput):
                 function_instance_attrs["__args__"] = path
 
                 structure = self.populate_function(path, function_instance_attrs)
-                self.write_structure(f_decls, f_defs, path, table_name, structure)
+                self.write_structure(f_decls, f_defs, path, table_name, structure, [], Reference("<function>", path))
 
                 # Functions with defaults need to declare instance structures.
 
@@ -410,6 +420,12 @@ class Generator(CommonOutput):
             self.write_code_constants(f_consts, self.optimiser.all_attrnames,
                                       self.optimiser.locations,
                                       "code", "pos", encode_code, encode_pos)
+
+            # Generate trailing data macros of the form...
+            # #define __TRAILING_typename nativetype trailing;
+
+            for name, member_type in self.trailing_data_types.items():
+                print >>f_consts, "#define %s %s trailing;" % (encode_symbol("TRAILING", name), member_type)
 
             # Generate macros for calls.
 
@@ -617,7 +633,16 @@ __attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n)
         # Set the data, if provided.
 
         if data is not None:
-            attrs["__data__"] = data
+
+            # Data retained by special attribute.
+
+            if attrs.has_key("__data__"):
+                attrs["__data__"] = data
+
+            # Data retained by a trailing data area.
+
+            elif attrs.has_key("__trailing__"):
+                attrs["__trailing__"] = data
 
             # Also set a key for dynamic attribute lookup, if a string.
 
@@ -658,9 +683,12 @@ __attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n)
         # the constant in the program.
 
         structure = []
+        trailing = []
         table_name = encode_tablename("<instance>", cls)
         self.populate_structure(ref, attrs, ref.get_kind(), structure)
-        self.write_structure(f_decls, f_defs, structure_name, table_name, structure)
+        self.populate_trailing(ref, attrs, trailing)
+        self.write_structure(f_decls, f_defs, structure_name, table_name,
+                             structure, trailing, ref)
 
         # Define a macro for the constant.
 
@@ -819,38 +847,51 @@ const __ptable %s = {
         # Write an instance-specific type definition for instances of classes.
         # See: templates/types.h
 
+        trailing_area = path in self.trailing_data_types and encode_trailing_area(path) or ""
+
         print >>f_decls, """\
 typedef struct {
     const __table * table;
     __pos pos;
     __attr attrs[%s];
+%s
 } %s;
-""" % (structure_size, encode_symbol("obj", path))
+""" % (structure_size, trailing_area, encode_symbol("obj", path))
 
-    def write_structure(self, f_decls, f_defs, structure_name, table_name, structure, path=None):
+    def write_structure(self, f_decls, f_defs, structure_name, table_name,
+                        structure, trailing, ref):
 
         """
         Write the declarations to 'f_decls' and definitions to 'f_defs' for
         the object having the given 'structure_name', the given 'table_name',
-        and the given 'structure' details used to populate the definition.
+        the given 'structure' details and any 'trailing' member details, used to
+        populate the definition.
         """
 
-        if f_decls:
-            print >>f_decls, "extern __obj %s;\n" % encode_path(structure_name)
+        origin = ref.get_origin()
+        pos = ref.has_kind("<class>") and encode_pos(encode_type_attribute(origin)) or str(self.instancepos)
 
-        is_class = path and self.importer.get_object(path).has_kind("<class>")
-        pos = is_class and encode_pos(encode_type_attribute(path)) or str(self.instancepos)
+        obj_type = ref.has_kind("<instance>") and encode_symbol("obj", origin) or "__obj"
+        obj_name = encode_path(structure_name)
+
+        if f_decls:
+            print >>f_decls, "extern %s %s;\n" % (obj_type, obj_name)
 
         print >>f_defs, """\
-__obj %s = {
+%s %s = {
     &%s,
     %s,
     {
         %s
-    }};
+    },
+    %s
+    };
 """ % (
-            encode_path(structure_name), table_name, pos,
-            ",\n        ".join(structure))
+            obj_type, obj_name,
+            table_name,
+            pos,
+            ",\n        ".join(structure),
+            trailing and ",\n    ".join(trailing) or "")
 
     def get_argument_limits(self, path):
 
@@ -910,6 +951,12 @@ __obj %s = {
                 continue
             const = consts.get(attrname)
             attrs[attrname] = const or Reference("<var>", "%s.%s" % (name, attrname))
+
+        # Instances with trailing data.
+
+        if name in self.trailing_data_types:
+            attrs["__trailing__"] = Reference("<var>", "%s.__trailing__" % name)
+
         return attrs
 
     def populate_table(self, path, table):
@@ -1101,6 +1148,21 @@ __obj %s = {
 
                 structure.append(self.encode_member(origin, attrname, attr, kind))
 
+    def populate_trailing(self, ref, attrs, trailing):
+
+        """
+        For the structure having the given 'ref', whose members are provided by
+        the 'attrs' mapping, adding entries to the 'trailing' member collection.
+        """
+
+        structure_ref = self.get_target_structure(ref)
+
+        # Instances with trailing data.
+
+        if structure_ref.get_kind() == "<instance>" and \
+           structure_ref.get_origin() in self.trailing_data_types:
+            trailing.append(encode_literal_constant_value(attrs["__trailing__"]))
+
     def get_target_structure(self, ref):
 
         "Return the target structure type and reference for 'ref'."
@@ -1154,22 +1216,22 @@ __obj %s = {
 
         if kind == "<instance>" and origin == self.none_type:
             attr_path = encode_predefined_reference(self.none_value)
-            return "{.value=&%s} /* %s */" % (attr_path, name)
+            return "{.value=(__ref) &%s} /* %s */" % (attr_path, name)
 
         # Predefined constant members.
 
         if (path, name) in self.predefined_constant_members:
             attr_path = encode_predefined_reference("%s.%s" % (path, name))
-            return "{.value=&%s} /* %s */" % (attr_path, name)
+            return "{.value=(__ref) &%s} /* %s */" % (attr_path, name)
 
         # General undetermined members.
 
         if kind in ("<var>", "<instance>"):
             attr_path = encode_predefined_reference(self.none_value)
-            return "{.value=&%s} /* %s */" % (attr_path, name)
+            return "{.value=(__ref) &%s} /* %s */" % (attr_path, name)
 
         else:
-            return "{.value=&%s}" % encode_path(origin)
+            return "{.value=(__ref) &%s}" % encode_path(origin)
 
     def append_defaults(self, path, structure):
 

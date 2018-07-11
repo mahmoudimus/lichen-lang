@@ -3,7 +3,7 @@
 """
 Core objects.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -181,6 +181,15 @@ class FloatingPointError(Exception):
     pass
 
 class OverflowError(ArithmeticError):
+
+    """
+    Indicates that an arithmetic operation produced a result that could not be
+    represented.
+    """
+
+    pass
+
+class UnderflowError(ArithmeticError):
 
     """
     Indicates that an arithmetic operation produced a result that could not be

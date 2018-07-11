@@ -44,6 +44,14 @@ __attr __new_list(__fragment *f)
     return attr;
 }
 
+__attr __new_float(double n)
+{
+    /* Create a new float and set the trailing data. */
+    __attr attr = __NEWINSTANCE(__builtins___float_float);
+    __set_trailing_data(attr, __builtins___float_float, n);
+    return attr;
+}
+
 __fragment *__fragment_append(__fragment *data, __attr value)
 {
     __fragment *newdata = data;

@@ -55,6 +55,21 @@ print hash((sys.maxint, 0))
 print "# hash((sys.maxint - 1, 0)):",
 print hash((sys.maxint - 1, 0))
 
+# Floating point numbers.
+
+i = 2.0 ** 29
+print i                                 # 536870912.0
+j = -2.0 ** 29
+print j                                 # -536870912.0
+print i + j                             # 0
+print i - j                             # -1073741824.0
+print i * i                             # 2.8823037615171174e+17
+
+try:
+    print i ** i
+except OverflowError:
+    print "i ** i: overflow occurred"
+
 # Test combining numbers with strings.
 
 s = "Number is " + str(123)

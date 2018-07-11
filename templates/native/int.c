@@ -1,6 +1,6 @@
 /* Native functions for integer operations.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -288,6 +288,14 @@ __attr __fn_native_int_int_str(__attr __self, __attr self)
 
     /* Return a new string. */
     return __new_str(s, strlen(s));
+}
+
+__attr __fn_native_int_int_float(__attr __self, __attr self)
+{
+    /* self interpreted as int */
+    int i = __TOINT(self);
+
+    return __new_float((double) i);
 }
 
 /* Module initialisation. */
