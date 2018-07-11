@@ -3,7 +3,7 @@
 """
 Generate C code from object layouts and other deduced information.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -204,14 +204,12 @@ class Generator(CommonOutput):
             # Generate table and structure data.
 
             function_instance_attrs = None
-            objects = self.optimiser.attr_table.items()
+            objects = self.optimiser.all_attrs.items()
             objects.sort()
 
             self.callables = {}
 
-            for ref, indexes in objects:
-                attrnames = self.get_attribute_names(indexes)
-
+            for ref, attrnames in objects:
                 kind = ref.get_kind()
                 path = ref.get_origin()
                 table_name = encode_tablename(kind, path)
@@ -613,8 +611,7 @@ __attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n)
         # Obtain the attributes.
 
         cls = ref.get_origin()
-        indexes = self.optimiser.attr_table[ref]
-        attrnames = self.get_attribute_names(indexes)
+        attrnames = self.optimiser.all_attrs[ref]
         attrs = self.get_instance_attributes(cls, attrnames)
 
         # Set the data, if provided.
@@ -867,22 +864,6 @@ __obj %s = {
         num_parameters = len(parameters) + 1
         return num_parameters - (defaults and len(defaults) or 0), num_parameters
 
-    def get_attribute_names(self, indexes):
-
-        """
-        Given a list of attribute table 'indexes', return a list of attribute
-        names.
-        """
-
-        all_attrnames = self.optimiser.all_attrnames
-        attrnames = []
-        for i in indexes:
-            if i is None:
-                attrnames.append(None)
-            else:
-                attrnames.append(all_attrnames[i])
-        return attrnames
-
     def get_static_attributes(self, kind, name, attrnames):
 
         """
@@ -987,17 +968,8 @@ __obj %s = {
         structure of the given 'kind', adding entries to the object 'structure'.
         """
 
-        # Populate function instance structures for functions.
-
-        if ref.has_kind("<function>"):
-            origin = self.function_type
-            structure_ref = Reference("<instance>", self.function_type)
-
-        # Otherwise, just populate the appropriate structures.
-
-        else:
-            origin = ref.get_origin()
-            structure_ref = ref
+        structure_ref = self.get_target_structure(ref)
+        origin = structure_ref.get_origin()
 
         for attrname in self.optimiser.structures[structure_ref]:
 
@@ -1128,6 +1100,20 @@ __obj %s = {
                 # All other kinds of members.
 
                 structure.append(self.encode_member(origin, attrname, attr, kind))
+
+    def get_target_structure(self, ref):
+
+        "Return the target structure type and reference for 'ref'."
+
+        # Populate function instance structures for functions.
+
+        if ref.has_kind("<function>"):
+            return Reference("<instance>", self.function_type)
+
+        # Otherwise, just populate the appropriate structures.
+
+        else:
+            return ref
 
     def encode_member(self, path, name, ref, structure_type):
 
