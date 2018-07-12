@@ -52,6 +52,7 @@ void __raise_io_error(__attr value);
 void __raise_memory_error();
 void __raise_os_error(__attr value, __attr arg);
 void __raise_overflow_error();
+void __raise_unbound_method_error();
 void __raise_underflow_error();
 void __raise_zero_division_error();
 void __raise_type_error();

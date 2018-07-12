@@ -151,6 +151,11 @@ void __raise_overflow_error()
     __Raise(__new___builtins___core_OverflowError(__NULL));
 }
 
+void __raise_unbound_method_error()
+{
+    __Raise(__new___builtins___core_UnboundMethodInvocation(__NULL));
+}
+
 void __raise_type_error()
 {
     __Raise(__new___builtins___core_TypeError(__NULL));

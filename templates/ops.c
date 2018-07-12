@@ -231,7 +231,7 @@ int __check_and_store_via_any__(__ref obj, int pos, int code, __attr value)
 
 /* Context-related operations. */
 
-int __test_context_update(__attr context, __attr attr)
+int __test_context_update(__attr context, __attr attr, int invoke)
 {
     /* Return whether the context should be updated for the attribute. */
 
@@ -258,6 +258,11 @@ int __test_context_update(__attr context, __attr attr)
             __raise_type_error();
     }
 
+    /* Without a null or instance context, an invocation cannot be performed. */
+
+    if (invoke)
+        __raise_unbound_method_error();
+
     /* Test for access to a type class attribute using a type instance. */
 
     if (__test_specific_type(attrcontextvalue, &__TYPE_CLASS_TYPE) && __is_type_instance(__VALUE(context)))
@@ -272,7 +277,7 @@ __attr __test_context(__attr context, __attr attr)
 {
     /* Update the context or return the unchanged attribute. */
 
-    if (__test_context_update(context, attr))
+    if (__test_context_update(context, attr, 0))
         return __update_context(context, attr);
     else
         return attr;
@@ -288,7 +293,7 @@ __attr __test_context_revert(int target, __attr context, __attr attr, __attr con
     /* Revert the local context to that employed by the attribute if the
        supplied context is not appropriate. */
 
-    if (!__test_context_update(context, attr))
+    if (!__test_context_update(context, attr, 1))
         contexts[target] = __CONTEXT_AS_VALUE(attr);
     return attr;
 }
@@ -297,7 +302,7 @@ __attr __test_context_static(int target, __attr context, __ref value, __attr con
 {
     /* Set the local context to the specified context if appropriate. */
 
-    if (__test_context_update(context, __ATTRVALUE(value)))
+    if (__test_context_update(context, __ATTRVALUE(value), 1))
         contexts[target] = context;
     return __ATTRVALUE(value);
 }
