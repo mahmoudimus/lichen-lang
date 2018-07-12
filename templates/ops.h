@@ -101,7 +101,7 @@ int __check_and_store_via_any__(__ref obj, int pos, int code, __attr value);
 
 /* Context-related operations. */
 
-int __test_context_update(__attr context, __attr attr);
+int __test_context_update(__attr context, __attr attr, int invoke);
 __attr __test_context(__attr context, __attr attr);
 __attr __update_context(__attr context, __attr attr);
 __attr __test_context_revert(int target, __attr context, __attr attr, __attr contexts[]);

@@ -1070,9 +1070,21 @@ class TranslatedModule(CommonModule):
 
         context_required = True
         have_access_context = isinstance(expr, AttrResult)
+
+        # The context identity is merely the thing providing the context.
+        # A verified context is one that does not need further testing for
+        # suitability.
+
         context_identity = have_access_context and expr.context()
         context_verified = have_access_context and expr.context_verified()
+
+        # The presence of any test operations in the accessor expression.
+        # With such operations present, the expression cannot be eliminated.
+
         tests_accessor = have_access_context and expr.tests_accessor()
+
+        # Parameter details and parameter list dimensions.
+
         parameters = None
         num_parameters = None
         num_defaults = None

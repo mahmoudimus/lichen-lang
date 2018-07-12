@@ -2938,7 +2938,13 @@ class Deducer(CommonOutput):
             # Produce an advisory instruction regarding the context.
 
             if context_var:
-                if context_test in ("ignore", "replace"):
+
+                # Only verify the context for invocation purposes if a suitable
+                # test has been performed.
+
+                if context_test in ("ignore", "replace") or \
+                   final_method in ("access-invoke", "static-invoke"):
+
                     emit(("<context_identity_verified>", context_var))
                 else:
                     emit(("<context_identity>", context_var))
