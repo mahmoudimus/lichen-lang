@@ -1070,9 +1070,21 @@ class TranslatedModule(CommonModule):
 
         context_required = True
         have_access_context = isinstance(expr, AttrResult)
+
+        # The context identity is merely the thing providing the context.
+        # A verified context is one that does not need further testing for
+        # suitability.
+
         context_identity = have_access_context and expr.context()
         context_verified = have_access_context and expr.context_verified()
+
+        # The presence of any test operations in the accessor expression.
+        # With such operations present, the expression cannot be eliminated.
+
         tests_accessor = have_access_context and expr.tests_accessor()
+
+        # Parameter details and parameter list dimensions.
+
         parameters = None
         num_parameters = None
         num_defaults = None
@@ -1252,11 +1264,13 @@ class TranslatedModule(CommonModule):
 
         if context_required:
             if have_access_context:
-                args = [context_identity]
+                context_arg = context_identity
             else:
-                args = ["__CONTEXT_AS_VALUE(%s)" % target_var]
+                context_arg = "__CONTEXT_AS_VALUE(%s)" % target_var
         else:
-            args = ["__NULL"]
+            context_arg = "__NULL"
+
+        args = [context_arg]
 
         # Complete the array with null values, permitting tests for a complete
         # set of arguments.
@@ -1398,25 +1412,23 @@ class TranslatedModule(CommonModule):
         elif function:
             if context_required:
 
-                # With context_verified or context_identity...
+                # Avoid further context testing if appropriate.
 
-                if have_access_context:
+                if have_access_context and context_verified:
                     emit("__get_function_member(%s)" % target_expr)
 
                 # Otherwise, test the context for the function/method.
 
                 else:
-                    emit("__get_function(__CONTEXT_AS_VALUE(%s), %s)" % (
-                        target_var, target_expr))
+                    emit("__get_function(%s, %s)" % (context_arg, target_expr))
             else:
                 emit("_get_function_member(%s)" % target_expr)
 
         # With known parameters, the target can be tested.
 
         elif known_parameters:
-            context_arg = context_required and args[0] or "__NULL"
             if self.always_callable(refs):
-                if context_verified or context_identity:
+                if context_verified:
                     emit("__get_function_member(%s)" % target_expr)
                 else:
                     emit("__get_function(%s, %s)" % (context_arg, target_expr))

@@ -3,7 +3,7 @@
 """
 Optimise object layouts and generate access instruction plans.
 
-Copyright (C) 2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2014, 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -413,6 +413,12 @@ class Optimiser(CommonOutput):
         finally:
             f.close()
 
+    def is_allocated_attribute(self, attrname):
+
+        "Return whether 'attrname' is to be allocated in an object."
+
+        return not attrname.startswith("$t")
+
     def populate_objects(self):
 
         "Populate objects using attribute and usage information."
@@ -432,8 +438,8 @@ class Optimiser(CommonOutput):
 
                 # Remove temporary names from structures.
 
-                attrnames = filter(lambda x: not x.startswith("$t"), attrnames)
-                self.all_attrs[(objkind, name)] = attrnames
+                attrnames = filter(self.is_allocated_attribute, attrnames)
+                self.all_attrs[Reference(objkind, name)] = attrnames
 
         try:
             self.locations = get_allocated_locations(self.all_attrs,
@@ -495,8 +501,7 @@ class Optimiser(CommonOutput):
 
         # Record the structures.
 
-        for (objkind, name), attrnames in self.all_attrs.items():
-            key = Reference(objkind, name)
+        for key, attrnames in self.all_attrs.items():
             l = self.structures[key] = [None] * len(attrnames)
 
             for attrname in attrnames:
@@ -719,7 +724,7 @@ def get_attributes_and_sizes(d):
 
     """
     Get attribute and size information for the object attributes defined by 'd'
-    providing a mapping from (object kind, type name) to attribute names.
+    providing a mapping from object references to attribute names.
 
     Return a matrix of attributes (each row entry consisting of column values
     providing attribute names, with value positions corresponding to types
@@ -736,15 +741,15 @@ def get_attributes_and_sizes(d):
     sizes = {}
     objkinds = {}
 
-    for objtype, attrnames in d.items():
-        objkind, _name = objtype
+    for ref, attrnames in d.items():
+        objkind = ref.get_kind()
 
         for attrname in attrnames:
 
             # Record each type supporting the attribute.
 
             init_item(attrs, attrname, set)
-            attrs[attrname].add(objtype)
+            attrs[attrname].add(ref)
 
             # Maintain a record of the smallest object size supporting the given
             # attribute.
@@ -761,13 +766,13 @@ def get_attributes_and_sizes(d):
 
     # Obtain attribute details in order of size and occupancy.
 
-    all_objtypes = d.keys()
+    all_refs = d.keys()
 
     rsizes = []
     for attrname, size in sizes.items():
         priority = "<instance>" in objkinds[attrname] and 0.5 or 1
         occupied = len(attrs[attrname])
-        key = (priority * size, size, len(all_objtypes) - occupied, attrname)
+        key = (priority * size, size, len(all_refs) - occupied, attrname)
         rsizes.append(key)
 
     rsizes.sort()
@@ -775,20 +780,20 @@ def get_attributes_and_sizes(d):
     # Make a matrix of attributes.
 
     matrix = {}
-    for attrname, objtypes in attrs.items():
+    for attrname, refs in attrs.items():
 
         # Traverse the object types, adding the attribute name if the object
         # type supports the attribute, adding None otherwise.
 
         row = []
-        for objtype in all_objtypes:
-            if objtype in objtypes:
+        for ref in all_refs:
+            if ref in refs:
                 row.append(attrname)
             else:
                 row.append(None)
         matrix[attrname] = row
 
-    return matrix, all_objtypes, rsizes
+    return matrix, all_refs, rsizes
 
 def get_parameters_and_sizes(d):
 

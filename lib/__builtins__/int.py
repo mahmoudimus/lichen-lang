@@ -3,7 +3,7 @@
 """
 Integer objects.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,12 +19,12 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.operator import _negate
 from __builtins__.unicode import utf8string
 from native import get_maxint, get_minint, is_int, \
-                   int_add, int_and, int_div, int_eq, int_gt, int_lshift, \
-                   int_lt, int_mod, int_mul, int_ne, int_neg, int_not, \
-                   int_or, int_pow, int_rshift, int_str, int_sub, int_xor
+                   int_add, int_and, int_div, int_eq, int_ge, int_gt, \
+                   int_lshift, int_le, int_lt, int_mod, int_mul, int_ne, \
+                   int_neg, int_not, int_or, int_pow, int_rshift, int_str, \
+                   int_sub, int_xor
 
 class int:
 
@@ -140,6 +140,8 @@ class int:
 
         return self._binary_op_rev(int_div, other)
 
+    # NOTE: To be implemented.
+
     def __floordiv__(self, other): pass
     def __rfloordiv__(self, other): pass
     def __ifloordiv__(self, other): pass
@@ -189,7 +191,6 @@ class int:
         return self._binary_op_rev(int_rshift, other)
 
     __ilshift__ = __lshift__
-
     __irshift__ = __rshift__
 
     def __lt__(self, other):
@@ -208,13 +209,13 @@ class int:
 
         "Return whether this int is less than or equal to 'other'."
 
-        return _negate(self.__gt__(other))
+        return self._binary_op(int_le, other)
 
     def __ge__(self, other):
 
         "Return whether this int is greater than or equal to 'other'."
 
-        return _negate(self.__lt__(other))
+        return self._binary_op(int_ge, other)
 
     def __eq__(self, other):
 
@@ -226,7 +227,7 @@ class int:
 
         "Return whether this int is not equal to 'other'."
 
-        return _negate(self.__eq__(other))
+        return self._binary_op(int_ne, other)
 
     def __neg__(self):
 
