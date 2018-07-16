@@ -31,3 +31,19 @@ try:
     a, b, c = l
 except ValueError, exc:
     print "a, b, c = l: failed with length", exc.value
+
+# Add tuples together.
+
+m = ("five", 6, 7, 8)
+n = t + m
+print n                 # (1, 2, 3, "four", "five", 6, 7, 8)
+
+# Add to list, really testing tuple iteration.
+
+o = l + m
+print o                 # [1, 2, 3, "four", "five", 6, 7, 8]
+
+try:
+    print t + l         # should raise an exception
+except TypeError:
+    print "t + l: failed due to tuple-list addition"
