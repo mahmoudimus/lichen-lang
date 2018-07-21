@@ -22,7 +22,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from __builtins__.iteration.iterator import itemiterator
 from __builtins__.sequence import hashable, unpackable
 from native import tuple_init, \
-                   list_element, list_len, list_setsize, list_setelement
+                   list_element, list_len, list_setsize, list_setelement, \
+                   isinstance as _isinstance
 
 class tuple(unpackable, hashable):
 
@@ -73,7 +74,13 @@ class tuple(unpackable, hashable):
 
         return list_len(self.__data__)
 
-    def __add__(self, other): pass
+    def __add__(self, other):
+
+        "Add this tuple to 'other'."
+
+        if not _isinstance(other, tuple):
+            raise TypeError
+        return tuple(tuplepair(self, other))
 
     def __str__(self):
 
@@ -109,5 +116,29 @@ class tuple(unpackable, hashable):
         "Set at the normalised (positive) 'index' the given 'value'."
 
         raise TypeError
+
+class tuplepair:
+
+    "A combination of tuples."
+
+    def __init__(self, a, b):
+        self.a = a
+        self.b = b
+
+    def __len__(self):
+
+        "Return the combined length of the tuples."
+
+        return len(self.a) + len(self.b)
+
+    def __getitem__(self, index):
+
+        "Return the value from 'index' in the combined tuple."
+
+        asize = len(self.a)
+        if index < asize:
+            return self.a.__get_single_item__(index)
+        else:
+            return self.b.__get_single_item__(index - asize)
 
 # vim: tabstop=4 expandtab shiftwidth=4
