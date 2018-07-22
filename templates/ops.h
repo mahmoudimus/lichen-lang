@@ -107,10 +107,11 @@ __attr __update_context(__attr context, __attr attr);
 __attr __test_context_revert(int target, __attr context, __attr attr, __attr contexts[]);
 __attr __test_context_static(int target, __attr context, __ref value, __attr contexts[]);
 
+#define __get_accessor(__TARGET) (__tmp_values[__TARGET])
 #define __get_context(__TARGET) (__tmp_contexts[__TARGET])
 #define __set_context(__TARGET, __ATTR) (__tmp_contexts[__TARGET] = (__ATTR))
 #define __set_private_context(__ATTR) (__tmp_private_context = (__ATTR))
-#define __set_accessor(__ATTR) (__tmp_value = (__ATTR))
+#define __set_accessor(__TARGET, __ATTR) (__tmp_values[__TARGET] = (__ATTR))
 #define __set_target_accessor(__ATTR) (__tmp_target_value = (__ATTR))
 
 /* Context testing for invocations. */

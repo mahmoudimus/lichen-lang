@@ -115,6 +115,7 @@ class TranslatedModule(CommonModule):
 
         self.namespaces = []
         self.in_conditional = False
+        self.in_parameter_list = False
 
         # Exception raising adjustments.
 
@@ -317,6 +318,8 @@ class TranslatedModule(CommonModule):
             self.max_function_target = 0
             self.context_index = 0
             self.max_context_index = 0
+            self.accessor_index = 0
+            self.max_accessor_index = 0
             self.start_module()
             self.process_structure(node)
             self.end_module()
@@ -554,11 +557,13 @@ class TranslatedModule(CommonModule):
         # The context set or retrieved will be that used by any enclosing
         # invocation.
 
+        accessor_index = self.accessor_index
         context_index = self.context_index
         context_identity = None
         context_identity_verified = False
         final_identity = None
         accessor_test = False
+        accessor_stored = False
 
         # Obtain encoded versions of each instruction, accumulating temporary
         # variables.
@@ -568,7 +573,9 @@ class TranslatedModule(CommonModule):
             # Intercept a special instruction identifying the context.
 
             if instruction[0] in ("<context_identity>", "<context_identity_verified>"):
-                context_identity, _substituted = encode_access_instruction_arg(instruction[1], subs, instruction[0], context_index)
+                context_identity, _substituted = \
+                    encode_access_instruction_arg(instruction[1], subs, instruction[0],
+                                                  accessor_index, context_index)
                 context_identity_verified = instruction[0] == "<context_identity_verified>"
                 continue
 
@@ -585,10 +592,16 @@ class TranslatedModule(CommonModule):
                 instruction = ("__to_error", instruction)
                 accessor_test = True
 
+            # Intercept accessor storage.
+
+            elif instruction[0] == "<set_accessor>":
+                accessor_stored = True
+
             # Collect the encoded instruction, noting any temporary variables
             # required by it.
 
-            encoded, _substituted = encode_access_instruction(instruction, subs, context_index)
+            encoded, _substituted = encode_access_instruction(instruction, subs,
+                                        accessor_index, context_index)
             output.append(encoded)
             substituted.update(_substituted)
 
@@ -604,7 +617,9 @@ class TranslatedModule(CommonModule):
             refs = set([self.importer.identify(final_identity)])
 
         del self.attrs[0]
-        return AttrResult(output, refs, location, context_identity, context_identity_verified, accessor_test)
+        return AttrResult(output, refs, location,
+                          context_identity, context_identity_verified,
+                          accessor_test, accessor_stored)
 
     def init_substitutions(self):
 
@@ -619,21 +634,22 @@ class TranslatedModule(CommonModule):
             # Substitutions used by instructions.
 
             "<private_context>" : "__tmp_private_context",
-            "<accessor>" : "__tmp_value",
             "<target_accessor>" : "__tmp_target_value",
 
             # Mappings to be replaced by those given below.
 
+            "<accessor>" : "__tmp_values",
             "<context>" : "__tmp_contexts",
             "<test_context_revert>" : "__tmp_contexts",
             "<test_context_static>" : "__tmp_contexts",
             "<set_context>" : "__tmp_contexts",
             "<set_private_context>" : "__tmp_private_context",
-            "<set_accessor>" : "__tmp_value",
+            "<set_accessor>" : "__tmp_values",
             "<set_target_accessor>" : "__tmp_target_value",
             }
 
         self.op_subs = {
+            "<accessor>" : "__get_accessor",
             "<context>" : "__get_context",
             "<test_context_revert>" : "__test_context_revert",
             "<test_context_static>" : "__test_context_static",
@@ -840,6 +856,8 @@ class TranslatedModule(CommonModule):
         self.max_function_target = 0
         self.context_index = 0
         self.max_context_index = 0
+        self.accessor_index = 0
+        self.max_accessor_index = 0
 
         # Volatile locals for exception handling.
 
@@ -1082,6 +1100,7 @@ class TranslatedModule(CommonModule):
         # With such operations present, the expression cannot be eliminated.
 
         tests_accessor = have_access_context and expr.tests_accessor()
+        stores_accessor = have_access_context and expr.stores_accessor()
 
         # Parameter details and parameter list dimensions.
 
@@ -1258,6 +1277,9 @@ class TranslatedModule(CommonModule):
         if need_context_stored:
             self.record_temp("__tmp_contexts")
 
+        if stores_accessor:
+            self.record_temp("__tmp_values")
+
         # Arguments are presented in a temporary frame array with any context
         # always being the first argument. Where it would be unused, it may be
         # set to null.
@@ -1284,12 +1306,19 @@ class TranslatedModule(CommonModule):
 
         function_target = self.function_target
         context_index = self.context_index
+        accessor_index = self.accessor_index
 
         if need_target_stored:
             self.next_target()
 
         if need_context_stored:
             self.next_context()
+
+        if stores_accessor:
+            self.next_accessor()
+
+        in_parameter_list = self.in_parameter_list
+        self.in_parameter_list = True
 
         for i, arg in enumerate(n.args):
             argexpr = self.process_structure_node(arg)
@@ -1329,8 +1358,12 @@ class TranslatedModule(CommonModule):
 
         # Reference the current target again.
 
-        self.function_target = function_target
-        self.context_index = context_index
+        self.in_parameter_list = in_parameter_list
+
+        if not self.in_parameter_list:
+            self.function_target = function_target
+            self.context_index = context_index
+            self.accessor_index = accessor_index
 
         # Defaults are added to the frame where arguments are missing.
 
@@ -1473,6 +1506,13 @@ class TranslatedModule(CommonModule):
         self.context_index += 1
         self.max_context_index = max(self.context_index, self.max_context_index)
 
+    def next_accessor(self):
+
+        "Allocate the next accessor value storage."
+
+        self.accessor_index += 1
+        self.max_accessor_index = max(self.accessor_index, self.max_accessor_index)
+
     def always_callable(self, refs):
 
         "Determine whether all 'refs' are callable."
@@ -1527,8 +1567,9 @@ class TranslatedModule(CommonModule):
 
         name = self.get_lambda_name()
         function_name = self.get_object_path(name)
+        instance_name = "__get_accessor(%d)" % self.accessor_index
 
-        defaults = self.process_function_defaults(n, name, function_name, "__tmp_value")
+        defaults = self.process_function_defaults(n, name, function_name, instance_name)
 
         # Without defaults, produce an attribute referring to the function.
 
@@ -1539,11 +1580,16 @@ class TranslatedModule(CommonModule):
         # copy.
 
         else:
-            self.record_temp("__tmp_value")
-            return make_expression("(__tmp_value = __ATTRVALUE(__COPY(&%s, sizeof(%s))), %s, __tmp_value)" % (
+            self.record_temp("__tmp_values")
+            return make_expression("""\
+(__set_accessor(%d, __ATTRVALUE(__COPY(&%s, sizeof(%s)))),
+ %s,
+ __get_accessor(%d))""" % (
+                self.accessor_index,
                 encode_path(function_name),
                 encode_symbol("obj", function_name),
-                ", ".join(defaults)))
+                ", ".join(defaults),
+                self.accessor_index))
 
     def process_logical_node(self, n):
 
@@ -2119,24 +2165,21 @@ class TranslatedModule(CommonModule):
 
         "Write temporary storage employed by 'name'."
 
-        # Provide space for the given number of targets.
-
-        targets = self.max_function_target
+        # Provide space for the recorded number of temporary variables.
 
         if self.uses_temp(name, "__tmp_targets"):
-            self.writeline("__attr __tmp_targets[%d];" % targets)
-
-        index = self.max_context_index
+            self.writeline("__attr __tmp_targets[%d];" % self.max_function_target)
 
         if self.uses_temp(name, "__tmp_contexts"):
-            self.writeline("__attr __tmp_contexts[%d];" % index)
+            self.writeline("__attr __tmp_contexts[%d];" % self.max_context_index)
+
+        if self.uses_temp(name, "__tmp_values"):
+            self.writeline("__attr __tmp_values[%d];" % self.max_accessor_index)
 
         # Add temporary variable usage details.
 
         if self.uses_temp(name, "__tmp_private_context"):
             self.writeline("__attr __tmp_private_context;")
-        if self.uses_temp(name, "__tmp_value"):
-            self.writeline("__attr __tmp_value;")
         if self.uses_temp(name, "__tmp_target_value"):
             self.writeline("__attr __tmp_target_value;")
         if self.uses_temp(name, "__tmp_result"):

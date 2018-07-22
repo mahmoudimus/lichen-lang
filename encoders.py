@@ -259,6 +259,14 @@ static_ops = (
     "__load_static_ignore", "__load_static_replace", "__load_static_test", "<test_context_static>",
     )
 
+accessor_values = (
+    "<accessor>",
+    )
+
+accessor_ops = (
+    "<accessor>", "<set_accessor>",
+    )
+
 context_values = (
     "<context>",
     )
@@ -278,7 +286,7 @@ attribute_producing_variables = (
     "<accessor>", "<context>", "<name>", "<private_context>", "<target_accessor>"
     )
 
-def encode_access_instruction(instruction, subs, context_index):
+def encode_access_instruction(instruction, subs, accessor_index, context_index):
 
     """
     Encode the 'instruction' - a sequence starting with an operation and
@@ -287,6 +295,9 @@ def encode_access_instruction(instruction, subs, context_index):
 
     The 'subs' parameter defines a mapping of substitutions for special values
     used in instructions.
+
+    The 'accessor_index' parameter defines the position in local accessor
+    storage for the referenced accessor or affected by an accessor operation.
 
     The 'context_index' parameter defines the position in local context storage
     for the referenced context or affected by a context operation.
@@ -304,7 +315,7 @@ def encode_access_instruction(instruction, subs, context_index):
     if args:
         converting_op = op
         for arg in args:
-            s, _substituted = encode_access_instruction_arg(arg, subs, converting_op, context_index)
+            s, _substituted = encode_access_instruction_arg(arg, subs, converting_op, accessor_index, context_index)
             substituted.update(_substituted)
             a.append(s)
             converting_op = None
@@ -325,6 +336,11 @@ def encode_access_instruction(instruction, subs, context_index):
 
     elif op in static_ops:
         a[-1] = "&%s" % a[-1]
+
+    # Add accessor storage information to certain operations.
+
+    if op in accessor_ops:
+        a.insert(0, accessor_index)
 
     # Add context storage information to certain operations.
 
@@ -365,19 +381,19 @@ def encode_access_instruction(instruction, subs, context_index):
 
     return "%s%s" % (op, argstr), substituted
 
-def encode_access_instruction_arg(arg, subs, op, context_index):
+def encode_access_instruction_arg(arg, subs, op, accessor_index, context_index):
 
     """
     Encode 'arg' using 'subs' to define substitutions, 'op' to indicate the
-    operation to which the argument belongs, and 'context_index' to indicate any
-    affected context storage.
+    operation to which the argument belongs, and with 'accessor_index' and
+    'context_index' indicating any affected accessor and context storage.
 
     Return a tuple containing the encoded form of 'arg' along with a collection
     of any substituted values.
     """
 
     if isinstance(arg, tuple):
-        encoded, substituted = encode_access_instruction(arg, subs, context_index)
+        encoded, substituted = encode_access_instruction(arg, subs, accessor_index, context_index)
         return attribute_to_reference(op, arg[0], encoded, substituted)
 
     # Special values only need replacing, not encoding.
@@ -386,7 +402,7 @@ def encode_access_instruction_arg(arg, subs, op, context_index):
 
         # Handle values modified by storage details.
 
-        if arg in context_values:
+        if arg in accessor_values or arg in context_values:
             encoded = "%s(%s)" % (subs.get(arg), context_index)
         else:
             encoded = subs.get(arg)
