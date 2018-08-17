@@ -1,29 +1,115 @@
 = History =
 
-Lichen is one of a number of experiments focused on the analysis of Python source code with potential reliability and performance improvements in mind. There have been a number of projects that can be regarded as its predecessors, the first of these being a project with the name "Analysis" that was inspired by the then-recent announcement of the [[https://dspace.mit.edu/handle/1721.1/16688|Starkiller]] tool, which attempted to compile Python to C++ (and was never publicly released). With the emergence of the [[http://pypy.org/|PyPy]] project, the notion of writing a Python implementation in a dialect of Python was also considered attractive.
+Lichen is one of a number of experiments focused on the analysis of Python
+source code with potential reliability and performance improvements in mind.
+There have been a number of projects that can be regarded as its predecessors,
+the first of these being a project with the name "Analysis" that was inspired
+by the then-recent announcement of the
+[[https://dspace.mit.edu/handle/1721.1/16688|Starkiller]] tool, which
+attempted to compile Python to C++ (and was never publicly released). With the
+emergence of the [[http://pypy.org/|PyPy]] project, the notion of writing a
+Python implementation in a dialect of Python was also considered attractive.
 
 == Initial Experiments ==
 
-After some experience gained, a successor to "Analysis" was attempted with the uninspired, but distinct, name of "analysis". This attempted to apply type inference and also generate C programs that could be compiled, albeit with a very simple run-time model that was not really amenable to further improvement. However, some useful concepts were explored, such as abstract syntax tree (AST) node annotations that could be used to direct code generation activities and to provide annotated source code and documentation summaries.
+After some experience gained, a successor to "Analysis" was attempted with the
+uninspired, but distinct, name of "analysis". This attempted to apply type
+inference and also generate C programs that could be compiled, albeit with a
+very simple run-time model that was not really amenable to further
+improvement. However, some useful concepts were explored, such as abstract
+syntax tree (AST) node annotations that could be used to direct code
+generation activities and to provide annotated source code and documentation
+summaries.
 
-Various experiences with specialising functions and methods, plus general experience working with the AST led to a successor called "simplify", which attempted to extend specialisation to classes, thus introducing the notion of multiple forms of a single class whose attributes have differing characteristics. It also introduced the idea of a simplified instruction set for program operations, in contrast to Python bytecode whose instructions can represent relatively complicated operations, along with a simplified program representation that was intended to make program analysis easier. Issues around "data polymorphism" led to the realisation that attempting to identify specific types, in order to facilitate insights into program behaviour or optimisations of programs, was costly and not necessarily effective.
+Various experiences with specialising functions and methods, plus general
+experience working with the AST led to a successor called "simplify", which
+attempted to extend specialisation to classes, thus introducing the notion of
+multiple forms of a single class whose attributes have differing
+characteristics. It also introduced the idea of a simplified instruction set
+for program operations, in contrast to Python bytecode whose instructions can
+represent relatively complicated operations, along with a simplified program
+representation that was intended to make program analysis easier. Issues
+around "data polymorphism" led to the realisation that attempting to identify
+specific types, in order to facilitate insights into program behaviour or
+optimisations of programs, was costly and not necessarily effective.
 
-(Conversations with the author of [[http://shedskin.github.io/|Shed Skin]], a tool already available at this time, which compiles Python programs complying to certain restrictions to C++, were very useful in considering data polymorphism issues and others. Shed Skin must effectively be what Starkiller promised to be, and it has even been available in Debian for a number of years so that others can evaluate it for their own needs.)
+(Conversations with the author of [[http://shedskin.github.io/|Shed Skin]], a
+tool already available at this time, which compiles Python programs complying
+to certain restrictions to C++, were very useful in considering data
+polymorphism issues and others. Shed Skin must effectively be what Starkiller
+promised to be, and it has even been available in Debian for a number of years
+so that others can evaluate it for their own needs.)
 
 == Further Experiences ==
 
-An alternative approach was taken in the next successor, "micropython" (not to be confused with any other, more popular, project of the same name), where the focus of analysis shifted to defining the attributes provided by program objects and then determining which objects might be used in different places in the program according to the attributes mentioned. It introduced a strategy for representing program objects at run-time, and continued the work on a simplified instruction set, defining its instructions in terms of the run-time structures. The ability to generate annotated source code summaries was enhanced, and the software could also generate programs in the simplified instruction set that could be executed using an interpreter. Although substantial progress was made, the increasing resistance experienced in adapting a growing system to further forms of optimisations, and the need to implement and test run-time functionality on a somewhat unique instruction set architecture meant that progress became slower over time.
+An alternative approach was taken in the next successor, "micropython" (not to
+be confused with any other, more popular, project of the same name), where the
+focus of analysis shifted to defining the attributes provided by program
+objects and then determining which objects might be used in different places
+in the program according to the attributes mentioned. It introduced a strategy
+for representing program objects at run-time, and continued the work on a
+simplified instruction set, defining its instructions in terms of the run-time
+structures. The ability to generate annotated source code summaries was
+enhanced, and the software could also generate programs in the simplified
+instruction set that could be executed using an interpreter. Although
+substantial progress was made, the increasing resistance experienced in
+adapting a growing system to further forms of optimisations, and the need to
+implement and test run-time functionality on a somewhat unique instruction set
+architecture meant that progress became slower over time.
 
-The dependence of "micropython" on costly whole-program analysis to identify optimisations led to some further realisations. The notion of "attribute usage" had allowed program namespaces to have their names characterised, and the notion of well-defined structures had allowed the identification of specific object types throughout programs, albeit with a degree of understandable inaccuracy. Meanwhile, the run-time data model had relied on restrictions on structures to permit relatively efficient structure access operations even when object types cannot be identified. It thus appeared that such techniques might be almost as potent on their own as the combination of more costly techniques explored in earlier projects.
+The dependence of "micropython" on costly whole-program analysis to identify
+optimisations led to some further realisations. The notion of "attribute
+usage" had allowed program namespaces to have their names characterised, and
+the notion of well-defined structures had allowed the identification of
+specific object types throughout programs, albeit with a degree of
+understandable inaccuracy. Meanwhile, the run-time data model had relied on
+restrictions on structures to permit relatively efficient structure access
+operations even when object types cannot be identified. It thus appeared that
+such techniques might be almost as potent on their own as the combination of
+more costly techniques explored in earlier projects.
 
 == Current Work ==
 
-It was with such realisations that a new project was effectively born. Tentatively called "!PythonLight" but renamed to "Lichen" as the code matured, the objectives now involved a simpler processing framework that merely attempted to catalogue structure members, to determine the origins of such members, and to record data flow within namespaces in order to determine attribute usage on names. The name "Lichen" can be pronounced in a way that is a contraction of "like Python", indicating that although the language being analysed is similar to Python, restrictions apply that make it not identical to it.
+It was with such realisations that a new project was effectively born.
+Tentatively called "!PythonLight" but renamed to "Lichen" as the code matured,
+the objectives now involved a simpler processing framework that merely
+attempted to catalogue structure members, to determine the origins of such
+members, and to record data flow within namespaces in order to determine
+attribute usage on names. The name "Lichen" can be pronounced in a way that is
+a contraction of "like Python", indicating that although the language being
+analysed is similar to Python, restrictions apply that make it not identical
+to it.
 
-Unlike previous efforts, instead of annotating the AST built by the Python parser, separate catalogues would record details of program operations for more convenient consumption by potentially separate analysis tools. It is worth emphasising that much of the processing work done to characterise program behaviour is effectively database work: searching for information that matches particular criteria. Emitting tabular data for perusal and potential use by other tools is a recognition of this, and it would not be unreasonable to expect future versions of tools of this nature to actually employ more conventional database management systems to facilitate program analysis.
+Unlike previous efforts, instead of annotating the AST built by the Python
+parser, separate catalogues would record details of program operations for
+more convenient consumption by potentially separate analysis tools. It is
+worth emphasising that much of the processing work done to characterise
+program behaviour is effectively database work: searching for information that
+matches particular criteria. Emitting tabular data for perusal and potential
+use by other tools is a recognition of this, and it would not be unreasonable
+to expect future versions of tools of this nature to actually employ more
+conventional database management systems to facilitate program analysis.
 
-Instead of targeting a project-specific virtual machine, the ultimate objective of processing was amended to generate a C program that could be compiled using existing tools. Although care must be taken to generate C source code, delegating the low-level work of actually producing an executable reduces the scope of the project and its associated demands.
+Instead of targeting a project-specific virtual machine, the ultimate
+objective of processing was amended to generate a C program that could be
+compiled using existing tools. Although care must be taken to generate C
+source code, delegating the low-level work of actually producing an executable
+reduces the scope of the project and its associated demands.
 
-Despite reasonable progress being made, certain features retained from Python proved to be a burden, notably the behaviour of Python's import system and the way in which programs can quickly accumulate superfluous code through that system's operation. To focus on genuinely important functionality and on producing working code, the project was [[../Restarted|restarted]] with various additional simplifications made to the supported language. Fortunately, this helped to drive progress, resulting in the development of a toolchain that can generate C programs for compilation and execution.
+Despite reasonable progress being made, certain features retained from Python
+proved to be a burden, notably the behaviour of Python's import system and the
+way in which programs can quickly accumulate superfluous code through that
+system's operation. To focus on genuinely important functionality and on
+producing working code, the project was [[../Restarted|restarted]] with
+various additional simplifications made to the supported language.
+Fortunately, this helped to drive progress, resulting in the development of a
+toolchain that can generate C programs for compilation and execution.
 
-Lichen attempts to balance the goals of requiring relatively inexpensive analysis, offering meaningful insights into program behaviour, providing output in the form of working, translated, standalone programs, and encouraging further experimentation in the areas of language design, program analysis and optimisation. Much of the standard library is itself written in Lichen, even functionality that would not be written in Python for CPython, thus realising one of the original ambitions for this work and its predecessors.
+Lichen attempts to balance the goals of requiring relatively inexpensive
+analysis, offering meaningful insights into program behaviour, providing
+output in the form of working, translated, standalone programs, and
+encouraging further experimentation in the areas of language design, program
+analysis and optimisation. Much of the standard library is itself written in
+Lichen, even functionality that would not be written in Python for CPython,
+thus realising one of the original ambitions for this work and its
+predecessors.
