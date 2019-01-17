@@ -9,13 +9,13 @@ operation.
 
 == The Deduction Process ==
 
-The deduction process takes observations made during the
-[[../Inspection|inspection process]] and attempts to form deductions about the
-behaviour of the program primarily in terms of the nature of the attribute
-'''accesses''', with their corresponding '''accessors''', featuring in the
-program. Where attributes are used in conjunction with names, accessors are
-name versions; where attributes are used in conjunction with other
-expressions, accessors are '''anonymous'''.
+The deduction process takes observations made during the [[../Inspection|
+inspection process]] and attempts to form deductions about the behaviour of
+the program primarily in terms of the nature of the attribute '''accesses''',
+with their corresponding '''accessors''', featuring in the program. Where
+attributes are used in conjunction with names, accessors are name versions;
+where attributes are used in conjunction with other expressions, accessors are
+'''anonymous'''.
 
 === Indexes ===
 
@@ -23,28 +23,58 @@ For efficiency, indexes are defined to establish relationships between the
 following things:
 
 {{{#!table
-'''Indexes''' || '''Details'''
+'''Indexes''' || '''From''' || '''To''' || '''Purpose'''
 ==
-`access_index` || Which accessors (name versions) are involved with access
-               .. operations
+`access_index`
+|| access operation
+|| accessor (name version)
+|| defining types at access locations
 ==
-`location_index` || Which attribute usage patterns are supported by accessors
-                 .. (name versions)
+`access_index_rev`
+|| accessor (name version)
+|| access operations
+|| determining whether names are used for accesses; establishing alias
+.. information
+==
+`location_index`
+|| accessor (name version)
+|| attribute usage patterns
+|| deducing types for names
 ==
 `attr_class_types`<<BR>>`attr_instance_types`<<BR>>`attr_module_types`
-|| Which types support which attribute names
+|| attribute name and assignment state
+|| class, instance, module types
+|| determining types supporting name accesses and assignments
 ==
 `assigned_attrs`
-|| Which usage patterns involve attribute assignment
-==
-`reference_assignments`
-|| Which accesses involve assignments
-==
-`reference_invocations`
-|| Which accesses involve invocations
+|| attribute usage pattern
+|| attribute assignment locations
+|| determining possibly mutated attributes on types
 ==
 `alias_index`
-|| Which names are aliases for other names, accesses or invocations
+|| alias (name version)
+|| accesses
+|| determining the identities of aliases (name versions) from initialising
+.. name or attribute accesses
+==
+`alias_index_rev`
+|| access
+|| aliases (name versions)
+|| propagating updated information from accesses to aliases
+}}}
+
+Various collections are also maintained:
+
+{{{#!table
+'''Collections''' || '''Details''' || '''Purpose'''
+==
+`reference_assignments`
+|| accesses involving assignments
+|| constraining accessor types; adjusting access plans
+==
+`reference_invocations`
+|| accesses involving invocations
+|| converting access types to instantiation or invocation results
 }}}
 
 The objective of deduction is to combine these indexes to establish new
@@ -312,8 +342,10 @@ In the context of a specific access, the types may be resolved further:
 
  * Any name whose initialisation could be determined during inspection can be
    associated with its initialised type
+
  * Any name referring to a constant object can be associated with the type of
    that object
+
  * Usage of `self` in methods can result in only compatible class and instance
    types being retained from the types obtained from usage deductions
 
@@ -325,8 +357,11 @@ consistent with the inspection observations. Several different kinds of
 accessors and access situations exist:
 
  * Name-based accesses involving attribute usage
+
  * Aliases to names, possibly accompanied by accesses
+
  * Anonymous accesses involving individual attributes
+
  * Constant or previously-identified names, possibly accompanied by accesses
 
 === Aliases ===
@@ -367,14 +402,18 @@ information takes the following forms:
 
  * Provider types, indicating which types may provide the attributes used by
    the accessor
+
  * Accessor types, indicating which types will actually appear as the accessor
 
-This information can be processed in a number of ways to produce the following:
+This information can be processed in a number of ways to produce the
+following:
 
  * All types (from all kinds of type) of providers able to provide attributes
    via the accessor
+
  * All types (from all kinds of type) of accessors compatible with the
    accessor
+
  * The most general types of accessors compatible with the accessor
 
 Where many types may be associated with an accessor, identifying the most
@@ -403,19 +442,25 @@ At the point of classifying accesses, information is available about the
 following:
 
  * The accessors potentially involved in each access
+
  * The types of accessors and the types providing attributes via those
    accessors
+
  * Any guards applying to the accessors
+
  * Whether an access is constrained by certain program characteristics and is
    thus guaranteed to be as deduced
+
  * The possible attributes referenced by the access
 
 This information can be processed in a number of ways to produce the
 following:
 
  * The types of accessors, both general and specific, applying to each access
+
  * The attributes that can be provided by each access, consolidating existing
    referenced attribute details
+
  * The general types providing the attributes
 
 Since more than one accessor may be involved, information from all accessors
@@ -456,8 +501,8 @@ following:
  * Details of any test required on the initial accessor
  * Details of any type employed by the test
  * Any identified static accessor (to be used as the initial accessor)
- * Attributes needing to be traversed from the accessor that yield unambiguous
-   objects
+ * Attributes needing to be traversed from the accessor that yield
+   unambiguous objects
  * Access modes for each of the unambiguously-traversed attributes
  * Remaining attributes needing to be tested and traversed (after having
    traversed the above attributes)
@@ -475,6 +520,7 @@ during deduction are used to determine...
 
  * Whether the initial accessor is static, originating from a constant access
    or involving an identifiable static object
+
  * Whether the initial accessor is dynamic but has a known, deduced identity
 
 Some useful information about the accessor and about the actual provider of
@@ -489,6 +535,7 @@ access operation can be established:
 
  * Object-relative accesses occur with class accessors or module accessors or
    when attributes are provided by instances
+
  * Class-relative accesses occur with instance accessors when attributes are
    provided by classes
 
@@ -531,21 +578,63 @@ access method used on the final attribute in a chain of attribute names.
 
 === Identifying Context Information ===
 
-Final attribute accesses involving callables need to yield context information
-that can subsequently be used to invoke those callables. Where the nature of
-an accessed attribute is not known, a simplistic attempt can be made to look
-up all attributes stored using the attribute name in the program.
+Final attribute accesses involving callables need to incorporate context
+information that can subsequently be used to invoke those callables. Where the
+nature of an accessed attribute is not known, a simplistic attempt can be made
+to look up all attributes stored using the attribute name in the program.
+Otherwise, with knowledge of the attribute, its details can be inspected to
+determine if context information plays a role in the access.
+
+==== Context Testing ====
 
 Of particular interest are the following situations:
 
  * Where class attributes are being accessed via instances, whether the
-   attributes are all methods that can be bound upon access
- * Where class attributes may be accessed via instances, whether any
-   attributes could be methods
+   attributes are all methods that are bound to the instances
+
+ * Where class attributes ''may'' be accessed via instances, whether any
+   attributes ''could be'' methods
 
 Such considerations dictate whether the context information originates from
 the attribute or from the accessor and whether any run-time test is required
-to determine this.
+to determine this. Thus, for attributes in general:
+
+{{{#!table
+'''Accessor''' || '''Provider''' || '''Attributes'''
+|| '''Effect on Context''' || '''Remark'''
+==
+Always instances || Always classes || Always methods
+|| Replacement
+|| Permit method calling using the instance as context
+==
+Always instances || Always classes || Sometimes methods
+|| Test at run-time
+|| Preserve original context for non-methods
+==
+Sometimes instances || Sometimes classes || Sometimes methods
+|| Test at run-time
+|| Preserve original context for non-methods, non-instance accessors
+}}}
+
+In all other situations, the available context is ignored, with the attribute
+itself providing any stored context information.
+
+==== Context Identity ====
+
+Where the context is ignored, no effort will be made to obtain or retain it in
+the program for the access operation: it will be unset. Otherwise, the context
+will be defined as one of the following:
+
+ * The "base" or static accessor where this is also the accessor for the final
+   access
+
+ * The original (or initial) accessor where this is also the accessor for the
+   final access
+
+ * The final accessor, having been identified through attribute traversal
+
+Note that non-static accessors may be computed dynamically and thus need to be
+stored temporarily for subsequent use. 
 
 == Preparing Instruction Plans ==
 
@@ -563,12 +652,24 @@ in the program can potentially be replaced with a static reference, and
 subsequent mentions of the accessor can potentially be replaced with such
 references or names used as expressions.
 
-|| '''Access Plan Information''' || '''Original Accessor''' ||
-|| Static accessor identified || Identified accessor ||
-|| Named accessor access, not invocation || Indicated name ||
-|| Named accessor invocation, accessor known to provide the attribute || Indicated name ||
-|| Named accessor invocation, accessor not known to provide the attribute || Accessor expression ||
-|| Other accessors || Accessor expression ||
+{{{#!table
+'''Access Plan Information''' || '''Original Accessor'''
+==
+Static accessor identified
+|| Identified accessor
+==
+Named accessor access, not invocation
+|| Indicated name
+==
+Named accessor invocation, accessor known to provide the attribute
+|| Indicated name
+==
+Named accessor invocation, accessor not known to provide the attribute
+|| Accessor expression
+==
+Other accessors
+|| Accessor expression
+}}}
 
 By using names or static references, the need to store the result of
 evaluating an accessor expression is eliminated because such labels can be
@@ -584,8 +685,10 @@ access plan indicates the following situations:
 
  * Final method is an access (meaning that an attribute cannot be directly
    obtained)
+
  * Final method is an assignment (requiring the object whose attribute will be
    updated)
+
  * Attributes (identified or otherwise) need traversing
 
 === Accessor Nature ===
@@ -610,13 +713,176 @@ variable for subsequent use in access operations.
 
 === Context Testing ===
 
+=== Instruction Details ===
+
+The emitted instructions are as follows.
+
+==== Direct Load ====
+
+These instructions employ the attribute position for the supplied attribute
+name.
+
+{{{#!table
+'''Instruction''' || '''Arguments''' || '''Operations'''
+==
+`__load_via_class` || object, attribute name
+|| Obtain class from object; load attribute from class at position
+==
+`__load_via_object` || object, attribute name
+|| Load attribute from object at position
+==
+`__get_class_and_load` || object, attribute name
+|| Obtain class from object if instance; load attribute from result at
+.. position
+}}}
+
+==== Direct Store ====
+
+These instructions employ the attribute position for the supplied attribute
+name, storing an attribute value.
+
+{{{#!table
+'''Instruction''' || '''Arguments''' || '''Operations'''
+==
+`__store_via_class` || object, attribute name, value
+|| Obtain class from object; store attribute in class at position
+==
+`__store_via_object` || object, attribute name, value
+|| Store attribute in object at position
+}}}
+
+==== Checked Load ====
+
+These instructions employ the attribute position and code for the supplied
+attribute name.
+
+{{{#!table
+'''Instruction''' || '''Arguments''' || '''Operations'''
+==
+`__check_and_load_via_class` || object, attribute name
+|| Obtain class from object; test for attribute and load or raise type error
+==
+`__check_and_load_via_object` || object, attribute name
+|| Test for attribute and load or raise type error
+==
+`__check_and_load_via_any` || object, attribute name
+|| Test for attribute and load or obtain class; test for attribute and load or
+.. raise type error
+}}}
+
+==== Checked Store ====
+
+These instructions employ the attribute position and code for the supplied
+attribute name, storing an attribute value.
+
+{{{#!table
+'''Instruction''' || '''Arguments''' || '''Operations'''
+==
+`__check_and_store_via_class` || object, attribute name, value
+|| Raise type error
+==
+`__check_and_store_via_object` || object, attribute name, value
+|| Test for attribute and store value or raise type error
+==
+`__check_and_store_via_any` || object, attribute name, value
+|| Test for attribute and store value or raise type error
+}}}
+
+==== Testing ====
+
+These instructions employ the special attribute position and code for the
+supplied type name.
+
+{{{#!table
+'''Instruction''' || '''Arguments''' || '''Operations'''
+==
+`__test_common_instance` || object, type
+|| Obtain class from object; test conformance to type
+==
+`__test_common_object` || object, type
+|| Test conformance to type or obtain class from object and test conformance
+.. to type
+==
+`__test_common_type` || object, type
+|| Test conformance to type
+==
+`__test_specific_instance` || object, type
+|| Obtain class from object; test equivalence to type
+==
+`__test_specific_object` || object, type
+|| Test equivalence to type or obtain class from object and test equivalence
+.. to type
+==
+`__test_specific_type` || object, type
+|| Test equivalence to type
+}}}
+
+==== Static Load ====
+
+These instructions obtain references to static objects, in some cases
+employing a supplied context.
+
+{{{#!table
+'''Instruction''' || '''Arguments''' || '''Operations'''
+==
+`__load_static_ignore` || object
+|| Load attribute populated with object, leaving the context unset
+==
+`__load_static_replace` || context, object
+|| Load attribute populated with the context and object
+==
+`__load_static_test` || context, object
+|| Load attribute populated with object; test context compatibility and set
+.. the context
+}}}
+
+==== Temporary Access ====
+
+These instructions access temporary values retained to perform the attribute
+access. The temporary storage index is generated during program translation.
+
+{{{#!table
+'''Instruction''' || '''Arguments''' || '''Operations'''
+==
+`__get_context` || (temporary)
+|| Load the context stored in the temporary storage
+==
+`__set_accessor` || accessor
+|| Store the accessor temporarily
+==
+`__set_context` || (temporary), context
+|| Store the context in the temporary storage
+==
+`__set_private_context` || context
+|| Store the context temporarily
+==
+`__set_target_accessor` || accessor
+|| Store the assignment accessor temporarily
+}}}
+
+==== Context Test ====
+
+These instructions perform tests on the available context object. The
+temporary storage index is generated during program translation.
+
+{{{#!table
+'''Instruction''' || '''Arguments''' || '''Operations'''
+==
+`__test_context_revert` || (temporary), context, attribute
+|| Test compatibility of context; revert temporary to attribute context if
+.. incompatible
+==
+`__test_context_static` || (temporary), context, value
+|| Test compatibility of context; set temporary to specified context if
+.. compatible
+}}}
+
 == Deduction Products ==
 
 The deduction process should produce a complete catalogue of accessor and
-access references that may then be consulted by the
-[[../Translation|translation]] process needing to know the nature of any
-operation within the program. Central to the translation process's
-understanding of references is the '''attribute access plan''' for each
-reference which characterises each access and provides the basis for the
-formulation of the '''instruction plan''' used to replicate it in the final
-program.
+access references that may then be consulted by the [[../Translation|
+translation]] process needing to know the nature of any operation within the
+program. Central to the translation process's understanding of references is
+the '''attribute access plan''' for each reference which characterises each
+access and provides the basis for the formulation of the '''instruction
+plan''' used to replicate it in the final program.
