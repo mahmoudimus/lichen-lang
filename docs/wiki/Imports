@@ -1,17 +1,21 @@
 = Imports =
 
-An '''import''' is a declaration of one or more names that are provided by another source file or '''module''':
+An '''import''' is a declaration of one or more names that are provided by
+another source file or '''module''':
 
   * `import` statements declare names that correspond to modules
   * `from` statements declare names provided by modules
 
-Imports occur either through explicit import operations initiated by the `from` and `import` statements, or through implicit import operations occurring to satisfy the requirements of another kind of operation.
+Imports occur either through explicit import operations initiated by the
+`from` and `import` statements, or through implicit import operations
+occurring to satisfy the requirements of another kind of operation.
 
 <<TableOfContents(2,3)>>
 
 == Packages and Submodules ==
 
-A '''package''' is a collection of modules whose names are all prefixed by the package name. For example:
+A '''package''' is a collection of modules whose names are all prefixed by the
+package name. For example:
 
 {{{
 compiler
@@ -19,30 +23,45 @@ compiler.ast
 compiler.transformer
 }}}
 
-Here, the `compiler` package is said to contain the `compiler.ast` and `compiler.transformer` modules.
+Here, the `compiler` package is said to contain the `compiler.ast` and
+`compiler.transformer` modules.
 
 === Defining Packages ===
 
-The package root or top-level module is defined in a file called `__init__.py` inside the directory bearing the package's name, and this file provides a namespace for the top-level module. However, a package does not expose its member modules ('''submodules''') as members of its top-level module. Instead, the hierarchical relationship between a package and its submodules exists purely in the naming of those modules, and where submodules are imported they must be done so using their full names.
+The package root or top-level module is defined in a file called `__init__.py`
+inside the directory bearing the package's name, and this file provides a
+namespace for the top-level module. However, a package does not expose its
+member modules ('''submodules''') as members of its top-level module. Instead,
+the hierarchical relationship between a package and its submodules exists
+purely in the naming of those modules, and where submodules are imported they
+must be done so using their full names.
 
-Thus, relationships between packages and modules must be explicitly defined in module namespaces. For example, in the `compiler` module, the following would define relationships to the submodules:
+Thus, relationships between packages and modules must be explicitly defined in
+module namespaces. For example, in the `compiler` module, the following would
+define relationships to the submodules:
 
 {{{
 from compiler.ast import ast
 from compiler.transformer import transformer
 }}}
 
-Without such import statements, no attempt will be made upon importing `compiler` to access the submodules and automatically populate the package.
+Without such import statements, no attempt will be made upon importing
+`compiler` to access the submodules and automatically populate the package.
 
 === Accessing Submodules Directly ===
 
-Importing of submodules from packages will not cause the package itself to be imported. For example:
+Importing of submodules from packages will not cause the package itself to be
+imported. For example:
 
 {{{
 import compiler.ast
 }}}
 
-This initialises the name `ast` which refers to the `compiler.ast` module, but the `compiler` package and its top-level module will not be imported. Thus, submodules can be considered independent of their packages, although they may seek to import their package top-level module should they need to access objects provided by that module.
+This initialises the name `ast` which refers to the `compiler.ast` module, but
+the `compiler` package and its top-level module will not be imported. Thus,
+submodules can be considered independent of their packages, although they may
+seek to import their package top-level module should they need to access
+objects provided by that module.
 
 == Implicit Imports ==
 
@@ -56,11 +75,20 @@ The following kinds of operations cause implicit imports:
 || Unary operators || `operator.unary` ||
 || Access to built-in name || `__builtins__` || (various modules in the [[../Builtins|built-ins]] package hierarchy) ||
 
-Operator usage will cause a local name referring to an `operator` module function to be created, with the appropriate function being exposed by the `operator` module itself. However, the inspection process will seek to obtain a reference to the function in its actual definition location, ultimately referencing the function in one of the modules indicated above.
+Operator usage will cause a local name referring to an `operator` module
+function to be created, with the appropriate function being exposed by the
+`operator` module itself. However, the inspection process will seek to obtain
+a reference to the function in its actual definition location, ultimately
+referencing the function in one of the modules indicated above.
 
 == Import Sequencing ==
 
-In order to populate modules, other modules may themselves be required to provide names to a given module, and in turn these other modules may rely on yet more modules, and so on. One logical consequence of this is that circular imports become possible, but the resulting mutual dependencies may not be easily untangled without careful attention to the state of each of the participating modules. Consider the following situation:
+In order to populate modules, other modules may themselves be required to
+provide names to a given module, and in turn these other modules may rely on
+yet more modules, and so on. One logical consequence of this is that circular
+imports become possible, but the resulting mutual dependencies may not be
+easily untangled without careful attention to the state of each of the
+participating modules. Consider the following situation:
 
 {{{{#!table
 {{{#!graphviz
@@ -116,25 +144,65 @@ class E(D):
 }}}
 }}}}
 
-If modules were loaded upon being encountered in import statements, module A would not be completely processed when attempting to import from module B, and thus the import within module B of module A would only yield some information about module A. Consequently, the details of class D might not be available, and this would then have an impact on whether module B could even be completely processed itself.
+If modules were loaded upon being encountered in import statements, module A
+would not be completely processed when attempting to import from module B, and
+thus the import within module B of module A would only yield some information
+about module A. Consequently, the details of class D might not be available,
+and this would then have an impact on whether module B could even be
+completely processed itself.
 
-The approach taken to generally deal with such situations is to defer resolution until all modules have been populated. Then, names are resolved with any names employing kinds of references specified as `<depends>` (instead of, for example, `<class>`) being resolved according to the recorded import dependencies.
+The approach taken to generally deal with such situations is to defer
+resolution until all modules have been populated. Then, names are resolved
+with any names employing kinds of references specified as `<depends>` (instead
+of, for example, `<class>`) being resolved according to the recorded import
+dependencies.
 
-Since the classes in one module may depend on those in other modules, it is not always possible to finalise the details of classes in a module context. And since modules may depend on each other, it is not always possible to finalise the details of classes until the details of all classes in a program are known.
+Since the classes in one module may depend on those in other modules, it is
+not always possible to finalise the details of classes in a module context.
+And since modules may depend on each other, it is not always possible to
+finalise the details of classes until the details of all classes in a program
+are known.
 
 === Module Initialisation ===
 
-Although static objects can be defined with interdependencies in a declarative fashion, the initialisation of objects in modules may require the availability of completely-initialised objects defined in other modules. Thus, an initialisation order needs to be established, with some modules being initialised before others, so that all modules do not encounter uninitialised names when they are expecting those names to provide valid objects.
+Although static objects can be defined with interdependencies in a declarative
+fashion, the initialisation of objects in modules may require the availability
+of completely-initialised objects defined in other modules. Thus, an
+initialisation order needs to be established, with some modules being
+initialised before others, so that all modules do not encounter uninitialised
+names when they are expecting those names to provide valid objects.
 
-The most obvious example of a module requiring the initialisation of others before it is itself evaluated is, of course, the `__main__` module. Given that it may import instances defined as attribute on other modules, it clearly requires those modules to have been initialised and those instances to have been created. It would be absurd to consider running the body of the `__main__` module before such other modules. Similarly, such dependencies exist between other modules, and consequently, an appropriate initialisation ordering must be defined for them. In its entirety, then, a program must define a workable ordering for all of its modules, signalling a concrete error if no such ordering can be established.
+The most obvious example of a module requiring the initialisation of others
+before it is itself evaluated is, of course, the `__main__` module. Given that
+it may import instances defined as attribute on other modules, it clearly
+requires those modules to have been initialised and those instances to have
+been created. It would be absurd to consider running the body of the
+`__main__` module before such other modules. Similarly, such dependencies
+exist between other modules, and consequently, an appropriate initialisation
+ordering must be defined for them. In its entirety, then, a program must
+define a workable ordering for all of its modules, signalling a concrete error
+if no such ordering can be established.
 
 == Hidden Modules ==
 
-Imports that do not obtain the imported module name itself, such as those initiated by the `from` statement and by implicit operations, keep the imported module '''hidden'''. Unless other operations expose hidden modules, they will remain hidden and may consequently be omitted from the final generated program: there would be no way of referencing such modules and they would therefore be unable to contribute their contents to the rest of the program.
+Imports that do not obtain the imported module name itself, such as those
+initiated by the `from` statement and by implicit operations, keep the
+imported module '''hidden'''. Unless other operations expose hidden modules,
+they will remain hidden and may consequently be omitted from the final
+generated program: there would be no way of referencing such modules and they
+would therefore be unable to contribute their contents to the rest of the
+program.
 
-However, where an object provided by a module is referenced, a module cannot remain hidden, since the provided object may depend on other parts of the module in order to function correctly. And since a provided object might reference or return other objects in the module, the general module contents must also be exposed.
+However, where an object provided by a module is referenced, a module cannot
+remain hidden, since the provided object may depend on other parts of the
+module in order to function correctly. And since a provided object might
+reference or return other objects in the module, the general module contents
+must also be exposed.
 
-Import dependencies are defined for namespaces indicating modules that are required by each namespace. By following dependency relationships, it is possible to determine the eventual target of an import and to potentially skip over modules that merely import and expose names. For example:
+Import dependencies are defined for namespaces indicating modules that are
+required by each namespace. By following dependency relationships, it is
+possible to determine the eventual target of an import and to potentially skip
+over modules that merely import and expose names. For example:
 
 {{{{#!table
 {{{#!graphviz
@@ -184,4 +252,8 @@ class C:
 }}}
 }}}}
 
-Here, B is never explicitly referenced, nor does it provide any referenced objects other than an imported name. Consequently, B is hidden and ultimately excluded from the final program. Such techniques are employed in the [[../Builtins|built-ins]] package hierarchy to reduce the amount of functionality employed by (and bundled in) a generated program.
+Here, B is never explicitly referenced, nor does it provide any referenced
+objects other than an imported name. Consequently, B is hidden and ultimately
+excluded from the final program. Such techniques are employed in the
+[[../Builtins|built-ins]] package hierarchy to reduce the amount of
+functionality employed by (and bundled in) a generated program.

@@ -1,12 +1,16 @@
 = Representing Program Objects =
 
-Certain representations have been chosen for program objects that attempt to support efficient access to those objects during the execution of a program.
+Certain representations have been chosen for program objects that attempt to
+support efficient access to those objects during the execution of a program.
 
 <<TableOfContents(2,2)>>
 
 == Attributes ==
 
-The principal means of referring to an object in a program is by using an '''attribute''', having this name because it is the representation of an attribute in classes, instances and modules. Each attribute can hold a reference to an object, known as the '''value''', or other kinds of data:
+The principal means of referring to an object in a program is by using an
+'''attribute''', having this name because it is the representation of an
+attribute in classes, instances and modules. Each attribute can hold a
+reference to an object, known as the '''value''', or other kinds of data:
 
 {{{#!graphviz
 //format=svg
@@ -25,19 +29,49 @@ digraph attributes {
 }
 }}}
 
-Although a value indicates a specific object of interest for an attribute, if the object is callable then additional '''context''' information may be required to call the object. Such context information is not stored in an attribute record but is instead obtained from the object itself, if appropriate.
+Although a value indicates a specific object of interest for an attribute, if
+the object is callable then additional '''context''' information may be
+required to call the object. Such context information is not stored in an
+attribute record but is instead obtained from the object itself, if
+appropriate.
 
 === Integer Representation ===
 
-The `intvalue` member of the attribute structure is employed instead of the `value` member to store integer values. Since `value` normally holds a pointer, and since pointers are often aligned to certain address boundaries on many modern platforms (usually four-byte boundaries on 32-bit platforms, eight-byte boundaries on 64-bit platforms, two-byte boundaries on platforms with 16-bit addressing), the lowest significant bit (bit 0) will typically be zero for a valid pointer. Consequently, by setting bit 0 to 1, other data can be stored in the remaining bits and be distinguished from pointer information. Obviously, operations on attributes first need to test whether the `value` member or the `intvalue` member is in use by testing bit 0.
+The `intvalue` member of the attribute structure is employed instead of the
+`value` member to store integer values. Since `value` normally holds a
+pointer, and since pointers are often aligned to certain address boundaries on
+many modern platforms (usually four-byte boundaries on 32-bit platforms,
+eight-byte boundaries on 64-bit platforms, two-byte boundaries on platforms
+with 16-bit addressing), the lowest significant bit (bit 0) will typically be
+zero for a valid pointer. Consequently, by setting bit 0 to 1, other data can
+be stored in the remaining bits and be distinguished from pointer information.
+Obviously, operations on attributes first need to test whether the `value`
+member or the `intvalue` member is in use by testing bit 0.
 
-Thus, integers are transformed and stored directly within attributes, and they are therefore passed around by value. When an attribute of an integer needs to be accessed, the operation usually providing the `value` member, thus obtaining an instance under normal circumstances, instead provides the address of a common integer instance. This instance may then provide instance attributes, whose values will be the same for all integers, or class attributes through a reference to the integer (`int`) class.
+Thus, integers are transformed and stored directly within attributes, and they
+are therefore passed around by value. When an attribute of an integer needs to
+be accessed, the operation usually providing the `value` member, thus
+obtaining an instance under normal circumstances, instead provides the address
+of a common integer instance. This instance may then provide instance
+attributes, whose values will be the same for all integers, or class
+attributes through a reference to the integer (`int`) class.
 
-Each method provided by `int`, when called, will be given the original attribute for which the method was obtained as its context. In such methods, operations on the context via `self` will either involve the propagation of the attribute to other functions or methods or attribute accesses on `self`, yielding common instance attributes or class attributes as already described. Only native functions will attempt to interpret the attribute in a different way, decoding the representation, performing arithmetic or logical operations, and encoding the result in a new attribute.
+Each method provided by `int`, when called, will be given the original
+attribute for which the method was obtained as its context. In such methods,
+operations on the context via `self` will either involve the propagation of
+the attribute to other functions or methods or attribute accesses on `self`,
+yielding common instance attributes or class attributes as already described.
+Only native functions will attempt to interpret the attribute in a different
+way, decoding the representation, performing arithmetic or logical operations,
+and encoding the result in a new attribute.
 
 == Contexts and Wrappers ==
 
-The context of an object is of significance if that object is callable. For example, an instance may permit access to a method via an attribute. Since the method will be callable, and since the method is accessed via the instance, the context of that method will be the instance. In order to retain both context and value information, a '''wrapper''' may be created.
+The context of an object is of significance if that object is callable. For
+example, an instance may permit access to a method via an attribute. Since the
+method will be callable, and since the method is accessed via the instance,
+the context of that method will be the instance. In order to retain both
+context and value information, a '''wrapper''' may be created.
 
 {{{#!graphviz
 //format=svg
@@ -57,11 +91,14 @@ digraph wrappers {
 }
 }}}
 
-The context is not always the accessor of the object - in this case, the instance - because the object may already be a wrapper with its own context.
+The context is not always the accessor of the object - in this case, the
+instance - because the object may already be a wrapper with its own context.
 
 == Objects ==
 
-Classes, instances and modules are objects, and all of these kinds of objects provide metadata describing the type of each object, together with a collection of attributes forming the contents of such objects.
+Classes, instances and modules are objects, and all of these kinds of objects
+provide metadata describing the type of each object, together with a
+collection of attributes forming the contents of such objects.
 
 {{{#!graphviz
 //format=svg
@@ -84,31 +121,52 @@ digraph objects {
 }
 }}}
 
-Classes are represented by structures whose members reference class attributes and class metadata (the class table), as well as incorporating invocation metadata (the `__args__` and `__fn__` special attributes).
+Classes are represented by structures whose members reference class attributes
+and class metadata (the class table), as well as incorporating invocation
+metadata (the `__args__` and `__fn__` special attributes).
 
-Instances are represented by structures whose members reference instance attributes (including `__class__` which indicates the class instantiated by a given instance) and instance metadata (the instance table), as well as incorporating invocation metadata (the `__args__` and `__fn__` special attributes).
+Instances are represented by structures whose members reference instance
+attributes (including `__class__` which indicates the class instantiated by a
+given instance) and instance metadata (the instance table), as well as
+incorporating invocation metadata (the `__args__` and `__fn__` special
+attributes).
 
-Functions are instances of a general function type that does not permit additional, general instance attributes. However, function instance structures may have extra members corresponding to default parameter values. Access to such extra members is performed using the minimum and maximum values provided via `__args__` and with knowledge of the number of declared instance attributes indicated by the instance table for the function type.
+Functions are instances of a general function type that does not permit
+additional, general instance attributes. However, function instance structures
+may have extra members corresponding to default parameter values. Access to
+such extra members is performed using the minimum and maximum values provided
+via `__args__` and with knowledge of the number of declared instance
+attributes indicated by the instance table for the function type.
 
-Modules are represented by structures whose members reference module attributes and module metadata (the module table).
+Modules are represented by structures whose members reference module
+attributes and module metadata (the module table).
 
 == Special Members ==
 
-All object representations support the following special members describing the invocation properties of each object:
+All object representations support the following special members describing
+the invocation properties of each object:
 
 {{{#!table
-`__args__` || the minimum number of arguments supported in an invocation and a reference to the parameter table for the object
+`__args__` || the minimum number of arguments supported in an invocation and a
+           .. reference to the parameter table for the object
 ==
-`__fn__` || a reference to a native function containing the actual code run when calling the object
+`__fn__` || a reference to a native function containing the actual code run
+         .. when calling the object
 }}}
 
-Classes are invoked in order to create instances of each class ('''instantiation'''). Instances may support invocation by providing a `__call__` method. Functions are supported by instances of a general function class. Modules are generally not callable and will not actually provide these special members in practice.
+Classes are invoked in order to create instances of each class
+('''instantiation'''). Instances may support invocation by providing a
+`__call__` method. Functions are supported by instances of a general function
+class. Modules are generally not callable and will not actually provide these
+special members in practice.
 
 All object representations support information about their type:
 
 {{{#!table
 `__class__`
-|| the class of the object: instances refer to their classes, classes refer to the `type` class, functions are instances that refer to the `function` class, modules refer to the `module` class
+|| the class of the object: instances refer to their classes, classes refer to
+.. the `type` class, functions are instances that refer to the `function`
+.. class, modules refer to the `module` class
 }}}
 
 Certain kinds of object support other descriptive attributes:
@@ -119,31 +177,48 @@ Certain kinds of object support other descriptive attributes:
 `__parent__` || the parent scope of a class or a function
 }}}
 
-Objects supported by native, system-level functionality require a means of retaining information in special attributes:
+Objects supported by native, system-level functionality require a means of
+retaining information in special attributes:
 
 {{{#!table
 `__data__` || private data manipulated at the native level
 }}}
 
-Strings support special annotation attributes that permit their use in dynamically resolving attributes:
+Strings support special annotation attributes that permit their use in
+dynamically resolving attributes:
 
 {{{#!table
-`__key__` || the code and position of the attribute whose name is represented by the string
+`__key__` || the code and position of the attribute whose name is represented
+          .. by the string
 }}}
 
-Such "key" attributes provide information that can be used to inspect an object table and to test for the presence of an attribute. With such information, the `getattr` and `hasattr` functions can be supported.
+Such "key" attributes provide information that can be used to inspect an
+object table and to test for the presence of an attribute. With such
+information, the `getattr` and `hasattr` functions can be supported.
 
 == Attribute Tables ==
 
-In order to provide information about the attributes supported by each object, the structure of each object will reference a table containing entries describing these supported attributes. The size of this table is declared within the table structure, and for each position in the table an entry corresponding to the same position within an actual object structure describes the nature of the attribute at that position.
+In order to provide information about the attributes supported by each object,
+the structure of each object will reference a table containing entries
+describing these supported attributes. The size of this table is declared
+within the table structure, and for each position in the table an entry
+corresponding to the same position within an actual object structure describes
+the nature of the attribute at that position.
 
 == Parameter Tables ==
 
-In order to support argument validation and keyword arguments in invocations, a structure is referenced by `__args__` that indicates...
+In order to support argument validation and keyword arguments in invocations,
+a structure is referenced by `__args__` that indicates...
 
  * The minimum number of parameters supported by a callable
  * The maximum number of parameters supported by a callable
  * The size of the table describing the parameters
- * A table of entries with each entry indicating the nature of a parameter (in effect, which name it uses, albeit as a generated code instead of a string) and the position of the parameter in any argument list prepared for an invocation
+ * A table of entries with each entry indicating the nature of a parameter (in
+   effect, which name it uses, albeit as a generated code instead of a string)
+   and the position of the parameter in any argument list prepared for an
+   invocation
 
-Parameter tables only need to be consulted at run-time if the nature of a callable is undetermined. By supporting a uniform interface, the arguments used in an invocation can be tested against the description provided by `__args__` and the table.
+Parameter tables only need to be consulted at run-time if the nature of a
+callable is undetermined. By supporting a uniform interface, the arguments
+used in an invocation can be tested against the description provided by
+`__args__` and the table.

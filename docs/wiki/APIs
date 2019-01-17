@@ -1,25 +1,31 @@
 = APIs =
 
-The principal application programming interfaces (APIs) within Lichen are described below.
+The principal application programming interfaces (APIs) within Lichen are
+described below.
 
 == Modules ==
 
-When [[../Inspection|inspecting]] and [[../Translation|translating]] modules, common abstractions are used so that elements of the program are handled in similar ways. Various useful attributes and methods are provided by the `CommonModule` abstraction for use within `InspectedModule` and `TranslatedModule` methods:
+When [[../Inspection|inspecting]] and [[../Translation|translating]] modules,
+common abstractions are used so that elements of the program are handled in
+similar ways. Various useful attributes and methods are provided by the
+`CommonModule` abstraction for use within `InspectedModule` and
+`TranslatedModule` methods:
 
 {{{#!table
 '''Attribute or Method''' || '''Purpose'''
 ==
-`name` ||
-An attribute providing the module name.
+`name` || An attribute providing the module name.
 ==
-`get_global_path(name)` ||
-A method returning the qualified name of the given global name within the module being processed.
+`get_global_path(name)` || A method returning the qualified name of the given
+                        .. global name within the module being processed.
 ==
-`get_namespace_path()` ||
-A method returning the qualified name of the namespace being processed.
+`get_namespace_path()`  || A method returning the qualified name of the
+                        .. namespace being processed.
+
  * For modules, this is the module name
- * For classes, functions and methods, the path incorporates the module name and namespaces leading to the current namespace itself
+ * For classes, functions and methods, the path incorporates the module name
+   and namespaces leading to the current namespace itself
 ==
-`get_object_path(name)` ||
-A method returning the qualified name of the given local name within the namespace being processed.
+`get_object_path(name)` || A method returning the qualified name of the given
+                        .. local name within the namespace being processed.
 }}}

@@ -1,7 +1,17 @@
 = Prerequisites =
 
-The software currently requires Python to operate. All recent development has been done using Python 2.7 which should be available for most operating system distributions. In future, Lichen will hopefully be compiled using its own toolchain and not require Python. See the Debian `python-minimal` or `python` packages or their equivalents.
+The software currently requires Python to operate. All recent development has
+been done using Python 2.7 which should be available for most operating system
+distributions. In future, Lichen will hopefully be compiled using its own
+toolchain and not require Python. See the Debian `python-minimal` or `python`
+packages or their equivalents.
 
-To produce executable programs, a C compiler and GNU make are required. The GNU C compiler, GCC, has been used for development and testing, and it should be available in various forms for most operating system distributions. Indeed, cross-compiling form of GCC has been used to test the toolchain output. See the Debian `gcc` and `make` packages or their equivalents.
+To produce executable programs, a C compiler and GNU make are required. The GNU
+C compiler, GCC, has been used for development and testing, and it should be
+available in various forms for most operating system distributions. Indeed,
+cross-compiling form of GCC has been used to test the toolchain output. See the
+Debian `gcc` and `make` packages or their equivalents.
 
-As Free Software, priority has been given to supporting Lichen on Free Software platforms, with Debian GNU/Linux being the development platform. Proprietary platforms are neither supported nor recommended.
+As Free Software, priority has been given to supporting Lichen on Free Software
+platforms, with Debian GNU/Linux being the development platform. Proprietary
+platforms are neither supported nor recommended.
