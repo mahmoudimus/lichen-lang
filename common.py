@@ -3,8 +3,8 @@
 """
 Common functions.
 
-Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016,
+              2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -582,7 +582,7 @@ class CommonModule:
             #         <var>... = <t2>()
             #         ...
             # except StopIteration:
-            #     pass
+            #     {n.else_}
 
             compiler.ast.Assign(
                 [compiler.ast.AssName(t2, "OP_ASSIGN")],
@@ -600,7 +600,7 @@ class CommonModule:
                                 )),
                         n.body]),
                     None),
-                [(compiler.ast.Name("StopIteration"), None, compiler.ast.Stmt([compiler.ast.Pass()]))],
+                [(compiler.ast.Name("StopIteration"), None, n.else_ or compiler.ast.Pass())],
                 None)
             ])
 
