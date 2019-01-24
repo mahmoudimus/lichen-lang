@@ -579,10 +579,14 @@ class CommonModule:
             # <t2> = <t1>.next
             # try:
             #     while True:
-            #         <var>... = <t2>()
-            #         ...
-            # except StopIteration:
+            #         try:
+            #             <var>... = <t2>()
+            #         except StopIteration:
+            #             raise LoopExit
+            #         {n.body}
+            # except LoopExit:
             #     {n.else_}
+            #     pass
 
             compiler.ast.Assign(
                 [compiler.ast.AssName(t2, "OP_ASSIGN")],
@@ -592,15 +596,18 @@ class CommonModule:
                 compiler.ast.While(
                     compiler.ast.Name("True"),
                     compiler.ast.Stmt([
-                        compiler.ast.Assign(
-                            [n.assign],
-                            compiler.ast.CallFunc(
-                                compiler.ast.Name(t2),
-                                []
-                                )),
+                        compiler.ast.TryExcept(
+                            compiler.ast.Assign(
+                                [n.assign],
+                                compiler.ast.CallFunc(
+                                    compiler.ast.Name(t2),
+                                    [])),
+                            [(compiler.ast.Name("StopIteration"), None,
+                              compiler.ast.Raise(compiler.ast.Name("LoopExit")))],
+                            None),
                         n.body]),
                     None),
-                [(compiler.ast.Name("StopIteration"), None, n.else_ or compiler.ast.Pass())],
+                [(compiler.ast.Name("LoopExit"), None, n.else_ or compiler.ast.Pass())],
                 None)
             ])
 
