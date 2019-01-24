@@ -1249,7 +1249,7 @@ class Printnl(Node):
         return "print %s" % ", ".join(map(str, dest + self.nodes))
 
 class Raise(Node):
-    def __init__(self, expr1, expr2, expr3, lineno=None):
+    def __init__(self, expr1, expr2=None, expr3=None, lineno=None):
         self.expr1 = expr1
         self.expr2 = expr2
         self.expr3 = expr3
