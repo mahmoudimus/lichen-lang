@@ -20,12 +20,12 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from __builtins__.iteration.iterator import itemiterator
-from __builtins__.sequence import hashable, sequence
+from __builtins__.sequence import hashable, unpackable
 from native import tuple_init, \
                    list_element, list_len, list_setsize, list_setelement, \
                    isinstance as _isinstance
 
-class tuple(sequence, hashable):
+class tuple(unpackable, hashable):
 
     "Implementation of tuple."
 
@@ -66,7 +66,7 @@ class tuple(sequence, hashable):
         'step'.
         """
 
-        return tuple(get_using(sequence.__getslice__, self)(start, end, step))
+        return tuple(get_using(unpackable.__getslice__, self)(start, end, step))
 
     def __len__(self):
 

@@ -21,7 +21,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from branching import BranchTracker
-from common import CommonModule, get_argnames, init_item, predefined_constants
+from common import CommonModule, get_argnames, init_item, \
+                   predefined_constants, privileged_attributes
 from modules import BasicModule, CacheWritingModule, InspectionNaming
 from errors import InspectError
 from referencing import Reference
@@ -358,6 +359,16 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         "Process the given attribute access node 'n'."
 
+        path = self.get_namespace_path()
+
+        # Test for access to special privileged attributes.
+
+        if isinstance(n, compiler.ast.Getattr) and \
+           n.attrname in privileged_attributes and not n.privileged:
+
+            raise InspectError("Attribute %s is accessed by an unprivileged operation." %
+                               n.attrname, path, n)
+
         # Obtain any completed chain and return the reference to it.
 
         name_ref = self.process_attribute_chain(n)
@@ -371,8 +382,6 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Given a non-access node, this chain can be handled in its entirety,
         # either being name-based and thus an access rooted on a name, or being
         # based on some other node and thus an anonymous access of some kind.
-
-        path = self.get_namespace_path()
 
         # Start with the the full attribute chain.
 

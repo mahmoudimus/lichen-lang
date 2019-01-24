@@ -868,10 +868,14 @@ class GenExprInner(Node):
         return "%s %s" % (self.expr, " ".join(map(str, self.quals)))
 
 class Getattr(Node):
-    def __init__(self, expr, attrname, lineno=None):
+    def __init__(self, expr, attrname, lineno=None, privileged=False):
         self.expr = expr
         self.attrname = attrname
         self.lineno = lineno
+
+        # Support privileged internal accesses.
+
+        self.privileged = privileged
 
     def getChildren(self):
         return self.expr, self.attrname
@@ -1249,7 +1253,7 @@ class Printnl(Node):
         return "print %s" % ", ".join(map(str, dest + self.nodes))
 
 class Raise(Node):
-    def __init__(self, expr1, expr2, expr3, lineno=None):
+    def __init__(self, expr1, expr2=None, expr3=None, lineno=None):
         self.expr1 = expr1
         self.expr2 = expr2
         self.expr3 = expr3

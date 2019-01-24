@@ -3,8 +3,8 @@
 """
 Common functions.
 
-Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016,
+              2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -461,8 +461,11 @@ class CommonModule:
 
         for i, node in enumerate(n.nodes):
             statements.append(
-                compiler.ast.Assign([node], compiler.ast.Subscript(
-                    compiler.ast.Name(temp), "OP_APPLY", [compiler.ast.Const(i, str(i))]))
+                compiler.ast.Assign([node], compiler.ast.CallFunc(
+                    compiler.ast.Getattr(compiler.ast.Name(temp),
+                                         "__get_single_item_unchecked__",
+                                         privileged=True),
+                    [compiler.ast.Const(i, str(i))]))
                 )
 
         return self.process_structure_node(compiler.ast.Stmt(statements))
@@ -579,9 +582,13 @@ class CommonModule:
             # <t2> = <t1>.next
             # try:
             #     while True:
-            #         <var>... = <t2>()
-            #         ...
-            # except StopIteration:
+            #         try:
+            #             <var>... = <t2>()
+            #         except StopIteration:
+            #             raise LoopExit
+            #         {n.body}
+            # except LoopExit:
+            #     {n.else_}
             #     pass
 
             compiler.ast.Assign(
@@ -592,15 +599,18 @@ class CommonModule:
                 compiler.ast.While(
                     compiler.ast.Name("True"),
                     compiler.ast.Stmt([
-                        compiler.ast.Assign(
-                            [n.assign],
-                            compiler.ast.CallFunc(
-                                compiler.ast.Name(t2),
-                                []
-                                )),
+                        compiler.ast.TryExcept(
+                            compiler.ast.Assign(
+                                [n.assign],
+                                compiler.ast.CallFunc(
+                                    compiler.ast.Name(t2),
+                                    [])),
+                            [(compiler.ast.Name("StopIteration"), None,
+                              compiler.ast.Raise(compiler.ast.Name("LoopExit")))],
+                            None),
                         n.body]),
                     None),
-                [(compiler.ast.Name("StopIteration"), None, compiler.ast.Stmt([compiler.ast.Pass()]))],
+                [(compiler.ast.Name("LoopExit"), None, n.else_ or compiler.ast.Pass())],
                 None)
             ])
 
@@ -1589,6 +1599,10 @@ def get_builtin_class(name):
 # Useful data.
 
 predefined_constants = "False", "None", "NotImplemented", "True"
+
+privileged_attributes = [
+    "__get_single_item_unchecked__",
+    ]
 
 unary_operator_functions = {
 
