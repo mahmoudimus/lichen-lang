@@ -868,10 +868,14 @@ class GenExprInner(Node):
         return "%s %s" % (self.expr, " ".join(map(str, self.quals)))
 
 class Getattr(Node):
-    def __init__(self, expr, attrname, lineno=None):
+    def __init__(self, expr, attrname, lineno=None, privileged=False):
         self.expr = expr
         self.attrname = attrname
         self.lineno = lineno
+
+        # Support privileged internal accesses.
+
+        self.privileged = privileged
 
     def getChildren(self):
         return self.expr, self.attrname
