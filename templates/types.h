@@ -1,6 +1,6 @@
 /* Runtime types.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -75,7 +75,7 @@ typedef union __attr
     /* General attribute members. */
 
     __ref value;                /* attribute value */
-    int intvalue;               /* integer value data ((integer << 1) | 1) */
+    int intvalue;               /* integer value data (shifted value, tagged) */
 
     /* Special case attribute members. */
 
@@ -113,31 +113,33 @@ typedef struct __fragment
 
 /* Attribute interpretation. */
 
-#define __INTEGER(ATTR) ((ATTR).intvalue % 2)
+#define __NUM_TAG_BITS      1
+#define __TAG_INT           0b1
+#define __INTEGER(ATTR)     ((ATTR).intvalue & __TAG_INT)
 
 /* Attribute value setting. */
 
-#define __ATTRVALUE(VALUE) ((__attr) {.value=VALUE})
-#define __NULL __ATTRVALUE(0)
-#define __SETNULL(ATTR) ((ATTR).value = 0)
+#define __ATTRVALUE(VALUE)  ((__attr) {.value=(__ref) VALUE})
+#define __NULL              __ATTRVALUE(0)
+#define __SETNULL(ATTR)     ((ATTR).value = 0)
 
 /* Attribute as instance setting. */
 
-#define __INTVALUE(VALUE) ((__attr) {.intvalue=((VALUE) << 1) | 1})
-#define __TOINT(ATTR) ((ATTR).intvalue >> 1)
-#define __MAXINT ((1 << ((sizeof(__attr) * 8) - 2)) - 1)
-#define __MININT (-(1 << ((sizeof(__attr) * 8) - 2)))
+#define __INTVALUE(VALUE)   ((__attr) {.intvalue=((VALUE) << __NUM_TAG_BITS) | __TAG_INT})
+#define __TOINT(ATTR)       ((ATTR).intvalue >> __NUM_TAG_BITS)
+#define __MAXINT            ((1 << ((sizeof(__attr) * 8) - 1 - __NUM_TAG_BITS)) - 1)
+#define __MININT            (-(1 << ((sizeof(__attr) * 8) - 1 - __NUM_TAG_BITS)))
 
 /* Argument lists. */
 
-#define __ARGS(...) ((__attr[]) {__VA_ARGS__})
-#define __KWARGS(...) ((__param[]) {__VA_ARGS__})
+#define __ARGS(...)         ((__attr[]) {__VA_ARGS__})
+#define __KWARGS(...)       ((__param[]) {__VA_ARGS__})
 
 /* Attribute codes and positions for attribute names. */
 
-#define __ATTRCODE(ATTRNAME) __code_##ATTRNAME
-#define __ATTRPOS(ATTRNAME) __pos_##ATTRNAME
-#define __PARAMCODE(PARAMNAME) __pcode_##PARAMNAME
-#define __PARAMPOS(PARAMNAME) __ppos_##PARAMNAME
+#define __ATTRCODE(ATTRNAME)    __code_##ATTRNAME
+#define __ATTRPOS(ATTRNAME)     __pos_##ATTRNAME
+#define __PARAMCODE(PARAMNAME)  __pcode_##PARAMNAME
+#define __PARAMPOS(PARAMNAME)   __ppos_##PARAMNAME
 
 #endif /* __TYPES_H__ */
