@@ -3,7 +3,8 @@
 """
 Operator support.
 
-Copyright (C) 2010, 2013, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2010, 2013, 2015, 2016, 2017,
+              2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -20,7 +21,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from operator.core import unary_op
-from native.int import int_neg, int_not, is_int
+from native import int_neg, int_not, is_int, float_neg
 
 # These functions defer method lookup by wrapping the attribute access in
 # lambda functions. Thus, the appropriate methods are defined locally, but no
@@ -34,6 +35,8 @@ def invert(a):
 def neg(a):
     if is_int(a):
         return int_neg(a)
+    elif a.__class__ is float:
+        return float_neg(a)
     return unary_op(a, lambda a: a.__neg__)
 
 def not_(a):
@@ -42,7 +45,7 @@ def not_(a):
     return not a
 
 def pos(a):
-    if is_int(a):
+    if is_int(a) or a.__class__ is float:
         return a
     return unary_op(a, lambda a: a.__pos__)
 

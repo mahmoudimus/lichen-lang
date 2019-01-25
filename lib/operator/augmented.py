@@ -3,7 +3,7 @@
 """
 Operator support.
 
-Copyright (C) 2010, 2013, 2015, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2010, 2013, 2015, 2017, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -22,7 +22,8 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 from operator.core import augassign
 from native import int_add, int_div, int_mod, int_mul, int_pow, int_sub, \
                    int_and, int_or, int_xor, \
-                   is_int
+                   is_int, \
+                   float_add, float_div, float_mul, float_pow, float_sub
 
 # These functions defer method lookup by wrapping the attribute access in
 # lambda functions. Thus, the appropriate methods are defined locally, but no
@@ -36,6 +37,8 @@ from native import int_add, int_div, int_mod, int_mul, int_pow, int_sub, \
 def iadd(a, b):
     if is_int(a) and is_int(b):
         return int_add(a, b)
+    elif a.__class__ is float and b.__class__ is float:
+        return float_add(a, b)
     return augassign(a, b, lambda a: a.__iadd__, lambda a: a.__add__, lambda b: b.__radd__)
 
 def iand_(a, b):
@@ -46,6 +49,8 @@ def iand_(a, b):
 def idiv(a, b):
     if is_int(a) and is_int(b):
         return int_div(a, b)
+    elif a.__class__ is float and b.__class__ is float:
+        return float_div(a, b)
     return augassign(a, b, lambda a: a.__idiv__, lambda a: a.__div__, lambda b: b.__rdiv__)
 
 def ifloordiv(a, b):
@@ -62,6 +67,8 @@ def imod(a, b):
 def imul(a, b):
     if is_int(a) and is_int(b):
         return int_mul(a, b)
+    elif a.__class__ is float and b.__class__ is float:
+        return float_mul(a, b)
     return augassign(a, b, lambda a: a.__imul__, lambda a: a.__mul__, lambda b: b.__rmul__)
 
 def ior_(a, b):
@@ -72,6 +79,8 @@ def ior_(a, b):
 def ipow(a, b):
     if is_int(a) and is_int(b):
         return int_pow(a, b)
+    elif a.__class__ is float and b.__class__ is float:
+        return float_pow(a, b)
     return augassign(a, b, lambda a: a.__ipow__, lambda a: a.__pow__, lambda b: b.__rpow__)
 
 def irshift(a, b):
@@ -80,6 +89,8 @@ def irshift(a, b):
 def isub(a, b):
     if is_int(a) and is_int(b):
         return int_sub(a, b)
+    elif a.__class__ is float and b.__class__ is float:
+        return float_sub(a, b)
     return augassign(a, b, lambda a: a.__isub__, lambda a: a.__sub__, lambda b: b.__rsub__)
 
 def ixor(a, b):

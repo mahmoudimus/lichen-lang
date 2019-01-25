@@ -3,7 +3,8 @@
 """
 Operator support.
 
-Copyright (C) 2010, 2013, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2010, 2013, 2015, 2016, 2017,
+              2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -23,7 +24,8 @@ from operator.core import binary_op, is_, is_not
 from native import int_add, int_div, int_mod, int_mul, int_pow, int_sub, \
                    int_lshift, int_rshift, \
                    int_and, int_not, int_or, int_xor, \
-                   is_int
+                   is_int, \
+                   float_add, float_div, float_mul, float_pow, float_sub
 
 # These functions defer method lookup by wrapping the attribute access in
 # lambda functions. Thus, the appropriate methods are defined locally, but no
@@ -34,6 +36,8 @@ from native import int_add, int_div, int_mod, int_mul, int_pow, int_sub, \
 def add(a, b):
     if is_int(a) and is_int(b):
         return int_add(a, b)
+    elif a.__class__ is float and b.__class__ is float:
+        return float_add(a, b)
     return binary_op(a, b, lambda a: a.__add__, lambda b: b.__radd__)
 
 def and_(a, b):
@@ -47,6 +51,8 @@ def contains(a, b):
 def div(a, b):
     if is_int(a) and is_int(b):
         return int_div(a, b)
+    elif a.__class__ is float and b.__class__ is float:
+        return float_div(a, b)
     return binary_op(a, b, lambda a: a.__div__, lambda b: b.__rdiv__)
 
 def floordiv(a, b):
@@ -71,6 +77,8 @@ def mod(a, b):
 def mul(a, b):
     if is_int(a) and is_int(b):
         return int_mul(a, b)
+    elif a.__class__ is float and b.__class__ is float:
+        return float_mul(a, b)
     return binary_op(a, b, lambda a: a.__mul__, lambda b: b.__rmul__)
 
 def or_(a, b):
@@ -81,6 +89,8 @@ def or_(a, b):
 def pow(a, b):
     if is_int(a) and is_int(b):
         return int_pow(a, b)
+    elif a.__class__ is float and b.__class__ is float:
+        return float_pow(a, b)
     return binary_op(a, b, lambda a: a.__pow__, lambda b: b.__rpow__)
 
 def rshift(a, b):
@@ -91,6 +101,8 @@ def rshift(a, b):
 def sub(a, b):
     if is_int(a) and is_int(b):
         return int_sub(a, b)
+    elif a.__class__ is float and b.__class__ is float:
+        return float_sub(a, b)
     return binary_op(a, b, lambda a: a.__sub__, lambda b: b.__rsub__)
 
 def xor(a, b):
