@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <fenv.h>   /* feclearexcept, fetestexcept */
+#include <setjmp.h>
+#include <signal.h>
 #include <math.h>   /* pow */
 #include <stdio.h>  /* snprintf */
 #include <errno.h>  /* errno */
@@ -66,32 +67,7 @@ static __attr format_number(double n, int size)
 
 /* Floating point exception handling. */
 
-static void init_env(fenv_t *envp, int excepts)
-{
-    fegetenv(envp);
-    feclearexcept(excepts);
-}
-
-static int test_env(fenv_t *envp, int excepts)
-{
-    if (fetestexcept(excepts))
-    {
-        fesetenv(envp);
-        return 1;
-    }
-    return 0;
-}
-
-static int have_result(fenv_t *envp, int excepts)
-{
-    return !fetestexcept(excepts);
-}
-
-static __attr make_result(fenv_t *envp, double result)
-{
-    fesetenv(envp);
-    return __new_float(result);
-}
+extern jmp_buf __fpe_env;
 
 /* Floating point operations. */
 
@@ -100,21 +76,17 @@ __attr __fn_native_float_float_add(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    double result;
+    int signum;
 
-    /* Preserve environment, clear exception state. */
-    fenv_t env;
-    init_env(&env, FE_OVERFLOW);
+    /* Perform the operation while handling exceptions. */
+    signum = setjmp(__fpe_env);
+    if (!signum)
+        return __new_float(i + j);
 
-    result = i + j;
-
-    /* Test for result, restore state, return the new float. */
-    if (have_result(&env, FE_OVERFLOW))
-        return make_result(&env, result);
-
-    /* Restore state, raise exception. */
-    if (test_env(&env, FE_OVERFLOW))
+    /* Exception occurred. */
+    if (signum == FPE_FLTOVF)
         __raise_overflow_error();
+
     return __NULL;
 }
 
@@ -123,21 +95,17 @@ __attr __fn_native_float_float_sub(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    double result;
+    int signum;
 
-    /* Preserve environment, clear exception state. */
-    fenv_t env;
-    init_env(&env, FE_OVERFLOW);
+    /* Perform the operation while handling exceptions. */
+    signum = setjmp(__fpe_env);
+    if (!signum)
+        return __new_float(i - j);
 
-    result = i - j;
-
-    /* Test for result, restore state, return the new float. */
-    if (have_result(&env, FE_OVERFLOW))
-        return make_result(&env, result);
-
-    /* Restore state, raise exception. */
-    if (test_env(&env, FE_OVERFLOW))
+    /* Exception occurred. */
+    if (signum == FPE_FLTOVF)
         __raise_overflow_error();
+
     return __NULL;
 }
 
@@ -146,23 +114,19 @@ __attr __fn_native_float_float_mul(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    double result;
+    int signum;
 
-    /* Preserve environment, clear exception state. */
-    fenv_t env;
-    init_env(&env, FE_OVERFLOW | FE_UNDERFLOW);
+    /* Perform the operation while handling exceptions. */
+    signum = setjmp(__fpe_env);
+    if (!signum)
+        return __new_float(i * j);
 
-    result = i * j;
-
-    /* Test for result, restore state, return the new float. */
-    if (have_result(&env, FE_OVERFLOW | FE_UNDERFLOW))
-        return make_result(&env, result);
-
-    /* Restore state, raise exception. */
-    if (test_env(&env, FE_OVERFLOW))
+    /* Exception occurred. */
+    if (signum == FPE_FLTOVF)
         __raise_overflow_error();
-    if (test_env(&env, FE_UNDERFLOW))
+    else if (signum == FPE_FLTUND)
         __raise_underflow_error();
+
     return __NULL;
 }
 
@@ -171,25 +135,21 @@ __attr __fn_native_float_float_div(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    double result;
+    int signum;
 
-    /* Preserve environment, clear exception state. */
-    fenv_t env;
-    init_env(&env, FE_OVERFLOW | FE_UNDERFLOW | FE_DIVBYZERO);
+    /* Perform the operation while handling exceptions. */
+    signum = setjmp(__fpe_env);
+    if (!signum)
+        return __new_float(i / j);
 
-    result = i / j;
-
-    /* Test for result, restore state, return the new float. */
-    if (have_result(&env, FE_OVERFLOW | FE_UNDERFLOW | FE_DIVBYZERO))
-        return make_result(&env, result);
-
-    /* Restore state, raise exception. */
-    if (test_env(&env, FE_OVERFLOW))
+    /* Exception occurred. */
+    if (signum == FPE_FLTOVF)
         __raise_overflow_error();
-    if (test_env(&env, FE_UNDERFLOW))
+    else if (signum == FPE_FLTUND)
         __raise_underflow_error();
-    if (test_env(&env, FE_DIVBYZERO))
+    else if (signum == FPE_FLTDIV)
         __raise_zero_division_error();
+
     return __NULL;
 }
 
@@ -198,23 +158,19 @@ __attr __fn_native_float_float_mod(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    double result;
+    int signum;
 
-    /* Preserve environment, clear exception state. */
-    fenv_t env;
-    init_env(&env, FE_OVERFLOW | FE_DIVBYZERO);
+    /* Perform the operation while handling exceptions. */
+    signum = setjmp(__fpe_env);
+    if (!signum)
+        return __new_float(fmod(i, j));
 
-    result = fmod(i, j);
-
-    /* Test for result, restore state, return the new float. */
-    if (have_result(&env, FE_OVERFLOW | FE_DIVBYZERO))
-        return make_result(&env, result);
-
-    /* Restore state, raise exception. */
-    if (test_env(&env, FE_OVERFLOW))
+    /* Exception occurred. */
+    if (signum == FPE_FLTOVF)
         __raise_overflow_error();
-    if (test_env(&env, FE_DIVBYZERO))
+    else if (signum == FPE_FLTDIV)
         __raise_zero_division_error();
+
     return __NULL;
 }
 
@@ -222,21 +178,17 @@ __attr __fn_native_float_float_neg(__attr __self, __attr self)
 {
     /* self interpreted as float */
     double i = __TOFLOAT(self);
-    double result;
+    int signum;
 
-    /* Preserve environment, clear exception state. */
-    fenv_t env;
-    init_env(&env, FE_OVERFLOW);
+    /* Perform the operation while handling exceptions. */
+    signum = setjmp(__fpe_env);
+    if (!signum)
+        return __new_float(-i);
 
-    result = -i;
-
-    /* Test for result, restore state, return the new float. */
-    if (have_result(&env, FE_OVERFLOW))
-        return make_result(&env, result);
-
-    /* Restore state, raise exception. */
-    if (test_env(&env, FE_OVERFLOW))
+    /* Exception occurred. */
+    if (signum == FPE_FLTOVF)
         __raise_overflow_error();
+
     return __NULL;
 }
 

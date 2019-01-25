@@ -192,6 +192,7 @@ class Generator(CommonOutput):
 #include <string.h>
 #include <stdio.h>
 #include "gc.h"
+#include "signals.h"
 #include "types.h"
 #include "exceptions.h"
 #include "ops.h"
@@ -1297,6 +1298,8 @@ int main(int argc, char *argv[])
     __exc __tmp_exc;
 
     GC_INIT();
+
+    __signals_install_handlers();
 
     __Try
     {"""

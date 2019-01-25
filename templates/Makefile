@@ -2,7 +2,7 @@ include native.mk
 include modules.mk
 include options.mk
 
-SRC += calls.c exceptions.c main.c ops.c progops.c progtypes.c
+SRC += calls.c exceptions.c main.c ops.c progops.c progtypes.c signals.c
 OBJ = $(SRC:.c=.o)
 CFLAGS += -Wall -Wno-maybe-uninitialized -I. -finput-charset=UTF-8
 LDFLAGS += -lm -lgc
