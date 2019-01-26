@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <setjmp.h>
 #include <signal.h>
 #include <stdlib.h>
 
 #include "signals.h"
+#include "progops.h"
 
 void __signals_install_handlers()
 {
@@ -35,11 +35,26 @@ void __signals_install_handlers()
     sigaction(SIGFPE, &context, NULL);
 }
 
-jmp_buf __fpe_env;
-
 void __signals_fpe_handler(int signum, siginfo_t *siginfo, void *context)
 {
-    /* Return from setjmp with the signal number. */
+    /* Return from setjmp using the signal number. */
 
-    longjmp(__fpe_env, siginfo->si_code);
+    switch (siginfo->si_code)
+    {
+        case FPE_FLTOVF:
+        __raise_overflow_error();
+        break;
+
+        case FPE_FLTUND:
+        __raise_underflow_error();
+        break;
+
+        case FPE_FLTDIV:
+        __raise_zero_division_error();
+        break;
+
+        default:
+        __raise_floating_point_error();
+        break;
+    }
 }

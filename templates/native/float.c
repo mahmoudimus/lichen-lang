@@ -16,8 +16,6 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <setjmp.h>
-#include <signal.h>
 #include <math.h>   /* pow */
 #include <stdio.h>  /* snprintf */
 #include <errno.h>  /* errno */
@@ -65,29 +63,14 @@ static __attr format_number(double n, int size)
     return __NULL;
 }
 
-/* Floating point exception handling. */
-
-extern jmp_buf __fpe_env;
-
-/* Floating point operations. */
+/* Floating point operations. Exceptions are raised in the signal handler. */
 
 __attr __fn_native_float_float_add(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    int signum;
-
-    /* Perform the operation while handling exceptions. */
-    signum = setjmp(__fpe_env);
-    if (!signum)
-        return __new_float(i + j);
-
-    /* Exception occurred. */
-    if (signum == FPE_FLTOVF)
-        __raise_overflow_error();
-
-    return __NULL;
+    return __new_float(i + j);
 }
 
 __attr __fn_native_float_float_sub(__attr __self, __attr self, __attr other)
@@ -95,18 +78,7 @@ __attr __fn_native_float_float_sub(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    int signum;
-
-    /* Perform the operation while handling exceptions. */
-    signum = setjmp(__fpe_env);
-    if (!signum)
-        return __new_float(i - j);
-
-    /* Exception occurred. */
-    if (signum == FPE_FLTOVF)
-        __raise_overflow_error();
-
-    return __NULL;
+    return __new_float(i - j);
 }
 
 __attr __fn_native_float_float_mul(__attr __self, __attr self, __attr other)
@@ -114,20 +86,7 @@ __attr __fn_native_float_float_mul(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    int signum;
-
-    /* Perform the operation while handling exceptions. */
-    signum = setjmp(__fpe_env);
-    if (!signum)
-        return __new_float(i * j);
-
-    /* Exception occurred. */
-    if (signum == FPE_FLTOVF)
-        __raise_overflow_error();
-    else if (signum == FPE_FLTUND)
-        __raise_underflow_error();
-
-    return __NULL;
+    return __new_float(i * j);
 }
 
 __attr __fn_native_float_float_div(__attr __self, __attr self, __attr other)
@@ -135,22 +94,7 @@ __attr __fn_native_float_float_div(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    int signum;
-
-    /* Perform the operation while handling exceptions. */
-    signum = setjmp(__fpe_env);
-    if (!signum)
-        return __new_float(i / j);
-
-    /* Exception occurred. */
-    if (signum == FPE_FLTOVF)
-        __raise_overflow_error();
-    else if (signum == FPE_FLTUND)
-        __raise_underflow_error();
-    else if (signum == FPE_FLTDIV)
-        __raise_zero_division_error();
-
-    return __NULL;
+    return __new_float(i / j);
 }
 
 __attr __fn_native_float_float_mod(__attr __self, __attr self, __attr other)
@@ -158,38 +102,14 @@ __attr __fn_native_float_float_mod(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    int signum;
-
-    /* Perform the operation while handling exceptions. */
-    signum = setjmp(__fpe_env);
-    if (!signum)
-        return __new_float(fmod(i, j));
-
-    /* Exception occurred. */
-    if (signum == FPE_FLTOVF)
-        __raise_overflow_error();
-    else if (signum == FPE_FLTDIV)
-        __raise_zero_division_error();
-
-    return __NULL;
+    return __new_float(fmod(i, j));
 }
 
 __attr __fn_native_float_float_neg(__attr __self, __attr self)
 {
     /* self interpreted as float */
     double i = __TOFLOAT(self);
-    int signum;
-
-    /* Perform the operation while handling exceptions. */
-    signum = setjmp(__fpe_env);
-    if (!signum)
-        return __new_float(-i);
-
-    /* Exception occurred. */
-    if (signum == FPE_FLTOVF)
-        __raise_overflow_error();
-
-    return __NULL;
+    return __new_float(-i);
 }
 
 __attr __fn_native_float_float_pow(__attr __self, __attr self, __attr other)

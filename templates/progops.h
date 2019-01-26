@@ -1,6 +1,6 @@
 /* Operations depending on program specifics.
 
-Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -48,6 +48,7 @@ __attr __newdata_dict(unsigned int number, __attr args[]);
 /* Helpers for raising errors within common operations. */
 
 void __raise_eof_error();
+void __raise_floating_point_error();
 void __raise_io_error(__attr value);
 void __raise_memory_error();
 void __raise_os_error(__attr value, __attr arg);
