@@ -145,6 +145,10 @@ __attr __fn_native_int_int_pow(__attr __self, __attr self, __attr other)
 
     if (errno == ERANGE)
         __raise_overflow_error();
+    if ((k > 0) && (k > __MAXINT))
+        __raise_overflow_error();
+    if ((k < 0) && (k < __MININT))
+        __raise_overflow_error();
 
     /* Return the new integer. */
     return __new_int(k);
