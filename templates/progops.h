@@ -25,6 +25,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Generic instantiation operations, defining common members. */
 
+void __init(__ref obj, const __table * table, __ref cls);
 __attr __new(const __table *table, __ref cls, size_t size, int immutable);
 __attr __new_wrapper(__attr context, __attr attr);
 
