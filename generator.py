@@ -3,7 +3,7 @@
 """
 Generate C code from object layouts and other deduced information.
 
-Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -246,7 +246,7 @@ class Generator(CommonOutput):
                     self.populate_structure(Reference(kind, path), attrs, kind, structure)
 
                     if kind == "<class>":
-                        self.write_instance_structure(f_decls, path, structure_size)
+                        self.write_instance_structure(f_decls, path)
 
                     self.write_structure(f_decls, f_defs, path, table_name, structure,
                         kind == "<class>" and path)
@@ -289,7 +289,6 @@ class Generator(CommonOutput):
 
                 cls = self.function_type
                 table_name = encode_tablename("<instance>", cls)
-                structure_size = encode_size("<instance>", path)
 
                 # Set a special callable attribute on the instance.
 
@@ -302,7 +301,7 @@ class Generator(CommonOutput):
                 # Functions with defaults need to declare instance structures.
 
                 if self.importer.function_defaults.get(path):
-                    self.write_instance_structure(f_decls, path, structure_size)
+                    self.write_instance_structure(f_decls, path)
                     extra_function_instances.append(path)
 
                 # Write function declarations.
@@ -809,12 +808,13 @@ const __ptable %s = {
 """ % (table_name, min_parameters, max_parameters, structure_size,
        ",\n        ".join(members))
 
-    def write_instance_structure(self, f_decls, path, structure_size):
+    def write_instance_structure(self, f_decls, path):
 
         """
-        Write a declaration to 'f_decls' for the object having the given 'path'
-        and the given 'structure_size'.
+        Write a declaration to 'f_decls' for the object having the given 'path'.
         """
+
+        structure_size = encode_size("<instance>", path)
 
         # Write an instance-specific type definition for instances of classes.
         # See: templates/types.h
