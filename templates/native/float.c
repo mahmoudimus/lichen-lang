@@ -19,6 +19,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <math.h>   /* pow */
 #include <stdio.h>  /* snprintf */
 #include <errno.h>  /* errno */
+#include <gc/gc_inline.h>
 #include "native/common.h"
 #include "types.h"
 #include "exceptions.h"
@@ -28,65 +29,50 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "progtypes.h"
 #include "main.h"
 
-/* A table of preallocated float instances. */
+/* A list of preallocated float instances. */
 
-struct float_table
-{
-    struct float_table *next;
-    char data[];
-};
-
-static struct float_table *next_float = 0;
+static void *preallocated_floats;
 
 /* Preallocate some float instances. */
 
-static void preallocate_floats(int num)
+#define MULTIPLE(VALUE, STEP) (((VALUE) + (STEP) - 1) & (~((STEP) - 1)))
+#define PTRFREE 0
+
+static void preallocate_floats()
 {
-    struct float_table *latest;
-    int i;
-
-    for (i = 0; i < num; i++)
-    {
-        /* Allocate a table entry. */
-
-        latest = (struct float_table *)
-                 __ALLOCATE(1, sizeof(struct float_table *) +
-                               __INSTANCESIZE(__builtins___float_float));
-
-        /* Reference the last entry from the new entry. */
-
-        latest->next = next_float;
-        next_float = latest;
-    }
+    GC_generic_malloc_many(MULTIPLE(__INSTANCESIZE(__builtins___float_float), GC_GRANULE_BYTES),
+                           PTRFREE, &preallocated_floats);
 }
 
 static __attr new_float(double n)
 {
-    struct float_table *this_float;
+    __ref obj, next;
     __attr attr;
 
-    if (!next_float)
-        preallocate_floats(1000);
+    if (!preallocated_floats)
+        preallocate_floats();
 
-    /* Reference the next preallocated entry. */
+    obj = preallocated_floats;
 
-    this_float = next_float;
+    /* Obtain the next object in the free list from the address in the first
+       word of the current object. */
+
+    next = (__ref) *((void **) preallocated_floats);
 
     /* Initialise the embedded instance. */
 
-    __init((__ref) &this_float->data,
+    __init(obj,
            &__INSTANCETABLE(__builtins___float_float),
            &__builtins___float_float);
 
     /* Populate the float with the value. */
 
-    attr = __ATTRVALUE(&this_float->data);
+    attr = __ATTRVALUE(obj);
     __set_trailing_data(attr, __builtins___float_float, n);
 
     /* Make the next entry available and detach it from this one. */
 
-    next_float = this_float->next;
-    this_float->next = 0;
+    preallocated_floats = next;
 
     return attr;
 }
