@@ -25,7 +25,8 @@ from native import int_add, int_div, int_mod, int_mul, int_pow, int_sub, \
                    int_lshift, int_rshift, \
                    int_and, int_not, int_or, int_xor, \
                    is_int, \
-                   float_add, float_div, float_mul, float_pow, float_sub
+                   float_add, float_div, float_mul, float_pow, float_sub, \
+                   int_float
 
 # These functions defer method lookup by wrapping the attribute access in
 # lambda functions. Thus, the appropriate methods are defined locally, but no
@@ -89,8 +90,11 @@ def or_(a, b):
 def pow(a, b):
     if is_int(a) and is_int(b):
         return int_pow(a, b)
-    elif a.__class__ is float and b.__class__ is float:
-        return float_pow(a, b)
+    elif a.__class__ is float:
+        if is_int(b):
+            b = int_float(b)
+        if b.__class__ is float:
+            return float_pow(a, b)
     return binary_op(a, b, lambda a: a.__pow__, lambda b: b.__rpow__)
 
 def rshift(a, b):
