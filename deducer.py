@@ -2347,6 +2347,10 @@ class Deducer(CommonOutput):
         remaining = attrnames.split(".")
         attrname = remaining[0]
 
+        # Special case for the ubiquitous __class__ attribute.
+
+        ubiquitous = attrname == "__class__"
+
         # Obtain reference, provider and provider kind information.
 
         attrs = self.reference_all_attrs[location]
@@ -2375,8 +2379,8 @@ class Deducer(CommonOutput):
 
         # Determine how attributes may be accessed relative to the accessor.
 
-        object_relative = class_accessor or module_accessor or provided_by_instance
-        class_relative = instance_accessor and provided_by_class
+        object_relative = ubiquitous or class_accessor or module_accessor or provided_by_instance
+        class_relative = not ubiquitous and instance_accessor and provided_by_class
 
         # Identify the last static attribute for context acquisition.
 
@@ -2516,6 +2520,11 @@ class Deducer(CommonOutput):
         elif dynamic_base:
             first_method = "relative" + (object_relative and "-object" or "") + \
                                         (class_relative and "-class" or "")
+
+        # Special case for the ubiquitous __class__ attribute.
+
+        elif ubiquitous:
+            first_method = "relative-object"
 
         # The fallback case is always run-time testing and access.
 
