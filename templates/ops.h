@@ -135,7 +135,8 @@ __attr __CONTEXT_AS_VALUE(__attr attr);
 /* Type testing. */
 
 __ref __ISFUNC(__ref obj);
-int __ISNULL(__attr value);
+
+#define __ISNULL(__ATTR) (!__ATTR.value)
 
 /* Attribute codes and positions for type objects. */
 

@@ -401,11 +401,6 @@ __ref __ISFUNC(__ref obj)
     return __test_specific_instance(obj, &__FUNCTION_TYPE);
 }
 
-int __ISNULL(__attr value)
-{
-    return (value.value == 0); /* __NULL.value */
-}
-
 /* Attribute codes and positions for type objects. */
 
 unsigned int __TYPECODE(__ref obj)
