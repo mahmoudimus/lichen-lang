@@ -92,7 +92,7 @@ def pow(a, b):
         return int_pow(a, b)
     elif a.__class__ is float:
         if is_int(b):
-            b = int_float(b)
+            return float_pow(a, int_float(b))
         if b.__class__ is float:
             return float_pow(a, b)
     return binary_op(a, b, lambda a: a.__pow__, lambda b: b.__rpow__)
