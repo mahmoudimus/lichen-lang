@@ -314,9 +314,17 @@ __attr __GETDEFAULT(__ref obj, int pos)
 
 int __BOOL(__attr attr)
 {
-    /* Invoke the bool function with the object and test against True. */
+    __ref value;
 
-    __ref value = __VALUE(attr);
+    /* Integers can be used directly as truth values. */
+
+    if (__INTEGER(attr))
+        return __TOINT(attr);
+
+    /* Test against True and False explicitly. If necessary, invoke the bool
+       function with the object and test against True. */
+
+    value = attr.value;
 
     return value == (__ref) &__predefined___builtins___boolean_True ? 1 :
            value == (__ref) &__predefined___builtins___boolean_False ? 0 :
