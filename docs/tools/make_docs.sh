@@ -4,6 +4,8 @@ THISDIR=`dirname "$0"`
 INDIR="$THISDIR/../wiki"
 OUTDIR="$THISDIR/../html"
 
+ROOT="Lichen"
+
 MAPPING='--mapping WikiPedia https://en.wikipedia.org/wiki/'
 THEME='--theme mercurial'
 
@@ -19,7 +21,7 @@ FILENAMES=${*:-'--all'}
 moinconvert --input-dir "$INDIR" \
             --input-page-sep '--' \
             --output-dir "$OUTDIR" \
-            --root Lichen \
+            --root "$ROOT" \
             --format html \
             --macros \
             $DOCINDEX \
