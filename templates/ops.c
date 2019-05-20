@@ -79,10 +79,29 @@ __attr __get_class_and_load__(__ref obj, int pos)
 
 /* Direct storage operations. */
 
-int __store_via_object__(__ref obj, int pos, __attr value)
+__attr __store_attr__(__attr value)
+{
+    if (!__ISNULL(value) && !__INTEGER(value) && value.value->temporary)
+        value.value->temporary = 0;
+
+    return value;
+}
+
+int __store_member__(__ref obj, int pos, __attr value)
 {
     obj->attrs[pos] = value;
     return 1;
+}
+
+int __store_via_object__(__ref obj, int pos, __attr value)
+{
+    /* NOTE: To be tested at compile-time, with dynamic attribute access
+             forbidding special attributes. */
+
+    if ((pos != __ATTRPOS(__data__)) && (pos != __ATTRPOS(__key__)))
+        __store_attr__(value);
+
+    return __store_member__(obj, pos, value);
 }
 
 int __store_via_class__(__ref obj, int pos, __attr value)

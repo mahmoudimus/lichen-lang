@@ -114,7 +114,7 @@ class TrResolvedNameRef(ResolvedNameRef):
             # All other assignments involve the names as they were given.
 
             else:
-                return "%s = %s" % (attrname, self.expr)
+                return "__store_local(%s, %s)" % (attrname, self.expr)
 
         # Expressions.
 

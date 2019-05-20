@@ -1,6 +1,6 @@
 /* Common operations for native functions.
 
-Copyright (C) 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -30,9 +30,9 @@ __attr __new_str(char *s, int size)
 {
     /* Create a new string and mutate the __data__, __size__ and __key__ attributes. */
     __attr attr = __NEWINSTANCE(__builtins___str_string);
-    __store_via_object(__VALUE(attr), __data__, (__attr) {.strvalue=s});
-    __store_via_object(__VALUE(attr), __size__, __INTVALUE(size));
-    __store_via_object(__VALUE(attr), __key__, __NULL);
+    __store_member(__VALUE(attr), __data__, (__attr) {.strvalue=s});
+    __store_member(__VALUE(attr), __size__, __INTVALUE(size));
+    __store_member(__VALUE(attr), __key__, __NULL);
     return attr;
 }
 
@@ -40,7 +40,7 @@ __attr __new_list(__fragment *f)
 {
     /* Create a new list and mutate the __data__ attribute. */
     __attr attr = __NEWINSTANCE(__builtins___list_list);
-    __store_via_object(__VALUE(attr), __data__, (__attr) {.seqvalue=f});
+    __store_member(__VALUE(attr), __data__, (__attr) {.seqvalue=f});
     return attr;
 }
 

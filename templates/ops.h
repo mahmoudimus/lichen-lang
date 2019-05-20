@@ -1,6 +1,6 @@
 /* Common operations.
 
-Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -42,7 +42,17 @@ __attr __get_class_and_load__(__ref obj, int pos);
 #define __load_via_object(OBJ, ATTRNAME) (__load_via_object__(OBJ, __ATTRPOS(ATTRNAME)))
 #define __get_class_and_load(OBJ, ATTRNAME) (__get_class_and_load__(OBJ, __ATTRPOS(ATTRNAME)))
 
+/* Object state updating when assigning. */
+
+__attr __store_attr__(__attr value);
+
 /* Direct storage operations. */
+
+int __store_member__(__ref obj, int pos, __attr value);
+
+#define __store_local(NAME, VALUE) (NAME = __store_attr__(VALUE))
+/* #define __store_local(NAME, VALUE) (NAME = VALUE) */
+#define __store_member(OBJ, ATTRNAME, VALUE) (__store_member__(OBJ, __ATTRPOS(ATTRNAME), VALUE))
 
 int __store_via_class__(__ref obj, int pos, __attr value);
 int __store_via_object__(__ref obj, int pos, __attr value);

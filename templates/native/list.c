@@ -1,6 +1,6 @@
 /* Native functions for list operations.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -56,7 +56,7 @@ __attr __fn_native_list_list_append(__attr __self, __attr self, __attr value)
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(__VALUE(self), __data__, ((__attr) {.seqvalue=newdata}));
+        __store_member(__VALUE(self), __data__, ((__attr) {.seqvalue=newdata}));
     return __builtins___none_None;
 }
 
@@ -84,7 +84,7 @@ __attr __fn_native_list_list_concat(__attr __self, __attr self, __attr other)
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(__VALUE(self), __data__, ((__attr) {.seqvalue=newdata}));
+        __store_member(__VALUE(self), __data__, ((__attr) {.seqvalue=newdata}));
     return __builtins___none_None;
 }
 

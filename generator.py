@@ -854,6 +854,7 @@ const __ptable %s = {
 typedef struct {
     const __table * table;
     __pos pos;
+    int temporary;
     __attr attrs[%s];
 %s
 } %s;
@@ -882,6 +883,7 @@ typedef struct {
 %s %s = {
     &%s,
     %s,
+    0, /* not temporary */
     {
         %s
     },

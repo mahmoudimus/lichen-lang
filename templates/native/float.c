@@ -63,6 +63,28 @@ static __attr format_number(double n, int size)
     return __NULL;
 }
 
+static __attr make_result(__attr self, __attr other, double value)
+{
+    __attr result;
+
+    if (self.value->temporary)
+    {
+        __set_trailing_data(self, __builtins___float_float, value);
+        return self;
+    }
+    else if (other.value->temporary)
+    {
+        __set_trailing_data(other, __builtins___float_float, value);
+        return other;
+    }
+    else
+    {
+        result = __new_float(value);
+        result.value->temporary = 1;
+        return result;
+    }
+}
+
 /* Floating point operations. Exceptions are raised in the signal handler. */
 
 __attr __fn_native_float_float_add(__attr __self, __attr self, __attr other)
@@ -70,7 +92,7 @@ __attr __fn_native_float_float_add(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    return __new_float(i + j);
+    return make_result(self, other, i + j);
 }
 
 __attr __fn_native_float_float_sub(__attr __self, __attr self, __attr other)
@@ -78,7 +100,7 @@ __attr __fn_native_float_float_sub(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    return __new_float(i - j);
+    return make_result(self, other, i - j);
 }
 
 __attr __fn_native_float_float_mul(__attr __self, __attr self, __attr other)
@@ -86,7 +108,7 @@ __attr __fn_native_float_float_mul(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    return __new_float(i * j);
+    return make_result(self, other, i * j);
 }
 
 __attr __fn_native_float_float_div(__attr __self, __attr self, __attr other)
@@ -94,7 +116,7 @@ __attr __fn_native_float_float_div(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    return __new_float(i / j);
+    return make_result(self, other, i / j);
 }
 
 __attr __fn_native_float_float_mod(__attr __self, __attr self, __attr other)
@@ -102,7 +124,7 @@ __attr __fn_native_float_float_mod(__attr __self, __attr self, __attr other)
     /* self and other interpreted as float */
     double i = __TOFLOAT(self);
     double j = __TOFLOAT(other);
-    return __new_float(fmod(i, j));
+    return make_result(self, other, fmod(i, j));
 }
 
 __attr __fn_native_float_float_neg(__attr __self, __attr self)
@@ -128,7 +150,7 @@ __attr __fn_native_float_float_pow(__attr __self, __attr self, __attr other)
         __raise_overflow_error();
 
     /* Return the result. */
-    return __new_float(result);
+    return make_result(self, other, result);
 }
 
 __attr __fn_native_float_float_le(__attr __self, __attr self, __attr other)

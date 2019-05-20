@@ -32,7 +32,8 @@ void __init(__ref obj, const __table * table, __ref cls)
 {
     obj->table = table;
     obj->pos = __INSTANCEPOS;
-    __store_via_object(obj, __class__, __ATTRVALUE(cls));
+    obj->temporary = 0;
+    __store_member(obj, __class__, __ATTRVALUE(cls));
 }
 
 __attr __new(const __table * table, __ref cls, size_t size, int immutable)
@@ -81,7 +82,7 @@ __attr __newdata_list(unsigned int number, __attr args[])
 
     /* Store a reference to the data in the object's __data__ attribute. */
 
-    __store_via_object(__VALUE(self), __data__, (__attr) {.seqvalue=data});
+    __store_member(__VALUE(self), __data__, (__attr) {.seqvalue=data});
     __newdata_sequence(number, data, args);
     return self;
 }
@@ -97,7 +98,7 @@ __attr __newdata_tuple(unsigned int number, __attr args[])
 
     /* Store a reference to the data in the object's __data__ attribute. */
 
-    __store_via_object(__VALUE(self), __data__, (__attr) {.seqvalue=data});
+    __store_member(__VALUE(self), __data__, (__attr) {.seqvalue=data});
     __newdata_sequence(number, data, args);
     return self;
 }

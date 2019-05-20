@@ -94,6 +94,7 @@ typedef struct __obj
 {
     const __table * table;      /* attribute table */
     __ppos pos;                 /* position of attribute indicating class */
+    int temporary;              /* temporary state of the object */
     __attr attrs[];             /* attributes */
 
     /* Specialisations of this type may add other members.
