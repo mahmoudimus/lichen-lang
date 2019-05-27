@@ -56,7 +56,7 @@ for FILENAME in "$DOCS/"* ; do
     BASENAME=`basename "$FILENAME"`
     PAGENAME=`echo "$BASENAME" | sed 's/--/\//g'`
     if [ "$PREFIX" ]; then
-        if [ "$PAGENAME" = "FrontPage" ]; then
+        if [ "$PAGENAME" = "Lichen" ]; then
             PAGENAME="$PREFIX"
         else
             PAGENAME="$PREFIX/$PAGENAME"
