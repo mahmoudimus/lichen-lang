@@ -687,4 +687,77 @@ print bt.get_assignment_positions_for_branches("a", ar) == [0, 1], \
     bt.get_assignment_positions_for_branches("a", ar)
 names.append(bt.assignments["a"])
 
+# This demonstrates why the assignment in a "for" loop construct must appear
+# outside the inner "try" body: null usage escapes the loop via the exception
+# handler and the raise statement, even though the assignment would only be
+# valid otherwise.
+
+# Equivalent to...
+#
+# try:
+#   while ...:
+#     try:
+#       a = ...
+#     except:
+#       raise ...
+#     a.p
+# except:
+#   pass
+
+bt = branching.BranchTracker()
+bt.new_branchpoint()                # begin (try)
+bt.new_branchpoint(True)            # begin (while)
+bt.new_branch(True)                 # while ...
+bt.new_branchpoint()                # begin (try)
+a = bt.assign_names(["a"])
+bt.resume_abandoned_branches()      # except
+bt.abandon_branch()                 # raise
+bt.shelve_branch()
+bt.new_branch()                     # (null)
+bt.shelve_branch()
+bt.merge_branches()                 # end (try)
+ap = bt.use_attribute("a", "p")
+bt.resume_continuing_branches()
+bt.shelve_branch(True)
+bt.new_branch()                     # (null)
+bt.shelve_branch()
+bt.merge_branches()                 # end (while)
+bt.resume_broken_branches()
+bt.resume_abandoned_branches()      # except
+bt.shelve_branch()
+bt.new_branch()                     # (null)
+bt.shelve_branch()
+bt.merge_branches()                 # end (try)
+
+print simple_usage(a) == \
+    {'a' : set([('p',), ()])}, simple_usage(a)
+print bt.get_assignment_positions_for_branches("a", ap) == [0], \
+    bt.get_assignment_positions_for_branches("a", ap)
+names.append(bt.assignments["a"])
+
+# Equivalent to...
+#
+# b = ...
+# while ...:
+#   a = ...
+#   a.p
+
+bt = branching.BranchTracker()
+bt.new_branchpoint(True)            # begin
+b = bt.assign_names(["b"])
+bt.new_branch(True)                 # while ...
+a = bt.assign_names(["a"])
+ap = bt.use_attribute("a", "p")
+bt.resume_continuing_branches()
+bt.shelve_branch(True)
+bt.new_branch()                     # (null)
+bt.shelve_branch()
+bt.merge_branches()                 # end
+
+print simple_usage(a) == \
+    {'a' : set([('p',)])}, simple_usage(a)
+print bt.get_assignment_positions_for_branches("a", ap) == [0], \
+    bt.get_assignment_positions_for_branches("a", ap)
+names.append(bt.assignments["a"])
+
 # vim: tabstop=4 expandtab shiftwidth=4
