@@ -3,8 +3,8 @@
 """
 Inspect and obtain module structure.
 
-Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017,
+              2018, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -659,6 +659,9 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
                    self.function_defaults[function_name] = []
 
         for argname, default in compiler.ast.get_defaults(n):
+            if argname[0] == ".":
+                argname = argname[1:]
+
             if default:
 
                 # Obtain any reference for the default.

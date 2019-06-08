@@ -71,7 +71,11 @@ class StopIteration(Exception):
 
     "An exception signalling the end of iteration."
 
-    pass
+    def __init__(self, .iterator=None):
+
+        "Initialise the exception with the given 'iterator'."
+
+        pass
 
 class ValueError(Exception):
 
