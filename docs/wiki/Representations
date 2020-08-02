@@ -16,8 +16,8 @@ reference to an object, known as the '''value''', or other kinds of data:
 //format=svg
 //transform=notugly
 digraph attributes {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Attributes"];
-  edge [fontsize="13.0",fontname="Helvetica",tooltip="Attributes"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Attributes"];
+  edge [fontsize="13.0",fontname="sans-serif",tooltip="Attributes"];
   rankdir=TB;
 
   attrA [label="attribute | { value |<value> reference to object }",shape=record];
@@ -77,8 +77,8 @@ context and value information, a '''wrapper''' may be created.
 //format=svg
 //transform=notugly
 digraph wrappers {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Wrappers"];
-  edge [fontsize="13.0",fontname="Helvetica",tooltip="Wrappers"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Wrappers"];
+  edge [fontsize="13.0",fontname="sans-serif",tooltip="Wrappers"];
   rankdir=TB;
 
   inst [label="<main> instance | { attr1 |<attr1> reference to method } | { attr2 | value } | ...",shape=record];
@@ -104,8 +104,8 @@ collection of attributes forming the contents of such objects.
 //format=svg
 //transform=notugly
 digraph objects {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Objects"];
-  edge [fontsize="13.0",fontname="Helvetica",tooltip="Objects"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Objects"];
+  edge [fontsize="13.0",fontname="sans-serif",tooltip="Objects"];
   rankdir=TB;
 
   instC [label="<main> instance of C | { 0 | reference to\ninstance table } | { __class__ |<cls> reference\nto C } | { a | value } | { b | value } | ...",shape=record];
