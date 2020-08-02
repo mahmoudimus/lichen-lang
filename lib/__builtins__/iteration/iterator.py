@@ -3,7 +3,7 @@
 """
 Iterator objects.
 
-Copyright (C) 2015, 2016 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -39,6 +39,6 @@ class itemiterator:
             self.i += 1
             return value
         except IndexError:
-            raise StopIteration()
+            raise StopIteration, self
 
 # vim: tabstop=4 expandtab shiftwidth=4

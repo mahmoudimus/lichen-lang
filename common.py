@@ -563,6 +563,8 @@ class CommonModule:
         self.next_temporary()
         t2 = self.get_temporary_name()
         self.next_temporary()
+        t3 = self.get_temporary_name()
+        self.next_temporary()
 
         node = compiler.ast.Stmt([
 
@@ -583,9 +585,10 @@ class CommonModule:
             # try:
             #     while True:
             #         try:
-            #             <var>... = <t2>()
+            #             <t3> = <t2>()
             #         except StopIteration:
             #             raise LoopExit
+            #         <var>... = <t3>
             #         {n.body}
             # except LoopExit:
             #     {n.else_}
@@ -595,21 +598,47 @@ class CommonModule:
                 [compiler.ast.AssName(t2, "OP_ASSIGN")],
                 compiler.ast.Getattr(compiler.ast.Name(t1), "next")),
 
+            # try:
+
             compiler.ast.TryExcept(
+
+                # while True:
+
                 compiler.ast.While(
                     compiler.ast.Name("True"),
                     compiler.ast.Stmt([
+
+                        # try:
+
                         compiler.ast.TryExcept(
+
+                            # <t3> = <t2>()
+
                             compiler.ast.Assign(
-                                [n.assign],
+                                [compiler.ast.AssName(t3, "OP_ASSIGN")],
                                 compiler.ast.CallFunc(
                                     compiler.ast.Name(t2),
                                     [])),
+
+                        # except StopIteration:
+                        #     raise LoopExit
+
                             [(compiler.ast.Name("StopIteration"), None,
                               compiler.ast.Raise(compiler.ast.Name("LoopExit")))],
                             None),
+
+                        # <var>... = <t3>
+
+                        compiler.ast.Assign(
+                            [n.assign],
+                            compiler.ast.Name(t3)),
                         n.body]),
                     None),
+
+            # except LoopExit:
+            #     {n.else_}
+            #     pass
+
                 [(compiler.ast.Name("LoopExit"), None, n.else_ or compiler.ast.Pass())],
                 None)
             ])

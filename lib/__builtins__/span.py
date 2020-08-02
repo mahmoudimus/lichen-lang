@@ -3,7 +3,7 @@
 """
 Span-related objects.
 
-Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -101,7 +101,7 @@ class xrangeiterator:
         "Return the next item or raise a StopIteration exception."
 
         if not self.count:
-            raise StopIteration
+            raise StopIteration, self
 
         current = self.current
         self.current = self.current.__add__(self.step)
