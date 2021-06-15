@@ -89,7 +89,7 @@ The building of indexes from inspection data is approximately as follows:
 //format=svg
 //transform=notugly
 digraph indexes {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Indexes"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Indexes"];
   edge [tooltip="Indexes"];
   rankdir=LR;
 
@@ -142,7 +142,7 @@ The indexes are employed in deduction approximately as follows:
 //format=svg
 //transform=notugly
 digraph deduction {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Deduction"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Deduction"];
   edge [tooltip="Deduction"];
   rankdir=LR;
 
@@ -192,7 +192,7 @@ set of types available to support the complete attribute usage collection.
 //format=svg
 //transform=notugly
 digraph usage_to_types {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Usage to types"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Usage to types"];
   edge [tooltip="Usage to types"];
   rankdir=LR;
 
@@ -249,7 +249,7 @@ Consider the following example:
 //format=svg
 //transform=notugly
 digraph instance_providers {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Instance providers"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Instance providers"];
   edge [tooltip="Instance providers"];
   rankdir=LR;
 
@@ -310,7 +310,7 @@ identity for such attributes when obtained from these types.
 //format=svg
 //transform=notugly
 digraph assignments {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Attribute assignments"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Attribute assignments"];
   edge [tooltip="Attribute assignments"];
   rankdir=LR;
 

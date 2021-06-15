@@ -95,7 +95,7 @@ participating modules. Consider the following situation:
 //format=svg
 //transform=notugly
 digraph mutual {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Mutually-dependent modules"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Mutually-dependent modules"];
   edge [tooltip="Mutually-dependent modules"];
   rankdir=LR;
 
@@ -209,7 +209,7 @@ over modules that merely import and expose names. For example:
 //format=svg
 //transform=notugly
 digraph imports {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Import dependencies"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Import dependencies"];
   edge [tooltip="Import dependencies"];
   rankdir=LR;
 

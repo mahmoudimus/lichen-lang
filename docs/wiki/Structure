@@ -29,7 +29,7 @@ namespaces.
 //format=svg
 //transform=notugly
 digraph program {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Program structure"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Program structure"];
   edge [tooltip="Program structure"];
   rankdir=LR;
 
