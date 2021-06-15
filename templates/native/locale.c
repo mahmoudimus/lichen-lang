@@ -1,6 +1,6 @@
 /* Native functions for locale handling.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -43,7 +43,7 @@ __attr __fn_native_locale_getlocale(__attr __self, __attr category)
 
     length = strlen(result);
     out = __ALLOCATE(length + 1, sizeof(char));
-    strncpy(out, result, length);
+    strcpy(out, result);
 
     return __new_str(result, length);
 }
@@ -64,7 +64,7 @@ __attr __fn_native_locale_setlocale(__attr __self, __attr category, __attr value
 
     length = strlen(result);
     out = __ALLOCATE(length + 1, sizeof(char));
-    strncpy(out, result, length);
+    strcpy(out, result);
 
     return __new_str(result, length);
 }
