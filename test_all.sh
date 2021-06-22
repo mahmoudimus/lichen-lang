@@ -3,7 +3,7 @@
 # This tool runs the toolchain for each of the tests, optionally building and
 # running the test programs.
 #
-# Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+# Copyright (C) 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -20,6 +20,8 @@
 
 PROGNAME=$0
 OPTION=$1
+shift 1
+MAKE_OPTIONS="$*"
 
 LPLC="./lplc"
 DATADIR="_main.lplc"
@@ -53,7 +55,7 @@ check_type_warnings() {
 
 if [ "$OPTION" = '--help' ] ; then
     cat 1>&2 <<EOF
-Usage: $0 [ --build | --build-only | --run-built ]
+Usage: $0 [ --build | --build-only | --run-built ] [ <make options> ]
 
 Run the toolchain over all tests in the tests directory.
 
@@ -87,6 +89,11 @@ already available there.
 Build and output logs are stored in the _results directory with the .build and
 .out suffixes employed respectively, one of each kind for each generated
 program.
+
+The make options can be used to specify things like the number of processes
+employed to perform a build of each program. For example:
+
+$PROGNAME --build -j8
 EOF
     exit 1
 fi
@@ -193,7 +200,7 @@ for FILENAME in tests/* ; do
 
         echo " (build)..." 1>&2
         if ! make -C "$DATADIR/_generated" clean > "$BUILDLOG" 2>&1 || \
-           ! make -C "$DATADIR/_generated" > "$BUILDLOG" 2>&1 ; then
+           ! make -C "$DATADIR/_generated" $MAKE_OPTIONS > "$BUILDLOG" 2>&1 ; then
             exit 1
         fi
 
