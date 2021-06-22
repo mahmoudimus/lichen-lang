@@ -1230,9 +1230,14 @@ __attr %s(__attr __self%s)
         """
 
         print >>f_code, """\
+int __argc;
+char **__argv;
+
 int main(int argc, char *argv[])
 {
     __exc __tmp_exc;
+    __argc = argc;
+    __argv = argv;
 
     GC_INIT();
 

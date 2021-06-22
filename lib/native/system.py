@@ -8,7 +8,7 @@ substituted when each program is built. It is, however, important to declare
 non-core exceptions used by the native functions because they need to be
 identified as being needed by the program.
 
-Copyright (C) 2011, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2011, 2015, 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 # NOTE: Example values used to provide type information.
 
 def exit(status): pass
-def get_argv(): return ""
+def get_argv(): return []
 def get_path(): return []
 
 # vim: tabstop=4 expandtab shiftwidth=4
