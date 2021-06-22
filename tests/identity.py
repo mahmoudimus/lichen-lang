@@ -1,6 +1,6 @@
 print isinstance("string", string)  # True
-print isinstance("string", int)     # False
-print isinstance(123, int)          # True
+print isinstance("string", integer) # False
+print isinstance(123, integer)      # True
 print isinstance(123, string)       # False
 print
 
