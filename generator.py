@@ -3,7 +3,7 @@
 """
 Generate C code from object layouts and other deduced information.
 
-Copyright (C) 2015, 2016, 2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -43,7 +43,7 @@ class Generator(CommonOutput):
 
     dict_type = "__builtins__.dict.dict"
     function_type = "__builtins__.core.function"
-    int_type = "__builtins__.int.int"
+    int_type = "__builtins__.int.integer"
     list_type = "__builtins__.list.list"
     none_type = "__builtins__.none.NoneType"
     string_type = "__builtins__.str.string"

@@ -3,7 +3,7 @@
 """
 Translation result abstractions.
 
-Copyright (C) 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2018, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -142,7 +142,7 @@ class TrConstantValueRef(ConstantValueRef):
 
         # NOTE: Should reference a common variable for the type name.
 
-        if self.ref.get_origin() == "__builtins__.int.int":
+        if self.ref.get_origin() == "__builtins__.int.integer":
             return "__INTVALUE(%s)" % self.value
         else:
             return encode_literal_constant(self.number)

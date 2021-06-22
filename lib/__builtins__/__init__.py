@@ -61,7 +61,7 @@ from __builtins__.complex import complex
 from __builtins__.dict import dict
 from __builtins__.file import file
 from __builtins__.float import float
-from __builtins__.int import int
+from __builtins__.int import int, integer
 from __builtins__.span import range, slice, xrange
 from __builtins__.list import list
 from __builtins__.long import long
