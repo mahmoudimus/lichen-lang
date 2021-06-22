@@ -3,7 +3,7 @@
 """
 Lichen Python-like compiler tool.
 
-Copyright (C) 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016-2018, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -151,6 +151,7 @@ The following options may be specified:
 Some options may be followed by values, either immediately after the option
 (without any space between) or in the arguments that follow them:
 
+-j          Number of processes to be used when compiling
 -o          Indicate the output executable name
 -W          Show warnings on the topics indicated
 
@@ -190,8 +191,7 @@ of compiling a program:
     elif "--version" in args or "-V" in args:
         print >>sys.stderr, """\
 lplc %s
-Copyright (C) 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013,
-              2014, 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2006-2018, 2021 Paul Boddie <paul@boddie.org.uk>
 This program is free software; you may redistribute it under the terms of
 the GNU General Public License version 3 or (at your option) a later version.
 This program has absolutely no warranty.
@@ -206,6 +206,7 @@ This program has absolutely no warranty.
     gc_sections = False
     ignore_env = False
     make = True
+    make_processes = []
     make_verbose = True
     outputs = []
     paramnames = []
@@ -232,6 +233,7 @@ This program has absolutely no warranty.
         elif arg in ("-E", "--no-env"): ignore_env = True
         elif arg in ("-g", "--debug"): debug = True
         elif arg in ("-G", "--gc-sections"): gc_sections = True
+        elif arg.startswith("-j"): l, needed = start_arg_list(make_processes, arg, 1)
         # "P" handled below.
         elif arg.startswith("--param-codes"): l, needed = start_arg_list(paramnames, arg, 1)
         elif arg.startswith("--param-locations"): l, needed = start_arg_list(paramlocations, arg, 1)
@@ -353,7 +355,8 @@ This program has absolutely no warranty.
         # Compile the program unless otherwise indicated.
 
         if make:
-            make_clean_cmd = ["make", "-C", generated_dir, "clean"]
+            processes = make_processes and ["-j"] + make_processes or []
+            make_clean_cmd = ["make", "-C", generated_dir] + processes + ["clean"]
             make_cmd = make_clean_cmd[:-1]
 
             retval = call(make_cmd, make_verbose)
