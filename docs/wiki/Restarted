@@ -262,8 +262,8 @@ versions that are retrieved. For example:
 //format=svg
 //transform=notugly
 digraph structures {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Instance and class structures"];
-  edge [fontsize="13.0",fontname="Helvetica",tooltip="Instance and class structures"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Instance and class structures"];
+  edge [fontsize="13.0",fontname="sans-serif",tooltip="Instance and class structures"];
   rankdir=TB;
 
   instanceC [label="<main> instance of C |{ context of a | value of a }|{context of b | value of b }",shape=record];
@@ -285,8 +285,8 @@ The precise structure usage is as follows:
 //format=svg
 //transform=notugly
 digraph methods {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Method structures"];
-  edge [fontsize="13.0",fontname="Helvetica",tooltip="Method structures"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Method structures"];
+  edge [fontsize="13.0",fontname="sans-serif",tooltip="Method structures"];
   rankdir=TB;
 
   classC [label="<main> class C | { context of m | <mvalue> uncallable for m } | ...",shape=record];

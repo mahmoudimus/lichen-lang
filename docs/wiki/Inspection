@@ -179,7 +179,7 @@ def f():
 //format=svg
 //transform=notugly
 digraph accesses {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Names and accesses"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Names and accesses"];
   edge [tooltip="Names and accesses"];
   rankdir=TB;
 
@@ -316,7 +316,7 @@ while cond0:
 //format=svg
 //transform=notugly
 digraph usage {
-  node [shape=box,fontsize="13.0",fontname="Helvetica",tooltip="Name and attribute tracking"];
+  node [shape=box,fontsize="13.0",fontname="sans-serif",tooltip="Name and attribute tracking"];
   edge [tooltip="Name and attribute tracking"];
   rankdir=TB;
 

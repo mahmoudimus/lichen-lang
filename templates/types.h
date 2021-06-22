@@ -131,8 +131,8 @@ typedef struct __fragment
 
 #define __INTVALUE(VALUE)   ((__attr) {.intvalue=((VALUE) << __NUM_TAG_BITS) | __TAG_INT})
 #define __TOINT(ATTR)       ((ATTR).intvalue >> __NUM_TAG_BITS)
-#define __MAXINT            ((1 << ((sizeof(__attr) * 8) - 1 - __NUM_TAG_BITS)) - 1)
-#define __MININT            (-(1 << ((sizeof(__attr) * 8) - 1 - __NUM_TAG_BITS)))
+#define __MAXINT            ((1 << ((sizeof(int) * 8) - 1 - __NUM_TAG_BITS)) - 1)
+#define __MININT            (-(1 << ((sizeof(int) * 8) - 1 - __NUM_TAG_BITS)))
 
 /* Argument lists. */
 
