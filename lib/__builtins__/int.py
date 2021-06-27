@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from __builtins__.str import basestring
 from __builtins__.unicode import utf8string
 from native import get_maxint, get_minint, is_int, \
                    int_add, int_and, int_div, int_eq, int_ge, int_gt, \
@@ -26,15 +27,47 @@ from native import get_maxint, get_minint, is_int, \
                    int_neg, int_not, int_or, int_pow, int_rshift, int_str, \
                    int_sub, int_xor
 
+def new_int(number_or_string, base=10):
+
+    "Initialise the integer with the given 'number_or_string'."
+
+    if is_int(number_or_string):
+        return number_or_string
+    elif isinstance(number_or_string, basestring):
+        return str_to_int(number_or_string, base)
+    else:
+        raise TypeError
+
+def str_to_int(value, base=10):
+
+    "Decode the string 'value' using the given 'base'."
+
+    # NOTE: Add support for lower and upper in the string classes.
+
+    #value = value.lower()
+    len_value = len(value)
+    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+    result = 0
+    i = 0
+
+    while i < len_value:
+        c = value[i]
+        d = digits.index(c)
+        result = result * base + d
+        i += 1
+
+    return result
+
 class int:
 
     "An integer abstraction."
 
-    def __init__(self, number_or_string=None):
+    def __init__(self, number_or_string=None, base=10):
 
         "Initialise the integer with the given 'number_or_string'."
 
-        # Implemented in the translator.
+        # Implemented by new_int above, invoked specially by the translator.
 
         pass
 

@@ -1202,14 +1202,14 @@ __obj %s = {
 
         # Special-case the integer type.
 
+        # Here, the __builtins__.int.new_int function is called with the
+        # initialiser's parameter.
+
         if path == self.int_type:
             print >>f_code, """\
-__attr %s(__attr __self, __attr number_or_string)
+__attr %s(__attr __self, __attr number_or_string, __attr base)
 {
-    if (!__BOOL(__fn_native_int_is_int(__NULL, number_or_string)))
-        __raise_value_error(number_or_string);
-
-    return number_or_string;
+    return __fn___builtins___int_new_int(__NULL, number_or_string, base);
 }
 """ % (
                 encode_instantiator_pointer(path),
