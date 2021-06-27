@@ -14,14 +14,14 @@ language.
 
 === Numeric Types ===
 
-Support all the numeric types. Currently, only `int` is supported, but `float`
-merely requires some native code handling operations and testing for exception
-conditions. A representation for `long` needs to be determined, and `complex`
-probably just needs some methods implementing.
+Support all the numeric types. Currently, only `int` is supported (as
+`integer`), but `float` merely requires some native code handling operations
+and testing for exception conditions. A representation for `long` needs to be
+determined, and `complex` probably just needs some methods implementing.
 
-Support promotion between some of the numeric types. Currently, `int` values
-that overflow raise `OverflowError`, as was done in Python before automatic
-promotion to `long`.
+Support promotion between some of the numeric types. Currently, `integer`
+values that overflow raise `OverflowError`, as was done in Python before
+automatic promotion to `long`.
 
 === String Types ===
 

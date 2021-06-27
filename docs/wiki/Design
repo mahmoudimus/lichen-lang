@@ -697,3 +697,38 @@ to be accessed. Again, run-time support is required to marshal arguments into
 the appropriate parameter of this nature, but programmers could just write
 functions and methods that employ general sequence and mapping parameters
 explicitly instead.
+
+== Library and Built-In Types ==
+
+{{{#!table
+'''Lichen''' || '''Python''' || '''Rationale'''
+==
+Integers belong to the `integer` type
+|| Integers are represented using the `int` type
+|| The `int` callable cannot be used to construct integer values in Lichen
+==
+Strings belong to the `string` or `utf8string` types
+|| Strings are represented using the `str` or `unicode` types
+|| Separate `str` and `unicode` functions perform conversion to string types
+}}}
+
+=== Integer Type ===
+
+In Python, the `int` callable is largely used to convert other types to
+integers. However, it is also used to test whether instances are integers, and
+the callable is, in fact, a form of constructor. Since Lichen only supports
+the definition of initialisers (`__init__`) and not more exotic callables such
+as `__new__`, which would permit more control over the construction of
+instances, it cannot easily provide the necessary functionality to redefine
+the nature of an instance, at least in the case of integers whose identities
+are their values, which applies in Lichen because tagged values are used in
+place of integer instances, and thus the "virtual" instance being initialised
+would actually need to be exchanged instead of being changed in some way.
+
+=== String Types ===
+
+Similarly, in Python, the `str` and `unicode` callables both convert and
+construct new instances as well as acting as types. Although an initialiser
+could be written to mutate the value retained by such instances in Lichen,
+this precludes the obvious definition of a `str` function as merely a wrapper
+around the invocation of the `__str__` method of any given object.

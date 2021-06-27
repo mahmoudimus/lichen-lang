@@ -54,12 +54,12 @@ be accessed, the operation usually providing the `value` member, thus
 obtaining an instance under normal circumstances, instead provides the address
 of a common integer instance. This instance may then provide instance
 attributes, whose values will be the same for all integers, or class
-attributes through a reference to the integer (`int`) class.
+attributes through a reference to the `integer` class.
 
-Each method provided by `int`, when called, will be given the original
+Each method provided by `integer`, when called, will be given the original
 attribute for which the method was obtained as its context. In such methods,
-operations on the context via `self` will either involve the propagation of
-the attribute to other functions or methods or attribute accesses on `self`,
+operations on the context via `self` will either involve the propagation of the
+attribute to other functions or methods or attribute accesses on `self`,
 yielding common instance attributes or class attributes as already described.
 Only native functions will attempt to interpret the attribute in a different
 way, decoding the representation, performing arithmetic or logical operations,
