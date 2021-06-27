@@ -1,6 +1,6 @@
 /* Operations depending on program specifics.
 
-Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -159,6 +159,13 @@ void __raise_unbound_method_error()
 void __raise_type_error()
 {
     __Raise(__new___builtins___core_TypeError(__NULL));
+}
+
+void __raise_value_error(__attr value)
+{
+#ifdef __HAVE___builtins___exception_base_ValueError
+    __Raise(__new___builtins___exception_base_ValueError(__NULL, value));
+#endif /* __HAVE___builtins___exception_base_ValueError */
 }
 
 void __raise_zero_division_error()
