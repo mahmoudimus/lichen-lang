@@ -1,6 +1,6 @@
 /* Operations depending on program specifics.
 
-Copyright (C) 2015, 2016, 2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015-2019, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -55,6 +55,7 @@ void __raise_os_error(__attr value, __attr arg);
 void __raise_overflow_error();
 void __raise_unbound_method_error();
 void __raise_underflow_error();
+void __raise_value_error(__attr value);
 void __raise_zero_division_error();
 void __raise_type_error();
 

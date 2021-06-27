@@ -1263,18 +1263,36 @@ typedef struct {
         for name in parameters:
             l.append("__attr %s" % name)
 
-        print >>f_code, """\
+        # Special-case the integer type.
+
+        if path == self.int_type:
+            print >>f_code, """\
+__attr %s(__attr __self, __attr number_or_string)
+{
+    if (!__BOOL(__fn_native_int_is_int(__self, number_or_string)))
+        __raise_value_error(number_or_string);
+
+    return number_or_string;
+}
+""" % (
+                encode_instantiator_pointer(path),
+                )
+
+        # Generic instantiation support.
+
+        else:
+            print >>f_code, """\
 __attr %s(__attr __self%s)
 {
     return %s(__NEWINSTANCE(%s)%s);
 }
 """ % (
-            encode_instantiator_pointer(path),
-            l and ", %s" % ",".join(l) or "",
-            encode_function_pointer(initialiser),
-            encode_path(path),
-            parameters and ", %s" % ", ".join(parameters) or ""
-            )
+                encode_instantiator_pointer(path),
+                l and ", %s" % ",".join(l) or "",
+                encode_function_pointer(initialiser),
+                encode_path(path),
+                parameters and ", %s" % ", ".join(parameters) or ""
+                )
 
         # Signature: __new_typename(__attr __self, ...)
 

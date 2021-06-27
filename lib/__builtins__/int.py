@@ -3,7 +3,7 @@
 """
 Integer objects.
 
-Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -34,7 +34,7 @@ class int:
 
         "Initialise the integer with the given 'number_or_string'."
 
-        # NOTE: To be implemented.
+        # Implemented in the translator.
 
         pass
 
