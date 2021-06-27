@@ -1206,7 +1206,7 @@ __obj %s = {
             print >>f_code, """\
 __attr %s(__attr __self, __attr number_or_string)
 {
-    if (!__BOOL(__fn_native_int_is_int(__self, number_or_string)))
+    if (!__BOOL(__fn_native_int_is_int(__NULL, number_or_string)))
         __raise_value_error(number_or_string);
 
     return number_or_string;
