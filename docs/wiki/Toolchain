@@ -73,12 +73,12 @@ However, it is not desirable to have a dependency on a Python implementation,
 which the `parser` module effectively is (as would the `ast` module also be if
 it were used here), with it typically being implemented as an extension module
 in a non-Python language (in C for CPython, in Java for Jython, and so on).
-Fortunately, the !PyPy project implemented their own parsing module,
-`pyparser`, that is intended to be used within the !PyPy environment together
-with their own `ast` equivalent, but it has been possible to rework `pyparser`
-to produce representations that are compatible with the `compiler` package,
-itself being modified in various ways to achieve compatibility (and also to
-provide various other conveniences).
+Fortunately, the [[http://pypy.org/|PyPy]] project implemented their own
+parsing module, `pyparser`, that is intended to be used within the PyPy
+environment together with their own `ast` equivalent, but it has been possible
+to rework `pyparser` to produce representations that are compatible with the
+`compiler` package, itself being modified in various ways to achieve
+compatibility (and also to provide various other conveniences).
 
 == Program Analysis ==
 

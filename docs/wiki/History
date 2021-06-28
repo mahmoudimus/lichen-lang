@@ -71,7 +71,7 @@ more costly techniques explored in earlier projects.
 == Current Work ==
 
 It was with such realisations that a new project was effectively born.
-Tentatively called "!PythonLight" but renamed to "Lichen" as the code matured,
+Tentatively called "PythonLight" but renamed to "Lichen" as the code matured,
 the objectives now involved a simpler processing framework that merely
 attempted to catalogue structure members, to determine the origins of such
 members, and to record data flow within namespaces in order to determine
