@@ -1,6 +1,6 @@
 /* Common operations for native functions.
 
-Copyright (C) 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2018, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -29,7 +29,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __new_str(char *s, int size)
 {
     /* Create a new string and mutate the __data__, __size__ and __key__ attributes. */
-    __attr attr = __NEWINSTANCE(__builtins___str_string);
+    __attr attr = __NEWINSTANCE(__builtins___str_str);
     __store_via_object(__VALUE(attr), __data__, (__attr) {.strvalue=s});
     __store_via_object(__VALUE(attr), __size__, __INTVALUE(size));
     __store_via_object(__VALUE(attr), __key__, __NULL);

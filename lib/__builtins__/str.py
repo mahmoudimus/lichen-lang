@@ -3,7 +3,7 @@
 """
 String objects.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -576,7 +576,7 @@ class basestring(hashable):
 
     def upper(self): pass
 
-class string(basestring):
+class str(basestring):
 
     "A plain string of bytes."
 
@@ -607,7 +607,7 @@ class string(basestring):
         l = get_using(basestring.__get_multiple_items__, self)(start, end, step)
         return "".join(l)
 
-def str(obj):
+def new_str(obj):
 
     "Return the string representation of 'obj'."
 

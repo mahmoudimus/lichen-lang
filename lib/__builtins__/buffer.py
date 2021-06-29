@@ -53,7 +53,7 @@ class buffer:
 
         if isinstance(s, buffer):
             list_concat(self, s.__data__)
-        elif isinstance(s, string):
+        elif isinstance(s, str):
             list_append(self, s)
         else:
             list_append(self, str(s))

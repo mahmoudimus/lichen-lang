@@ -3,8 +3,7 @@
 """
 Inspect and obtain module structure.
 
-Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017,
-              2018, 2019 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2007-2019, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -78,13 +77,13 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         ref = self.get_builtin("module")
         self.set_name("__class__", ref)
-        self.set_name("__name__", self.get_constant("string", self.name).reference())
-        self.set_name("__file__", self.get_constant("string", filename).reference())
+        self.set_name("__name__", self.get_constant("str", self.name).reference())
+        self.set_name("__file__", self.get_constant("str", filename).reference())
 
         # Reserve a constant for the encoding.
 
         if self.encoding:
-            self.get_constant("string", self.encoding)
+            self.get_constant("str", self.encoding)
 
         # Get module-level attribute usage details.
 
@@ -531,7 +530,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
         # Provide leafname, parent and context attributes.
 
         parent, leafname = class_name.rsplit(".", 1)
-        self.set_name("__name__", self.get_constant("string", leafname).reference())
+        self.set_name("__name__", self.get_constant("str", leafname).reference())
 
         if class_name != "__builtins__.core.function":
             self.set_name("__parent__")
@@ -681,7 +680,7 @@ class InspectedModule(BasicModule, CacheWritingModule, NameResolving, Inspection
 
         # Define a leafname attribute value for the function instance.
 
-        ref = self.get_builtin_class("string")
+        ref = self.get_builtin_class("str")
         self.reserve_constant(function_name, name, ref.get_origin())
 
         # Track attribute usage within the namespace.

@@ -18,31 +18,31 @@ print len(s1)                       # 6
 s2 = b"\xe6\xf8\xe5"
 print "ISO-8859-15 values:"
 print s2                            # זרו
-print s2.__class__                  # __builtins__.str.string
+print s2.__class__                  # __builtins__.str.str
 print len(s2)                       # 3
 
 s3 = "\xe6\xf8\xe5"
 print "ISO-8859-15 values:"
 print s3                            # זרו
-print s3.__class__                  # __builtins__.str.string
+print s3.__class__                  # __builtins__.str.str
 print len(s3)                       # 3
 
 s4 = b"\u00e6\u00f8\u00e5"
 print "Untranslated values:"
 print s4                            # \u00e6\u00f8\u00e5
-print s4.__class__                  # __builtins__.str.string
+print s4.__class__                  # __builtins__.str.str
 print len(s4)                       # 18
 
 s5 = b"\346\370\345"
 print "ISO-8859-15 values:"
 print s5                            # זרו
-print s5.__class__                  # __builtins__.str.string
+print s5.__class__                  # __builtins__.str.str
 print len(s5)                       # 3
 
 s6 = "\346\370\345"
 print "ISO-8859-15 values:"
 print s6                            # זרו
-print s6.__class__                  # __builtins__.str.string
+print s6.__class__                  # __builtins__.str.str
 print len(s6)                       # 3
 
 s7 = r"\346\370\345"
@@ -98,7 +98,7 @@ print len(u4)                       # 3
 u5 = "\u00e6\u00f8\u00e5"
 print "Unicode values:"
 print u5                            # זרו
-print u5.__class__                  # __builtins__.unicode.ut8string
+print u5.__class__                  # __builtins__.unicode.unicode
 print len(u5)                       # 3
 
 # Test some untranslated values.
@@ -106,7 +106,7 @@ print len(u5)                       # 3
 u6 = "\\u00e6\\u00f8\\u00e5"
 print "Untranslated values:"
 print u6                            # \u00e6\u00f8\u00e5
-print u6.__class__                  # __builtins__.unicode.ut8string
+print u6.__class__                  # __builtins__.unicode.unicode
 print len(u6)                       # 18
 
 # Test Unicode values.
@@ -114,7 +114,7 @@ print len(u6)                       # 18
 u7 = u"\346\370\345"
 print "Unicode values:"
 print u7                            # זרו
-print u7.__class__                  # __builtins__.unicode.ut8string
+print u7.__class__                  # __builtins__.unicode.unicode
 print len(u7)                       # 3
 
 # Test Unicode values.
@@ -122,7 +122,7 @@ print len(u7)                       # 3
 u8 = ur"\346\370\345"
 print "Untranslated values:"
 print u8                            # \346\370\345
-print u8.__class__                  # __builtins__.unicode.ut8string
+print u8.__class__                  # __builtins__.unicode.unicode
 print len(u8)                       # 12
 
 # Test invalid sequences.
@@ -137,7 +137,7 @@ except UnicodeDecodeError, exc:
 u10 = "\u00e6\xf8\u00e5"
 print "ISO-8859-15 values:"
 print u10                           # \u00e6ר\u00e5
-print u10.__class__                 # __builtins__.str.string
+print u10.__class__                 # __builtins__.str.str
 print len(u10)                      # 13
 
 # Combine bytes and text.
@@ -146,7 +146,7 @@ print len(u10)                      # 13
 su = s + u
 print "ISO-8859-15 values:"
 print su                            # ÆØÅזרו
-print su.__class__                  # __builtins__.str.string
+print su.__class__                  # __builtins__.str.str
 print len(su)                       # 6
 
 # Combine text and bytes.
@@ -155,7 +155,7 @@ print len(su)                       # 6
 us = u + s
 print "ISO-8859-15 values:"
 print us                            # זרוÆØÅ
-print us.__class__                  # __builtins__.str.string
+print us.__class__                  # __builtins__.str.str
 print len(us)                       # 6
 
 # Combine text and text.

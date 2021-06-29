@@ -1,7 +1,7 @@
-print isinstance("string", string)  # True
+print isinstance("string", str)     # True
 print isinstance("string", int)     # False
 print isinstance(123, int)          # True
-print isinstance(123, string)       # False
+print isinstance(123, str)          # False
 print
 
 class A:
