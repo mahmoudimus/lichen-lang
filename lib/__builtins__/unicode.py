@@ -3,7 +3,7 @@
 """
 Unicode objects.
 
-Copyright (C) 2015, 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -25,20 +25,57 @@ from posix.iconv import Converter
 from native import str_add, unicode_len, unicode_ord, unicode_substr, \
                    isinstance as _isinstance
 
-class utf8string(basestring):
+class unicode(basestring):
 
     "A character string representation based on UTF-8."
 
-    def __init__(self, other=None, encoding=None):
+    def __init__(self, s, encoding=None, original=None):
 
         """
-        Initialise the string, perhaps from 'other', with any original
-        'encoding' indicated.
+        Initialise the string from 'other', employing any indicated 'encoding'
+        for the provided string data.
+
+        If 'original' is indicated, this may be used to override the original
+        encoding. This is useful when the string data is already in UTF-8
+        format, but where the original encoding needs to be communicated.
         """
 
-        get_using(basestring.__init__, self)(other)
-        self.encoding = encoding
         self.length = None
+
+        # Initialise using another Unicode object.
+
+        if _isinstance(s, unicode):
+            get_using(basestring.__init__, self)(s)
+            self.encoding = s.encoding
+
+        # Initialise using suitable string data but with an explicit original
+        # encoding.
+
+        elif original:
+            get_using(basestring.__init__, self)(s)
+            self.encoding = original
+
+        # Initialise using string data having either UTF-8 or another encoding,
+        # converting to UTF-8 and retaining the encoding details as the original
+        # encoding.
+
+        else:
+            # Obtain a string representation.
+
+            s = s.__str__()
+
+            # Convert the string to UTF-8. Even if the stated encoding is UTF-8, it
+            # needs to be validated.
+
+            to_utf8 = Converter(encoding or "UTF-8", "UTF-8")
+
+            try:
+                to_utf8.feed(s)
+                get_using(basestring.__init__, self)(str(to_utf8))
+            finally:
+                to_utf8.close()
+
+            self.encoding = encoding
 
     def _binary_op(self, op, other, sizes=False):
 
@@ -51,7 +88,7 @@ class utf8string(basestring):
 
         # Combining text with bytes.
 
-        if not _isinstance(other, utf8string):
+        if not _isinstance(other, unicode):
             s = self.encode()
         else:
             s = self
@@ -72,7 +109,7 @@ class utf8string(basestring):
 
         # Combining text with bytes.
 
-        if not _isinstance(other, utf8string):
+        if not _isinstance(other, unicode):
             s = self.encode()
         else:
             s = self
@@ -86,8 +123,8 @@ class utf8string(basestring):
 
         "Convert 'result' to a Unicode object if 'other' already is."
 
-        if _isinstance(other, utf8string):
-            return utf8string(result, self.encoding)
+        if _isinstance(other, unicode):
+            return unicode(result, None, self.encoding)
         else:
             return result
 
@@ -188,15 +225,14 @@ class utf8string(basestring):
             elif nonempty:
                 b.append(self)
 
-            if _isinstance(s, utf8string):
+            if _isinstance(s, unicode):
                 encoding = None
 
             b.append(s)
 
         s = str(b)
         if encoding:
-            s = utf8string(s)
-            s.encoding = encoding
+            s = unicode(s, None, encoding)
         return s
 
     # Special implementation methods.
@@ -204,9 +240,9 @@ class utf8string(basestring):
     def __get_single_item__(self, index):
     
         "Return the item at the normalised (positive) 'index'."
-    
+ 
         self._check_index(index)
-        return utf8string(unicode_substr(self.__data__, self.__size__, index, index + 1, 1), self.encoding)
+        return unicode(unicode_substr(self.__data__, self.__size__, index, index + 1, 1), None, self.encoding)
 
     def __get_multiple_items__(self, start, end, step):
 
@@ -224,29 +260,6 @@ class utf8string(basestring):
             raise ValueError(step)
 
         l = get_using(basestring.__get_multiple_items__, self)(start, end, step)
-        return utf8string("".join(l), self.encoding)
-
-def unicode(s, encoding):
-
-    "Convert 's' to a Unicode object, interpreting 's' as using 'encoding'."
-
-    if isinstance(s, utf8string):
-        return s
-
-    # Obtain a string representation.
-
-    s = s.__str__()
-
-    # Convert the string to UTF-8. Even if the stated encoding is UTF-8, it
-    # needs to be validated.
-
-    to_utf8 = Converter(encoding, "UTF-8")
-
-    try:
-        to_utf8.feed(s)
-        return utf8string(str(to_utf8), encoding)
-
-    finally:
-        to_utf8.close()
+        return unicode("".join(l), None, self.encoding)
 
 # vim: tabstop=4 expandtab shiftwidth=4

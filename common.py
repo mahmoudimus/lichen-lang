@@ -3,8 +3,7 @@
 """
 Common functions.
 
-Copyright (C) 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016,
-              2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2007-2019, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -1597,8 +1596,6 @@ def get_builtin_module(name):
 
     if name == "string":
         modname = "str"
-    elif name == "utf8string":
-        modname = "unicode"
     elif name == "NoneType":
         modname = "none"
     else:
@@ -1612,8 +1609,6 @@ def get_builtin_type(name):
 
     if name == "str":
         return "string"
-    elif name == "unicode":
-        return "utf8string"
     else:
         return name
 

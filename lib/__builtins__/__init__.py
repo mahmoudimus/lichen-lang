@@ -3,7 +3,7 @@
 """
 Simple built-in classes and functions.
 
-Copyright (C) 2015, 2016, 2017, 2019 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2019, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -70,7 +70,7 @@ from __builtins__.notimplemented import NotImplemented, NotImplementedType
 from __builtins__.set import frozenset, set
 from __builtins__.str import basestring, str, string
 from __builtins__.tuple import tuple
-from __builtins__.unicode import unicode, utf8string
+from __builtins__.unicode import unicode
 
 # Functions.
 

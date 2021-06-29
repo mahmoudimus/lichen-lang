@@ -3,7 +3,7 @@
 """
 Generate C code from object layouts and other deduced information.
 
-Copyright (C) 2015, 2016, 2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015-2019, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -51,7 +51,7 @@ class Generator(CommonOutput):
     string_type = "__builtins__.str.string"
     tuple_type = "__builtins__.tuple.tuple"
     type_type = "__builtins__.core.type"
-    unicode_type = "__builtins__.unicode.utf8string"
+    unicode_type = "__builtins__.unicode.unicode"
 
     none_value = "__builtins__.none.None"
 
@@ -1265,14 +1265,14 @@ typedef struct {
 
         # Special-case the integer type.
 
+        # Here, the __builtins__.int.new_int function is called with the
+        # initialiser's parameter.
+
         if path == self.int_type:
             print >>f_code, """\
-__attr %s(__attr __self, __attr number_or_string)
+__attr %s(__attr __self, __attr number_or_string, __attr base)
 {
-    if (!__BOOL(__fn_native_int_is_int(__self, number_or_string)))
-        __raise_value_error(number_or_string);
-
-    return number_or_string;
+    return __fn___builtins___int_new_int(__NULL, number_or_string, base);
 }
 """ % (
                 encode_instantiator_pointer(path),

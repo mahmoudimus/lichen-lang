@@ -103,7 +103,7 @@ def unichr(i):
     check_int(i)
 
     if 0 <= i <= 2097151:
-        return utf8string(unicode_unichr(i))
+        return unicode(unicode_unichr(i))
     else:
         raise ValueError, i
 

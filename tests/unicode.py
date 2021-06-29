@@ -48,7 +48,7 @@ print len(s6)                       # 3
 s7 = r"\346\370\345"
 print "Untranslated values:"
 print s7                            # \346\370\345
-print s7.__class__                  # __builtins__.unicode.utf8string
+print s7.__class__                  # __builtins__.unicode.unicode
 print len(s7)                       # 12
 
 # Obtain text and print it.
@@ -58,7 +58,7 @@ print len(s7)                       # 12
 u = unicode(b"זרו", "ISO-8859-15")
 print "Unicode values:"
 print u                             # זרו
-print u.__class__                   # __builtins__.unicode.utf8string
+print u.__class__                   # __builtins__.unicode.unicode
 print u.encode("ISO-8859-15")       # זרו
 print u.encoding                    # ISO-8859-15
 print len(u)                        # 3
@@ -68,7 +68,7 @@ print len(u)                        # 3
 u2 = u"זרו"
 print "Unicode values:"
 print u2                            # זרו
-print u2.__class__                  # __builtins__.unicode.utf8string
+print u2.__class__                  # __builtins__.unicode.unicode
 print u2.encode("ISO-8859-15")      # זרו
 print u2.encoding                   # ISO-8859-15
 print len(u2)                       # 3
@@ -78,7 +78,7 @@ print len(u2)                       # 3
 u3 = "זרו"
 print "Unicode values:"
 print u3                            # זרו
-print u3.__class__                  # __builtins__.unicode.utf8string
+print u3.__class__                  # __builtins__.unicode.unicode
 print u3.encode("ISO-8859-15")      # זרו
 print u3.encoding                   # ISO-8859-15
 print len(u3)                       # 3
@@ -88,7 +88,7 @@ print len(u3)                       # 3
 u4 = unicode("זרו", "ISO-8859-15")
 print "Unicode values:"
 print u4                            # זרו
-print u4.__class__                  # __builtins__.unicode.utf8string
+print u4.__class__                  # __builtins__.unicode.unicode
 print u4.encode("ISO-8859-15")      # זרו
 print u4.encoding                   # ISO-8859-15
 print len(u4)                       # 3
@@ -163,7 +163,7 @@ print len(us)                       # 6
 uu2 = u + u2
 print "Unicode values:"
 print uu2                           # זרוזרו
-print uu2.__class__                 # __builtins__.unicode.utf8string
+print uu2.__class__                 # __builtins__.unicode.unicode
 print uu2.encoding                  # ISO-8859-15
 print len(uu2)                      # 6
 
@@ -195,7 +195,7 @@ sys.stdout.encoding = "ISO-8859-15"
 # Test character access.
 
 u0 = u[0]
-print u0.__class__                  # __builtins__.unicode.utf8string
+print u0.__class__                  # __builtins__.unicode.unicode
 print u0.encoding                   # ISO-8859-15
 print u0                            # ז
 print u[-1]                         # ו
