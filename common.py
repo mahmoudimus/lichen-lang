@@ -1594,9 +1594,7 @@ def get_builtin_module(name):
 
     "Return the module name containing the given type 'name'."
 
-    if name == "string":
-        modname = "str"
-    elif name == "NoneType":
+    if name == "NoneType":
         modname = "none"
     else:
         modname = name
@@ -1607,10 +1605,7 @@ def get_builtin_type(name):
 
     "Return the type name provided by the given Python value 'name'."
 
-    if name == "str":
-        return "string"
-    else:
-        return name
+    return name
 
 def get_builtin_class(name):
 

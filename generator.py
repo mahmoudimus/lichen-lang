@@ -48,7 +48,7 @@ class Generator(CommonOutput):
     int_type = "__builtins__.int.int"
     list_type = "__builtins__.list.list"
     none_type = "__builtins__.none.NoneType"
-    string_type = "__builtins__.str.string"
+    string_type = "__builtins__.str.str"
     tuple_type = "__builtins__.tuple.tuple"
     type_type = "__builtins__.core.type"
     unicode_type = "__builtins__.unicode.unicode"
@@ -1266,13 +1266,28 @@ typedef struct {
         # Special-case the integer type.
 
         # Here, the __builtins__.int.new_int function is called with the
-        # initialiser's parameter.
+        # initialiser's parameters.
 
         if path == self.int_type:
             print >>f_code, """\
 __attr %s(__attr __self, __attr number_or_string, __attr base)
 {
     return __fn___builtins___int_new_int(__NULL, number_or_string, base);
+}
+""" % (
+                encode_instantiator_pointer(path),
+                )
+
+        # Special-case the string types.
+
+        # Here, the __builtins__.str.new_str function is called with the
+        # initialiser's parameter.
+
+        elif path == self.string_type:
+            print >>f_code, """\
+__attr %s(__attr __self, __attr obj)
+{
+    return __fn___builtins___str_new_str(__NULL, obj);
 }
 """ % (
                 encode_instantiator_pointer(path),
@@ -1350,6 +1365,6 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-""" % encode_function_pointer("__builtins__.str.str")
+""" % encode_instantiator_pointer("__builtins__.str.str")
 
 # vim: tabstop=4 expandtab shiftwidth=4
