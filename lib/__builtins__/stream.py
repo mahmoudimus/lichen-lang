@@ -144,7 +144,7 @@ class filestream:
         # Encode text as bytes if necessary. When the encoding is not set, any
         # original encoding of the text will be applied.
 
-        if _isinstance(s, utf8string):
+        if _isinstance(s, unicode):
             s = s.encode(self.encoding)
 
         fwrite(self.__data__, s)
