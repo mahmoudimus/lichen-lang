@@ -1203,7 +1203,7 @@ __obj %s = {
         # Special-case the integer type.
 
         # Here, the __builtins__.int.new_int function is called with the
-        # initialiser's parameter.
+        # initialiser's parameters.
 
         if path == self.int_type:
             print >>f_code, """\
