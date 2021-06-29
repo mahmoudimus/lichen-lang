@@ -3,7 +3,7 @@
 """
 Floating point number objects.
 
-Copyright (C) 2015, 2016, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2018, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -19,7 +19,7 @@ You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from __builtins__.unicode import utf8string
+from __builtins__.unicode import unicode
 from native import isinstance as _isinstance, \
                    int_float, is_int, \
                    float_add, float_div, float_eq, float_ge, float_gt, \
@@ -194,7 +194,7 @@ class float:
 
         "Return a string representation."
 
-        return utf8string(float_str(self))
+        return unicode(float_str(self))
 
     __repr__ = __str__
 
