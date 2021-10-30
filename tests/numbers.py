@@ -18,7 +18,7 @@ print oct(i)                            # 04000000000
 j = -2 ** 29
 print j                                 # -536870912
 print hex(j)                            # -0x20000000
-print oct(j)                            # -05000000000
+print oct(j)                            # -04000000000
 
 print i + j                             # 0
 
