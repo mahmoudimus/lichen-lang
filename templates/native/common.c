@@ -26,7 +26,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Utility functions. */
 
-__attr __new_str(char *s, int size)
+__attr __new_str(char *s, __int size)
 {
     /* Create a new string and mutate the __data__, __size__ and __key__ attributes. */
     __attr attr = __NEWINSTANCE(__builtins___str_str);
@@ -47,8 +47,8 @@ __attr __new_list(__fragment *f)
 __fragment *__fragment_append(__fragment *data, __attr value)
 {
     __fragment *newdata = data;
-    unsigned int size = data->size, capacity = data->capacity;
-    unsigned int n;
+    __int size = data->size, capacity = data->capacity;
+    __int n;
 
     /* Re-allocate the fragment if the capacity has been reached. */
     if (size >= capacity)

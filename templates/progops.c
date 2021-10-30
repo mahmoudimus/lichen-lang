@@ -49,7 +49,7 @@ __attr __new_wrapper(__attr context, __attr attr)
 
 /* Generic internal data allocation. */
 
-__fragment *__new_fragment(unsigned int n) 
+__fragment *__new_fragment(__int n) 
 {
     /* Allocate space for the list. */
 
@@ -62,9 +62,9 @@ __fragment *__new_fragment(unsigned int n)
     return data;
 }
 
-void __newdata_sequence(unsigned int number, __fragment *data, __attr args[])
+void __newdata_sequence(__int number, __fragment *data, __attr args[])
 {
-    unsigned int i;
+    __int i;
 
     /* Copy the given number of values. */
 
@@ -74,7 +74,7 @@ void __newdata_sequence(unsigned int number, __fragment *data, __attr args[])
     data->size = number;
 }
 
-__attr __newdata_list(unsigned int number, __attr args[])
+__attr __newdata_list(__int number, __attr args[])
 {
     __attr self = __NEWINSTANCE(__builtins___list_list);
     __fragment *data = __new_fragment(number);
@@ -86,7 +86,7 @@ __attr __newdata_list(unsigned int number, __attr args[])
     return self;
 }
 
-__attr __newdata_tuple(unsigned int number, __attr args[])
+__attr __newdata_tuple(__int number, __attr args[])
 {
     /* Allocate the tuple and fragment together. */
 
@@ -103,7 +103,7 @@ __attr __newdata_tuple(unsigned int number, __attr args[])
 }
 
 #ifdef __HAVE___builtins___dict_dict
-__attr __newdata_dict(unsigned int number, __attr args[])
+__attr __newdata_dict(__int number, __attr args[])
 {
     __attr self = __NEWINSTANCE(__builtins___dict_dict);
 
@@ -313,10 +313,11 @@ int __BOOL(__attr attr)
 {
     __ref value;
 
-    /* Integers can be used directly as truth values. */
+    /* Non-zero integers yield a non-zero result. Since the integer type can be
+       larger than int, a conversion is performed. */
 
     if (__INTEGER(attr))
-        return __TOINT(attr);
+        return __TOINT(attr) ? 1 : 0;
 
     /* Test against True and False explicitly. If necessary, invoke the bool
        function with the object and test against True. */

@@ -1,6 +1,6 @@
 /* Native functions for character set conversion.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -56,8 +56,8 @@ __attr __fn_native_iconv_iconv(__attr __self, __attr cd, __attr state)
     /* Obtain the string, start position, and remaining bytes from the state. */
 
     char *inbuf = __load_via_object(__VALUE(f->attrs[0]), __data__).strvalue;
-    int start = __TOINT(f->attrs[1]);
-    int remaining = __TOINT(f->attrs[2]);
+    __int start = __TOINT(f->attrs[1]);
+    __int remaining = __TOINT(f->attrs[2]);
 
     /* Allocate a string for the output buffer using the remaining input size
        as a guide. */

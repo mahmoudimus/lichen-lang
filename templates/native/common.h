@@ -24,7 +24,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 /* Utility functions. */
 
 #define __new_int(VALUE) __INTVALUE(VALUE)
-__attr __new_str(char *s, int size);
+__attr __new_str(char *s, __int size);
 __attr __new_list(__fragment *f);
 __fragment *__fragment_append(__fragment *data, __attr value);
 

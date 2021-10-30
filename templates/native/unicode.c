@@ -1,6 +1,6 @@
 /* Native functions for Unicode operations.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -39,9 +39,9 @@ static inline int boundary_value(char c)
     else return 0;
 }
 
-static unsigned int nextpos(char *s, unsigned int size, unsigned int bytestart)
+static __int nextpos(char *s, __int size, __int bytestart)
 {
-    unsigned int i = bytestart;
+    __int i = bytestart;
 
     while (i < size)
     {
@@ -53,9 +53,9 @@ static unsigned int nextpos(char *s, unsigned int size, unsigned int bytestart)
     return i;
 }
 
-static unsigned int prevpos(char *s, unsigned int bytestart)
+static __int prevpos(char *s, __int bytestart)
 {
-    unsigned int i = bytestart;
+    __int i = bytestart;
 
     while (i > 0)
     {
@@ -74,8 +74,8 @@ __attr __fn_native_unicode_unicode_len(__attr __self, __attr _data, __attr _size
     /* _data interpreted as string.__data__ */
     char *s = _data.strvalue;
     /* _size interpreted as int */
-    int size = __TOINT(_size);
-    unsigned int i, c = 0;
+    __int size = __TOINT(_size);
+    __int i, c = 0;
 
     for (i = 0; i < size; i++)
         if (boundary(s[i]))
@@ -90,8 +90,8 @@ __attr __fn_native_unicode_unicode_ord(__attr __self, __attr _data, __attr _size
     /* _data interpreted as string.__data__ */
     char *s = _data.strvalue;
     /* _size interpreted as int */
-    int size = __TOINT(_size);
-    unsigned int i, c = 0, v;
+    __int size = __TOINT(_size);
+    __int i, c = 0, v;
 
     for (i = 0; i < size; i++)
     {
@@ -124,20 +124,20 @@ __attr __fn_native_unicode_unicode_substr(__attr __self, __attr _data, __attr _s
     /* _data interpreted as string.__data__ */
     char *s = _data.strvalue, *sub;
     /* _size interpreted as int */
-    int ss = __TOINT(_size);
+    __int ss = __TOINT(_size);
     /* start interpreted as int */
-    int istart = __TOINT(start);
+    __int istart = __TOINT(start);
     /* end interpreted as int */
-    int iend = __TOINT(end);
+    __int iend = __TOINT(end);
     /* step interpreted as int */
-    int istep = __TOINT(step);
+    __int istep = __TOINT(step);
 
     /* Calculate the number of characters. */
-    size_t nchar = ((iend - istart - (istep > 0 ? 1 : -1)) / istep) + 1;
-    unsigned int indexes[nchar];
+    __int nchar = ((iend - istart - (istep > 0 ? 1 : -1)) / istep) + 1;
+    __int indexes[nchar];
 
-    unsigned int c, d, i, to, from, lastbyte = 0;
-    int resultsize = 0;
+    __int c, d, i, to, from, lastbyte = 0;
+    __int resultsize = 0;
 
     /* Find the indexes of the characters. */
     if (istep > 0)
@@ -197,7 +197,7 @@ __attr __fn_native_unicode_unicode_unichr(__attr __self, __attr value)
 {
     /* value interpreted as int */
     int i = __TOINT(value);
-    unsigned int resultsize;
+    __int resultsize;
     char *s;
 
     if (i < 128) resultsize = 1;

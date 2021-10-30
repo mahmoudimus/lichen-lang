@@ -1,6 +1,6 @@
 /* Native functions for buffer operations.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -30,7 +30,7 @@ __attr __fn_native_buffer_buffer_str(__attr __self, __attr _data)
 {
     /* _data interpreted as buffer.__data__ */
     __fragment *data = _data.seqvalue;
-    unsigned int size = 0, i, j, n;
+    __int size = 0, i, j, n;
     char *s;
     __attr o;
 
