@@ -126,9 +126,10 @@ typedef struct __fragment
 
 /* Attribute interpretation. */
 
-#define __NUM_TAG_BITS      1
-#define __TAG_INT           0b1
-#define __INTEGER(ATTR)     ((ATTR).intvalue & __TAG_INT)
+#define __NUM_TAG_BITS      2
+#define __TAG_INT           0b01
+#define __TAG_MASK          0b11
+#define __INTEGER(ATTR)     (((ATTR).intvalue & __TAG_MASK) == __TAG_INT)
 
 /* Attribute value setting. */
 
