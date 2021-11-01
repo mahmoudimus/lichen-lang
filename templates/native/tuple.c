@@ -1,6 +1,6 @@
 /* Native functions for tuple operations.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -32,7 +32,7 @@ static __fragment __empty_fragment = {.size=0, .capacity=0};
 __attr __fn_native_tuple_tuple_init(__attr __self, __attr size)
 {
     /* size interpreted as int */
-    int n = __TOINT(size);
+    __int n = __TOINT(size);
 
     /* Return the __data__ attribute. */
     if (n) return (__attr) {.seqvalue=__new_fragment(n)};

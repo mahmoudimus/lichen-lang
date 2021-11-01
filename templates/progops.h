@@ -30,10 +30,10 @@ __attr __new_wrapper(__attr context, __attr attr);
 
 /* Generic internal data allocation. */
 
-__fragment *__new_fragment(unsigned int n);
+__fragment *__new_fragment(__int n);
 
-__attr __newdata_list(unsigned int number, __attr args[]);
-__attr __newdata_tuple(unsigned int number, __attr args[]);
+__attr __newdata_list(__int number, __attr args[]);
+__attr __newdata_tuple(__int number, __attr args[]);
 
 #define __newliteral___builtins___list_list(NUM, ...) __newdata_list(NUM, __ARGS(__VA_ARGS__))
 #define __newliteral___builtins___tuple_tuple(NUM, ...) __newdata_tuple(NUM, __ARGS(__VA_ARGS__))
@@ -41,7 +41,7 @@ __attr __newdata_tuple(unsigned int number, __attr args[]);
 /* Potentially superfluous operations. */
 
 #ifdef __HAVE___builtins___dict_dict
-__attr __newdata_dict(unsigned int number, __attr args[]);
+__attr __newdata_dict(__int number, __attr args[]);
 #define __newliteral___builtins___dict_dict(NUM, ...) __newdata_dict(NUM, __ARGS(__VA_ARGS__))
 #endif
 

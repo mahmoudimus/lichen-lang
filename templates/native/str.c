@@ -1,6 +1,6 @@
 /* Native functions for string operations.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -34,8 +34,8 @@ __attr __fn_native_str_str_add(__attr __self, __attr _data, __attr other, __attr
     char *s = _data.strvalue;
     char *o = other.strvalue;
     /* _size, othersize interpreted as int */
-    int ss = __TOINT(_size), os = __TOINT(othersize);
-    int n = ss + os;
+    __int ss = __TOINT(_size), os = __TOINT(othersize);
+    __int n = ss + os;
     char *r = (char *) __ALLOCATE(n + 1, sizeof(char));
 
     memcpy(r, s, ss);
@@ -90,7 +90,7 @@ __attr __fn_native_str_str_ord(__attr __self, __attr _data)
     /* _data interpreted as string.__data__ */
     char *s = _data.strvalue;
 
-    return __new_int((unsigned int) s[0]);
+    return __new_int((__int) s[0]);
 }
 
 __attr __fn_native_str_str_substr(__attr __self, __attr _data, __attr start, __attr end, __attr step)
@@ -98,15 +98,15 @@ __attr __fn_native_str_str_substr(__attr __self, __attr _data, __attr start, __a
     /* _data interpreted as string.__data__ */
     char *s = _data.strvalue, *sub;
     /* start interpreted as int */
-    int istart = __TOINT(start);
+    __int istart = __TOINT(start);
     /* end interpreted as int */
-    int iend = __TOINT(end);
+    __int iend = __TOINT(end);
     /* step interpreted as int */
-    int istep = __TOINT(step);
+    __int istep = __TOINT(step);
 
     /* Calculate the size of the substring. */
     size_t resultsize = ((iend - istart - (istep > 0 ? 1 : -1)) / istep) + 1;
-    int to, from;
+    size_t to, from;
 
     /* Reserve space for a new string. */
     sub = (char *) __ALLOCATE(resultsize + 1, sizeof(char));

@@ -1,6 +1,6 @@
 /* Native functions for input/output.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -120,7 +120,7 @@ __attr __fn_native_io_fread(__attr __self, __attr fp, __attr size)
     /* fp interpreted as FILE reference */
     FILE *f = (FILE *) fp.datavalue;
     /* size interpreted as int */
-    int to_read = __TOINT(size);
+    size_t to_read = __TOINT(size);
     char buf[to_read];
     size_t have_read;
     int error;
@@ -150,7 +150,7 @@ __attr __fn_native_io_fwrite(__attr __self, __attr fp, __attr str)
     /* str.__data__ interpreted as string */
     char *s = __load_via_object(__VALUE(str), __data__).strvalue;
     /* str.__size__ interpreted as int */
-    int to_write = __TOINT(__load_via_object(__VALUE(str), __size__));
+    size_t to_write = __TOINT(__load_via_object(__VALUE(str), __size__));
     size_t have_written = fwrite(s, sizeof(char), to_write, f);
     int error;
 
@@ -182,7 +182,7 @@ __attr __fn_native_io_read(__attr __self, __attr fd, __attr n)
     /* fd interpreted as int */
     int i = __TOINT(fd);
     /* n interpreted as int */
-    int to_read = __TOINT(n);
+    size_t to_read = __TOINT(n);
     char buf[to_read];
     ssize_t have_read;
     char *s;
@@ -207,7 +207,7 @@ __attr __fn_native_io_write(__attr __self, __attr fd, __attr str)
     /* str.__data__ interpreted as string */
     char *s = __load_via_object(__VALUE(str), __data__).strvalue;
     /* str.__size__ interpreted as int */
-    int size = __TOINT(__load_via_object(__VALUE(str), __size__));
+    size_t size = __TOINT(__load_via_object(__VALUE(str), __size__));
     ssize_t have_written;
 
     errno = 0;

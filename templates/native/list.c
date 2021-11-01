@@ -1,6 +1,6 @@
 /* Native functions for list operations.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -30,7 +30,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __fn_native_list_list_init(__attr __self, __attr size)
 {
     /* size interpreted as int */
-    unsigned int n = __TOINT(size);
+    __int n = __TOINT(size);
     __attr attr = {.seqvalue=__new_fragment(n)};
 
     /* Return the __data__ attribute. */
@@ -42,7 +42,7 @@ __attr __fn_native_list_list_setsize(__attr __self, __attr _data, __attr size)
     /* _data interpreted as list.__data__ */
     __fragment *data = _data.seqvalue;
     /* size interpreted as int */
-    unsigned int n = __TOINT(size);
+    __int n = __TOINT(size);
 
     data->size = n;
     return __builtins___none_None;
@@ -66,9 +66,9 @@ __attr __fn_native_list_list_concat(__attr __self, __attr self, __attr other)
     __fragment *data = __load_via_object(__VALUE(self), __data__).seqvalue;
     __fragment *other_data = other.seqvalue;
     __fragment *newdata = data;
-    unsigned int size = data->size, capacity = data->capacity;
-    unsigned int other_size = other_data->size;
-    unsigned int i, j, n = size + other_size;
+    __int size = data->size, capacity = data->capacity;
+    __int other_size = other_data->size;
+    __int i, j, n = size + other_size;
 
     /* Re-allocate the fragment if the capacity has been reached. */
     if (n >= capacity)
@@ -91,7 +91,7 @@ __attr __fn_native_list_list_concat(__attr __self, __attr self, __attr other)
 __attr __fn_native_list_list_len(__attr self, __attr _data)
 {
     /* _data interpreted as list.__data__ */
-    unsigned int size = _data.seqvalue->size;
+    __int size = _data.seqvalue->size;
 
     /* Return the new integer. */
     return __new_int(size);
@@ -107,7 +107,7 @@ __attr __fn_native_list_list_element(__attr __self, __attr _data, __attr index)
     /* _data interpreted as list.__data__ */
     __attr *elements = _data.seqvalue->attrs;
     /* index interpreted as int */
-    int i = __TOINT(index);
+    __int i = __TOINT(index);
 
     return elements[i];
 }
@@ -117,7 +117,7 @@ __attr __fn_native_list_list_setelement(__attr __self, __attr _data, __attr inde
     /* _data interpreted as list.__data__ */
     __attr *elements = _data.seqvalue->attrs;
     /* index interpreted as int */
-    int i = __TOINT(index);
+    __int i = __TOINT(index);
 
     /* Set the element. */
     elements[i] = value;

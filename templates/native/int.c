@@ -1,6 +1,6 @@
 /* Native functions for integer operations.
 
-Copyright (C) 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2018, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -39,8 +39,8 @@ __attr __fn_native_int_is_int(__attr __self, __attr obj)
 __attr __fn_native_int_int_add(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Test for overflow. */
     if (((i > 0) && (j > 0) && (i > __MAXINT - j)) ||
@@ -55,8 +55,8 @@ __attr __fn_native_int_int_add(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_sub(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Test for overflow. */
     if (((i < 0) && (j > 0) && (i < __MININT + j)) ||
@@ -71,8 +71,8 @@ __attr __fn_native_int_int_sub(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_mul(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Test for overflow. */
     if (((i > 0) && (j > 0) && (i > __MAXINT / j)) ||
@@ -89,8 +89,8 @@ __attr __fn_native_int_int_mul(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_div(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Test for division by zero or overflow. */
     if (j == 0)
@@ -105,8 +105,8 @@ __attr __fn_native_int_int_div(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_mod(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Test for division by zero or overflow. */
     if (j == 0)
@@ -121,7 +121,7 @@ __attr __fn_native_int_int_mod(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_neg(__attr __self, __attr self)
 {
     /* self interpreted as int */
-    int i = __TOINT(self);
+    __int i = __TOINT(self);
 
     /* Test for overflow. */
     if (i == __MININT)
@@ -134,8 +134,8 @@ __attr __fn_native_int_int_neg(__attr __self, __attr self)
 __attr __fn_native_int_int_pow(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
     int k;
 
     errno = 0;
@@ -157,8 +157,8 @@ __attr __fn_native_int_int_pow(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_and(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -168,7 +168,7 @@ __attr __fn_native_int_int_and(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_not(__attr __self, __attr self)
 {
     /* self interpreted as int */
-    int i = __TOINT(self);
+    __int i = __TOINT(self);
 
     /* Return the new integer. */
     return __new_int(~i);
@@ -177,8 +177,8 @@ __attr __fn_native_int_int_not(__attr __self, __attr self)
 __attr __fn_native_int_int_or(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -188,8 +188,8 @@ __attr __fn_native_int_int_or(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_xor(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -199,8 +199,8 @@ __attr __fn_native_int_int_xor(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_lshift(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -210,8 +210,8 @@ __attr __fn_native_int_int_lshift(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_rshift(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Return the new integer. */
     /* NOTE: No overflow test applied. */
@@ -221,8 +221,8 @@ __attr __fn_native_int_int_rshift(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_le(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Return a boolean result. */
     return i <= j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -231,8 +231,8 @@ __attr __fn_native_int_int_le(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_lt(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Return a boolean result. */
     return i < j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -241,8 +241,8 @@ __attr __fn_native_int_int_lt(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_ge(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Return a boolean result. */
     return i >= j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -251,8 +251,8 @@ __attr __fn_native_int_int_ge(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_gt(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Return a boolean result. */
     return i > j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -261,8 +261,8 @@ __attr __fn_native_int_int_gt(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_eq(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Return a boolean result. */
     return i == j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -271,8 +271,8 @@ __attr __fn_native_int_int_eq(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_ne(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as int */
-    int i = __TOINT(self);
-    int j = __TOINT(other);
+    __int i = __TOINT(self);
+    __int j = __TOINT(other);
 
     /* Return a boolean result. */
     return i != j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -281,14 +281,14 @@ __attr __fn_native_int_int_ne(__attr __self, __attr self, __attr other)
 __attr __fn_native_int_int_str(__attr __self, __attr self)
 {
     /* self interpreted as int */
-    int i = __TOINT(self);
+    __int i = __TOINT(self);
 
     /* Employ a buffer big enough to fit the largest integer plus an extra
        character, a minus sign, and the null terminator. */
     unsigned int n = (int) log10(__MAXINT) + 3;
     char *s = (char *) __ALLOCATE(n, sizeof(char));
 
-    snprintf(s, n, "%d", i);
+    snprintf(s, n, "%ld", i);
 
     /* Return a new string. */
     return __new_str(s, strlen(s));

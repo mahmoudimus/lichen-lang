@@ -1,6 +1,7 @@
 /* Runtime types.
 
-Copyright (C) 2015, 2016, 2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015, 2016, 2017, 2018, 2019,
+              2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -23,6 +24,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
    program specifically. */
 
 #include <stdint.h>
+#include <stdlib.h>
 
 /* Include the special instance position value. The pos member of __obj refers
    to the special type attribute for classes, indicating which position holds
@@ -70,12 +72,19 @@ typedef struct __fragment __fragment;
 typedef union __attr __attr;
 typedef __obj * __ref;
 
+/* Introduce an integer type that should not exceed the size of the pointer
+   type. */
+
+typedef ssize_t __int;
+
+/* Attribute value interpretations. */
+
 typedef union __attr
 {
     /* General attribute members. */
 
     __ref value;                /* attribute value */
-    int intvalue;               /* integer value data (shifted value, tagged) */
+    __int intvalue;             /* integer value data (shifted value, tagged) */
 
     /* Special case attribute members. */
 
@@ -109,11 +118,11 @@ typedef struct __obj
 
 typedef struct __fragment
 {
-    unsigned int size, capacity;
+    __int size, capacity;
     __attr attrs[];
 } __fragment;
 
-#define __FRAGMENT_SIZE(NUMBER) ((NUMBER) * sizeof(__attr) + 2 * sizeof(unsigned int))
+#define __FRAGMENT_SIZE(NUMBER) ((NUMBER) * sizeof(__attr) + 2 * sizeof(__int))
 
 /* Attribute interpretation. */
 
@@ -129,10 +138,10 @@ typedef struct __fragment
 
 /* Attribute as instance setting. */
 
-#define __INTVALUE(VALUE)   ((__attr) {.intvalue=((VALUE) << __NUM_TAG_BITS) | __TAG_INT})
+#define __INTVALUE(VALUE)   ((__attr) {.intvalue=(((__int) VALUE) << __NUM_TAG_BITS) | __TAG_INT})
 #define __TOINT(ATTR)       ((ATTR).intvalue >> __NUM_TAG_BITS)
-#define __MAXINT            ((1 << ((sizeof(int) * 8) - 1 - __NUM_TAG_BITS)) - 1)
-#define __MININT            (-(1 << ((sizeof(int) * 8) - 1 - __NUM_TAG_BITS)))
+#define __MAXINT            ((((__int) 1) << ((sizeof(__int) * 8) - 1 - __NUM_TAG_BITS)) - 1)
+#define __MININT            (-(((__int) 1) << ((sizeof(__int) * 8) - 1 - __NUM_TAG_BITS)))
 
 /* Argument lists. */
 
