@@ -73,8 +73,8 @@ __attr __fn_native_unicode_unicode_len(__attr __self, __attr _data, __attr _size
 {
     /* _data interpreted as string.__data__ */
     char *s = _data.strvalue;
-    /* _size interpreted as int */
-    __int size = __TOINT(_size);
+    /* _size interpreted as size */
+    __int size = _size.sizevalue;
     __int i, c = 0;
 
     for (i = 0; i < size; i++)
@@ -89,8 +89,8 @@ __attr __fn_native_unicode_unicode_ord(__attr __self, __attr _data, __attr _size
 {
     /* _data interpreted as string.__data__ */
     char *s = _data.strvalue;
-    /* _size interpreted as int */
-    __int size = __TOINT(_size);
+    /* _size interpreted as size */
+    __int size = _size.sizevalue;
     __int i, c = 0, v;
 
     for (i = 0; i < size; i++)
@@ -123,8 +123,8 @@ __attr __fn_native_unicode_unicode_substr(__attr __self, __attr _data, __attr _s
 {
     /* _data interpreted as string.__data__ */
     char *s = _data.strvalue, *sub;
-    /* _size interpreted as int */
-    __int ss = __TOINT(_size);
+    /* _size interpreted as size */
+    __int ss = _size.sizevalue;
     /* start interpreted as int */
     __int istart = __TOINT(start);
     /* end interpreted as int */

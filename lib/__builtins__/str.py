@@ -24,7 +24,7 @@ from __builtins__.sequence import hashable, itemaccess
 from __builtins__.types import check_int
 from native import isinstance as _isinstance, \
                    str_add, str_lt, str_gt, str_eq, str_ord, \
-                   str_substr
+                   str_size, str_substr
 
 WHITESPACE = (" ", "\f", "\n", "\r", "\t")
 
@@ -54,7 +54,7 @@ class basestring(hashable):
         else:
             self.__data__ = None
             self.__key__ = None
-            self.__size__ = 0
+            self.__size__ = None
 
     # Internal methods.
 
@@ -158,7 +158,7 @@ class basestring(hashable):
 
         "Return the number of bytes in this string."
 
-        return self.__size__
+        return str_size(self.__size__)
 
     # General type methods.
 
@@ -166,7 +166,7 @@ class basestring(hashable):
 
         "Return whether the string provides any data."
 
-        return self.__size__.__bool__()
+        return str_size(self.__size__).__bool__()
 
     def __contains__(self, value):
 
