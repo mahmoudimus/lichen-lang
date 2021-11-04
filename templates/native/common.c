@@ -26,6 +26,14 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 /* Utility functions. */
 
+__attr __new_int(__int n)
+{
+    /* Create a new int and set the trailing data. */
+    __attr attr = __NEWINSTANCEIM(__builtins___int_int);
+    __set_trailing_data(attr, __builtins___int_int, n);
+    return attr;
+}
+
 __attr __new_str(char *s, __int size)
 {
     /* Create a new string and mutate the __data__, __size__ and __key__ attributes. */
@@ -44,7 +52,7 @@ __attr __new_list(__fragment *f)
     return attr;
 }
 
-__attr __new_float(double n)
+__attr __new_float(__float n)
 {
     /* Create a new float and set the trailing data. */
     __attr attr = __NEWINSTANCEIM(__builtins___float_float);

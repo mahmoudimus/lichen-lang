@@ -69,7 +69,8 @@ class Generator(CommonOutput):
     # Data types with a trailing data member of the given native types.
 
     trailing_data_types = {
-        float_type : "double",
+        float_type : "__float",
+        int_type : "__int",
         }
 
     def __init__(self, importer, optimiser, output):
@@ -377,11 +378,6 @@ class Generator(CommonOutput):
             for constant, n in self.optimiser.constants.items():
                 self.make_literal_constant(f_decls, f_defs, n, constant)
 
-            # Generate a common integer instance object, referenced when integer
-            # attributes are accessed.
-
-            self.make_common_integer(f_decls, f_defs)
-
             # Finish the main source file.
 
             self.write_main_program(f_code, f_signatures)
@@ -575,11 +571,6 @@ __attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n)
 
         value, value_type, encoding = constant
 
-        # Do not generate individual integer constants.
-
-        if value_type == self.int_type:
-            return
-
         const_path = encode_literal_constant(n)
         structure_name = encode_literal_reference(n)
 
@@ -601,16 +592,6 @@ __attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n)
         ref = self.importer.get_object(attr_path)
 
         self.make_constant(f_decls, f_defs, ref, attr_path, structure_name)
-
-    def make_common_integer(self, f_decls, f_defs):
-
-        """
-        Write common integer instance details to 'f_decls' (to declare a
-        structure) and to 'f_defs' (to define the contents).
-        """
-
-        ref = Reference("<instance>", self.int_type)
-        self.make_constant(f_decls, f_defs, ref, "__common_integer", "__common_integer_obj")
 
     def make_constant(self, f_decls, f_defs, ref, const_path, structure_name, data=None, encoding=None):
 
@@ -1202,13 +1183,6 @@ typedef struct {
             # Obtain a constant value directly assigned to the attribute.
 
             if self.optimiser.constant_numbers.has_key(alias):
-
-                # Encode integer constants differently.
-
-                value, value_type, encoding = self.importer.all_constant_values[alias]
-                if value_type == self.int_type:
-                    return "__INTVALUE(%s) /* %s */" % (value, name)
-
                 constant_number = self.optimiser.constant_numbers[alias]
                 constant_value = encode_literal_constant(constant_number)
                 return "%s /* %s */" % (constant_value, name)

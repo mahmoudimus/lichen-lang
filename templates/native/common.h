@@ -21,15 +21,12 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "types.h"
 
-/* Utility macro for the special integer representation. */
-
-#define __new_int(VALUE) __INTVALUE(VALUE)
-
 /* Utility functions. */
 
+__attr __new_int(__int n);
 __attr __new_str(char *s, __int size);
 __attr __new_list(__fragment *f);
-__attr __new_float(double n);
+__attr __new_float(__float n);
 __fragment *__fragment_append(__fragment *data, __attr value);
 
 #endif /* __NATIVE_COMMON_H__ */

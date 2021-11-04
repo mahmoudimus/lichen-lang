@@ -93,4 +93,13 @@ int __BOOL(__attr attr);
 #define __get_trailing_data(ATTR, TYPE) (((__OBJTYPE(TYPE) *) ((ATTR).value))->trailing)
 #define __set_trailing_data(ATTR, TYPE, VALUE) ((__OBJTYPE(TYPE) *) ((ATTR).value))->trailing = VALUE;
 
+/* Specialised trailing data functions. */
+
+__int __TOINT(__attr attr);
+
+/* Instance test functions, to be replaced by tagged pointer usage. */
+
+int __INTEGER(__attr attr);
+int __FLOAT(__attr attr);
+
 #endif /* __PROGOPS_H__ */

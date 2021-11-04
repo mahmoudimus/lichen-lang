@@ -74,6 +74,11 @@ typedef __obj * __ref;
 /* Introduce an integer type that is interoperable with the size type. */
 
 typedef ssize_t __int;
+typedef size_t __uint;
+
+/* Introduce a floating point type. */
+
+typedef _Float64 __float;
 
 /* Attribute value interpretations. */
 
@@ -82,7 +87,7 @@ typedef union __attr
     /* General attribute members. */
 
     __ref value;                /* attribute value */
-    __int intvalue;             /* integer value data (shifted value, tagged) */
+    uintptr_t rawvalue;         /* raw attribute value used to test tagging */
 
     /* Special case attribute members. */
 
@@ -127,8 +132,13 @@ typedef struct __fragment
 
 #define __NUM_TAG_BITS      2
 #define __TAG_INT           0b01
+#define __TAG_FLOAT         0b10
 #define __TAG_MASK          0b11
-#define __INTEGER(ATTR)     (((ATTR).intvalue & __TAG_MASK) == __TAG_INT)
+
+#if 0
+#define __INTEGER(ATTR)     (((ATTR).rawvalue & __TAG_MASK) == __TAG_INT)
+#define __FLOAT(ATTR)       (((ATTR).rawvalue & __TAG_MASK) == __TAG_FLOAT)
+#endif
 
 /* Attribute value setting. */
 
@@ -136,12 +146,10 @@ typedef struct __fragment
 #define __NULL              __ATTRVALUE(0)
 #define __SETNULL(ATTR)     ((ATTR).value = 0)
 
-/* Attribute as instance setting. */
+/* Value limits. */
 
-#define __INTVALUE(VALUE)   ((__attr) {.intvalue=(((__int) VALUE) << __NUM_TAG_BITS) | __TAG_INT})
-#define __TOINT(ATTR)       ((ATTR).intvalue >> __NUM_TAG_BITS)
-#define __MAXINT            ((((__int) 1) << ((sizeof(__int) * 8) - 1 - __NUM_TAG_BITS)) - 1)
-#define __MININT            (-(((__int) 1) << ((sizeof(__int) * 8) - 1 - __NUM_TAG_BITS)))
+#define __MAXINT            ((((__uint) 1) << ((sizeof(__int) * 8) - 1)) - 1)
+#define __MININT            (-(((__uint) 1) << ((sizeof(__int) * 8) - 1)))
 
 /* Argument lists. */
 

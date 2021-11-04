@@ -1,6 +1,6 @@
 /* Native functions for floating point operations.
 
-Copyright (C) 2016, 2017, 2018, 2019 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2018, 2019, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -28,9 +28,9 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "progtypes.h"
 #include "main.h"
 
-/* Conversion of trailing data to a double-precision floating point number. */
+/* Conversion of trailing data to a floating point number. */
 
-static double __TOFLOAT(__attr attr)
+static __float __TOFLOAT(__attr attr)
 {
     return __get_trailing_data(attr, __builtins___float_float);
 }
@@ -38,7 +38,7 @@ static double __TOFLOAT(__attr attr)
 /* Numeric formatting using snprintf.
    NOTE: This might be moved elsewhere and used by other types. */
 
-static __attr format_number(double n, int size)
+static __attr format_number(__float n, int size)
 {
     char *s = (char *) __ALLOCATE(size, sizeof(char));
     int digits;
@@ -48,7 +48,7 @@ static __attr format_number(double n, int size)
 
     while (1)
     {
-        digits = snprintf(s, size, "%f", n);
+        digits = snprintf(s, size, "%f", (double) n);
 
         if (digits < size)
         {
@@ -68,56 +68,56 @@ static __attr format_number(double n, int size)
 __attr __fn_native_float_float_add(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
     return __new_float(i + j);
 }
 
 __attr __fn_native_float_float_sub(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
     return __new_float(i - j);
 }
 
 __attr __fn_native_float_float_mul(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
     return __new_float(i * j);
 }
 
 __attr __fn_native_float_float_div(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
     return __new_float(i / j);
 }
 
 __attr __fn_native_float_float_mod(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
     return __new_float(fmod(i, j));
 }
 
 __attr __fn_native_float_float_neg(__attr __self, __attr self)
 {
     /* self interpreted as float */
-    double i = __TOFLOAT(self);
+    __float i = __TOFLOAT(self);
     return __new_float(-i);
 }
 
 __attr __fn_native_float_float_pow(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
-    double result;
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
+    __float result;
 
     errno = 0;
     result = pow(i, j);
@@ -134,8 +134,8 @@ __attr __fn_native_float_float_pow(__attr __self, __attr self, __attr other)
 __attr __fn_native_float_float_le(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
 
     /* Return a boolean result. */
     return i <= j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -144,8 +144,8 @@ __attr __fn_native_float_float_le(__attr __self, __attr self, __attr other)
 __attr __fn_native_float_float_lt(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
 
     /* Return a boolean result. */
     return i < j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -154,8 +154,8 @@ __attr __fn_native_float_float_lt(__attr __self, __attr self, __attr other)
 __attr __fn_native_float_float_ge(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
 
     /* Return a boolean result. */
     return i >= j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -164,8 +164,8 @@ __attr __fn_native_float_float_ge(__attr __self, __attr self, __attr other)
 __attr __fn_native_float_float_gt(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
 
     /* Return a boolean result. */
     return i > j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -174,8 +174,8 @@ __attr __fn_native_float_float_gt(__attr __self, __attr self, __attr other)
 __attr __fn_native_float_float_eq(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
 
     /* Return a boolean result. */
     return i == j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -184,8 +184,8 @@ __attr __fn_native_float_float_eq(__attr __self, __attr self, __attr other)
 __attr __fn_native_float_float_ne(__attr __self, __attr self, __attr other)
 {
     /* self and other interpreted as float */
-    double i = __TOFLOAT(self);
-    double j = __TOFLOAT(other);
+    __float i = __TOFLOAT(self);
+    __float j = __TOFLOAT(other);
 
     /* Return a boolean result. */
     return i != j ? __builtins___boolean_True : __builtins___boolean_False;
@@ -194,7 +194,7 @@ __attr __fn_native_float_float_ne(__attr __self, __attr self, __attr other)
 __attr __fn_native_float_float_str(__attr __self, __attr self)
 {
     /* self interpreted as float */
-    double i = __TOFLOAT(self);
+    __float i = __TOFLOAT(self);
 
     /* Return a new string. */
     return format_number(i, 64);
@@ -203,7 +203,7 @@ __attr __fn_native_float_float_str(__attr __self, __attr self)
 __attr __fn_native_float_float_int(__attr __self, __attr self)
 {
     /* self interpreted as float */
-    double i = __TOFLOAT(self);
+    __float i = __TOFLOAT(self);
 
     /* NOTE: Test for conversion failure. */
     return __new_int((int) i);

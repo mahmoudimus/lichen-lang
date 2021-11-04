@@ -338,3 +338,24 @@ int __BOOL(__attr attr)
            value == (__ref) &__predefined___builtins___boolean_False ? 0 :
            __VALUE(__fn___builtins___boolean_bool(__NULL, attr)) == (__ref) &__predefined___builtins___boolean_True;
 }
+
+/* Conversion of trailing data to an integer. */
+
+__int __TOINT(__attr attr)
+{
+    return __get_trailing_data(attr, __builtins___int_int);
+}
+
+/* Instance test functions, to be replaced by tagged pointer usage. */
+
+int __INTEGER(__attr attr)
+{
+    __ref value = __VALUE(attr);
+    return __get_class(value) == &__builtins___int_int;
+}
+
+int __FLOAT(__attr attr)
+{
+    __ref value = __VALUE(attr);
+    return __get_class(value) == &__builtins___float_float;
+}
