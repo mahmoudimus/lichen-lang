@@ -33,8 +33,8 @@ __attr __fn_native_str_str_add(__attr __self, __attr _data, __attr other, __attr
     /* _data, other interpreted as string.__data__ */
     char *s = _data.strvalue;
     char *o = other.strvalue;
-    /* _size, othersize interpreted as int */
-    __int ss = __TOINT(_size), os = __TOINT(othersize);
+    /* _size, othersize interpreted as size */
+    __int ss = _size.sizevalue, os = othersize.sizevalue;
     __int n = ss + os;
     char *r = (char *) __ALLOCATE(n + 1, sizeof(char));
 
@@ -91,6 +91,11 @@ __attr __fn_native_str_str_ord(__attr __self, __attr _data)
     char *s = _data.strvalue;
 
     return __new_int((__int) s[0]);
+}
+
+__attr __fn_native_str_str_size(__attr __self, __attr _size)
+{
+    return __new_int(_size.sizevalue);
 }
 
 __attr __fn_native_str_str_substr(__attr __self, __attr _data, __attr start, __attr end, __attr step)

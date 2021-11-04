@@ -1,7 +1,6 @@
 /* Runtime types.
 
-Copyright (C) 2015, 2016, 2017, 2018, 2019,
-              2021 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015-2019, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -72,8 +71,7 @@ typedef struct __fragment __fragment;
 typedef union __attr __attr;
 typedef __obj * __ref;
 
-/* Introduce an integer type that should not exceed the size of the pointer
-   type. */
+/* Introduce an integer type that is interoperable with the size type. */
 
 typedef ssize_t __int;
 
@@ -97,6 +95,7 @@ typedef union __attr
     char * strvalue;            /* string value */
     __fragment * seqvalue;      /* sequence data */
     void * datavalue;           /* object-specific data */
+    __int sizevalue;            /* object-specific size */
 } __attr;
 
 typedef struct __obj

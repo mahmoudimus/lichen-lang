@@ -31,7 +31,7 @@ __attr __new_str(char *s, __int size)
     /* Create a new string and mutate the __data__, __size__ and __key__ attributes. */
     __attr attr = __NEWINSTANCE(__builtins___str_str);
     __store_via_object(__VALUE(attr), __data__, (__attr) {.strvalue=s});
-    __store_via_object(__VALUE(attr), __size__, __INTVALUE(size));
+    __store_via_object(__VALUE(attr), __size__, (__attr) {.sizevalue=size});
     __store_via_object(__VALUE(attr), __key__, __NULL);
     return attr;
 }

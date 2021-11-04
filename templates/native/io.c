@@ -150,7 +150,7 @@ __attr __fn_native_io_fwrite(__attr __self, __attr fp, __attr str)
     /* str.__data__ interpreted as string */
     char *s = __load_via_object(__VALUE(str), __data__).strvalue;
     /* str.__size__ interpreted as int */
-    size_t to_write = __TOINT(__load_via_object(__VALUE(str), __size__));
+    size_t to_write = __load_via_object(__VALUE(str), __size__).sizevalue;
     size_t have_written = fwrite(s, sizeof(char), to_write, f);
     int error;
 
@@ -207,7 +207,7 @@ __attr __fn_native_io_write(__attr __self, __attr fd, __attr str)
     /* str.__data__ interpreted as string */
     char *s = __load_via_object(__VALUE(str), __data__).strvalue;
     /* str.__size__ interpreted as int */
-    size_t size = __TOINT(__load_via_object(__VALUE(str), __size__));
+    size_t size = __load_via_object(__VALUE(str), __size__).sizevalue;
     ssize_t have_written;
 
     errno = 0;

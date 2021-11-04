@@ -1066,7 +1066,7 @@ typedef struct {
                 # Special internal size member.
 
                 elif attrname == "__size__":
-                    structure.append("__INTVALUE(%d)" % attr)
+                    structure.append("{.sizevalue=%d}" % attr)
                     continue
 
                 # Special internal key member.
