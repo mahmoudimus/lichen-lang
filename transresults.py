@@ -119,8 +119,6 @@ class TrResolvedNameRef(ResolvedNameRef):
         # Expressions.
 
         elif static_name:
-            parent = ref.parent()
-            context = ref.has_kind("<function>") and encode_path(parent) or None
             return "__ATTRVALUE(&%s)" % static_name
 
         # Qualified names must be converted into parent-relative accesses.
