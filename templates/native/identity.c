@@ -28,15 +28,11 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __attr __fn_native_identity_is_(__attr __self, __attr x, __attr y)
 {
-    /* NOTE: value member assumed equivalent to rawvalue for comparison. */
-
     return x.value == y.value ? __builtins___boolean_True : __builtins___boolean_False;
 }
 
 __attr __fn_native_identity_is_not(__attr __self, __attr x, __attr y)
 {
-    /* NOTE: value member assumed equivalent to rawvalue for comparison. */
-
     return x.value != y.value ? __builtins___boolean_True : __builtins___boolean_False;
 }
 

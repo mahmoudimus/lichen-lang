@@ -87,7 +87,6 @@ typedef union __attr
     /* General attribute members. */
 
     __ref value;                /* attribute value */
-    uintptr_t rawvalue;         /* raw attribute value used to test tagging */
 
     /* Special case attribute members. */
 
@@ -127,18 +126,6 @@ typedef struct __fragment
 } __fragment;
 
 #define __FRAGMENT_SIZE(NUMBER) ((NUMBER) * sizeof(__attr) + 2 * sizeof(__int))
-
-/* Attribute interpretation. */
-
-#define __NUM_TAG_BITS      2
-#define __TAG_INT           0b01
-#define __TAG_FLOAT         0b10
-#define __TAG_MASK          0b11
-
-#if 0
-#define __INTEGER(ATTR)     (((ATTR).rawvalue & __TAG_MASK) == __TAG_INT)
-#define __FLOAT(ATTR)       (((ATTR).rawvalue & __TAG_MASK) == __TAG_FLOAT)
-#endif
 
 /* Attribute value setting. */
 
