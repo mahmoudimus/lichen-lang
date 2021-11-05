@@ -3,7 +3,7 @@
 """
 Translation result abstractions.
 
-Copyright (C) 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2018, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -119,8 +119,6 @@ class TrResolvedNameRef(ResolvedNameRef):
         # Expressions.
 
         elif static_name:
-            parent = ref.parent()
-            context = ref.has_kind("<function>") and encode_path(parent) or None
             return "__ATTRVALUE(&%s)" % static_name
 
         # Qualified names must be converted into parent-relative accesses.
