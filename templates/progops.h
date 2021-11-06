@@ -90,8 +90,8 @@ int __BOOL(__attr attr);
 
 /* Operations for accessing trailing data. */
 
-#define __get_trailing_data(ATTR, TYPE) (((__OBJTYPE(TYPE) *) ((ATTR).value))->trailing)
-#define __set_trailing_data(ATTR, TYPE, VALUE) ((__OBJTYPE(TYPE) *) ((ATTR).value))->trailing = VALUE;
+#define __get_trailing_data(ATTR, TYPE) (((__OBJTYPE(TYPE) *) (__VALUE(ATTR)))->trailing)
+#define __set_trailing_data(ATTR, TYPE, VALUE) ((__OBJTYPE(TYPE) *) (__VALUE(ATTR)))->trailing = VALUE;
 
 /* Specialised trailing data functions. */
 

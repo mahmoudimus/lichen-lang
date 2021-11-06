@@ -1,6 +1,6 @@
 /* Common operations.
 
-Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015-2018, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -136,7 +136,7 @@ __attr __CONTEXT_AS_VALUE(__attr attr);
 
 __ref __ISFUNC(__ref obj);
 
-#define __ISNULL(__ATTR) (!__ATTR.value)
+#define __ISNULL(__ATTR) (!(__ATTR.rawvalue & (~__TAG_MASK)))
 
 /* Attribute codes and positions for type objects. */
 

@@ -332,7 +332,7 @@ int __BOOL(__attr attr)
     /* Test against True and False explicitly. If necessary, invoke the bool
        function with the object and test against True. */
 
-    value = attr.value;
+    value = __VALUE(attr);
 
     return value == (__ref) &__predefined___builtins___boolean_True ? 1 :
            value == (__ref) &__predefined___builtins___boolean_False ? 0 :

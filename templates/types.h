@@ -130,15 +130,12 @@ typedef struct __fragment
 
 /* Attribute interpretation. */
 
-#define __NUM_TAG_BITS      2
-#define __TAG_INT           0b01
-#define __TAG_FLOAT         0b10
-#define __TAG_MASK          0b11
+#define __NUM_TAG_BITS      1
+#define __TAG_MUTABLE       0b1
+#define __TAG_MASK          0b1
 
-#if 0
-#define __INTEGER(ATTR)     (((ATTR).rawvalue & __TAG_MASK) == __TAG_INT)
-#define __FLOAT(ATTR)       (((ATTR).rawvalue & __TAG_MASK) == __TAG_FLOAT)
-#endif
+#define __MUTABLE(ATTR)     (((ATTR).rawvalue & __TAG_MASK) == __TAG_MUTABLE)
+#define __TO_MUTABLE(ATTR)  ((__attr) (((ATTR).rawvalue & (~__TAG_MASK)) | __TAG_MUTABLE))
 
 /* Attribute value setting. */
 

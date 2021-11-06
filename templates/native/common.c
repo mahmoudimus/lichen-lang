@@ -31,7 +31,7 @@ __attr __new_int(__int n)
     /* Create a new int and set the trailing data. */
     __attr attr = __NEWINSTANCEIM(__builtins___int_int);
     __set_trailing_data(attr, __builtins___int_int, n);
-    return attr;
+    return __TO_MUTABLE(attr);
 }
 
 __attr __new_str(char *s, __int size)
@@ -57,7 +57,7 @@ __attr __new_float(__float n)
     /* Create a new float and set the trailing data. */
     __attr attr = __NEWINSTANCEIM(__builtins___float_float);
     __set_trailing_data(attr, __builtins___float_float, n);
-    return attr;
+    return __TO_MUTABLE(attr);
 }
 
 __fragment *__fragment_append(__fragment *data, __attr value)
