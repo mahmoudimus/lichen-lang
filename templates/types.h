@@ -130,12 +130,15 @@ typedef struct __fragment
 
 /* Attribute interpretation. */
 
-#define __NUM_TAG_BITS      1
-#define __TAG_MUTABLE       0b1
-#define __TAG_MASK          0b1
+#define __NUM_TAG_BITS      2
+#define __TAG_COPYABLE      0b01UL
+#define __TAG_MUTABLE       0b10UL
+#define __TAG_MASK          0b11UL
 
-#define __MUTABLE(ATTR)     (((ATTR).rawvalue & __TAG_MASK) == __TAG_MUTABLE)
-#define __TO_MUTABLE(ATTR)  ((__attr) (((ATTR).rawvalue & (~__TAG_MASK)) | __TAG_MUTABLE))
+#define __COPYABLE(ATTR)    ((ATTR).rawvalue & __TAG_COPYABLE)
+#define __MUTABLE(ATTR)     ((ATTR).rawvalue & __TAG_MUTABLE)
+#define __TO_IMMUTABLE(ATTR) ((__attr) {.rawvalue=(ATTR).rawvalue & (~__TAG_MUTABLE)})
+#define __TO_MUTABLE(ATTR)   ((__attr) {.rawvalue=(ATTR).rawvalue | __TAG_MASK})
 
 /* Attribute value setting. */
 

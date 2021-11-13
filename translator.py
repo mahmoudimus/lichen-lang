@@ -1324,6 +1324,13 @@ class TranslatedModule(CommonModule):
         for i, arg in enumerate(n.args):
             argexpr = self.process_structure_node(arg)
 
+            # Obtain an appropriate argument representation. This prevents
+            # copyable values from being mutable, but care must be taken to
+            # prevent special internal attribute values represented using
+            # attributes from being modified.
+
+            argrepr = argexpr.as_arg()
+
             # Store a keyword argument, either in the argument list or
             # in a separate keyword argument list for subsequent lookup.
 
@@ -1338,12 +1345,12 @@ class TranslatedModule(CommonModule):
                     except ValueError:
                         raise TranslateError("Argument %s is not recognised." % arg.name,
                                              self.get_namespace_path(), n)
-                    args[argnum + reserved_args] = str(argexpr)
+                    args[argnum + reserved_args] = argrepr
 
                 # Otherwise, store the details in a separate collection.
 
                 else:
-                    kwargs.append(str(argexpr))
+                    kwargs.append(argrepr)
                     kwcodes.append("{%s, %s}" % (
                         encode_ppos(arg.name), encode_pcode(arg.name)))
 
@@ -1352,7 +1359,7 @@ class TranslatedModule(CommonModule):
 
             else:
                 try:
-                    args[i + reserved_args] = str(argexpr)
+                    args[i + reserved_args] = argrepr
                 except IndexError:
                     raise TranslateError("Too many arguments specified.",
                                          self.get_namespace_path(), n)

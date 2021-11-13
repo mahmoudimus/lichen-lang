@@ -59,6 +59,12 @@ class Expression(Result):
     def __repr__(self):
         return "Expression(%r)" % self.s
 
+    def as_arg(self):
+
+        "Return the expression without any mutable tag."
+
+        return self.s
+
 class TrResolvedNameRef(ResolvedNameRef):
 
     "A reference to a name in the translation."
@@ -132,6 +138,21 @@ class TrResolvedNameRef(ResolvedNameRef):
         else:
             return "(%s)" % self.attrname
 
+    def as_arg(self):
+
+        "Return the expression without any mutable tag."
+
+        s = self.__str__()
+
+        # NOTE: This is a superficial test for internal attributes that relies
+        # NOTE: on such attributes being used directly and passed to native
+        # NOTE: code.
+
+        if self.attrname in ("__data__", "__size__"):
+            return s
+        else:
+            return "__TO_IMMUTABLE(%s)" % s
+
 class TrConstantValueRef(ConstantValueRef):
 
     "A constant value reference in the translation."
@@ -139,12 +160,18 @@ class TrConstantValueRef(ConstantValueRef):
     def __str__(self):
         return encode_literal_constant(self.number)
 
+    def as_arg(self):
+        return self.__str__()
+
 class TrLiteralSequenceRef(LiteralSequenceRef):
 
     "A reference representing a sequence of values."
 
     def __str__(self):
         return str(self.node)
+
+    def as_arg(self):
+        return self.__str__()
 
 class TrInstanceRef(InstanceRef):
 
@@ -165,6 +192,9 @@ class TrInstanceRef(InstanceRef):
 
     def __repr__(self):
         return "TrResolvedInstanceRef(%r, %r)" % (self.ref, self.expr)
+
+    def as_arg(self):
+        return self.__str__()
 
 class AttrResult(Result, InstructionSequence):
 
@@ -222,6 +252,9 @@ class AttrResult(Result, InstructionSequence):
                 self.context_identity, self.context_identity_verified,
                 self.accessor_test, self.accessor_stored)
 
+    def as_arg(self):
+        return self.__str__()
+
 class AliasResult(NameRef, Result):
 
     "An alias for other values."
@@ -275,6 +308,9 @@ class AliasResult(NameRef, Result):
     def __repr__(self):
         return "AliasResult(%r, %r)" % (self.name_ref, self.refs)
 
+    def as_arg(self):
+        return self.__str__()
+
 class InvocationResult(Result, InstructionSequence):
 
     "A translation result for an invocation."
@@ -284,6 +320,9 @@ class InvocationResult(Result, InstructionSequence):
 
     def __repr__(self):
         return "InvocationResult(%r)" % self.instructions
+
+    def as_arg(self):
+        return self.__str__()
 
 class InstantiationResult(InvocationResult, TrInstanceRef):
 
@@ -324,6 +363,9 @@ class PredefinedConstantRef(Result):
 
     def __repr__(self):
         return "PredefinedConstantRef(%r)" % self.value
+
+    def as_arg(self):
+        return self.__str__()
 
 class LogicalResult(Result):
 
@@ -369,6 +411,9 @@ class NegationResult(LogicalResult):
 
     def __repr__(self):
         return "NegationResult(%r)" % self.expr
+
+    def as_arg(self):
+        return self.__str__()
 
 class LogicalOperationResult(LogicalResult):
 
@@ -441,5 +486,8 @@ class LogicalOperationResult(LogicalResult):
 
     def __repr__(self):
         return "LogicalOperationResult(%r, %r)" % (self.exprs, self.conjunction)
+
+    def as_arg(self):
+        return self.__str__()
 
 # vim: tabstop=4 expandtab shiftwidth=4
