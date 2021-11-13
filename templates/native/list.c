@@ -88,7 +88,7 @@ __attr __fn_native_list_list_concat(__attr __self, __attr self, __attr other)
     return __builtins___none_None;
 }
 
-__attr __fn_native_list_list_len(__attr self, __attr _data)
+__attr __fn_native_list_list_len(__attr __self, __attr _data)
 {
     /* _data interpreted as list.__data__ */
     __int size = _data.seqvalue->size;
