@@ -1,6 +1,6 @@
 /* Native functions for list operations.
 
-Copyright (C) 2016, 2017 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,7 @@ __attr __fn_native_list_list_init(__attr __self, __attr size);
 __attr __fn_native_list_list_setsize(__attr __self, __attr _data, __attr size);
 __attr __fn_native_list_list_append(__attr __self, __attr self, __attr value);
 __attr __fn_native_list_list_concat(__attr __self, __attr self, __attr other);
-__attr __fn_native_list_list_len(__attr self, __attr _data);
+__attr __fn_native_list_list_len(__attr __self, __attr _data);
 __attr __fn_native_list_list_nonempty(__attr __self, __attr _data);
 __attr __fn_native_list_list_element(__attr __self, __attr _data, __attr index);
 __attr __fn_native_list_list_setelement(__attr __self, __attr _data, __attr index, __attr value);
