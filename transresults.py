@@ -67,6 +67,20 @@ class TrResolvedNameRef(ResolvedNameRef):
         ResolvedNameRef.__init__(self, name, ref, expr, is_global)
         self.location = location
 
+        # For sources, any identified static origin will be constant and thus
+        # usable directly. For targets, no constant should be assigned and thus
+        # the alias (or any plain name) will be used.
+
+        self.static_ref = self.static()
+        origin = self.static_ref and self.get_origin()
+        self.static_name = origin and encode_path(origin)
+
+        # Determine whether a qualified name is involved.
+
+        t = (not self.is_constant_alias() and self.get_name() or self.name).rsplit(".", 1)
+        self.parent = len(t) > 1 and t[0] or None
+        self.attrname = t[-1] and encode_path(t[-1])
+
     def access_location(self):
         return self.location
 
@@ -82,55 +96,41 @@ class TrResolvedNameRef(ResolvedNameRef):
             else:
                 return encode_path(self.name)
 
-        # For sources, any identified static origin will be constant and thus
-        # usable directly. For targets, no constant should be assigned and thus
-        # the alias (or any plain name) will be used.
-
-        ref = self.static()
-        origin = ref and self.get_origin()
-        static_name = origin and encode_path(origin)
-
-        # Determine whether a qualified name is involved.
-
-        t = (not self.is_constant_alias() and self.get_name() or self.name).rsplit(".", 1)
-        parent = len(t) > 1 and t[0] or None
-        attrname = t[-1] and encode_path(t[-1])
-
         # Assignments.
 
         if self.expr:
 
             # Eliminate assignments between constants.
 
-            if ref and self.expr.static():
+            if self.static_ref and self.expr.static():
                 return ""
 
             # Qualified names must be converted into parent-relative assignments.
 
-            elif parent:
+            elif self.parent:
                 return "__store_via_object(&%s, %s, %s)" % (
-                    encode_path(parent), attrname, self.expr)
+                    encode_path(self.parent), self.attrname, self.expr)
 
             # All other assignments involve the names as they were given.
 
             else:
-                return "%s = %s" % (attrname, self.expr)
+                return "%s = %s" % (self.attrname, self.expr)
 
         # Expressions.
 
-        elif static_name:
-            return "__ATTRVALUE(&%s)" % static_name
+        elif self.static_name:
+            return "__ATTRVALUE(&%s)" % self.static_name
 
         # Qualified names must be converted into parent-relative accesses.
 
-        elif parent:
+        elif self.parent:
             return "__load_via_object(&%s, %s)" % (
-                encode_path(parent), attrname)
+                encode_path(self.parent), self.attrname)
 
         # All other accesses involve the names as they were given.
 
         else:
-            return "(%s)" % attrname
+            return "(%s)" % self.attrname
 
 class TrConstantValueRef(ConstantValueRef):
 
