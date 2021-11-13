@@ -1293,6 +1293,7 @@ class TranslatedModule(CommonModule):
             context_arg = "__NULL"
 
         args = [context_arg]
+        reserved_args = 1
 
         # Complete the array with null values, permitting tests for a complete
         # set of arguments.
@@ -1337,7 +1338,7 @@ class TranslatedModule(CommonModule):
                     except ValueError:
                         raise TranslateError("Argument %s is not recognised." % arg.name,
                                              self.get_namespace_path(), n)
-                    args[argnum+1] = str(argexpr)
+                    args[argnum + reserved_args] = str(argexpr)
 
                 # Otherwise, store the details in a separate collection.
 
@@ -1351,7 +1352,7 @@ class TranslatedModule(CommonModule):
 
             else:
                 try:
-                    args[i+1] = str(argexpr)
+                    args[i + reserved_args] = str(argexpr)
                 except IndexError:
                     raise TranslateError("Too many arguments specified.",
                                          self.get_namespace_path(), n)
@@ -1375,8 +1376,8 @@ class TranslatedModule(CommonModule):
 
             for i, (argname, default) in enumerate(function_defaults):
                 argnum = parameters.index(argname)
-                if not args[argnum+1]:
-                    args[argnum+1] = "__GETDEFAULT(%s, %d)" % (target_structure, i)
+                if not args[argnum + reserved_args]:
+                    args[argnum + reserved_args] = "__GETDEFAULT(%s, %d)" % (target_structure, i)
 
         elif known_parameters:
 
@@ -1387,7 +1388,7 @@ class TranslatedModule(CommonModule):
             i = len(n.args)
             pos = i - (num_parameters - num_defaults)
             while i < num_parameters:
-                args[i+1] = "__GETDEFAULT(%s.value, %d)" % (target_var, pos)
+                args[i + reserved_args] = "__GETDEFAULT(%s.value, %d)" % (target_var, pos)
                 i += 1
                 pos += 1
 
@@ -1403,7 +1404,7 @@ class TranslatedModule(CommonModule):
         # the number of values. The context is excluded.
 
         if literal_instantiation:
-            argstr = "%d, %s" % (len(args) - 1, ", ".join(args[1:]))
+            argstr = "%d, %s" % (len(args) - reserved_args, ", ".join(args[reserved_args:]))
         else:
             argstr = ", ".join(args)
 
