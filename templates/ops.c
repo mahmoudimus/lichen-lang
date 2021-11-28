@@ -37,6 +37,24 @@ static inline int __HASATTR(__ref obj, int pos, int code)
     return (pos < obj->table->size) && (obj->table->attrs[pos] == code);
 }
 
+/* Generic load wrapper employing temporary stack storage. */
+
+__attr __load(__attr value)
+{
+    /* Copy values where appropriate. */
+
+    if (__COPYABLE(value))
+    {
+        size_t value_size = __INSTANCE_SIZE(__VALUE(value));
+        __attr target = __stack_allocate(__stack, value_size);
+
+        __COPY_TO(__VALUE(value), __VALUE(target), value_size);
+        return __TO_MUTABLE(target);
+    }
+    else
+        return value;
+}
+
 /* Direct access and manipulation of static objects. */
 
 __attr __load_static_ignore(__ref obj)
@@ -76,7 +94,70 @@ __attr __get_class_and_load__(__ref obj, int pos)
 
 /* Direct storage operations. */
 
+__attr __store_local(__attr target, __attr value)
+{
+    /* Copy values where appropriate. */
+
+    if (__COPYABLE(value))
+    {
+        size_t value_size = __INSTANCE_SIZE(__VALUE(value));
+
+        /* Allocate new space for values if the target is not a mutable value
+           or refers to an object that is too small for the value. */
+
+        if ((__VALUE(target) == NULL) || !__MUTABLE(target) || (value_size > __INSTANCE_SIZE(__VALUE(target))))
+            target = __stack_allocate(__stack, value_size);
+
+        __COPY_TO(__VALUE(value), __VALUE(target), value_size);
+        return __TO_MUTABLE(target);
+    }
+    else
+        return value;
+}
+
+void __store_target(__attr *target, __attr value)
+{
+    /* Copy values where appropriate. */
+
+    if (__COPYABLE(value))
+    {
+        size_t value_size = __INSTANCE_SIZE(__VALUE(value));
+
+        if ((__VALUE(*target) == NULL) || (!__MUTABLE(*target)) || (value_size > __INSTANCE_SIZE(__VALUE(*target))))
+            *target = __ATTRVALUE(__ALLOCATEIM(1, value_size));
+
+        __COPY_TO(__VALUE(value), __VALUE(*target), value_size);
+        *target = __TO_MUTABLE(*target);
+    }
+    else
+        *target = value;
+}
+
 int __store_via_object__(__ref obj, int pos, __attr value)
+{
+    /* Copy values where appropriate. */
+
+    if (__COPYABLE(value))
+    {
+        size_t value_size = __INSTANCE_SIZE(__VALUE(value));
+        __attr target = obj->attrs[pos];
+
+        /* Allocate new space for values if the target is not a mutable value
+           or refers to an object that is too small for the value. */
+
+        if ((__VALUE(target) == NULL) || (!__MUTABLE(target)) || (value_size > __INSTANCE_SIZE(__VALUE(target))))
+            target = __ATTRVALUE(__ALLOCATEIM(1, value_size));
+
+        __COPY_TO(__VALUE(value), __VALUE(target), value_size);
+        obj->attrs[pos] = __TO_MUTABLE(target);
+    }
+    else
+        obj->attrs[pos] = value;
+
+    return 1;
+}
+
+int __store_via_object_internal__(__ref obj, int pos, __attr value)
 {
     obj->attrs[pos] = value;
     return 1;
@@ -206,6 +287,20 @@ int __check_and_store_via_object__(__ref obj, int pos, int code, __attr value)
     if (__HASATTR(obj, pos, code))
     {
         __store_via_object__(obj, pos, value);
+        return 1;
+    }
+
+    /* No suitable attribute. */
+
+    __raise_type_error();
+    return 0;
+}
+
+int __check_and_store_via_object_internal__(__ref obj, int pos, int code, __attr value)
+{
+    if (__HASATTR(obj, pos, code))
+    {
+        __store_via_object_internal__(obj, pos, value);
         return 1;
     }
 
@@ -438,9 +533,95 @@ void *__REALLOCATE(void *ptr, size_t size)
 
 /* Copying of structures. */
 
-__ref __COPY(__ref obj, int size)
+__ref __COPY(__ref obj, size_t size)
 {
     __ref copy = (__ref) __ALLOCATE(1, size);
     memcpy(copy, obj, size);
     return copy;
+}
+
+void __COPY_TO(__ref source, __ref target, size_t size)
+{
+    memcpy(target, source, size);
+}
+
+/* Stack management. */
+
+__attr __stack_init()
+{
+    __attr __stack;
+
+    __stack.stackdesc = (__stackdesc *) __ALLOCATE(1, sizeof(__stackdesc));
+    __stack.stackdesc->current = NULL;
+    __stack_expand(__stack);
+
+    return __stack;
+}
+
+__attr __stack_allocate(__attr __stack, size_t size)
+{
+    char *result;
+    __section *section = __stack.stackdesc->current;
+
+    if (section->limit - section->level < size)
+    {
+        __stack_expand(__stack);
+        section = __stack.stackdesc->current;
+    }
+
+    result = section->level;
+    section->level += size;
+
+    return __ATTRVALUE(result);
+}
+
+void __stack_expand(__attr __stack)
+{
+    __section *current = __stack.stackdesc->current;
+    __section *section = (__section *) __ALLOCATE(1, sizeof(__section));
+    char *base = (char *) __ALLOCATEIM(1, __STACK_SECTION_SIZE);
+
+    section->base = base;
+    section->level = base;
+    section->limit = base + __STACK_SECTION_SIZE;
+    section->previous = current;
+
+    __stack.stackdesc->current = section;
+}
+
+__attr __return(__attr result, __section *section, char *level)
+{
+    __ref obj = __VALUE(result);
+    char *target = level;
+    size_t size;
+
+    if (__COPYABLE(result))
+    {
+        size = __INSTANCE_SIZE(obj);
+
+        /* Test for space in the section. */
+
+        if (size > section->limit - level)
+        {
+            __stack_expand(__stack);
+            section = __stack.stackdesc->current;
+            target = section->base;
+        }
+
+        /* Copy into the stack and adjust the level. */
+
+        __COPY_TO(obj, (__ref) target, size);
+        level = target + size;
+
+        /* Reference the new location of the object. */
+
+        result = __MUTABLEVALUE(target);
+    }
+
+    /* Set the level and current section.*/
+
+    section->level = level;
+    __stack.stackdesc->current = section;
+
+    return result;
 }

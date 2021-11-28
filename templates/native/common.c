@@ -29,7 +29,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 __attr __new_int(__int n)
 {
     /* Create a new int and set the trailing data. */
-    __attr attr = __NEWINSTANCEIM(__builtins___int_int);
+    __attr attr = __NEWINSTANCE_STACK(__builtins___int_int);
     __set_trailing_data(attr, __builtins___int_int, n);
     return __TO_MUTABLE(attr);
 }
@@ -38,9 +38,9 @@ __attr __new_str(char *s, __int size)
 {
     /* Create a new string and mutate the __data__, __size__ and __key__ attributes. */
     __attr attr = __NEWINSTANCE(__builtins___str_str);
-    __store_via_object(__VALUE(attr), __data__, (__attr) {.strvalue=s});
-    __store_via_object(__VALUE(attr), __size__, (__attr) {.sizevalue=size});
-    __store_via_object(__VALUE(attr), __key__, __NULL);
+    __store_via_object_internal(__VALUE(attr), __data__, (__attr) {.strvalue=s});
+    __store_via_object_internal(__VALUE(attr), __size__, (__attr) {.sizevalue=size});
+    __store_via_object_internal(__VALUE(attr), __key__, __NULL);
     return attr;
 }
 
@@ -48,14 +48,14 @@ __attr __new_list(__fragment *f)
 {
     /* Create a new list and mutate the __data__ attribute. */
     __attr attr = __NEWINSTANCE(__builtins___list_list);
-    __store_via_object(__VALUE(attr), __data__, (__attr) {.seqvalue=f});
+    __store_via_object_internal(__VALUE(attr), __data__, (__attr) {.seqvalue=f});
     return attr;
 }
 
 __attr __new_float(__float n)
 {
     /* Create a new float and set the trailing data. */
-    __attr attr = __NEWINSTANCEIM(__builtins___float_float);
+    __attr attr = __NEWINSTANCE_STACK(__builtins___float_float);
     __set_trailing_data(attr, __builtins___float_float, n);
     return __TO_MUTABLE(attr);
 }
@@ -70,13 +70,14 @@ __fragment *__fragment_append(__fragment *data, __attr value)
     if (size >= capacity)
     {
         /* NOTE: Consider various restrictions on capacity increases. */
-        n = capacity ? capacity * 2 : 1;
+        n = capacity * 2 > size ? capacity * 2 : size + 1;
         newdata = (__fragment *) __REALLOCATE(data, __FRAGMENT_SIZE(n));
         newdata->capacity = n;
     }
 
     /* Insert the new element and increment the list size. */
-    newdata->attrs[size] = value;
+    newdata->attrs[size] = __RAWVALUE(0);
+    __store_target(&newdata->attrs[size], value);
     newdata->size = size + 1;
 
     return newdata;

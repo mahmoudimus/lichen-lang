@@ -3,7 +3,7 @@
 """
 Encoder functions, producing representations of program objects.
 
-Copyright (C) 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2016, 2017, 2018, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -286,6 +286,16 @@ attribute_producing_variables = (
     "<accessor>", "<context>", "<name>", "<private_context>", "<target_accessor>"
     )
 
+# Instructions that need to be customised for certain attributes.
+
+via_object_ops = (
+    "__store_via_object", "__check_and_store_via_object",
+    )
+
+# NOTE: This duplicates a definition in transresults.
+
+special_attributes = ("__args__", "__data__", "__key__", "__size__")
+
 def encode_access_instruction(instruction, subs, accessor_index, context_index):
 
     """
@@ -378,6 +388,11 @@ def encode_access_instruction(instruction, subs, accessor_index, context_index):
 
     elif not args:
         op = "&%s" % encode_path(op)
+
+    # Substitute the operation for certain attributes.
+
+    if op in via_object_ops and args[1] in special_attributes:
+        op = "%s_internal" % op
 
     return "%s%s" % (op, argstr), substituted
 

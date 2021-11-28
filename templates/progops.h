@@ -26,6 +26,7 @@ this program.  If not, see <http://www.gnu.org/licenses/>.
 /* Generic instantiation operations, defining common members. */
 
 __attr __new(const __table *table, __ref cls, size_t size, int immutable);
+__attr __new_stack(const __table *table, __ref cls, size_t size);
 __attr __new_wrapper(__attr context, __attr attr);
 
 /* Generic internal data allocation. */
@@ -86,6 +87,7 @@ int __BOOL(__attr attr);
 #define __INSTANCETABLE(CLS) (__InstanceTable_##CLS)
 #define __NEWINSTANCE(CLS) __new(&__INSTANCETABLE(CLS), &CLS, __INSTANCESIZE(CLS), 0)
 #define __NEWINSTANCEIM(CLS) __new(&__INSTANCETABLE(CLS), &CLS, __INSTANCESIZE(CLS), 1)
+#define __NEWINSTANCE_STACK(CLS) __new_stack(&__INSTANCETABLE(CLS), &CLS, __INSTANCESIZE(CLS))
 #define __ISINSTANCE(ATTR, TYPE) __BOOL(__fn_native_introspection_isinstance(__NULL, ATTR, TYPE))
 
 /* Operations for accessing trailing data. */

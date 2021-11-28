@@ -24,6 +24,8 @@ from encoders import encode_instructions, encode_literal_constant, encode_path
 from results import ConstantValueRef, InstanceRef, LiteralSequenceRef, NameRef, \
                     ResolvedNameRef, Result
 
+special_attributes = ("__args__", "__data__", "__key__", "__size__")
+
 # Classes representing intermediate translation results.
 
 class ReturnRef:
@@ -58,12 +60,6 @@ class Expression(Result):
 
     def __repr__(self):
         return "Expression(%r)" % self.s
-
-    def as_arg(self):
-
-        "Return the expression without any mutable tag."
-
-        return self.s
 
 class TrResolvedNameRef(ResolvedNameRef):
 
@@ -114,54 +110,58 @@ class TrResolvedNameRef(ResolvedNameRef):
             # Qualified names must be converted into parent-relative assignments.
 
             elif self.parent:
-                return "__store_via_object(&%s, %s, %s)" % (
-                    encode_path(self.parent), self.attrname, self.expr)
+
+                # NOTE: This is a superficial test for internal attributes that
+                # NOTE: relies on such attributes being used directly and passed
+                # NOTE: to native code.
+
+                if self.attrname in special_attributes:
+                    op = "__store_via_object_internal"
+                else:
+                    op = "__store_via_object"
+
+                return "%s(&%s, %s, %s)" % (
+                    op, encode_path(self.parent), self.attrname, self.expr)
 
             # All other assignments involve the names as they were given.
 
             else:
-                return "%s = %s" % (self.attrname, self.expr)
+                return "%s = __store_local(%s, %s)" % (self.attrname, self.attrname, self.expr)
 
         # Expressions.
 
-        elif self.static_name:
-            return "__ATTRVALUE(&%s)" % self.static_name
+        if self.static_name:
+            s = "__ATTRVALUE(&%s)" % self.static_name
 
         # Qualified names must be converted into parent-relative accesses.
 
         elif self.parent:
-            return "__load_via_object(&%s, %s)" % (
-                encode_path(self.parent), self.attrname)
+
+            # NOTE: This is a superficial test for internal attributes that
+            # NOTE: relies on such attributes being used directly and passed
+            # NOTE: to native code.
+
+            if self.attrname in special_attributes:
+                op = "__load_via_object_internal"
+            else:
+                op = "__load_via_object"
+
+            s = "%s(&%s, %s)" % (
+                op, encode_path(self.parent), self.attrname)
 
         # All other accesses involve the names as they were given.
 
         else:
-            return "(%s)" % self.attrname
+            s = "(%s)" % self.attrname
 
-    def as_arg(self):
-
-        "Return the expression without any mutable tag."
-
-        s = self.__str__()
-
-        # NOTE: This is a superficial test for internal attributes that relies
-        # NOTE: on such attributes being used directly and passed to native
-        # NOTE: code.
-
-        if self.attrname in ("__data__", "__size__"):
-            return s
-        else:
-            return "__TO_IMMUTABLE(%s)" % s
+        return "__load(%s)" % s
 
 class TrConstantValueRef(ConstantValueRef):
 
     "A constant value reference in the translation."
 
     def __str__(self):
-        return encode_literal_constant(self.number)
-
-    def as_arg(self):
-        return self.__str__()
+        return "__load(%s)" % encode_literal_constant(self.number)
 
 class TrLiteralSequenceRef(LiteralSequenceRef):
 
@@ -169,9 +169,6 @@ class TrLiteralSequenceRef(LiteralSequenceRef):
 
     def __str__(self):
         return str(self.node)
-
-    def as_arg(self):
-        return self.__str__()
 
 class TrInstanceRef(InstanceRef):
 
@@ -193,15 +190,13 @@ class TrInstanceRef(InstanceRef):
     def __repr__(self):
         return "TrResolvedInstanceRef(%r, %r)" % (self.ref, self.expr)
 
-    def as_arg(self):
-        return self.__str__()
-
 class AttrResult(Result, InstructionSequence):
 
     "A translation result for an attribute access."
 
     def __init__(self, instructions, refs, location, context_identity,
-                 context_identity_verified, accessor_test, accessor_stored):
+                 context_identity_verified, accessor_test, accessor_stored,
+                 attrname, assignment):
 
         InstructionSequence.__init__(self, instructions)
         self.refs = refs
@@ -210,6 +205,8 @@ class AttrResult(Result, InstructionSequence):
         self.context_identity_verified = context_identity_verified
         self.accessor_test = accessor_test
         self.accessor_stored = accessor_stored
+        self.attrname = attrname
+        self.assignment = assignment
 
     def references(self):
         return self.refs
@@ -244,16 +241,23 @@ class AttrResult(Result, InstructionSequence):
         return bool(self.instructions)
 
     def __str__(self):
-        return encode_instructions(self.instructions)
+        s = encode_instructions(self.instructions)
+
+        # NOTE: This includes a superficial test for internal attributes that
+        # NOTE: relies on such attributes being used directly and passedto
+        # NOTE: native code.
+
+        if self.assignment or self.accessor_test or self.attrname in special_attributes:
+            return s
+        else:
+            return "__load(%s)" % s
 
     def __repr__(self):
-        return "AttrResult(%r, %r, %r, %r, %r, %r, %r)" % (
+        return "AttrResult(%r, %r, %r, %r, %r, %r, %r, %r, %r)" % (
                 self.instructions, self.refs, self.location,
                 self.context_identity, self.context_identity_verified,
-                self.accessor_test, self.accessor_stored)
-
-    def as_arg(self):
-        return self.__str__()
+                self.accessor_test, self.accessor_stored, self.attrname,
+                self.assignment)
 
 class AliasResult(NameRef, Result):
 
@@ -308,9 +312,6 @@ class AliasResult(NameRef, Result):
     def __repr__(self):
         return "AliasResult(%r, %r)" % (self.name_ref, self.refs)
 
-    def as_arg(self):
-        return self.__str__()
-
 class InvocationResult(Result, InstructionSequence):
 
     "A translation result for an invocation."
@@ -320,9 +321,6 @@ class InvocationResult(Result, InstructionSequence):
 
     def __repr__(self):
         return "InvocationResult(%r)" % self.instructions
-
-    def as_arg(self):
-        return self.__str__()
 
 class InstantiationResult(InvocationResult, TrInstanceRef):
 
@@ -363,9 +361,6 @@ class PredefinedConstantRef(Result):
 
     def __repr__(self):
         return "PredefinedConstantRef(%r)" % self.value
-
-    def as_arg(self):
-        return self.__str__()
 
 class LogicalResult(Result):
 
@@ -411,9 +406,6 @@ class NegationResult(LogicalResult):
 
     def __repr__(self):
         return "NegationResult(%r)" % self.expr
-
-    def as_arg(self):
-        return self.__str__()
 
 class LogicalOperationResult(LogicalResult):
 
@@ -486,8 +478,5 @@ class LogicalOperationResult(LogicalResult):
 
     def __repr__(self):
         return "LogicalOperationResult(%r, %r)" % (self.exprs, self.conjunction)
-
-    def as_arg(self):
-        return self.__str__()
 
 # vim: tabstop=4 expandtab shiftwidth=4

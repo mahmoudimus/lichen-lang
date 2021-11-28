@@ -192,6 +192,7 @@ class Generator(CommonOutput):
             print >>f_code, """\
 #include <string.h>
 #include <stdio.h>
+#include <threads.h>
 #include "gc.h"
 #include "signals.h"
 #include "types.h"
@@ -277,8 +278,9 @@ class Generator(CommonOutput):
                 # Write a table for all objects.
 
                 table = []
-                self.populate_table(Reference(kind, path), table)
-                self.write_table(f_decls, f_defs, table_name, structure_size, table)
+                self.populate_table(ref, table)
+                self.write_table(f_decls, f_defs, table_name, structure_size,
+                                 table, ref)
 
             # Generate function instances.
 
@@ -320,6 +322,9 @@ class Generator(CommonOutput):
                 # Signature: __attr <name>(...);
 
                 parameters = self.importer.function_parameters[path]
+
+                # Include the context plus the original parameters.
+
                 l = ["__attr"] * (len(parameters) + 1)
                 print >>f_signatures, "__attr %s(%s);" % (encode_function_pointer(path), ", ".join(l))
 
@@ -766,26 +771,41 @@ __attr __call_with_args(__attr (*fn)(), __attr args[], unsigned int n)
                 f_consts.write("    %s = %d" % (pos_encoder(attrname), i))
         print >>f_consts, "\n    };"
 
-    def write_table(self, f_decls, f_defs, table_name, structure_size, table):
+    def write_table(self, f_decls, f_defs, table_name, structure_size, table,
+                    ref):
 
         """
         Write the declarations to 'f_decls' and definitions to 'f_defs' for
         the object having the given 'table_name' and the given 'structure_size',
         with 'table' details used to populate the definition.
+
+        To support value copying, the 'ref' is provided to be able to encode the
+        structure size.
         """
 
         print >>f_decls, "extern const __table %s;\n" % table_name
+
+        # Generate an object size of 0 for non-copyable types.
+
+        path = ref.get_origin()
+
+        if ref.get_kind() == "<instance>" and self.trailing_data_types.has_key(path):
+            obj_type = encode_symbol("obj", path) or "__obj"
+            obj_size = "sizeof(%s)" % obj_type
+        else:
+            obj_size = "0"
 
         # Write the corresponding definition.
 
         print >>f_defs, """\
 const __table %s = {
     %s,
+    %s,
     {
         %s
     }
 };
-""" % (table_name, structure_size,
+""" % (table_name, structure_size, obj_size,
        ",\n        ".join(table))
 
     def write_parameter_table(self, f_decls, f_defs, table_name, min_parameters,
@@ -1137,13 +1157,24 @@ typedef struct {
         the 'attrs' mapping, adding entries to the 'trailing' member collection.
         """
 
+        if self.get_trailing_data_type(ref):
+            trailing.append(encode_literal_constant_value(attrs["__trailing__"]))
+
+    def get_trailing_data_type(self, ref):
+
+        """
+        For the structure having the given 'ref', return the type of any
+        trailing data.
+        """
+
         structure_ref = self.get_target_structure(ref)
 
         # Instances with trailing data.
 
-        if structure_ref.get_kind() == "<instance>" and \
-           structure_ref.get_origin() in self.trailing_data_types:
-            trailing.append(encode_literal_constant_value(attrs["__trailing__"]))
+        if structure_ref.get_kind() == "<instance>":
+            return self.trailing_data_types.get(structure_ref.get_origin())
+        else:
+            return None
 
     def get_target_structure(self, ref):
 
@@ -1300,28 +1331,44 @@ __attr %s(__attr __self%s)
         """
 
         print >>f_code, """\
+_Thread_local __attr __stack;
+
+/* Global used to prevent compiler over-optimisation. */
+
+__attr __stack_global;
+
 int main(int argc, char *argv[])
 {
     __exc __tmp_exc;
+    __attr __stack_base;
 
     GC_INIT();
 
     __signals_install_handlers();
+    __stack = __stack_init();
+
+    /* Record the stack accessor on the function stack for libgc. */
+
+    __stack_base = __stack;
+    __stack_global = __stack_base;
 
     __Try
     {"""
 
+        # Write a main function invocation for all but the native modules.
+
         for name in self.importer.order_modules():
-            function_name = "__main_%s" % encode_path(name)
-            print >>f_signatures, "void %s();" % function_name
-
-            # Omit the native modules.
-
             parts = name.split(".")
 
-            if parts[0] != "native":
-                print >>f_code, """\
+            if parts[0] == "native":
+                continue
+
+            function_name = "__main_%s" % encode_path(name)
+            print >>f_signatures, "void %s();" % function_name
+            print >>f_code, """\
         %s();""" % function_name
+
+        # Finish the main section with an exception handler.
 
         print >>f_code, """\
     }

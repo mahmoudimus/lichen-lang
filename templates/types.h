@@ -42,6 +42,7 @@ typedef uint16_t __ppos;
 typedef struct __table
 {
     const __pos size;
+    const size_t obj_size;      /* size for value instance copying */
     const __code attrs[];
 } __table;
 
@@ -80,6 +81,11 @@ typedef size_t __uint;
 
 typedef _Float64 __float;
 
+/* Introduce value stack section and descriptor. */
+
+typedef struct __section __section;
+typedef struct __stackdesc __stackdesc;
+
 /* Attribute value interpretations. */
 
 typedef union __attr
@@ -101,6 +107,11 @@ typedef union __attr
     __fragment * seqvalue;      /* sequence data */
     void * datavalue;           /* object-specific data */
     __int sizevalue;            /* object-specific size */
+
+    /* Value stack parameter member. */
+
+    __stackdesc *stackdesc;     /* reference to value stack descriptor */
+
 } __attr;
 
 typedef struct __obj
@@ -115,7 +126,7 @@ typedef struct __obj
 
 } __obj;
 
-#define __INSTANCE_SIZE(NUMBER) ((NUMBER) * sizeof(__attr) + sizeof(__table *) + sizeof(__ppos))
+#define __INSTANCE_SIZE(REF) ((REF)->table->obj_size)
 
 /* Fragments are simple collections of attributes employed by sequence types.
    They provide the basis of lists and tuples. */
@@ -128,17 +139,33 @@ typedef struct __fragment
 
 #define __FRAGMENT_SIZE(NUMBER) ((NUMBER) * sizeof(__attr) + 2 * sizeof(__int))
 
+/* Sections are used to provide the value stack. */
+
+typedef struct __section
+{
+    char *base, *level, *limit;
+    __section *previous;
+} __section;
+
+/* The value stack descriptor references the current value stack section. */
+
+typedef struct __stackdesc
+{
+    __section *current;
+} __stackdesc;
+
 /* Attribute interpretation. */
 
 #define __NUM_TAG_BITS      2
-#define __TAG_COPYABLE      0b01UL
 #define __TAG_MUTABLE       0b10UL
 #define __TAG_MASK          0b11UL
 
-#define __COPYABLE(ATTR)    ((ATTR).rawvalue & __TAG_COPYABLE)
+#define __COPYABLE(ATTR)    (__VALUE(ATTR)->table->obj_size != 0)
 #define __MUTABLE(ATTR)     ((ATTR).rawvalue & __TAG_MUTABLE)
 #define __TO_IMMUTABLE(ATTR) ((__attr) {.rawvalue=(ATTR).rawvalue & (~__TAG_MUTABLE)})
-#define __TO_MUTABLE(ATTR)   ((__attr) {.rawvalue=(ATTR).rawvalue | __TAG_MASK})
+#define __TO_MUTABLE(ATTR)   ((__attr) {.rawvalue=(ATTR).rawvalue | __TAG_MUTABLE})
+#define __MUTABLEVALUE(REF) ((__attr) {.rawvalue=(uintptr_t) REF | __TAG_MUTABLE})
+#define __RAWVALUE(VALUE)   ((__attr) {.rawvalue=VALUE})
 
 /* Attribute value setting. */
 

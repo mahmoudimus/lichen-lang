@@ -42,6 +42,13 @@ __attr __new(const __table * table, __ref cls, size_t size, int immutable)
     return __ATTRVALUE(obj);
 }
 
+__attr __new_stack(const __table * table, __ref cls, size_t size)
+{
+    __attr attr = __stack_allocate(__stack, size);
+    __init(__VALUE(attr), table, cls);
+    return attr;
+}
+
 __attr __new_wrapper(__attr context, __attr attr)
 {
     return __new___builtins___core_wrapper(__NULL, context, attr);
@@ -69,7 +76,10 @@ void __newdata_sequence(__int number, __fragment *data, __attr args[])
     /* Copy the given number of values. */
 
     for (i = 0; i < number; i++)
-        data->attrs[i] = args[i];
+    {
+        data->attrs[i] = __RAWVALUE(0);
+        __store_target(&data->attrs[i], args[i]);
+    }
 
     data->size = number;
 }
@@ -81,7 +91,7 @@ __attr __newdata_list(__int number, __attr args[])
 
     /* Store a reference to the data in the object's __data__ attribute. */
 
-    __store_via_object(__VALUE(self), __data__, (__attr) {.seqvalue=data});
+    __store_via_object_internal(__VALUE(self), __data__, (__attr) {.seqvalue=data});
     __newdata_sequence(number, data, args);
     return self;
 }
@@ -97,7 +107,7 @@ __attr __newdata_tuple(__int number, __attr args[])
 
     /* Store a reference to the data in the object's __data__ attribute. */
 
-    __store_via_object(__VALUE(self), __data__, (__attr) {.seqvalue=data});
+    __store_via_object_internal(__VALUE(self), __data__, (__attr) {.seqvalue=data});
     __newdata_sequence(number, data, args);
     return self;
 }
@@ -207,8 +217,10 @@ __attr __ensure_instance(__attr arg)
 /* Invoke the given callable, supplying keyword argument details in the given
    codes and arguments arrays, indicating the number of arguments described.
    The number of positional arguments is specified, and such arguments then
-   follow as conventional function arguments. Typically, at least one argument
-   is specified, starting with any context argument.
+   follow as conventional function arguments.
+
+   Typically, at least one argument is specified, starting with any context
+   argument.
 */
 
 __attr __invoke(__attr callable, int always_callable,
@@ -220,9 +232,11 @@ __attr __invoke(__attr callable, int always_callable,
     __attr target = __unwrap_callable(callable);
 
     /* Obtain the __args__ special member, referencing the parameter table. */
-    /* Refer to the table and minimum/maximum. */
 
     const __ptable *ptable = __check_and_load_via_object(__VALUE(target), __args__).ptable;
+
+    /* Refer to the table and minimum/maximum. */
+
     const unsigned int min = ptable->min, max = ptable->max;
 
     /* Reserve enough space for the arguments. */
@@ -270,10 +284,13 @@ __attr __invoke(__attr callable, int always_callable,
             /* Check the table entry against the supplied argument details.
                Set the argument but only if it does not overwrite positional
                arguments. */
-            /* NOTE: Should use a more specific exception. */
 
             if ((pos == -1) || (pos < nargs))
+            {
+                /* NOTE: Should use a more specific exception. */
+
                 __raise_type_error();
+            }
 
             /* Set the argument using the appropriate position. */
 
@@ -290,7 +307,8 @@ __attr __invoke(__attr callable, int always_callable,
     }
 
     /* Call with the prepared arguments via a special adaptor function that
-       converts the array to an argument list. */
+       converts the array to an argument list. The context argument occupies
+       position #0. */
 
     return __call_with_args(
         always_callable ?
@@ -336,7 +354,8 @@ int __BOOL(__attr attr)
 
     return value == (__ref) &__predefined___builtins___boolean_True ? 1 :
            value == (__ref) &__predefined___builtins___boolean_False ? 0 :
-           __VALUE(__fn___builtins___boolean_bool(__NULL, attr)) == (__ref) &__predefined___builtins___boolean_True;
+           __VALUE(__fn___builtins___boolean_bool(__NULL, attr)) ==
+               (__ref) &__predefined___builtins___boolean_True;
 }
 
 /* Conversion of trailing data to an integer. */

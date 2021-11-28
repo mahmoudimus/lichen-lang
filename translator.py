@@ -3,7 +3,7 @@
 """
 Translate programs.
 
-Copyright (C) 2015, 2016, 2017, 2018 Paul Boddie <paul@boddie.org.uk>
+Copyright (C) 2015-2018, 2021 Paul Boddie <paul@boddie.org.uk>
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -37,7 +37,7 @@ from transresults import TrConstantValueRef, TrInstanceRef, \
                          AliasResult, AttrResult, Expression, InstantiationResult, \
                          InvocationResult, LogicalOperationResult, \
                          LogicalResult, NegationResult, PredefinedConstantRef, \
-                         ReturnRef
+                         ReturnRef, special_attributes
 from StringIO import StringIO
 import compiler
 import sys
@@ -619,7 +619,8 @@ class TranslatedModule(CommonModule):
         del self.attrs[0]
         return AttrResult(output, refs, location,
                           context_identity, context_identity_verified,
-                          accessor_test, accessor_stored)
+                          accessor_test, accessor_stored, n.attrname,
+                          self.in_assignment)
 
     def init_substitutions(self):
 
@@ -806,9 +807,23 @@ class TranslatedModule(CommonModule):
             if ref and not ref.static():
                 parent, attrname = path.rsplit(".", 1)
 
-                self.writestmt("__store_via_object(&%s, %s, __load_via_object(&%s, %s));" % (
-                    encode_path(class_name), name,
-                    encode_path(parent), attrname
+                # NOTE: This is a superficial test for internal attributes that
+                # NOTE: relies on such attributes being used directly and passed
+                # NOTE: to native code.
+
+                if name in special_attributes:
+                    store_op = "__store_via_object_internal"
+                else:
+                    store_op = "__store_via_object"
+
+                if attrname in special_attributes:
+                    load_op = "__load_via_object_internal"
+                else:
+                    load_op = "__load_via_object"
+
+                self.writestmt("%s(&%s, %s, %s(&%s, %s));" % (
+                    store_op, encode_path(class_name), name,
+                    load_op, encode_path(parent), attrname
                     ))
 
     def process_from_node(self, n):
@@ -882,6 +897,11 @@ class TranslatedModule(CommonModule):
                 self.process_assignment_node(
                     compiler.ast.AssAttr(compiler.ast.Name("self"), name, "OP_ASSIGN"),
                     compiler.ast.Name(name))
+
+        # Record the value stack level.
+
+        self.writestmt("__section *__stack_section = __stack.stackdesc->current;")
+        self.writestmt("char *__stack_level = __stack_section->level; (void) __stack_level;")
 
         # Produce the body and any additional return statement.
 
@@ -1281,8 +1301,8 @@ class TranslatedModule(CommonModule):
             self.record_temp("__tmp_values")
 
         # Arguments are presented in a temporary frame array with any context
-        # always being the first argument. Where it would be unused, it may be
-        # set to null.
+        # always being the first argument. Where the context would be unused, it
+        # may be set to null.
 
         if context_required:
             if have_access_context:
@@ -1291,6 +1311,8 @@ class TranslatedModule(CommonModule):
                 context_arg = "__CONTEXT_AS_VALUE(%s)" % target_var
         else:
             context_arg = "__NULL"
+
+        # Introduce any context.
 
         args = [context_arg]
         reserved_args = 1
@@ -1324,12 +1346,9 @@ class TranslatedModule(CommonModule):
         for i, arg in enumerate(n.args):
             argexpr = self.process_structure_node(arg)
 
-            # Obtain an appropriate argument representation. This prevents
-            # copyable values from being mutable, but care must be taken to
-            # prevent special internal attribute values represented using
-            # attributes from being modified.
+            # Obtain an appropriate argument representation.
 
-            argrepr = argexpr.as_arg()
+            argrepr = str(argexpr)
 
             # Store a keyword argument, either in the argument list or
             # in a separate keyword argument list for subsequent lookup.
@@ -1758,7 +1777,7 @@ class TranslatedModule(CommonModule):
         if self.in_try_finally or self.in_try_except:
             self.writestmt("__Return(%s);" % expr)
         else:
-            self.writestmt("return %s;" % expr)
+            self.writestmt("return __return(%s, __stack_section, __stack_level);" % expr)
 
         return ReturnRef()
 
@@ -2131,11 +2150,13 @@ class TranslatedModule(CommonModule):
 
         if names:
             names.sort()
-            self.writeline("__attr %s;" % ", ".join(names))
+            for n in names:
+                self.writeline("__attr %s = (__attr) {.rawvalue = 0};" % n)
 
         if volatile_names:
             volatile_names.sort()
-            self.writeline("volatile __attr %s;" % ", ".join(volatile_names))
+            for n in volatile_names:
+                self.writeline("volatile __attr %s = (__attr) {.rawvalue = 0};" % n)
 
         self.flush_unit(name, out)
 

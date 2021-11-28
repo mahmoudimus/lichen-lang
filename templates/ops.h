@@ -44,12 +44,15 @@ __attr __get_class_and_load__(__ref obj, int pos);
 
 /* Direct storage operations. */
 
+void __store_target(__attr *target, __attr value);
 int __store_via_class__(__ref obj, int pos, __attr value);
 int __store_via_object__(__ref obj, int pos, __attr value);
+int __store_via_object_internal__(__ref obj, int pos, __attr value);
 int __get_class_and_store__(__ref obj, int pos, __attr value);
 
 #define __store_via_class(OBJ, ATTRNAME, VALUE) (__store_via_class__(OBJ, __ATTRPOS(ATTRNAME), VALUE))
 #define __store_via_object(OBJ, ATTRNAME, VALUE) (__store_via_object__(OBJ, __ATTRPOS(ATTRNAME), VALUE))
+#define __store_via_object_internal(OBJ, ATTRNAME, VALUE) (__store_via_object_internal__(OBJ, __ATTRPOS(ATTRNAME), VALUE))
 #define __get_class_and_store(OBJ, ATTRNAME, VALUE) (__get_class_and_store__(OBJ, __ATTRPOS(ATTRNAME), VALUE))
 
 /* Introspection. */
@@ -93,10 +96,12 @@ __attr __check_and_load_via_any__(__ref obj, int pos, int code);
 
 int __check_and_store_via_class__(__ref obj, int pos, int code, __attr value);
 int __check_and_store_via_object__(__ref obj, int pos, int code, __attr value);
+int __check_and_store_via_object_internal__(__ref obj, int pos, int code, __attr value);
 int __check_and_store_via_any__(__ref obj, int pos, int code, __attr value);
 
 #define __check_and_store_via_class(OBJ, ATTRNAME, VALUE) (__check_and_store_via_class__(OBJ, __ATTRPOS(ATTRNAME), __ATTRCODE(ATTRNAME), VALUE))
 #define __check_and_store_via_object(OBJ, ATTRNAME, VALUE) (__check_and_store_via_object__(OBJ, __ATTRPOS(ATTRNAME), __ATTRCODE(ATTRNAME), VALUE))
+#define __check_and_store_via_object_internal(OBJ, ATTRNAME, VALUE) (__check_and_store_via_object_internal__(OBJ, __ATTRPOS(ATTRNAME), __ATTRCODE(ATTRNAME), VALUE))
 #define __check_and_store_via_any(OBJ, ATTRNAME, VALUE) (__check_and_store_via_any__(OBJ, __ATTRPOS(ATTRNAME), __ATTRCODE(ATTRNAME), VALUE))
 
 /* Context-related operations. */
@@ -151,6 +156,24 @@ void *__REALLOCATE(void *ptr, size_t size);
 
 /* Copying of structures. */
 
-__ref __COPY(__ref obj, int size);
+__ref __COPY(__ref obj, size_t size);
+void __COPY_TO(__ref source, __ref target, size_t size);
+
+/* Stack management. */
+
+extern _Thread_local __attr __stack;
+
+#define __STACK_SECTION_SIZE 4096
+
+__attr __stack_init();
+__attr __stack_allocate(__attr __stack, size_t size);
+void __stack_expand(__attr __stack);
+void __stack_contract(__attr __stack, char *level);
+
+/* Stack access. */
+
+__attr __load(__attr value);
+__attr __store_local(__attr target, __attr value);
+__attr __return(__attr result, __section *section, char *level);
 
 #endif /* __OPS_H__ */

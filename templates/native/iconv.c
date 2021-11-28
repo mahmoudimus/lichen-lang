@@ -87,8 +87,10 @@ __attr __fn_native_iconv_iconv(__attr __self, __attr cd, __attr state)
 
         /* Mutate the state to indicate the next input buffer position. */
 
-        f->attrs[1] = __new_int(start + remaining - inbytesleft);
-        f->attrs[2] = __new_int(inbytesleft);
+        f->attrs[1] = __RAWVALUE(0);
+        f->attrs[2] = __RAWVALUE(0);
+        __store_target(&f->attrs[1], __new_int(start + remaining - inbytesleft));
+        __store_target(&f->attrs[2], __new_int(inbytesleft));
 
         /* Incomplete sequence: raise the string in an OSError instead. */
 

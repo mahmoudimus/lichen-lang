@@ -56,7 +56,7 @@ __attr __fn_native_list_list_append(__attr __self, __attr self, __attr value)
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(__VALUE(self), __data__, ((__attr) {.seqvalue=newdata}));
+        __store_via_object_internal(__VALUE(self), __data__, ((__attr) {.seqvalue=newdata}));
     return __builtins___none_None;
 }
 
@@ -79,12 +79,16 @@ __attr __fn_native_list_list_concat(__attr __self, __attr self, __attr other)
 
     /* Copy the elements from the other list and increment the list size. */
     for (i = size, j = 0; j < other_size; i++, j++)
-        newdata->attrs[i] = other_data->attrs[j];
+    {
+        newdata->attrs[i] = __RAWVALUE(0);
+        __store_target(&newdata->attrs[i], other_data->attrs[j]);
+    }
+
     newdata->size = n;
 
     /* Replace the __data__ attribute if appropriate. */
     if (newdata != data)
-        __store_via_object(__VALUE(self), __data__, ((__attr) {.seqvalue=newdata}));
+        __store_via_object_internal(__VALUE(self), __data__, ((__attr) {.seqvalue=newdata}));
     return __builtins___none_None;
 }
 
@@ -120,7 +124,7 @@ __attr __fn_native_list_list_setelement(__attr __self, __attr _data, __attr inde
     __int i = __TOINT(index);
 
     /* Set the element. */
-    elements[i] = value;
+    __store_target(&elements[i], value);
     return __builtins___none_None;
 }
 
